@@ -7,4 +7,4 @@
  * @module
  */
 
-export { EmbeddingCollection, type EmbeddingData } from "@office-open/core";
+export { EmbeddingCollection, type EmbeddingData } from "@office-open/core/opc";

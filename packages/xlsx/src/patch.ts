@@ -1,3 +1,18 @@
+import {
+  appendContentType,
+  appendOverride,
+  appendRelationship,
+  applyCorePropertiesOverride,
+  getNextRelationshipIndex,
+  nextNumericId,
+  OoxmlMimeType,
+  removeOverride,
+  toJson,
+  zipAndConvert,
+} from "@office-open/core";
+import type { BasePatchOptions, OutputByType, OutputType } from "@office-open/core";
+import { toUint8Array } from "@office-open/core";
+import type { ReadContext, WriteContext } from "@office-open/core/descriptor";
 /**
  * XLSX patching — replace placeholders in existing .xlsx files.
  *
@@ -12,24 +27,11 @@
  * @module
  */
 import {
-  RELATIONSHIP_TYPES,
-  OoxmlMimeType,
-  appendContentType,
-  appendOverride,
-  appendRelationship,
-  applyCorePropertiesOverride,
-  getNextRelationshipIndex,
-  nextNumericId,
   partPathToRelsPath,
-  removeOverride,
+  RELATIONSHIP_TYPES,
   strFromU8,
-  toJson,
   unzipSync,
-  zipAndConvert,
-} from "@office-open/core";
-import type { BasePatchOptions, OutputByType, OutputType } from "@office-open/core";
-import { toUint8Array } from "@office-open/core";
-import type { ReadContext, WriteContext } from "@office-open/core/descriptor";
+} from "@office-open/core/opc";
 import { OOXML_XML_DECLARATION } from "@office-open/xml";
 import { stringify } from "@office-open/xml";
 import type { Element } from "@office-open/xml";

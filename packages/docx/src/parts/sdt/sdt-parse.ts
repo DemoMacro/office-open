@@ -9,6 +9,7 @@ import type { ThemeColor } from "@office-open/core";
 import { attr, attrBool, attrNum, children, findChild } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import type { RunPropertiesOptions } from "@parts/paragraph/run/properties";
+import { ON_OFF_LEXICAL_VALUES, type OnOffLexicalValue } from "@parts/paragraph/run/properties";
 import { parseRunProperties } from "@parts/paragraph/run/run-parse";
 import type {
   SdtChildOrder,
@@ -19,6 +20,8 @@ import type {
   SdtComboBoxOptions,
   SdtDropDownListOptions,
 } from "@parts/table-of-contents";
+
+import { DocxParseError } from "../../errors";
 
 const SDT_ELEMENT_ORDER = new Map<string, SdtChildOrder>([
   ["w:rPr", "runProperties"],
@@ -60,7 +63,7 @@ import type { DocxReadContext } from "../../context";
 /**
  * Parse w:sdtPr element into SdtPropertiesOptions.
  */
-export function parseSdtProperties(el: Element): SdtPropertiesOptions {
+export function parseSdtProperties(el: Element, ctx: DocxReadContext): SdtPropertiesOptions {
   const opts: Partial<SdtPropertiesOptions> = {};
 
   // rPr — the SDT start mark's run properties (CT_SdtPr's leading element)
@@ -192,8 +195,21 @@ export function parseSdtProperties(el: Element): SdtPropertiesOptions {
     opts.richText = true;
   } else if (findChild(el, "w:text")) {
     const text = findChild(el, "w:text")!;
+    const multiLineRaw = attr(text, "w:multiLine");
+    if (
+      multiLineRaw !== undefined &&
+      !(ON_OFF_LEXICAL_VALUES as readonly string[]).includes(multiLineRaw)
+    ) {
+      throw new DocxParseError(
+        "Invalid SDT multiline on/off value",
+        ctx.currentPart,
+        "/w:sdt/w:sdtPr/w:text/@w:multiLine",
+        "invalid-value",
+      );
+    }
     opts.text = {
       multiLine: attrBool(text, "w:multiLine"),
+      multiLineRaw: multiLineRaw as OnOffLexicalValue | undefined,
     } as SdtTextOptions;
   } else if (findChild(el, "w:citation")) {
     opts.citation = true;
@@ -208,7 +224,13 @@ export function parseSdtProperties(el: Element): SdtPropertiesOptions {
     if (gallery) dpObj.gallery = attr(gallery, "w:val");
     const category = findChild(dp, "w:docPartCategory");
     if (category) dpObj.category = attr(category, "w:val");
-    if (findChild(dp, "w:docPartUnique")) dpObj.unique = true;
+    const unique = findChild(dp, "w:docPartUnique");
+    if (unique) {
+      const raw = attr(unique, "w:val");
+      if (raw !== undefined && (ON_OFF_LEXICAL_VALUES as readonly string[]).includes(raw))
+        dpObj.uniqueRaw = raw as OnOffLexicalValue;
+      dpObj.unique = attrBool(unique, "w:val") ?? true;
+    }
     opts.docPartObj = dpObj;
   } else if (findChild(el, "w:docPartList")) {
     const dp = findChild(el, "w:docPartList")!;
@@ -217,7 +239,13 @@ export function parseSdtProperties(el: Element): SdtPropertiesOptions {
     if (gallery) dpObj.gallery = attr(gallery, "w:val");
     const category = findChild(dp, "w:docPartCategory");
     if (category) dpObj.category = attr(category, "w:val");
-    if (findChild(dp, "w:docPartUnique")) dpObj.unique = true;
+    const unique = findChild(dp, "w:docPartUnique");
+    if (unique) {
+      const raw = attr(unique, "w:val");
+      if (raw !== undefined && (ON_OFF_LEXICAL_VALUES as readonly string[]).includes(raw))
+        dpObj.uniqueRaw = raw as OnOffLexicalValue;
+      dpObj.unique = attrBool(unique, "w:val") ?? true;
+    }
     opts.docPartList = dpObj;
   } else if (findChild(el, "w14:checkbox")) {
     const cb = findChild(el, "w14:checkbox")!;
@@ -225,17 +253,25 @@ export function parseSdtProperties(el: Element): SdtPropertiesOptions {
     const checked = findChild(cb, "w14:checked");
     if (checked) cbObj.checked = attrBool(checked, "w14:val") ?? true;
     const checkedState = findChild(cb, "w14:checkedState");
-    if (checkedState)
+    if (checkedState) {
       cbObj.checkedState = {
         val: attr(checkedState, "w14:val") ?? "",
-        font: attr(checkedState, "w14:font"),
+        font: attr(checkedState, "w14:font") ?? null,
       };
+      cbObj.checkedStatePresent = true;
+    } else {
+      cbObj.checkedStatePresent = false;
+    }
     const uncheckedState = findChild(cb, "w14:uncheckedState");
-    if (uncheckedState)
+    if (uncheckedState) {
       cbObj.uncheckedState = {
         val: attr(uncheckedState, "w14:val") ?? "",
-        font: attr(uncheckedState, "w14:font"),
+        font: attr(uncheckedState, "w14:font") ?? null,
       };
+      cbObj.uncheckedStatePresent = true;
+    } else {
+      cbObj.uncheckedStatePresent = false;
+    }
     opts.checkbox = cbObj;
   } else if (findChild(el, "w15:repeatingSection")) {
     const rs = findChild(el, "w15:repeatingSection")!;
@@ -288,7 +324,9 @@ export function parseSdtBlock(
   children?: unknown[];
 } {
   const sdtPr = findChild(el, "w:sdtPr");
-  const properties = sdtPr ? parseSdtProperties(sdtPr) : {};
+  const properties = sdtPr
+    ? { ...parseSdtProperties(sdtPr, ctx), propertiesPresent: true }
+    : { propertiesPresent: false };
 
   // sdtEndPr (CT_SdtEndPr wraps its run properties in a w:rPr child)
   const sdtEndPr = findChild(el, "w:sdtEndPr");

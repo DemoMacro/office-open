@@ -1,4 +1,6 @@
+import { XlsParseError } from "../errors";
 import { EXCEL_ERROR_LITERALS, columnLabel } from "../shared/cell-reference";
+import { biffFunction } from "./function-table";
 
 export interface FormulaContext {
   baseRow: number;
@@ -25,19 +27,6 @@ const BINARY_OPERATORS: Record<number, string> = {
   0x0f: " ",
   0x10: ",",
   0x11: ":",
-};
-
-const FUNCTION_NAMES: Record<number, string> = {
-  1: "IF",
-  2: "ISNA",
-  3: "ISERROR",
-  4: "SUM",
-  5: "AVERAGE",
-  6: "MIN",
-  7: "MAX",
-  8: "COUNT",
-  34: "ROUND",
-  85: "CONCATENATE",
 };
 
 class FormulaReader {
@@ -131,7 +120,7 @@ function biff5Address(reader: FormulaReader, context: FormulaContext): string {
 }
 
 function functionName(index: number): string {
-  return FUNCTION_NAMES[index] ?? `FN_${index}`;
+  return biffFunction(index).name;
 }
 
 function readConstantArray(reader: FormulaReader): string {
@@ -213,6 +202,24 @@ function decodeTokens(
         operands.push(token === 0x13 ? `-${operand}` : `+${operand}`);
         break;
       }
+      case 0x00: {
+        break;
+      }
+      case 0x02: {
+        reader.bytes(4);
+        break;
+      }
+      case 0x14: {
+        const operand = operands.pop();
+        if (operand === undefined)
+          throw new XlsParseError("Invalid legacy XLS file: malformed formula percentage");
+        operands.push(`(${operand})%`);
+        break;
+      }
+      case 0x16: {
+        operands.push("");
+        break;
+      }
       case 0x01: {
         reader.uint16();
         reader.uint16();
@@ -259,19 +266,112 @@ function decodeTokens(
       }
       case 0x19: {
         const attribute = reader.byte();
-        if (attribute === 0x04) {
-          const row = reader.uint16();
-          const column = reader.uint16();
-          operands.push(reference(row, column & 0x3fff));
+        if ((attribute & 0x04) !== 0) {
+          const choices = reader.uint16();
+          reader.bytes(choices * 2 + 2);
         } else {
           reader.uint16();
         }
+        if ((attribute & 0x10) !== 0) {
+          const operand = operands.pop();
+          if (operand === undefined)
+            throw new XlsParseError("Invalid legacy XLS file: malformed optimized SUM");
+          operands.push(`SUM(${operand})`);
+        }
+        if ((attribute & 0x40) === 0) continue;
         break;
       }
-      case 0x21: {
+      case 0x26:
+      case 0x46:
+      case 0x66: {
+        reader.bytes(6);
+        break;
+      }
+      case 0x27:
+      case 0x47:
+      case 0x67: {
+        reader.bytes(6);
+        break;
+      }
+      case 0x28:
+      case 0x48:
+      case 0x68: {
+        reader.bytes(6);
+        break;
+      }
+      case 0x2e:
+      case 0x4e:
+      case 0x6e:
+      case 0x2f:
+      case 0x4f:
+      case 0x6f: {
+        reader.uint16();
+        break;
+      }
+      case 0x2a:
+      case 0x4a:
+      case 0x6a: {
+        reader.bytes(4);
+        operands.push("#REF!");
+        break;
+      }
+      case 0x2b:
+      case 0x4b:
+      case 0x6b: {
+        reader.bytes(8);
+        operands.push("#REF!");
+        break;
+      }
+      case 0x2c:
+      case 0x4c:
+      case 0x6c: {
+        const row = reader.uint16();
+        const column = reader.uint16();
+        operands.push(relativeCell(row, column, column >> 8, context));
+        break;
+      }
+      case 0x2d:
+      case 0x4d:
+      case 0x6d: {
+        const firstRow = reader.uint16();
+        const lastRow = reader.uint16();
+        const firstColumn = reader.uint16();
+        const lastColumn = reader.uint16();
+        operands.push(
+          `${relativeCell(firstRow, firstColumn, firstColumn >> 8, context)}:${relativeCell(
+            lastRow,
+            lastColumn,
+            lastColumn >> 8,
+            context,
+          )}`,
+        );
+        break;
+      }
+      case 0x38:
+      case 0x58:
+      case 0x78: {
+        const index = reader.byte();
+        const argumentCount = reader.byte() + 1;
+        pendingFunction = { name: `COMMAND_${index}`, arguments: argumentCount };
+        break;
+      }
+      case 0x39:
+      case 0x59:
+      case 0x79: {
+        reader.uint16();
+        const index = reader.uint16() - 1;
+        reader.uint16();
+        operands.push(context.definedNameByIndex?.(index) ?? `#NAME_${index + 1}`);
+        break;
+      }
+      case 0x21:
+      case 0x41:
+      case 0x61: {
         const index = reader.uint16();
-        const argumentCount = reader.byte();
-        pendingFunction = { name: functionName(index), arguments: argumentCount };
+        pendingFunction = {
+          name: functionName(index),
+          arguments: biffFunction(index).minimumArguments,
+        };
         break;
       }
       case 0x22: {
@@ -396,21 +496,15 @@ function decodeTokens(
         operands.push(`${sheet}!#REF!`);
         break;
       }
-      case 0x41:
-      case 0x61: {
-        const argumentCount = reader.byte();
-        const index = reader.uint16();
-        pendingFunction = { name: functionName(index), arguments: argumentCount };
-        break;
-      }
       case 0x1d: {
         operands.push(reader.byte() === 0 ? "FALSE()" : "TRUE()");
         break;
       }
       case 0x42:
       case 0x62: {
-        const error = reader.byte();
-        operands.push(`#VALUE_${error}`);
+        const argumentCount = reader.byte();
+        const index = reader.uint16();
+        pendingFunction = { name: functionName(index), arguments: argumentCount };
         break;
       }
       case 0x1e: {
@@ -419,13 +513,6 @@ function decodeTokens(
       }
       case 0x1f: {
         operands.push(String(reader.float64()));
-        break;
-      }
-      case 0x4c:
-      case 0x6c: {
-        const row = reader.uint16();
-        const column = reader.uint16();
-        operands.push(relativeCell(row, column, column >> 8, context));
         break;
       }
       default:
@@ -469,8 +556,3 @@ export function decodeFormula(
   const result = decodeTokens(data, context);
   return { ...result, consumed: result.consumed + (context.arrayData?.byteLength ?? 0) };
 }
-
-function reference(row: number, column: number): string {
-  return `${columnLabel(column)}${row + 1}`;
-}
-import { XlsParseError } from "../errors";

@@ -17,9 +17,13 @@ export interface AltChunkOptions {
   /** Content data to embed (string or binary) */
   data: Uint8Array | string;
   /** MIME content type of the data */
-  contentType: "text/html" | "application/rtf" | "text/plain";
+  contentType:
+    | "text/html"
+    | "application/rtf"
+    | "text/plain"
+    | "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
   /** File extension for the part */
-  extension: "html" | "rtf" | "txt";
+  extension: "html" | "rtf" | "txt" | "docx";
   /** Whether to match source formatting (w:matchSrc) */
   matchSource?: boolean;
   /** Source part sub-path within word/ (round-trip). */

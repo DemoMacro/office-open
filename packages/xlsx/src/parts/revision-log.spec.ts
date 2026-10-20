@@ -1,5 +1,5 @@
-import { unzipSync, zipSync } from "@office-open/core";
 import type { ReadContext, WriteContext } from "@office-open/core/descriptor";
+import { unzipSync, zipSync } from "@office-open/core/opc";
 import { parse as parseXml } from "@office-open/xml";
 import { describe, expect, it } from "vite-plus/test";
 

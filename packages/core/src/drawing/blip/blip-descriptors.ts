@@ -23,6 +23,7 @@ import type { SolidFillOptions } from "../color/solid-fill";
 import type { BlipOptions } from "./blip";
 import type {
   BlipEffectsOptions,
+  BlipEffectKind,
   LuminanceEffectOptions,
   HSLEffectOptions,
   TintEffectOptions,
@@ -52,16 +53,20 @@ export const tileDesc: CustomDescriptor<TileOptions> = {
   },
   parse(el, _ctx) {
     const result: TileOptions = {};
-    if (el.attributes?.["tx"] !== undefined) result.tx = Number(el.attributes["tx"]);
-    if (el.attributes?.["ty"] !== undefined) result.ty = Number(el.attributes["ty"]);
-    if (el.attributes?.["sx"] !== undefined) result.sx = parsePercentAttr(el.attributes["sx"])!;
-    if (el.attributes?.["sy"] !== undefined) result.sy = parsePercentAttr(el.attributes["sy"])!;
-    if (el.attributes?.["flip"] !== undefined)
-      result.flip = String(el.attributes["flip"]) as TileOptions["flip"];
-    if (el.attributes?.["algn"] !== undefined)
-      result.alignment = xsdRectAlignment.from(
-        String(el.attributes["algn"]),
-      ) as TileOptions["alignment"];
+    const tx = attr(el, "tx");
+    if (tx !== undefined) result.tx = Number(tx);
+    const ty = attr(el, "ty");
+    if (ty !== undefined) result.ty = Number(ty);
+    const sx = attr(el, "sx");
+    if (sx !== undefined) result.sx = parsePercentAttr(sx)!;
+    const sy = attr(el, "sy");
+    if (sy !== undefined) result.sy = parsePercentAttr(sy)!;
+    const flip = attr(el, "flip");
+    if (flip !== undefined) result.flip = flip as TileOptions["flip"];
+    const alignment = attr(el, "algn");
+    if (alignment !== undefined) {
+      result.alignment = xsdRectAlignment.from(alignment) as TileOptions["alignment"];
+    }
     return result;
   },
 };
@@ -123,6 +128,14 @@ export const stretchDesc: CustomDescriptor<SourceRectangleOptions> = {
 /** Serialize a:blip adjustment effects (a:lum, a:duotone, …) in public units. */
 export function stringifyBlipEffects(opts: BlipEffectsOptions, ctx: WriteContext): string {
   const parts: string[] = [];
+
+  if (opts.effectOrder) {
+    for (const kind of opts.effectOrder) {
+      if (opts[kind] === undefined) continue;
+      parts.push(stringifyBlipEffects({ [kind]: opts[kind] } as BlipEffectsOptions, ctx));
+    }
+    return parts.join("");
+  }
 
   if (opts.grayscale) {
     parts.push("<a:grayscl/>");
@@ -191,8 +204,9 @@ export function stringifyBlipEffects(opts: BlipEffectsOptions, ctx: WriteContext
   }
 
   if (opts.alphaModulateFixed) {
-    const amt = emitPercent(opts.alphaModulateFixed.amount ?? 100);
-    parts.push(`<a:alphaModFix amt="${amt}"/>`);
+    const amount = opts.alphaModulateFixed.amount;
+    const attributes = amount === undefined ? "" : ` amt="${emitPercent(amount)}"`;
+    parts.push(`<a:alphaModFix${attributes}/>`);
   }
 
   if (opts.alphaReplace) {
@@ -231,6 +245,31 @@ export function stringifyBlipEffects(opts: BlipEffectsOptions, ctx: WriteContext
 
 function readBlipEffects(el: XmlElement, ctx: ReadContext): BlipEffectsOptions | undefined {
   const result: BlipEffectsOptions = {};
+
+  const effectOrder: BlipEffectKind[] = [];
+  const effectFieldByElement = new Map<string, BlipEffectKind>([
+    ["a:grayscl", "grayscale"],
+    ["a:lum", "luminance"],
+    ["a:hsl", "hsl"],
+    ["a:tint", "tint"],
+    ["a:duotone", "duotone"],
+    ["a:biLevel", "biLevel"],
+    ["a:alphaCeiling", "alphaCeiling"],
+    ["a:alphaFloor", "alphaFloor"],
+    ["a:alphaInv", "alphaInverse"],
+    ["a:alphaModFix", "alphaModulateFixed"],
+    ["a:alphaRepl", "alphaReplace"],
+    ["a:alphaBiLevel", "alphaBiLevel"],
+    ["a:clrChange", "colorChange"],
+    ["a:clrRepl", "colorReplace"],
+    ["a:blur", "blur"],
+  ]);
+  for (const child of el.elements ?? []) {
+    if (child.type !== "element" || child.name === undefined) continue;
+    const field = effectFieldByElement.get(child.name);
+    if (field !== undefined) effectOrder.push(field);
+  }
+  if (effectOrder.length > 0) result.effectOrder = effectOrder;
 
   if (findChild(el, "a:grayscl")) result.grayscale = true;
 
@@ -363,7 +402,7 @@ export type BlipDescriptorOptions = BlipOptions & {
    * a14:useLocalDpi from the blip extension list — Office's local-DPI display
    * hint, the dominant non-SVG a:blip ext content.
    */
-  useLocalDpi?: boolean;
+  useLocalDpi?: boolean | "default";
   /**
    * Verbatim `a:extLst` inner XML for extensions beyond useLocalDpi (a14
    * imgProps artistic effects, …). Round-trip only: takes precedence over
@@ -397,7 +436,9 @@ export const blipDesc: CustomDescriptor<BlipDescriptorOptions> = {
       parts.push(`<a:extLst>${opts.ext}</a:extLst>`);
     } else if (opts.useLocalDpi !== undefined) {
       parts.push(
-        `<a:extLst><a:ext uri="${USE_LOCAL_DPI_EXT_URI}"><a14:useLocalDpi xmlns:a14="http://schemas.microsoft.com/office/drawing/2010/main" val="${opts.useLocalDpi ? 1 : 0}"/></a:ext></a:extLst>`,
+        `<a:extLst><a:ext uri="${USE_LOCAL_DPI_EXT_URI}"><a14:useLocalDpi xmlns:a14="http://schemas.microsoft.com/office/drawing/2010/main"${
+          opts.useLocalDpi === "default" ? "" : ` val="${opts.useLocalDpi ? 1 : 0}"`
+        }/></a:ext></a:extLst>`,
       );
     }
 
@@ -440,8 +481,12 @@ export const blipDesc: CustomDescriptor<BlipDescriptorOptions> = {
           if (ext.name !== "a:ext" || !extUriMatches(attr(ext, "uri"), USE_LOCAL_DPI_EXT_URI))
             continue;
           const useLocalDpi = findChild(ext, "a14:useLocalDpi");
-          if (useLocalDpi !== undefined)
-            result.useLocalDpi = parseOnOff(attr(useLocalDpi, "val")) ?? true;
+          if (useLocalDpi !== undefined) {
+            const value = parseOnOff(attr(useLocalDpi, "val"));
+            if (value === undefined && attr(useLocalDpi, "val") !== undefined)
+              throw new Error(`Invalid a14:useLocalDpi value: ${attr(useLocalDpi, "val")}`);
+            result.useLocalDpi = value ?? "default";
+          }
         }
       }
     }
@@ -455,7 +500,10 @@ export const blipFillDesc: CustomDescriptor<
   BlipFillOptions & {
     referenceId?: string;
     linkReferenceId?: string;
+    rawReferenceId?: string;
     blipEffects?: BlipEffectsOptions;
+    useLocalDpi?: boolean | "default";
+    ext?: string;
   }
 > = {
   kind: "custom",
@@ -469,12 +517,15 @@ export const blipFillDesc: CustomDescriptor<
     const parts: string[] = [];
 
     // Blip child (uses references from parent)
-    if (opts.referenceId || opts.linkReferenceId) {
+    if (opts.referenceId || opts.rawReferenceId || opts.linkReferenceId) {
       const blipOpts = {
         ...(opts.referenceId !== undefined && { referenceId: opts.referenceId }),
+        ...(opts.rawReferenceId !== undefined && { rawReferenceId: opts.rawReferenceId }),
         ...(opts.linkReferenceId !== undefined && { linkReferenceId: opts.linkReferenceId }),
         compression: opts.compression,
         blipEffects: opts.blipEffects,
+        useLocalDpi: opts.useLocalDpi,
+        ext: opts.ext,
       };
       const blipXml = stringify(blipDesc, blipOpts, ctx);
       if (blipXml) parts.push(blipXml);
@@ -490,6 +541,11 @@ export const blipFillDesc: CustomDescriptor<
     if (opts.tile) {
       const tileXml = stringify(tileDesc, opts.tile, ctx);
       if (tileXml) parts.push(tileXml);
+    } else if (opts.stretch === true) {
+      parts.push("<a:stretch/>");
+    } else if (opts.stretch !== undefined) {
+      const stretchXml = stringify(stretchDesc, opts.stretch, ctx);
+      if (stretchXml) parts.push(stretchXml);
     } else {
       parts.push("<a:stretch><a:fillRect/></a:stretch>");
     }
@@ -504,7 +560,10 @@ export const blipFillDesc: CustomDescriptor<
       BlipFillOptions & {
         referenceId?: string;
         linkReferenceId?: string;
+        rawReferenceId?: string;
         blipEffects?: BlipEffectsOptions;
+        useLocalDpi?: boolean | "default";
+        ext?: string;
       }
     > = {};
 
@@ -518,9 +577,12 @@ export const blipFillDesc: CustomDescriptor<
     if (blip) {
       const blipResult = parse(blipDesc, blip, ctx);
       if (blipResult.referenceId) result.referenceId = blipResult.referenceId;
+      if (blipResult.rawReferenceId) result.rawReferenceId = blipResult.rawReferenceId;
       if (blipResult.linkReferenceId) result.linkReferenceId = blipResult.linkReferenceId;
       if (blipResult.compression !== undefined) result.compression = blipResult.compression;
       if (blipResult.blipEffects) result.blipEffects = blipResult.blipEffects;
+      if (blipResult.useLocalDpi !== undefined) result.useLocalDpi = blipResult.useLocalDpi;
+      if (blipResult.ext !== undefined) result.ext = blipResult.ext;
     }
 
     // Source rectangle
@@ -529,12 +591,19 @@ export const blipFillDesc: CustomDescriptor<
 
     // Tile
     const tile = findChild(el, "a:tile");
-    if (tile) result.tile = parse(tileDesc, tile, ctx);
+    if (tile) result.tile = tileDesc.parse(tile, ctx);
+    const stretch = findChild(el, "a:stretch");
+    if (stretch) {
+      result.stretch = findChild(stretch, "a:fillRect") ? parse(stretchDesc, stretch, ctx) : true;
+    }
 
     return result as BlipFillOptions & {
       referenceId?: string;
       linkReferenceId?: string;
+      rawReferenceId?: string;
       blipEffects?: BlipEffectsOptions;
+      useLocalDpi?: boolean | "default";
+      ext?: string;
     };
   },
 };

@@ -52,6 +52,8 @@ export interface BorderOptions {
   style: (typeof BorderStyle)[keyof typeof BorderStyle] | string;
   /** Border color, "auto" or hex (eg 'FF00AA') */
   color?: HexColorOrAuto;
+  /** Source `@w:color` when it is outside the canonical hex/auto surface; round-trip only. */
+  colorRaw?: string;
   /** Theme color slot: "dark1"/"light1" text/background, "accent1"–"accent6" theme accents, "hyperlink"/"followedHyperlink". */
   themeColor?: ThemeColor;
   /** Theme color tint (2-char hex) */
@@ -145,7 +147,10 @@ export function parseBorderSide(sideEl: Element): BorderOptions | undefined {
   if (!style) return undefined;
   const sideOpts: BorderOptions = { style: style as BorderOptions["style"] };
   const color = attr(sideEl, "w:color");
-  if (color) sideOpts.color = color;
+  if (color) {
+    sideOpts.color = color;
+    if (!/^(?:auto|[0-9a-fA-F]{6})$/.test(color)) sideOpts.colorRaw = color;
+  }
   const size = attrNum(sideEl, "w:sz");
   if (size !== undefined) sideOpts.size = size;
   const space = attrNum(sideEl, "w:space");

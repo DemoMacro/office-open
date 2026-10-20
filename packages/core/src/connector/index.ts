@@ -3,4 +3,4 @@
  *
  * @module
  */
-export * from "./types";
+export type { BaseConnectorOptions } from "./types";

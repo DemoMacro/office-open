@@ -6,8 +6,16 @@
  * @module
  */
 
-import { convertToEmu, toUint8Array } from "@office-open/core";
+import {
+  convertToEmu,
+  createSourceRectangle,
+  fillDesc,
+  outlineDesc,
+  toUint8Array,
+} from "@office-open/core";
+import { parse, stringify } from "@office-open/core/descriptor";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
+import { findFillChild } from "@office-open/core/drawing";
 import { attr, attrBool, attrNum, escapeXml, findChild, findFirst } from "@office-open/xml";
 
 import type { PptxWriteContext } from "../../context";
@@ -56,12 +64,14 @@ export const oleDesc: CustomDescriptor<OleOptions> = {
 
     // a:graphic > a:graphicData > p:oleObj
     const oleAttrs: string[] = [];
-    oleAttrs.push(`name="${escapeXml(opts.objectName ?? opts.name ?? "OLE Object")}"`);
-    if (opts.shapeId) oleAttrs.push(`spid="${opts.shapeId}"`);
+    if (opts.objectName !== false) {
+      oleAttrs.push(`name="${escapeXml(opts.objectName ?? opts.name ?? "OLE Object")}"`);
+    }
+    if (opts.shapeId !== undefined) oleAttrs.push(`spid="${escapeXml(opts.shapeId)}"`);
     if (opts.showAsIcon) oleAttrs.push(`showAsIcon="1"`);
     if (opts.imageWidth !== undefined) oleAttrs.push(`imgW="${opts.imageWidth}"`);
     if (opts.imageHeight !== undefined) oleAttrs.push(`imgH="${opts.imageHeight}"`);
-    if (opts.progId) oleAttrs.push(`progId="${opts.progId}"`);
+    if (opts.progId !== undefined) oleAttrs.push(`progId="${escapeXml(opts.progId)}"`);
 
     // Embedded OLE: register the binary as ppt/embeddings/oleObjectN.bin and
     // emit a {ole:…} placeholder — the compiler rewrites it to a real r:id and
@@ -103,14 +113,52 @@ export const oleDesc: CustomDescriptor<OleOptions> = {
       const imageRef = pptxCtx.addMedia(
         toUint8Array(opts.iconImage.data) as Uint8Array,
         opts.iconImage.type,
+        opts.iconImage.fileName,
       );
+      const stretch =
+        opts.iconImage.stretchPresent === false
+          ? ""
+          : opts.iconImage.fillRectangle === false
+            ? "<a:stretch/>"
+            : `<a:stretch>${createSourceRectangle(
+                opts.iconImage.fillRectangle ?? {},
+                "a:fillRect",
+              )}</a:stretch>`;
+      const iconX = convertToEmu(opts.iconImage.x ?? x);
+      const iconY = convertToEmu(opts.iconImage.y ?? y);
+      const iconWidth = convertToEmu(opts.iconImage.width ?? w);
+      const iconHeight = convertToEmu(opts.iconImage.height ?? h);
+      const fillXml =
+        opts.iconImage.fill === undefined
+          ? ""
+          : (stringify(fillDesc, opts.iconImage.fill, ctx) ?? "");
+      const outlineXml =
+        opts.iconImage.outline === undefined
+          ? ""
+          : (stringify(outlineDesc, opts.iconImage.outline, ctx) ?? "");
+      const hasIconTransform =
+        opts.iconImage.shapePropertiesPresent !== false &&
+        opts.iconImage.transformPresent !== false;
+      const iconGeometry =
+        opts.iconImage.geometry === null
+          ? ""
+          : `<a:prstGeom prst="${opts.iconImage.geometry ?? "rect"}"><a:avLst/></a:prstGeom>`;
+      const iconProperties =
+        opts.iconImage.shapePropertiesPresent === false
+          ? ""
+          : `<p:spPr>${
+              hasIconTransform
+                ? `<a:xfrm><a:off x="${iconX}" y="${iconY}"/><a:ext cx="${iconWidth}" cy="${iconHeight}"/></a:xfrm>`
+                : ""
+            }${iconGeometry}${fillXml}${outlineXml}</p:spPr>`;
+      const iconCnvPr = `<p:cNvPr id="${opts.iconImage.id ?? 0}" name="${escapeXml(
+        opts.iconImage.name ?? "",
+      )}"/>`;
       oleChildren.push(
-        `<p:pic><p:nvPicPr><p:cNvPr id="0" name=""/><p:cNvPicPr/><p:nvPr/></p:nvPicPr>` +
+        `<p:pic><p:nvPicPr>${iconCnvPr}<p:cNvPicPr/><p:nvPr/></p:nvPicPr>` +
           `<p:blipFill><a:blip r:embed="${imageRef}"` +
           `${opts.iconImage.compression ? ` cstate="${opts.iconImage.compression}"` : ""}/>` +
-          `<a:stretch><a:fillRect/></a:stretch></p:blipFill>` +
-          `<p:spPr><a:xfrm><a:off x="${x}" y="${y}"/><a:ext cx="${w}" cy="${h}"/></a:xfrm>` +
-          `<a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr></p:pic>`,
+          `${stretch}</p:blipFill>${iconProperties}</p:pic>`,
       );
     }
 
@@ -167,6 +215,7 @@ export const oleDesc: CustomDescriptor<OleOptions> = {
       if (imgW !== undefined && result.imageWidth === undefined) result.imageWidth = imgW;
       const imgH = attrNum(oleObj, "imgH");
       if (imgH !== undefined && result.imageHeight === undefined) result.imageHeight = imgH;
+      result.objectName = objectName ?? false;
 
       // embed/link — embedded OLE reads the binary back through the
       // relationship so generate re-registers it in a fresh package.
@@ -207,16 +256,56 @@ export const oleDesc: CustomDescriptor<OleOptions> = {
       // iconImage: read the picture bytes back through the blip relationship
       const pic = findChild(oleObj, "p:pic");
       if (pic) {
+        const iconCnvPr = findChild(pic, "p:nvPicPr")
+          ? findChild(findChild(pic, "p:nvPicPr")!, "p:cNvPr")
+          : undefined;
+        const iconImageId = iconCnvPr ? attrNum(iconCnvPr, "id") : undefined;
+        const iconImageName = iconCnvPr ? attr(iconCnvPr, "name") : undefined;
         const blip = findFirst(pic, "a:blip");
         const blipRId = blip ? attr(blip, "r:embed") : undefined;
         const imagePath = blipRId ? ctx.resolveRelationship(blipRId) : undefined;
         const raw = imagePath ? ctx.getRaw(imagePath) : undefined;
         const type = imagePath?.split(".").pop();
         const compression = blip ? attr(blip, "cstate") : undefined;
+        const iconBlipFill = findChild(pic, "p:blipFill");
+        const hasStretch =
+          iconBlipFill !== undefined && findChild(iconBlipFill, "a:stretch") !== undefined;
+        const iconStretch =
+          iconBlipFill === undefined ? undefined : findChild(iconBlipFill, "a:stretch");
+        const fillRect =
+          iconStretch === undefined ? undefined : findChild(iconStretch, "a:fillRect");
+        const iconSpPr = findChild(pic, "p:spPr");
+        const iconFillChild = iconSpPr ? findFillChild(iconSpPr) : undefined;
+        const iconFill = iconFillChild ? parse(fillDesc, iconFillChild, ctx) : undefined;
+        const iconLine = iconSpPr ? findChild(iconSpPr, "a:ln") : undefined;
+        const iconOutline = iconLine ? parse(outlineDesc, iconLine, ctx) : undefined;
+        const iconXfrm = iconSpPr ? findChild(iconSpPr, "a:xfrm") : undefined;
+        const iconOff = iconXfrm ? findChild(iconXfrm, "a:off") : undefined;
+        const iconExt = iconXfrm ? findChild(iconXfrm, "a:ext") : undefined;
+        const iconGeometry = iconSpPr ? findChild(iconSpPr, "a:prstGeom") : undefined;
+        const iconGeometryType = iconGeometry ? attr(iconGeometry, "prst") : undefined;
         if (raw && type && result.iconImage === undefined) {
           result.iconImage = {
             data: raw,
             type,
+            ...(iconImageId !== undefined ? { id: iconImageId } : {}),
+            ...(iconImageName !== undefined ? { name: iconImageName } : {}),
+            ...(imagePath !== undefined ? { fileName: imagePath.split("/").pop() } : {}),
+            ...(hasStretch ? {} : { stretchPresent: false }),
+            ...(hasStretch && fillRect === undefined ? { fillRectangle: false } : {}),
+            ...(iconFill !== undefined ? { fill: iconFill } : {}),
+            ...(iconOutline !== undefined ? { outline: iconOutline } : {}),
+            ...(iconXfrm === undefined ? { transformPresent: false } : {}),
+            ...(iconSpPr === undefined ? { shapePropertiesPresent: false } : {}),
+            ...(iconOff?.attributes?.x !== undefined ? { x: attrNum(iconOff, "x") } : {}),
+            ...(iconOff?.attributes?.y !== undefined ? { y: attrNum(iconOff, "y") } : {}),
+            ...(iconExt?.attributes?.cx !== undefined ? { width: attrNum(iconExt, "cx") } : {}),
+            ...(iconExt?.attributes?.cy !== undefined ? { height: attrNum(iconExt, "cy") } : {}),
+            ...(iconGeometry === undefined
+              ? { geometry: null }
+              : iconGeometryType !== undefined
+                ? { geometry: iconGeometryType as OleIconImageOptions["geometry"] }
+                : {}),
             ...(compression !== undefined
               ? { compression: compression as OleIconImageOptions["compression"] }
               : {}),

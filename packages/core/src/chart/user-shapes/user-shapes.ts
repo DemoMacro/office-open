@@ -25,6 +25,8 @@ import type { BlipFillOptions } from "../../drawing/blip/blip-fill";
 import { groupShapePropertiesDesc } from "../../drawing/group-shape-properties-desc";
 import type { GroupShapePropertiesOptions } from "../../drawing/group-shape-properties-desc";
 import type { GraphicFrameLockingOptions } from "../../drawing/locking/locking";
+import type { PictureLockingOptions } from "../../drawing/locking/locking";
+import { pictureLockingDesc } from "../../drawing/locking/locking-descriptors";
 import { stringifyNonVisualDrawingProperties } from "../../drawing/non-visual";
 import type { NonVisualDrawingPropertiesOptions } from "../../drawing/non-visual";
 import { parseNonVisualDrawingProperties } from "../../drawing/non-visual";
@@ -122,8 +124,12 @@ export interface UserShapePictureOptions extends ObjectCommonAttributes {
   nonVisualProperties?: NonVisualDrawingPropertiesOptions;
   /** Image reference key (a:blip r:embed via the relationship placeholder) */
   referenceId: string;
+  /** Raw parsed `a:blip @r:embed`; emits without the media-placeholder wrapper. */
+  rawReferenceId?: string;
   /** Resize relative to the original image (cdr:cNvPicPr attribute). */
   preferRelativeResize?: boolean;
+  /** Picture locks (cdr:cNvPicPr/a:picLocks); absent = empty cNvPicPr. */
+  locking?: PictureLockingOptions;
   blipFill?: BlipFillOptions;
   shapeProperties: ShapePropertiesOptions;
   style?: DefaultShapeStyleOptions;
@@ -237,10 +243,18 @@ function stringifyObject(obj: UserShapeObjectOptions): string {
         obj.preferRelativeResize === undefined
           ? ""
           : ` preferRelativeResize="${obj.preferRelativeResize ? 1 : 0}"`;
+      const pictureLocks = obj.locking
+        ? (pictureLockingDesc.stringify(obj.locking, DIRECT_CTX) ?? "")
+        : "";
       const nvPicPr =
         `<cdr:nvPicPr>${stringifyCnvPr(obj.id, obj.nonVisualProperties)}` +
-        `<cdr:cNvPicPr${preferRelativeResize}/></cdr:nvPicPr>`;
-      const fillOpts = { ...obj.blipFill, referenceId: obj.referenceId };
+        `<cdr:cNvPicPr${preferRelativeResize}${pictureLocks ? `>${pictureLocks}</cdr:cNvPicPr>` : "/>"}</cdr:nvPicPr>`;
+      const fillOpts = {
+        ...obj.blipFill,
+        ...(obj.rawReferenceId
+          ? { rawReferenceId: obj.rawReferenceId }
+          : { referenceId: obj.referenceId }),
+      };
       // blipFill is a local element of CT_Picture → cdr-prefixed root; the
       // blip/srcRect/tile children belong to a: either way.
       const blipFillXml = (stringify(blipFillDesc, fillOpts, DIRECT_CTX) ?? "").replace(
@@ -401,12 +415,15 @@ function readObject(el: XmlElement, ctx: ReadContext): UserShapeObjectOptions | 
         id: cnvPr.id,
         nonVisualProperties: cnvPr.nvp,
         referenceId: referenceId ?? "",
+        rawReferenceId: referenceId,
         shapeProperties: parse(shapePropertiesDesc, spPr, ctx),
       };
       const cNvPicPr = findChild(nvPicPr, "cdr:cNvPicPr");
       if (cNvPicPr?.attributes?.preferRelativeResize !== undefined) {
         result.preferRelativeResize = parseOnOff(cNvPicPr.attributes.preferRelativeResize) ?? true;
       }
+      const picLocks = cNvPicPr ? findChild(cNvPicPr, "a:picLocks") : undefined;
+      if (picLocks) result.locking = pictureLockingDesc.parse(picLocks, ctx);
       if (Object.keys(blipFillOpts).length > 0) result.blipFill = blipFillOpts;
       const styleEl = findChild(el, "cdr:style") ?? findChild(el, "a:style");
       if (styleEl) result.style = parseShapeStyle(styleEl, ctx);
@@ -572,13 +589,18 @@ export function buildUserShapesData(userShapes: {
   relationshipId?: string;
   rootElement?: UserShapesOptions["rootElement"];
   anchors: UserShapesOptions["anchors"];
-}): { relationshipId: string; xml: string } {
+  empty?: boolean;
+}): { relationshipId: string; xml: string; empty?: boolean } {
   return {
     relationshipId: userShapes.relationshipId ?? "rId1",
-    xml:
-      userShapesDesc.stringify(
-        { rootElement: userShapes.rootElement, anchors: userShapes.anchors },
-        DIRECT_CTX,
-      ) ?? "",
+    ...(userShapes.empty
+      ? { empty: true, xml: "" }
+      : {
+          xml:
+            userShapesDesc.stringify(
+              { rootElement: userShapes.rootElement, anchors: userShapes.anchors },
+              DIRECT_CTX,
+            ) ?? "",
+        }),
   };
 }

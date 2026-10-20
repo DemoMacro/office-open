@@ -146,6 +146,18 @@ describe("inline metadata parse", () => {
     expect((inner[0]!.smartTag as Record<string, unknown>).children).toEqual([{ text: "nested" }]);
   });
 
+  it("parses grammar markers inside customXml containers", () => {
+    const opts = parseParagraphXml(
+      `<w:customXml w:element="Root">` +
+        `<w:proofErr w:type="gramStart"/><w:r><w:t>Text</w:t></w:r>` +
+        `<w:proofErr w:type="gramEnd"/></w:customXml>`,
+    );
+    const cxOpts = findChildByKey(opts, "customXml")!.customXml as Record<string, unknown>;
+    const children = cxOpts.children as Array<Record<string, unknown>>;
+    expect(children[0]).toEqual({ proofErr: "gramStart" });
+    expect(children.at(-1)).toEqual({ proofErr: "gramEnd" });
+  });
+
   it("drops a smartTag/customXml missing the required w:element", () => {
     const opts = parseParagraphXml(
       `<w:smartTag w:uri="http://x"><w:r><w:t>x</w:t></w:r></w:smartTag>`,
@@ -198,6 +210,47 @@ describe("bidirectional containers parse", () => {
     const b = findChildByKey(opts, "bdo");
     expect(b!.bdo).toMatchObject({ val: "ltr" });
     expect((b!.bdo as Record<string, unknown>).children).toEqual([{ text: "text" }]);
+  });
+
+  it("parses nested bidirectional containers", () => {
+    const opts = parseParagraphXml(
+      `<w:dir w:val="ltr"><w:dir w:val="rtl"><w:r><w:t>nested</w:t></w:r></w:dir></w:dir>`,
+    );
+    const outer = findChildByKey(opts, "dir")!.dir as {
+      children?: Extract<ParagraphOptions["children"], unknown[]>[number][];
+    };
+    expect(outer.children).toHaveLength(1);
+    expect(outer.children?.[0]).toMatchObject({ dir: { val: "rtl" } });
+  });
+
+  it("preserves range markers inside bidirectional containers", () => {
+    const opts = parseParagraphXml(
+      `<w:dir w:val="rtl">` +
+        '<w:bookmarkStart w:id="7" w:name="Marker"/>' +
+        "<w:r><w:t>text</w:t></w:r>" +
+        '<w:commentRangeStart w:id="3"/>' +
+        '<w:permStart w:id="9" w:edGrp="editors"/>' +
+        '<w:permEnd w:id="9"/>' +
+        '<w:commentRangeEnd w:id="3"/>' +
+        '<w:bookmarkEnd w:id="7"/>' +
+        "</w:dir>",
+    );
+    const dir = findChildByKey(opts, "dir")!.dir as { children?: Record<string, unknown>[] };
+    expect(dir.children).toEqual([
+      { bookmarkStart: { id: 7, name: "Marker" } },
+      { text: "text" },
+      { commentRangeStart: { id: 3 } },
+      { permStart: { id: 9, editGroup: "editors" } },
+      { permEnd: 9 },
+      { commentRangeEnd: { id: 3 } },
+      { bookmarkEnd: { id: 7 } },
+    ]);
+
+    const xml = stringifyParagraph(opts as never, writeCtx);
+    expect(xml).toContain('<w:bookmarkStart w:id="7" w:name="Marker"/>');
+    expect(xml).toContain('<w:commentRangeStart w:id="3"/>');
+    expect(xml).toContain('<w:permStart w:id="9" w:edGrp="editors"/>');
+    expect(xml).toContain('<w:permEnd w:id="9"/>');
   });
 });
 
@@ -262,7 +315,7 @@ describe("hyperlink relationships", () => {
       relationships: {
         hasId: (id: string) => id === "rId1",
         idOf: () => "rId1",
-        addRelationship: (_id: number, type: string, target: string, mode: string) => {
+        addRelationship: (_id: string, type: string, target: string, mode: string) => {
           relationships.push({ type, target, mode });
         },
         add: (type: string, target: string, mode: string) => {
@@ -322,7 +375,7 @@ describe("hyperlink relationships", () => {
     const hyperlink = findChildByKey(opts, "hyperlink");
     expect(hyperlink).toBeDefined();
     expect(hyperlink!.hyperlink).toMatchObject({
-      sourceRelationshipId: 1,
+      sourceRelationshipId: "rId1",
       anchor: "section",
       history: true,
       children: [{ proofErr: "spellStart" }, { text: "Link" }, { proofErr: "spellEnd" }],
@@ -333,5 +386,61 @@ describe("hyperlink relationships", () => {
     expect(xml).toContain('<w:proofErr w:type="spellStart"/><w:r><w:t>Link</w:t></w:r>');
     expect(xml).toContain('<w:proofErr w:type="spellEnd"/></w:hyperlink>');
     expect(relationships).toHaveLength(0);
+  });
+
+  it("parses and round-trips w:tooltip on w:hyperlink", () => {
+    const opts = parseParagraphXml(
+      `<w:hyperlink w:anchor="section" w:tooltip="Open the section">` +
+        `<w:r><w:t>Link</w:t></w:r></w:hyperlink>`,
+    );
+
+    const hyperlink = findChildByKey(opts, "hyperlink");
+    expect(hyperlink).toBeDefined();
+    expect(hyperlink!.hyperlink).toMatchObject({
+      anchor: "section",
+      tooltip: "Open the section",
+    });
+
+    const xml = stringifyParagraph(opts, writeCtx);
+    expect(xml).toContain('w:tooltip="Open the section"');
+  });
+
+  it("preserves empty hyperlink attributes and empty link content", () => {
+    const opts = parseParagraphXml(
+      `<w:hyperlink r:id="rId1" w:tooltip="" w:tgtFrame="" w:docLocation=""/>`,
+      {
+        currentPart: "word/document.xml",
+        docx: {
+          partRefs: {
+            partHyperlinks: new Map([
+              ["word/document.xml", new Map([["rId1", "https://example.com/a"]])],
+            ]),
+            hyperlinks: new Map(),
+          },
+        },
+      } as unknown as DocxReadContext,
+    );
+    expect(findChildByKey(opts, "hyperlink")!.hyperlink).toMatchObject({
+      sourceRelationshipId: "rId1",
+      tooltip: "",
+      targetFrame: "",
+      docLocation: "",
+      children: [],
+    });
+
+    relationships = [];
+    const xml = stringifyParagraph(opts as never, hlWriteCtx);
+    expect(xml).toContain('<w:hyperlink r:id="rId1" w:tooltip="" w:tgtFrame="" w:docLocation="">');
+    expect(relationships).toHaveLength(0);
+
+    relationships = [];
+    const freshXml = stringifyParagraph(
+      {
+        children: [{ hyperlink: { url: "https://example.com/fresh", tooltip: "", children: [] } }],
+      },
+      hlWriteCtx,
+    );
+    expect(freshXml).toContain('<w:hyperlink r:id="rId1" w:tooltip="">');
+    expect(relationships).toHaveLength(1);
   });
 });

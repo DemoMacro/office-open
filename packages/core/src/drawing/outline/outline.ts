@@ -143,6 +143,11 @@ export interface OutlineProperties {
    */
   dash?: PresetDash;
   /**
+   * Preserve a bare `a:prstDash` element produced by lenient sources.
+   * Mutually exclusive with `dash` and `customDash`; round-trip only.
+   */
+  dashPresent?: boolean;
+  /**
    * Custom dash pattern (list of dash/space stops).
    *
    * Mutually exclusive with `dash` — only one can be specified.
@@ -262,6 +267,8 @@ export const createOutline = (options: OutlineOptions): string => {
     children.push(createCustomDash(options.customDash));
   } else if (options.dash !== undefined) {
     children.push(`<a:prstDash val="${options.dash}"/>`);
+  } else if (options.dashPresent) {
+    children.push("<a:prstDash/>");
   }
 
   // Join

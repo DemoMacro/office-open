@@ -84,13 +84,18 @@ export function stringifyTableOfContents(
   // The end run's rPr is independent of the control runs in Word: "" = the
   // source's end run carried no rPr (must stay bare), undefined = same as
   // the control rPr (reuse it), otherwise its own captured rPr.
-  const endRun = `<w:r>${options.endRPrXml ?? ctrl ?? ""}<w:fldChar w:fldCharType="end"/></w:r>`;
+  const endAttrs = [
+    options.endAdditionRsid ? ` w:rsidR="${options.endAdditionRsid}"` : "",
+    options.endRunPropertiesRsid ? ` w:rsidRPr="${options.endRunPropertiesRsid}"` : "",
+    options.endDeletionRsid ? ` w:rsidDel="${options.endDeletionRsid}"` : "",
+  ].join("");
+  const endRun = `<w:r${endAttrs}>${options.endRPrXml ?? ctrl ?? ""}<w:fldChar w:fldCharType="end"/></w:r>`;
   const endParagraph = `<w:p>${endRun}</w:p>`;
 
   const body = entriesXml
     ? // endInBody: the end marker round-trips in a following body paragraph —
       // injecting another end run here would emit the field end twice.
-      options.endInBody
+      options.endInBody || options.endMarkerInEntries
       ? injectHeadRuns(entriesXml, headRuns, options)
       : injectFieldEnd(
           injectHeadRuns(entriesXml, headRuns, options),
@@ -111,7 +116,13 @@ export function stringifyTableOfContents(
     (stringifyRunProperties(options.runProperties) ?? "") +
     (alias !== undefined ? `<w:alias${aliasAttr}/>` : "") +
     (options.id !== undefined ? `<w:id w:val="${options.id}"/>` : "") +
-    `<w:docPartObj><w:docPartGallery w:val="Table of Contents"/>${options.docPartUnique ? "<w:docPartUnique/>" : ""}</w:docPartObj>` +
+    `<w:docPartObj><w:docPartGallery w:val="Table of Contents"/>${
+      options.docPartUniqueRaw !== undefined
+        ? `<w:docPartUnique w:val="${escapeXml(options.docPartUniqueRaw)}"/>`
+        : options.docPartUnique
+          ? "<w:docPartUnique/>"
+          : ""
+    }</w:docPartObj>` +
     `</w:sdtPr>`;
   // sdtEndPr mirrors the generic SDT shell: omitted when the source had
   // none, bare element for an empty one.
@@ -158,12 +169,32 @@ function injectHeadRuns(
   headRuns: string,
   options: Pick<TableOfContentsOptions, "headRunsAfterText">,
 ): string {
+  const wrapper = parseControlWrapper(headRuns);
+  if (wrapper) {
+    const wrapperAt = entriesXml.indexOf(wrapper.open);
+    if (wrapperAt >= 0) {
+      const injectAt = wrapperAt + wrapper.open.length;
+      return entriesXml.slice(0, injectAt) + wrapper.inner + entriesXml.slice(injectAt);
+    }
+  }
   if (options.headRunsAfterText !== true) return injectFieldHead(entriesXml, headRuns);
   const rStart = entriesXml.search(/<w:r[ >]/);
   const rEnd = rStart < 0 ? -1 : entriesXml.indexOf("</w:r>", rStart);
   if (rEnd < 0) return injectFieldHead(entriesXml, headRuns);
   const insertAt = rEnd + "</w:r>".length;
   return entriesXml.slice(0, insertAt) + headRuns + entriesXml.slice(insertAt);
+}
+
+interface ControlWrapper {
+  open: string;
+  inner: string;
+}
+
+function parseControlWrapper(xml: string): ControlWrapper | undefined {
+  const match = /^<(w:(?:ins|del|moveFrom|moveTo))\b([^>]*)>([\s\S]*)<\/\1>$/.exec(xml);
+  if (!match) return undefined;
+  const [tag, attrs, inner] = [match[1]!, match[2] ?? "", match[3] ?? ""];
+  return { open: `<${tag}${attrs}>`, inner };
 }
 
 /**

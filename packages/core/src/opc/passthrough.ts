@@ -152,7 +152,10 @@ export function collectPassthroughParts(
   // vs docProps/Thumbnail.jpeg) and Office still resolves it.
   const kept = new Set<string>();
   for (const path of archive.keys()) {
-    if (path.endsWith("/") || rebuilt.has(path)) continue;
+    // OPC part names are case-insensitive: a source may spell the always-
+    // rebuilt package files (`[content_types].xml`) with different casing,
+    // and the packer must not emit them twice under both names.
+    if (path.endsWith("/") || rebuilt.has(path) || rebuiltLower.has(path.toLowerCase())) continue;
     const sourceData = archive.getRaw(path);
     if (!sourceData) continue;
     // Modeled XML is parsed through the same obsolete→final namespace aliases;
@@ -193,12 +196,11 @@ export function collectPassthroughParts(
       const rId = attr(rel, "Id");
       if (!relationshipType || !target || !rId) continue;
       if (targetMode === "External") {
-        // A rebuilt owner can only preserve an external relationship when its
-        // modeled XML also remaps the local rId. Package-root relationships have
-        // no owner XML, so they are safe to retain directly.
-        if (source === "") {
-          relationships.push({ source, relationshipType, target, rId, targetMode });
-        }
+        // Package-root relationships have no owner XML, so they are safe to
+        // retain directly. Owner relationships are also captured here; each
+        // compiler claims them only for its part and semantic absorption keeps
+        // modeled remaps from duplicating.
+        relationships.push({ source, relationshipType, target, rId, targetMode });
         continue;
       }
       // Capture every source rel, including those pointing at rebuilt parts
@@ -206,7 +208,14 @@ export function collectPassthroughParts(
       // pre-claim pass needs the source id to slot structure re-emissions in
       // after, preserving the source rId ordering on round-trip.
       if (source !== "") {
-        relationships.push({ source, relationshipType, target, rId });
+        const resolvedTarget = resolveRelationshipTarget(source, target);
+        relationships.push({
+          source,
+          relationshipType,
+          target,
+          rId,
+          ...(archive.getRaw(resolvedTarget) ? {} : { sourceTargetMissing: true }),
+        });
       } else if (kept.has(resolveRelationshipTarget(source, target).toLowerCase())) {
         relationships.push({ source, relationshipType, target, rId });
       } else if (!archive.getRaw(resolveRelationshipTarget(source, target))) {
@@ -260,6 +269,7 @@ export function dropDanglingPassthroughRels(
   let dropped = 0;
   for (const rel of passthroughRelationships) {
     if (rel.targetMode === "External" || rel.target.startsWith("#")) continue;
+    if (rel.sourceTargetMissing) continue;
     const relsPath = rel.source === "" ? "_rels/.rels" : partPathToRelsPath(rel.source);
     const entry = files[relsPath];
     // A .rels part is always a flat entry (Uint8Array or [Uint8Array, opts]);

@@ -13,31 +13,30 @@
  */
 
 import {
-  RELATIONSHIP_TYPES,
   addModelBinaries,
-  buildRootRelationships,
   compileMapping,
-  dropDanglingPassthroughRels,
-  finalizeContentTypes,
   getReferencedMedia,
-  partPathToRelsPath,
-  resolveRelationshipTarget,
-  ooxmlPackageFormatInfo,
-  resolveMainPartContentType,
   replaceImagePlaceholders,
 } from "@office-open/core";
-import type {
-  OoxmlPackageVariant,
-  ReproducibleScope,
-  XmlifyedFile,
-  Zippable,
-} from "@office-open/core";
+import type { OoxmlPackageVariant, ReproducibleScope } from "@office-open/core";
+import { ChartCollection } from "@office-open/core/chart";
+import {
+  buildRootRelationships,
+  dropDanglingPassthroughRels,
+  finalizeContentTypes,
+  ooxmlPackageFormatInfo,
+  partPathToRelsPath,
+  relativePartTarget,
+  RELATIONSHIP_TYPES,
+  resolveMainPartContentType,
+  resolveRelationshipTarget,
+} from "@office-open/core/opc";
+import type { XmlifyedFile, Zippable } from "@office-open/core/opc";
 import {
   appPropertiesDesc,
   buildCorePropertiesXmlString,
   customPropertiesDesc,
-} from "@office-open/core";
-import { ChartCollection } from "@office-open/core/chart";
+} from "@office-open/core/opc";
 import { SmartArtCollection } from "@office-open/core/smartart";
 import type {
   CustomXmlItemOptions,
@@ -207,8 +206,10 @@ export function compilePresentation(
   );
   // Unique master themes in theme-index order (deduped in buildMasterMap) —
   // notesMaster/handoutMaster themes append after these.
-  const uniqueMasterThemes: string[] = [];
-  for (const m of masters) uniqueMasterThemes[m.themeIndex] ??= m.theme;
+  const uniqueMasterThemes: { xml: string; path: string }[] = [];
+  for (const master of masters) {
+    uniqueMasterThemes[master.themeIndex] ??= { xml: master.theme, path: master.themePath };
+  }
   const themes = uniqueMasterThemes;
   const slideRels = buildSlideRels(masters, slides);
 
@@ -217,7 +218,7 @@ export function compilePresentation(
   // Presence-based: a parsed empty docProps/custom.xml round-trips as an
   // empty part (undefined = fresh document, omit the part).
   const hasCustomProperties = options.customProperties !== undefined;
-  const presRels = initPresRels(masters, slides.length);
+  const presRels = initPresRels(masters, slides);
   // Reserve the presentation's captured ids whose rels a claim will re-emit —
   // after the structured slide/master slots above (their r:ids are written
   // verbatim into sldMasterIdLst/sldIdLst and take precedence), but before
@@ -256,10 +257,12 @@ export function compilePresentation(
     }
     arr.push(i);
   }
-  const sections: PresentationSectionGroup[] = sectionOrder.map((name) => ({
-    name,
-    slideIndices: sectionIndices.get(name)!,
-  }));
+  const sections: PresentationSectionGroup[] =
+    options.sections ??
+    sectionOrder.map((name) => ({
+      name,
+      slideIndices: sectionIndices.get(name)!,
+    }));
 
   const customXmlRIds = new Map<string, string>();
   for (const [index, item] of (options.customXml ?? []).entries()) {
@@ -276,8 +279,15 @@ export function compilePresentation(
     slideHeight: sz.height,
     slideSizeType: options.slideSizeType,
     slideIds: slides.map((slide, index) => slide.slideId ?? 256 + index),
-    masterIds: masters.map((master, index) => master.masterId ?? 2147483648 + index * 12),
-    masterCount: masters.length,
+    masterIds: masters
+      .filter((master) => master.attachedToPresentation)
+      .sort(
+        (left, right) => (left.presentationMasterOrder ?? 0) - (right.presentationMasterOrder ?? 0),
+      )
+      .map((master) =>
+        master.masterId === null ? null : (master.masterId ?? 2147483648 + master.index * 12),
+      ),
+    masterCount: masters.filter((master) => master.attachedToPresentation).length,
     sections,
     ...buildPresAttrOpts(options),
     ...(options.ext !== undefined ? { ext: options.ext } : {}),
@@ -306,19 +316,31 @@ export function compilePresentation(
     options.contentTypes.overrides.some(
       (override) => override.partName.toLowerCase() === "/docprops/core.xml",
     );
+  const hasAppProperties = options.includeAppProperties ?? true;
   const fileRels = buildRootRelationships(
     "ppt/presentation.xml",
     hasCustomProperties,
     options.passthroughRelationships,
-    options.appPropertiesRelationshipType
-      ? { appPropertiesType: options.appPropertiesRelationshipType }
-      : { includeCoreProperties: hasCoreProperties },
+    {
+      includeCoreProperties: hasCoreProperties,
+      includeAppProperties: hasAppProperties,
+      ...(options.corePropertiesRelationshipType
+        ? { corePropertiesType: options.corePropertiesRelationshipType }
+        : {}),
+      ...(options.appPropertiesRelationshipType
+        ? { appPropertiesType: options.appPropertiesRelationshipType }
+        : {}),
+      ...(options.presentationRelationshipType
+        ? { mainRelationshipType: options.presentationRelationshipType }
+        : {}),
+    },
   );
   const media = descCtx.mediaCollection;
   const charts = new ChartCollection();
   const smartArts = new SmartArtCollection();
 
   const presPropsFullOpts =
+    options.includePresentationProperties ||
     options.web ||
     options.print ||
     options.htmlPublish ||
@@ -338,10 +360,15 @@ export function compilePresentation(
   // ── Build XML file mapping ──
 
   const mapping: XmlifyedFileMapping = {
-    AppProperties: {
-      data: XML_DECL + (appPropertiesDesc.stringify(options.appProperties ?? {}, descCtx) ?? ""),
-      path: "docProps/app.xml",
-    },
+    ...(hasAppProperties
+      ? {
+          AppProperties: {
+            data:
+              XML_DECL + (appPropertiesDesc.stringify(options.appProperties ?? {}, descCtx) ?? ""),
+            path: "docProps/app.xml",
+          },
+        }
+      : {}),
     ...(hasCoreProperties
       ? {
           Properties: {
@@ -394,25 +421,31 @@ export function compilePresentation(
 
   for (let ti = 0; ti < themes.length; ti++) {
     mapping[`Theme${ti}`] = {
-      data: XML_DECL + themes[ti],
-      path: `ppt/theme/theme${ti + 1}.xml`,
+      data: XML_DECL + themes[ti]!.xml,
+      path: themes[ti]!.path,
     };
   }
 
-  mapping["TableStyles"] = {
-    data: XML_DECL + (tableStylesDesc.stringify({ opts: options.tableStyles }, descCtx) ?? ""),
-    path: "ppt/tableStyles.xml",
-  };
+  if (options.tableStyles) {
+    mapping["TableStyles"] = {
+      data: XML_DECL + tableStylesDesc.stringify({ opts: options.tableStyles }, descCtx)!,
+      path: "ppt/tableStyles.xml",
+    };
+  }
 
-  mapping["PresProps"] = {
-    data: XML_DECL + (presentationPropertiesDesc.stringify(presPropsFullOpts ?? {}, descCtx) ?? ""),
-    path: "ppt/presProps.xml",
-  };
+  if (presPropsFullOpts) {
+    mapping["PresProps"] = {
+      data: XML_DECL + presentationPropertiesDesc.stringify(presPropsFullOpts, descCtx)!,
+      path: "ppt/presProps.xml",
+    };
+  }
 
-  mapping["ViewProps"] = {
-    data: XML_DECL + (viewPropsDesc.stringify(options.view ?? {}, descCtx) ?? ""),
-    path: "ppt/viewProps.xml",
-  };
+  if (options.view) {
+    mapping["ViewProps"] = {
+      data: XML_DECL + viewPropsDesc.stringify(options.view, descCtx)!,
+      path: "ppt/viewProps.xml",
+    };
+  }
 
   mapMasterAndLayoutParts(mapping, masters, descCtx, options.passthroughRelationships);
   mapNotesAndHandoutMasters(
@@ -424,11 +457,11 @@ export function compilePresentation(
     descCtx,
     themes.length,
   );
-
   // Comment Authors
   if (
-    slides.some((s) => s.comments !== undefined && s.comments.length > 0) &&
-    !presRels.hasRelationshipKind("commentAuthors")
+    (options.commentAuthorsPresent && !presRels.hasRelationshipKind("commentAuthors")) ||
+    (slides.some((s) => s.comments !== undefined && s.comments.length > 0) &&
+      !presRels.hasRelationshipKind("commentAuthors"))
   ) {
     presRels.add(RELATIONSHIP_TYPES.commentAuthors, "commentAuthors.xml");
   }
@@ -439,16 +472,29 @@ export function compilePresentation(
   // presentation.xml.rels carries exactly one theme rel (the presentation's
   // default theme) regardless of how many masters or theme parts exist —
   // extra masters reference their themes through their own rels.
-  if (!presRels.hasRelationshipKind("presProps")) {
+  if (mapping.PresProps && !presRels.hasRelationshipKind("presProps")) {
     presRels.add(RELATIONSHIP_TYPES.presProps, "presProps.xml");
   }
-  if (!presRels.hasRelationshipKind("viewProps")) {
+  if (mapping.ViewProps && !presRels.hasRelationshipKind("viewProps")) {
     presRels.add(RELATIONSHIP_TYPES.viewProps, "viewProps.xml");
   }
   if (!presRels.hasRelationshipKind("theme")) {
-    presRels.add(RELATIONSHIP_TYPES.theme, "theme/theme1.xml");
+    const sourceThemeRel = options.passthroughRelationships?.find(
+      (rel) =>
+        rel.source === "ppt/presentation.xml" && rel.relationshipType === RELATIONSHIP_TYPES.theme,
+    );
+    if (!options.passthroughRelationships) {
+      presRels.add(RELATIONSHIP_TYPES.theme, "theme/theme1.xml");
+    } else if (sourceThemeRel) {
+      const themePath = resolveRelationshipTarget("ppt/presentation.xml", sourceThemeRel.target);
+      presRels.addRelationship(
+        sourceThemeRel.rId,
+        RELATIONSHIP_TYPES.theme,
+        relativePartTarget("ppt/presentation.xml", themePath),
+      );
+    }
   }
-  if (!presRels.hasRelationshipKind("tableStyles")) {
+  if (mapping.TableStyles && !presRels.hasRelationshipKind("tableStyles")) {
     presRels.add(RELATIONSHIP_TYPES.tableStyles, "tableStyles.xml");
   }
 
@@ -495,12 +541,13 @@ export function compilePresentation(
     smartArts,
     options.passthroughRelationships,
     options.commentAuthors ?? [],
+    options.commentAuthorsPresent === true,
   );
 
   // Compile mapping to Zippable
   const files = compileMapping(mapping, overrides);
 
-  compileTailParts(files, descCtx, charts, smartArts, artifacts, slides.length, options);
+  compileTailParts(files, descCtx, charts, smartArts, artifacts, slides, options);
 
   // Media + OLE embedding binaries (ppt/media/*, ppt/embeddings/*)
   addModelBinaries(files, "ppt", media.array, descCtx.embeddings, mediaLevel);

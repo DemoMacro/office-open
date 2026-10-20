@@ -26,7 +26,9 @@ export const commentAuthorsDesc: CustomDescriptor<AuthorEntry[]> = {
       const attrs =
         `<p:cmAuthor id="${a.id}" name="${escapeXml(a.name)}" initials="${escapeXml(a.initials)}"` +
         ` clrIdx="${a.clrIdx}" lastIdx="${a.lastIdx}">`;
-      parts.push(attrs + (a.ext ? `<p:extLst>${a.ext}</p:extLst>` : "") + "</p:cmAuthor>");
+      parts.push(
+        attrs + (a.ext !== undefined ? `<p:extLst>${a.ext}</p:extLst>` : "") + "</p:cmAuthor>",
+      );
     }
     parts.push("</p:cmAuthorLst>");
     return parts.join("");
@@ -41,7 +43,13 @@ export const commentAuthorsDesc: CustomDescriptor<AuthorEntry[]> = {
       const initials = attr(child, "initials");
       const clrIdx = attrNum(child, "clrIdx");
       const lastIdx = attrNum(child, "lastIdx");
-      if (id !== undefined && name && initials && clrIdx !== undefined && lastIdx !== undefined) {
+      if (
+        id !== undefined &&
+        name !== undefined &&
+        initials !== undefined &&
+        clrIdx !== undefined &&
+        lastIdx !== undefined
+      ) {
         const author: AuthorEntry = { id, name, initials, clrIdx, lastIdx };
         const extLst = findChild(child, "p:extLst");
         if (extLst) author.ext = stringifyXml(extLst);
@@ -65,7 +73,11 @@ export const slideCommentsDesc: CustomDescriptor<CommentEntry[]> = {
       const attrs: string[] = [`authorId="${c.authorId}"`, `idx="${c.idx}"`];
       if (c.date != null) attrs.push(`dt="${escapeXml(c.date)}"`);
       parts.push(`<p:cm ${attrs.join(" ")}>`);
-      parts.push(`<p:pos x="${convertToEmu(c.x)}" y="${convertToEmu(c.y)}"/>`);
+      const extent =
+        c.width === undefined && c.height === undefined
+          ? ""
+          : `<p:ext cx="${convertToEmu(c.width ?? 0)}" cy="${convertToEmu(c.height ?? 0)}"/>`;
+      parts.push(`<p:pos x="${convertToEmu(c.x)}" y="${convertToEmu(c.y)}"/>${extent}`);
       parts.push(`<p:text>${escapeXml(c.text)}</p:text>`);
       // CT_ExtensionListModify.mod lives on <p:extLst>, not <p:cm>.
       if (c.modified !== undefined || c.ext !== undefined) {
@@ -88,9 +100,16 @@ export const slideCommentsDesc: CustomDescriptor<CommentEntry[]> = {
       const pos = findChild(cm, "p:pos");
       const x = pos ? (attrNum(pos, "x") ?? 0) : 0;
       const y = pos ? (attrNum(pos, "y") ?? 0) : 0;
+      const extent = findChild(cm, "p:ext");
       const textEl = findChild(cm, "p:text");
       const text = textEl ? (textOf(textEl) ?? "") : "";
       const entry: CommentEntry = { authorId, idx, x, y, text };
+      if (extent) {
+        const width = attrNum(extent, "cx");
+        const height = attrNum(extent, "cy");
+        if (width !== undefined) entry.width = width;
+        if (height !== undefined) entry.height = height;
+      }
       if (date !== undefined) entry.date = date;
       // mod lives on <p:extLst> (CT_ExtensionListModify), not on <p:cm>.
       const extLst = findChild(cm, "p:extLst");

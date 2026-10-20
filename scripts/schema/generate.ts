@@ -186,6 +186,29 @@ const PATTERN_OVERRIDES: Record<
  * encoding is stated in prose instead of a keyword that would be half-true.
  */
 const DEFINITION_OVERRIDES: Record<string, Record<string, unknown>> = {
+  ColorTransformItem: {
+    description: "One ordered EG_ColorTransform child; the list preserves repeated keys.",
+    anyOf: [
+      {
+        type: "object",
+        additionalProperties: false,
+        required: ["type"],
+        properties: { type: { $ref: "#/definitions/BooleanTransformKey" } },
+      },
+      {
+        type: "object",
+        additionalProperties: false,
+        required: ["type", "value"],
+        properties: {
+          type: {
+            type: "string",
+            not: { enum: ["comp", "inv", "gray", "gamma", "invGamma"] },
+          },
+          value: { anyOf: [{ type: "number" }, { $ref: "#/definitions/Percentage" }] },
+        },
+      },
+    ],
+  },
   DataType: {
     description: "Binary content as a string or an array of byte values.",
     examples: ["data:image/png;base64,iVBORw0KGgo="],

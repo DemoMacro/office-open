@@ -89,6 +89,7 @@ interface RunOptionsBase {
     | { text: string; preserveSpace?: boolean }
     | { instructionText: string; preserveSpace?: boolean }
     | { deletedInstructionText: string; preserveSpace?: boolean }
+    | { deletedText: string; preserveSpace?: boolean }
     | { tab: true }
     | { noBreakHyphen: true }
     | { softHyphen: true }

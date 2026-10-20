@@ -23,6 +23,8 @@ export interface HyperlinkOptions {
   clickTargetMode?: "External";
   /** Click hyperlink tooltip (a:hlinkClick attribute tooltip) */
   clickTooltip?: string;
+  /** Click hyperlink target frame (a:hlinkClick attribute tgtFrame) */
+  clickTargetFrame?: string;
   /** URL for hover hyperlink */
   hover?: string;
   /** Source hover relationship ID (round-trip only — do not hand-author). */
@@ -31,6 +33,8 @@ export interface HyperlinkOptions {
   hoverTargetMode?: "External";
   /** Hover hyperlink tooltip (a:hlinkHover attribute tooltip) */
   hoverTooltip?: string;
+  /** Hover hyperlink target frame (a:hlinkHover attribute tgtFrame) */
+  hoverTargetFrame?: string;
 }
 
 /**

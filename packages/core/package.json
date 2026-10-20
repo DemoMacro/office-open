@@ -1,6 +1,6 @@
 {
   "name": "@office-open/core",
-  "version": "0.14.6",
+  "version": "0.15.0",
   "description": "Shared OOXML infrastructure for office-open — part descriptors, charts, drawings, tables, VML, and unit converters",
   "keywords": [
     "chart",
@@ -59,6 +59,14 @@
     "./descriptor": {
       "types": "./dist/descriptor/index.d.mts",
       "import": "./dist/descriptor/index.mjs"
+    },
+    "./opc": {
+      "types": "./dist/opc/index.d.mts",
+      "import": "./dist/opc/index.mjs"
+    },
+    "./cfb": {
+      "types": "./dist/cfb/index.d.mts",
+      "import": "./dist/cfb/index.mjs"
     },
     "./patch": {
       "types": "./dist/patch/index.d.mts",

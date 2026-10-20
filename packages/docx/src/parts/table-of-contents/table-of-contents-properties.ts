@@ -9,7 +9,8 @@
  * @module
  */
 
-import type { RunPropertiesOptions } from "@parts/paragraph/run/properties";
+import type { LongHexNumber } from "@office-open/core";
+import type { OnOffLexicalValue, RunPropertiesOptions } from "@parts/paragraph/run/properties";
 import type { SectionChild } from "@shared/section";
 
 /**
@@ -162,6 +163,15 @@ export interface TableOfContentsOptions {
    */
   endRPrXml?: string;
 
+  /** Revision save ID of the closing end run (round-trip only). */
+  endAdditionRsid?: LongHexNumber;
+
+  /** Revision save ID of the closing end run properties (round-trip only). */
+  endRunPropertiesRsid?: LongHexNumber;
+
+  /** Revision save ID when the closing end run was deleted (round-trip only). */
+  endDeletionRsid?: LongHexNumber;
+
   /**
    * Emit the TOC as a bare complex field instead of the sdt content control
    * Word normally wraps it in. Set by parsing when the source carried no
@@ -177,6 +187,13 @@ export interface TableOfContentsOptions {
   endInBody?: boolean;
 
   /**
+   * The outer field-end marker already exists inside a rendered entry at its
+   * source position. Stringify must not inject another end run (round-trip
+   * only).
+   */
+  endMarkerInEntries?: boolean;
+
+  /**
    * The closing field-end run precedes bookmark markers in the final entry
    * paragraph. Stringify uses this to preserve source child order instead of
    * always appending the end run before `</w:p>` (round-trip only).
@@ -189,6 +206,13 @@ export interface TableOfContentsOptions {
    * must survive).
    */
   headRunsXml?: string;
+
+  /**
+   * The first source run combines the begin→separate controls with the first
+   * rendered TOC result. Stringify reuses the verbatim head run and must skip
+   * the duplicate result in the parsed entry (round-trip only).
+   */
+  headResultInFirstRun?: boolean;
 
   /**
    * Head control runs inject after the first entry's leading text run instead
@@ -208,6 +232,8 @@ export interface TableOfContentsOptions {
 
   /** Emit w:docPartUnique inside sdtPr's w:docPartObj (round-trip only). */
   docPartUnique?: boolean;
+  /** Source `@w:val` spelling for `w:docPartUnique` (round-trip only). */
+  docPartUniqueRaw?: OnOffLexicalValue;
 
   /**
    * Run properties of the SDT end mark (w:sdtEndPr). An empty object means

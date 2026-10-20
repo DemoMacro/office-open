@@ -347,7 +347,7 @@ const buffer = await generateDocument({
               {
                 sdt: {
                   properties: { alias: "RowControl", tag: "row-control", richText: true },
-                  rows: [
+                  content: [
                     {
                       cells: [
                         { children: [{ paragraph: "Controlled row - A" }] },

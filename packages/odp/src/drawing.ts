@@ -9,9 +9,18 @@ import {
   childNamed,
   isExternalOdfUrl,
   lengthToEmu,
+  resolveEmbeddedChart,
   xmlElement,
 } from "@office-open/odf";
-import type { ChartOptions, PictureOptions } from "@office-open/pptx";
+import type {
+  AudioType,
+  AudioFrameOptions,
+  ChartOptions,
+  MediaPlaybackOptions,
+  PictureOptions,
+  VideoType,
+  VideoFrameOptions,
+} from "@office-open/pptx";
 import type { Element } from "@office-open/xml";
 
 import { OdpParseError } from "./error";
@@ -84,6 +93,62 @@ export function chartFrameXml(chart: ChartOptions, charts: OdpChart[]): string {
   );
 }
 
+/** Slide media renders as a positioned draw:frame + draw:plugin. */
+export function mediaFrameXml(
+  media: VideoFrameOptions | AudioFrameOptions,
+  mediaFiles: OdpImage[],
+  images: OdpImage[],
+): string {
+  const extension = media.type ?? "mp4";
+  const path =
+    media.data === undefined
+      ? (media.sourceUrl ?? "")
+      : `Media/media${mediaFiles.length + 1}.${extension}`;
+  if (media.data !== undefined) mediaFiles.push({ path, data: toUint8Array(media.data) });
+  let posterPath: string | undefined;
+  if (media.poster !== undefined) {
+    const poster = toUint8Array(media.poster);
+    posterPath = `Pictures/poster${images.length + 1}.${media.posterType ?? "png"}`;
+    images.push({ path: posterPath, data: poster });
+  }
+  const playback = media.playback;
+  const parameter = (name: string, value: string) =>
+    xmlElement("draw:param", { "draw:name": name, "draw:value": value });
+  return xmlElement(
+    "draw:frame",
+    {
+      "draw:name": media.name,
+      "svg:x": toOdfLength(media.x),
+      "svg:y": toOdfLength(media.y),
+      "svg:width": toOdfLength(media.width),
+      "svg:height": toOdfLength(media.height),
+    },
+    [
+      xmlElement(
+        "draw:plugin",
+        {
+          "xlink:href": path,
+          "xlink:type": "simple",
+          "xlink:show": "embed",
+          "xlink:actuate": "onLoad",
+          "draw:mime-type": "application/vnd.sun.star.media",
+        },
+        [
+          ...(playback?.loop === undefined ? [] : [parameter("Loop", String(playback.loop))]),
+          ...(playback?.mute === undefined ? [] : [parameter("Mute", String(playback.mute))]),
+          ...(playback?.volume === undefined
+            ? []
+            : [parameter("VolumeDB", String(playback.volume))]),
+          ...(playback?.zoom === undefined ? [] : [parameter("Zoom", playback.zoom)]),
+        ],
+      ),
+      ...(posterPath
+        ? [xmlElement("draw:image", { "xlink:href": posterPath, "xlink:type": "simple" })]
+        : []),
+    ],
+  );
+}
+
 /** Parses a draw:frame + embedded chart subdocument back to a slide chart. */
 export function parseChartFrame(
   frame: Element,
@@ -104,17 +169,8 @@ export function parseChartFrame(
       reason,
     );
   }
-  const chart = chartPool.get(href);
-  if (!chart) {
-    const reason = "referenced chart subdocument is missing";
-    throw new OdpParseError(
-      `content.xml: ${path}: ${href}: ${reason}`,
-      "content.xml",
-      path,
-      href,
-      reason,
-    );
-  }
+  const chart = href === undefined ? undefined : resolveEmbeddedChart(chartPool, href);
+  if (!chart) return undefined;
   return {
     chart: {
       ...chart,
@@ -189,4 +245,136 @@ function pictureTypeFromUrl(value: string): PictureOptions["type"] {
   if (extension === "jpeg") return "jpg";
   const supported = ["png", "jpg", "gif", "bmp", "emf", "wmf"].includes(extension ?? "");
   return (supported ? extension : "png") as PictureOptions["type"];
+}
+
+/** Parses a draw:frame + media draw:plugin back to a slide video/audio child. */
+export function parseMediaFrame(
+  frame: Element,
+  binaries: Record<string, Uint8Array>,
+  usedBinaryPaths: Set<string>,
+): { video: VideoFrameOptions } | { audio: AudioFrameOptions } | undefined {
+  const plugin = childNamed(frame, "draw:plugin");
+  const mimeType = attributeString(plugin, "draw:mime-type");
+  if (!plugin || mimeType !== "application/vnd.sun.star.media") return undefined;
+  const href = attributeString(plugin, "xlink:href")?.replace(/^\//, "");
+  if (!href) return undefined;
+  const extension = href.split(/[?#]/, 1)[0]?.split(".").pop()?.toLowerCase() ?? "";
+  if (!isAudioType(extension) && !isVideoType(extension)) return undefined;
+  const data = binaries[href];
+  if (data) usedBinaryPaths.add(href);
+  else if (!isExternalOdfUrl(href)) throw missingMediaPart(href);
+  const name = attributeString(frame, "draw:name");
+  const x = lengthToEmu(attributeString(frame, "svg:x"));
+  const y = lengthToEmu(attributeString(frame, "svg:y"));
+  const width = lengthToEmu(attributeString(frame, "svg:width"));
+  const height = lengthToEmu(attributeString(frame, "svg:height"));
+  const poster = childNamed(frame, "draw:image");
+  const posterHref = poster ? attributeString(poster, "xlink:href")?.replace(/^\//, "") : undefined;
+  const posterData = posterHref ? binaries[posterHref] : undefined;
+  if (posterData && posterHref) usedBinaryPaths.add(posterHref);
+  if (isAudioType(extension)) {
+    const geometry: MediaGeometry = {};
+    assignMediaGeometry(geometry, { name, x, y, width, height });
+    const audio: AudioFrameOptions = { ...geometry, type: extension };
+    if (data === undefined) audio.sourceUrl = href;
+    else {
+      audio.data = data;
+      audio.fileName = href.split("/").pop();
+    }
+    audio.playback = parseMediaPlayback(plugin);
+    return { audio };
+  }
+  const geometry: MediaGeometry = {};
+  assignMediaGeometry(geometry, { name, x, y, width, height });
+  const video: VideoFrameOptions = { ...geometry, type: extension };
+  if (data === undefined) video.sourceUrl = href;
+  else {
+    video.data = data;
+    video.fileName = href.split("/").pop();
+  }
+  video.playback = parseMediaPlayback(plugin);
+  if (posterData && posterHref) {
+    video.poster = posterData;
+    video.posterType = posterType(posterHref);
+  }
+  return { video };
+}
+
+interface MediaGeometry {
+  name?: string;
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+}
+
+function assignMediaGeometry(
+  options: MediaGeometry,
+  frame: {
+    name: string | undefined;
+    x: number | undefined;
+    y: number | undefined;
+    width: number | undefined;
+    height: number | undefined;
+  },
+): void {
+  if (frame.name !== undefined) options.name = frame.name;
+  if (frame.x !== undefined) options.x = frame.x;
+  if (frame.y !== undefined) options.y = frame.y;
+  if (frame.width !== undefined) options.width = frame.width;
+  if (frame.height !== undefined) options.height = frame.height;
+}
+
+function isAudioType(value: string): value is AudioType {
+  return ["mp3", "wav", "wma", "aac"].includes(value);
+}
+
+function isVideoType(value: string): value is VideoType {
+  return ["mp4", "mov", "wmv", "avi"].includes(value);
+}
+
+function posterType(path: string): VideoFrameOptions["posterType"] {
+  const extension = path.split(".").pop() ?? "png";
+  switch (extension) {
+    case "jpg":
+    case "gif":
+    case "bmp":
+    case "tif":
+    case "ico":
+    case "emf":
+    case "wmf":
+      return extension;
+    default:
+      return "png";
+  }
+}
+
+function missingMediaPart(path: string): OdpParseError {
+  const reason = "missing-package-part";
+  return new OdpParseError(
+    `content.xml: ${path}: package media is missing`,
+    "content.xml",
+    "/draw:frame/draw:plugin/@xlink:href",
+    "draw:plugin",
+    reason,
+  );
+}
+
+function parseMediaPlayback(plugin: Element): MediaPlaybackOptions | undefined {
+  const params = (plugin.elements ?? []).filter((child) => child.name === "draw:param");
+  const value = (name: string) => {
+    const param = params.find((child) => attributeString(child, "draw:name") === name);
+    return param === undefined ? undefined : attributeString(param, "draw:value");
+  };
+  const loop = value("Loop");
+  const mute = value("Mute");
+  const volume = value("VolumeDB");
+  const zoom = value("Zoom");
+  const playback: MediaPlaybackOptions = {
+    ...(loop === undefined ? {} : { loop: loop === "true" }),
+    ...(mute === undefined ? {} : { mute: mute === "true" }),
+    ...(volume === undefined || Number.isNaN(Number(volume)) ? {} : { volume: Number(volume) }),
+    ...(zoom === undefined ? {} : { zoom }),
+  };
+  return Object.keys(playback).length > 0 ? playback : undefined;
 }

@@ -88,6 +88,52 @@ describe("slideMasterDesc round-trip", () => {
     expect(result.placeholders?.date).toBe(false);
   });
 
+  it("preserves duplicate standard placeholder types and their identities", () => {
+    const source =
+      '<p:sldMaster xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" ' +
+      'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" ' +
+      'xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">' +
+      '<p:cSld><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>' +
+      '<p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>' +
+      '<p:sp><p:nvSpPr><p:cNvPr id="0" name="PlaceHolder 1"/><p:cNvSpPr/><p:nvPr><p:ph type="title"/></p:nvPr></p:nvSpPr>' +
+      '<p:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="1" cy="1"/></a:xfrm></p:spPr><p:txBody><a:bodyPr/><a:lstStyle/><a:p/></p:txBody></p:sp>' +
+      '<p:sp><p:nvSpPr><p:cNvPr id="1" name="PlaceHolder 2"/><p:cNvSpPr/><p:nvPr><p:ph type="body"/></p:nvPr></p:nvSpPr>' +
+      '<p:spPr><a:xfrm><a:off x="0" y="1"/><a:ext cx="1" cy="1"/></a:xfrm></p:spPr><p:txBody><a:bodyPr/><a:lstStyle/><a:p/></p:txBody></p:sp>' +
+      '<p:sp><p:nvSpPr><p:cNvPr id="2" name="PlaceHolder 3"/><p:cNvSpPr/><p:nvPr><p:ph type="body"/></p:nvPr></p:nvSpPr>' +
+      '<p:spPr><a:xfrm><a:off x="0" y="2"/><a:ext cx="1" cy="1"/></a:xfrm></p:spPr><p:txBody><a:bodyPr/><a:lstStyle/><a:p/></p:txBody></p:sp>' +
+      '</p:spTree></p:cSld><p:clrMap bg1="lt1"/></p:sldMaster>';
+    const el = parseXml(source).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const parsed = slideMasterDesc.parse(el, readCtx);
+    expect(parsed.placeholderShapes?.map((shape) => shape.key)).toEqual(["title", "body", "body"]);
+    const xml = slideMasterDesc.stringify(parsed, makeWriteCtx());
+    if (!xml) throw new Error("stringify returned undefined");
+    expect(xml.match(/<p:cNvPr id="1" name="PlaceHolder 2"\/>/g)).toHaveLength(1);
+    expect(xml.match(/<p:cNvPr id="2" name="PlaceHolder 3"\/>/g)).toHaveLength(1);
+    expect(xml.indexOf("PlaceHolder 2")).toBeLessThan(xml.indexOf("PlaceHolder 3"));
+  });
+
+  it("round-trips userDrawn on an ordered standard placeholder", () => {
+    const source =
+      '<p:sldMaster xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" ' +
+      'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" ' +
+      'xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">' +
+      '<p:cSld><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>' +
+      '<p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>' +
+      '<p:sp><p:nvSpPr><p:cNvPr id="2" name="Title"/><p:cNvSpPr/>' +
+      '<p:nvPr userDrawn="1"><p:ph type="title"/></p:nvPr></p:nvSpPr>' +
+      '<p:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="1" cy="1"/></a:xfrm></p:spPr>' +
+      "<p:txBody><a:bodyPr/><a:lstStyle/><a:p/></p:txBody></p:sp>" +
+      '</p:spTree></p:cSld><p:clrMap bg1="lt1"/></p:sldMaster>';
+    const el = parseXml(source).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const parsed = slideMasterDesc.parse(el, readCtx);
+    expect(parsed.placeholderShapes?.[0]?.userDrawn).toBe(true);
+    const xml = slideMasterDesc.stringify(parsed, makeWriteCtx());
+    if (!xml) throw new Error("stringify returned undefined");
+    expect(xml).toContain('<p:nvPr userDrawn="1"><p:ph type="title"/>');
+  });
+
   it("keeps non-standard placeholder shapes in children and records the map entry", () => {
     // sldImg has no fresh-emit branch: the whole sp stays in children (re-emitted
     // from there) and the definition lands on the map for inheritance only.
@@ -163,7 +209,11 @@ describe("slideMasterDesc round-trip", () => {
         { shape: { x: 100, y: 100, width: 200, height: 200, properties: { fill: "FF0000" } } },
       ],
     });
-    expect(result.children?.filter((child) => !("placeholder" in child))).toHaveLength(1);
+    expect(
+      result.children?.filter(
+        (child) => !("placeholder" in child) && !("placeholderShape" in child),
+      ),
+    ).toHaveLength(1);
   });
 
   it("preserves source order of placeholder markers and custom children", () => {
@@ -191,6 +241,49 @@ describe("slide-master placeholder facets round-trip", () => {
     });
     const title = result.placeholders?.title as { locking?: Record<string, boolean> };
     expect(title.locking).toEqual({ noGrp: true, noChangeArrowheads: true });
+  });
+
+  it("preserves a placeholder without shape locks", () => {
+    const options = {
+      placeholders: {
+        title: { x: 100, y: 100, width: 200, height: 200, lockingPresent: false },
+      },
+    };
+    const xml = freshXml(options);
+    const titleStart = xml.indexOf('type="title"');
+    const shapeStart = xml.lastIndexOf("<p:sp>", titleStart);
+    const shapeEnd = xml.indexOf("</p:sp>", titleStart);
+    expect(xml.slice(shapeStart, shapeEnd)).not.toContain("<a:spLocks");
+    expect(roundTrip(options).placeholders?.title).toMatchObject({
+      lockingPresent: false,
+    });
+  });
+
+  it("round-trips placeholder transforms", () => {
+    const result = roundTrip({
+      placeholders: {
+        title: {
+          x: 100,
+          y: 100,
+          width: 200,
+          height: 200,
+          flipHorizontal: true,
+          rotation: 45,
+        },
+      },
+    });
+    const title = result.placeholders?.title as {
+      flipHorizontal?: boolean;
+      rotation?: number;
+    };
+    expect(title.flipHorizontal).toBe(true);
+    expect(title.rotation).toBe(45);
+  });
+
+  it("keeps cSld display name separate from master identity", () => {
+    const result = roundTrip({ cSldName: "Display Name" });
+    expect(result.cSldName).toBe("Display Name");
+    expect(freshXml(result)).toContain('<p:cSld name="Display Name">');
   });
 
   it("round-trips placeholder customer data tags", () => {

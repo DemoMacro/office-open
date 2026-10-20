@@ -63,6 +63,8 @@ export interface TextBoxPartOptions {
 }
 
 export interface ShapeCoreOptions {
+  /** ODF-only `draw:control` reference; absent for ordinary DrawingML shapes. */
+  odfControlId?: string;
   /** Black-and-white rendering mode on wps:spPr (`@bwMode`); absent = omitted. */
   blackWhiteMode?: BlackWhiteMode;
   /**
@@ -71,13 +73,34 @@ export interface ShapeCoreOptions {
    * use SectionChild variants.
    */
   children: ShapeTextBoxChild[];
+  /** Inline text box identity (`wps:txbx/@id`, schema default 0). */
+  textBoxId?: number;
   nonVisualProperties?: NonVisualShapePropertiesOptions;
+  /** Whether the source shape carried non-visual properties; round-trip only. */
+  nonVisualPropertiesPresent?: boolean;
+  /** Additional legacy wrapped properties emitted after the bare element. */
+  wrappedNonVisualProperties?: NonVisualShapePropertiesOptions;
   bodyProperties?: BodyPropertiesOptions;
+  /** Whether the source shape carried wps:bodyPr; round-trip only. */
+  bodyPropertiesPresent?: boolean;
   outline?: OutlineOptions;
   fill?: FillOptions;
   customGeometry?: CustomGeometryOptions;
   /** Preset geometry (a:prstGeom) — a bare string is shorthand for `{ preset: "<name>" }`. */
   geometry?: ShapeType | PresetGeometryOptions;
+  /** Whether the source shape carried wps:spPr; round-trip only. */
+  shapePropertiesPresent?: boolean;
+  /**
+   * Whether the source shape carried wps:spPr/a:xfrm. `false` preserves an
+   * absent transform; `true` preserves an explicit empty transform.
+   */
+  transformPresent?: boolean;
+  /**
+   * Child shape offset in EMUs from `wps:spPr/a:xfrm/a:off`. Anchored shapes
+   * may carry this alongside floating placement, so it must not collapse into
+   * the anchor origin.
+   */
+  shapeOffset?: { x: number; y: number };
   effectDag?: EffectDagOptions;
   effects?: EffectListOptions;
   scene3d?: Scene3DOptions;
@@ -104,4 +127,6 @@ export interface ShapeCoreOptions {
   };
   /** East-Asian vertical text flow (wps:wsp `@normalEastAsianFlow`, default false). */
   normalEastAsianFlow?: boolean;
+  /** Preserve the legacy `wps:nvSpPr` wrapper emitted by some producers. */
+  nonVisualPropertiesWrapped?: boolean;
 }

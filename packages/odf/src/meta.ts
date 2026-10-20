@@ -1,18 +1,18 @@
+import type { CorePropertiesOptions } from "@office-open/core";
 import type {
   AutoReloadOptions,
   CalendarDurationOptions,
-  CorePropertiesOptions,
   DocumentStatisticsOptions,
   DocumentTemplateOptions,
   HyperlinkBehaviorOptions,
   UserDefinedMetadataOptions,
-} from "@office-open/core";
+} from "@office-open/core/opc";
 import { escapeXml } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 
-import { readXml, type OdfFiles } from "../container/package";
-import { OdfSchemaError } from "../errors";
-import { childNamed, textOf } from "../runtime/xml";
+import { readXml, type OdfFiles } from "./container/package";
+import { OdfSchemaError } from "./errors";
+import { childNamed, textOf } from "./runtime/xml";
 
 export const ODF_NAMESPACES = [
   'xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"',
@@ -46,6 +46,13 @@ export function metaXml(options: CorePropertiesOptions): string {
     text(options.modified) && `<dc:date>${escapeXml(options.modified!)}</dc:date>`,
     text(options.category) && `<office:category>${escapeXml(options.category!)}</office:category>`,
     text(options.language) && `<dc:language>${escapeXml(options.language!)}</dc:language>`,
+    ...(options.publishers ?? []).map(
+      (publisher) => `<dc:publisher>${escapeXml(publisher)}</dc:publisher>`,
+    ),
+    ...(options.autoFillers ?? []).map(
+      (autoFiller) => `<dc:auto-filler>${escapeXml(autoFiller)}</dc:auto-filler>`,
+    ),
+    ...(options.sources ?? []).map((source) => `<dc:source>${escapeXml(source)}</dc:source>`),
     text(options.identifier) && `<dc:identifier>${escapeXml(options.identifier!)}</dc:identifier>`,
     text(options.lastPrinted) &&
       `<meta:print-date>${escapeXml(options.lastPrinted!)}</meta:print-date>`,
@@ -71,6 +78,7 @@ export function metaXml(options: CorePropertiesOptions): string {
 const META_FIELDS: ReadonlySet<string> = new Set([
   "dc:title",
   "dc:subject",
+  "dc:initial-creator",
   "meta:initial-creator",
   "dc:creator",
   "meta:keyword",
@@ -79,6 +87,9 @@ const META_FIELDS: ReadonlySet<string> = new Set([
   "dc:date",
   "office:category",
   "dc:language",
+  "dc:publisher",
+  "dc:auto-filler",
+  "dc:source",
   "dc:identifier",
   "meta:print-date",
   "meta:printed-by",
@@ -101,7 +112,7 @@ export function parseMeta(files: OdfFiles): CorePropertiesOptions {
   const properties: CorePropertiesOptions = {
     title: value("dc:title"),
     subject: value("dc:subject"),
-    creator: value("meta:initial-creator"),
+    creator: value("meta:initial-creator") ?? value("dc:initial-creator"),
     keywords: keywords || undefined,
     description: value("dc:description"),
     lastModifiedBy: value("dc:creator"),
@@ -109,6 +120,9 @@ export function parseMeta(files: OdfFiles): CorePropertiesOptions {
     modified: value("dc:date"),
     category: value("office:category"),
     language: value("dc:language"),
+    publishers: childrenNamed(meta, "dc:publisher").map(textOf).filter(Boolean),
+    autoFillers: childrenNamed(meta, "dc:auto-filler").map(textOf).filter(Boolean),
+    sources: childrenNamed(meta, "dc:source").map(textOf).filter(Boolean),
     identifier: value("dc:identifier"),
     lastPrinted: value("meta:print-date"),
     printedBy: value("meta:printed-by"),
@@ -148,7 +162,12 @@ function rejectUnknownMetadata(meta: Element | undefined): void {
   }
   for (const child of meta?.elements ?? []) {
     if (child.type !== "element") continue;
-    const repeated = child.name === "meta:user-defined" || child.name === "meta:keyword";
+    const repeated =
+      child.name === "meta:user-defined" ||
+      child.name === "meta:keyword" ||
+      child.name === "dc:publisher" ||
+      child.name === "dc:auto-filler" ||
+      child.name === "dc:source";
     if (!child.name || (!repeated && !META_FIELDS.has(child.name))) {
       const name = child.name ?? "unknown";
       throw metadataError(name, "no canonical metadata mapping");

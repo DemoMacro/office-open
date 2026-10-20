@@ -11,16 +11,18 @@
  */
 
 import {
-  RELATIONSHIP_TYPES,
-  Relationships,
   findAndReplaceImagePlaceholders,
-  optionalRelsPart,
-  partPathToRelsPath,
+  Relationships,
   replaceNumberingPlaceholders,
-  type RelationshipType,
-  type XmlifyedFile,
 } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
+import {
+  optionalRelsPart,
+  partPathToRelsPath,
+  RELATIONSHIP_TYPES,
+  type RelationshipType,
+  type XmlifyedFile,
+} from "@office-open/core/opc";
 import { documentNamespaceDialect } from "@parts/document/document-attributes";
 import { EMBEDDED_FONT_PART_NAMES } from "@parts/fonts/font-table";
 import { defaultEmbeddedFontPath, embeddedFontParts, FontWrapper } from "@parts/fonts/font-wrapper";
@@ -47,6 +49,9 @@ import {
   relativePartTarget,
   resolvePartCharts,
   resolvePartMedia,
+  resolveNumberingMedia,
+  sourceOwnedMediaRids,
+  sourceOwnedRels,
 } from "./shared";
 
 /** Default companion paths relative to word/ when the round-trip name is absent. */
@@ -59,27 +64,6 @@ const DEFAULT_PART_NAMES = {
   footnotes: "glossary/footnotes.xml",
   endnotes: "glossary/endnotes.xml",
 } as const;
-
-/** {fileName → source rId} for glossary media rels, so the body XML's
- *  re-emitted `r:embed` keeps pointing at the same relationship. */
-function glossarySourceMediaRids(ctx: DocxWriteContext, partPath: string): Map<string, string> {
-  const sourceRids = new Map<string, string>();
-  for (const rel of ctx._options.passthroughRelationships ?? []) {
-    if (rel.source !== partPath || !rel.target.startsWith("../media/")) continue;
-    sourceRids.set(rel.target.slice("../media/".length), rel.rId);
-  }
-  return sourceRids;
-}
-
-/** Source relationships owned by one part, preserved verbatim for a rebuilt
- *  part whose rels the compiler re-emits. */
-function sourceOwnedRels(ctx: DocxWriteContext, sourcePath: string): Relationships {
-  const rels = new Relationships();
-  for (const rel of ctx._options.passthroughRelationships ?? []) {
-    if (rel.source === sourcePath) rels.claimSourceRel(rel);
-  }
-  return rels;
-}
 
 /** Assemble the glossary styles part the same way the main styles part is
  *  assembled in the write context: a round-trip origin re-emits the parsed
@@ -211,7 +195,7 @@ export function compileGlossaryParts(
   try {
     const glossaryCtx = mkCtx({ relationships: glossaryRels, partName: glossaryPartPath });
     const glossaryXml = glossaryDesc.stringify(glossary, glossaryCtx) ?? "";
-    const sourceMediaRids = glossarySourceMediaRids(ctx, glossaryPartPath);
+    const sourceMediaRids = sourceOwnedMediaRids(ctx, glossaryPartPath);
     const resolvedGlossary = findAndReplaceImagePlaceholders(
       glossaryXml,
       ctx.media.array,
@@ -261,6 +245,12 @@ export function compileGlossaryParts(
         glossary.endnotesPartName ?? DEFAULT_PART_NAMES.endnotes,
       );
     }
+    // Preserve relationships the model does not own (an unmodeled opaque
+    // companion such as glossary/stylesWithEffects.xml) after modeled wiring,
+    // so claimSourceRel can skip companion rels it already absorbed.
+    for (const rel of ctx._options.passthroughRelationships ?? []) {
+      if (rel.source === glossaryPartPath) glossaryRels.claimSourceRel(rel);
+    }
 
     entries.Glossary = {
       data:
@@ -278,16 +268,12 @@ export function compileGlossaryParts(
 
     if (glossaryNumbering && numberingPartName) {
       const numberingPath = `word/${numberingPartName}`;
-      const numberingXml = glossaryNumbering.serialize(ctx);
-      const numberingMedia = findAndReplaceImagePlaceholders(numberingXml, ctx.media.array, 1);
-      const numberingRels = new Relationships();
-      for (const [i, ref] of numberingMedia.referenced.entries()) {
-        numberingRels.addRelationship(
-          1 + i,
-          RELATIONSHIP_TYPES.image,
-          relativePartTarget(numberingPath, `word/media/${ref.fileName}`),
-        );
-      }
+      const numberingMedia = resolveNumberingMedia(
+        glossaryNumbering.serialize(ctx),
+        ctx,
+        numberingPath,
+      );
+      const numberingRels = numberingMedia.rels;
       entries.GlossaryNumbering = { data: XML_DECL + numberingMedia.xml, path: numberingPath };
       entries.GlossaryNumberingRelationships = optionalRelsPart(
         numberingRels,
@@ -383,17 +369,20 @@ export function compileGlossaryParts(
     if (glossary.footnotes || glossary.footnoteSeparators) {
       const footnotes = glossary.footnotes ?? [];
       const notes = new Map<number, NoteChild[]>();
+      const autoReferenceMarks = new Map<number, boolean>();
       let nextId = 1;
       for (const note of footnotes) {
         const id = note.id ?? nextId;
         nextId = Math.max(nextId, id) + 1;
         notes.set(id, note.children);
+        if (note.autoReferenceMark === false) autoReferenceMarks.set(id, false);
       }
       compileGlossaryNotesPart(
         footnotesDesc,
         `word/${glossary.footnotesPartName ?? DEFAULT_PART_NAMES.footnotes}`,
         {
           notes,
+          autoReferenceMarks,
           separator: glossary.footnoteSeparators?.separator ?? undefined,
           continuationSeparator: glossary.footnoteSeparators?.continuationSeparator ?? undefined,
           continuationNotice: glossary.footnoteSeparators?.continuationNotice,
@@ -405,17 +394,20 @@ export function compileGlossaryParts(
     if (glossary.endnotes || glossary.endnoteSeparators) {
       const endnotes = glossary.endnotes ?? [];
       const notes = new Map<number, NoteChild[]>();
+      const autoReferenceMarks = new Map<number, boolean>();
       let nextId = 1;
       for (const note of endnotes) {
         const id = note.id ?? nextId;
         nextId = Math.max(nextId, id) + 1;
         notes.set(id, note.children);
+        if (note.autoReferenceMark === false) autoReferenceMarks.set(id, false);
       }
       compileGlossaryNotesPart(
         endnotesDesc,
         `word/${glossary.endnotesPartName ?? DEFAULT_PART_NAMES.endnotes}`,
         {
           notes,
+          autoReferenceMarks,
           separator: glossary.endnoteSeparators?.separator ?? undefined,
           continuationSeparator: glossary.endnoteSeparators?.continuationSeparator ?? undefined,
           continuationNotice: glossary.endnoteSeparators?.continuationNotice,

@@ -52,6 +52,29 @@ describe("notesSlideDesc round-trip", () => {
     expect(notesSlideDesc.stringify(parsed, writeCtx)!).toBe(original);
   });
 
+  it("round-trips shape-tree root identity", () => {
+    const original = notesSlideDesc.stringify(
+      {
+        shapeTreeId: 12,
+        shapeTreeName: "Notes Root",
+        shapeTreeBlackWhiteMode: "gray",
+        groupTransformless: true,
+      },
+      writeCtx,
+    )!;
+    expect(original).toContain('<p:cNvPr id="12" name="Notes Root"/>');
+    expect(original).toContain('<p:grpSpPr bwMode="gray">');
+    expect(original).not.toContain("<a:xfrm>");
+
+    const el = parseXml(original).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const parsed = notesSlideDesc.parse(el, readCtx);
+    expect(parsed.shapeTreeId).toBe(12);
+    expect(parsed.shapeTreeName).toBe("Notes Root");
+    expect(parsed.shapeTreeBlackWhiteMode).toBe("gray");
+    expect(parsed.groupTransformless).toBe(true);
+  });
+
   it("round-trips notes with special characters byte-stable", () => {
     const original = notesSlideDesc.stringify({ text: '<b>Bold & "quoted"' }, writeCtx)!;
     expect(original).toContain("&lt;b&gt;Bold &amp; &quot;quoted&quot;");

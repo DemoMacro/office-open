@@ -1,3 +1,4 @@
+import type { OfficeFormsOptions } from "@office-open/core";
 import {
   drawingVocabularyXml,
   generateChartDocument,
@@ -29,10 +30,13 @@ function assertEqual(actual: unknown, expected: unknown, label: string): void {
   assert(left === right, `${label}: expected ${right}, received ${left}`);
 }
 
-function assertThrows(run: () => unknown, expected: string): void {
+async function assertThrows(
+  run: () => unknown | Promise<unknown>,
+  expected: string,
+): Promise<void> {
   let error: unknown;
   try {
-    run();
+    await run();
   } catch (cause) {
     error = cause;
   }
@@ -58,7 +62,7 @@ export interface OdfCoverageFixtureResult {
 }
 
 export const ODF_COVERAGE_FIXTURES = {
-  "manifest-package-entry"(): OdfCoverageFixtureResult {
+  async "manifest-package-entry"(): Promise<OdfCoverageFixtureResult> {
     const source = {
       version: "1.3",
       entries: [
@@ -77,7 +81,7 @@ export const ODF_COVERAGE_FIXTURES = {
     assertEqual(parsed.entries, source.entries, "manifest entries");
     return { semanticRoundTrip: true };
   },
-  "drawing-vocabulary-desc"(): OdfCoverageFixtureResult {
+  async "drawing-vocabulary-desc"(): Promise<OdfCoverageFixtureResult> {
     const source = element("<svg:desc>Drawing</svg:desc>");
     const parsed = parseDrawingVocabulary(source, "content.xml", "/svg:desc");
     assert(!("contentXml" in parsed), "expected the drawing vocabulary model");
@@ -86,7 +90,7 @@ export const ODF_COVERAGE_FIXTURES = {
     assert(drawingVocabularyXml(parsed).includes("Drawing"), "drawing vocabulary XML");
     return { semanticRoundTrip: true };
   },
-  "odt-paragraph"(): OdfCoverageFixtureResult {
+  async "odt-paragraph"(): Promise<OdfCoverageFixtureResult> {
     const source = {
       title: "ODT ownership",
       creator: "office-open",
@@ -118,7 +122,7 @@ export const ODF_COVERAGE_FIXTURES = {
         },
       ],
     } as const;
-    const generated = generateDocument(source);
+    const generated = await generateDocument(source);
     const files = unzipSync(generated);
     const odtContent = unzipText(files, "content.xml");
     assert(
@@ -128,11 +132,11 @@ export const ODF_COVERAGE_FIXTURES = {
     assert(unzipText(files, "styles.xml").includes("<style:style"), "ODT styles");
     assert(unzipText(files, "meta.xml").includes("<dc:title>ODT ownership</dc:title>"), "ODT meta");
     assert(odtContent.includes('fo:font-weight="bold"'), "ODT text style");
-    const parsed = parseDocument(generateDocument(JSON.parse(JSON.stringify(source))));
+    const parsed = await parseDocument(await generateDocument(JSON.parse(JSON.stringify(source))));
     assertEqual(collectText(parsed.sections), ["Bold", " ODT", "A1"], "ODT semantic round trip");
     return { semanticRoundTrip: true };
   },
-  "ods-cell"(): OdfCoverageFixtureResult {
+  async "ods-cell"(): Promise<OdfCoverageFixtureResult> {
     const source = {
       title: "ODS ownership",
       creator: "office-open",
@@ -155,7 +159,7 @@ export const ODF_COVERAGE_FIXTURES = {
         },
       ],
     } as const;
-    const generated = generateWorkbook(source);
+    const generated = await generateWorkbook(source);
     const files = unzipSync(generated);
     const odsContent = unzipText(files, "content.xml");
     assert(
@@ -165,13 +169,13 @@ export const ODF_COVERAGE_FIXTURES = {
     assert(unzipText(files, "styles.xml").includes("<office:styles/>"), "ODS styles part");
     assert(odsContent.includes('style:row-height="18pt"'), "ODS row style");
     assert(unzipText(files, "meta.xml").includes("<dc:title>ODS ownership</dc:title>"), "ODS meta");
-    const parsed = parseWorkbook(generated);
+    const parsed = await parseWorkbook(generated);
     const cell = parsed.worksheets?.[0]?.rows?.[0]?.cells?.[0];
     assertEqual(cell?.value, 1.5, "ODS cell value");
     assertEqual(cell?.formula, "A1*2", "ODS formula round trip");
     return { semanticRoundTrip: true };
   },
-  "odp-notes"(): OdfCoverageFixtureResult {
+  async "odp-notes"(): Promise<OdfCoverageFixtureResult> {
     const source = {
       title: "ODP ownership",
       creator: "office-open",
@@ -205,7 +209,7 @@ export const ODF_COVERAGE_FIXTURES = {
         },
       ],
     } as const;
-    const generated = generatePresentation(source);
+    const generated = await generatePresentation(source);
     const files = unzipSync(generated);
     const odpContent = unzipText(files, "content.xml");
     assert(
@@ -218,7 +222,7 @@ export const ODF_COVERAGE_FIXTURES = {
       "ODP master-page style",
     );
     assert(unzipText(files, "meta.xml").includes("<dc:title>ODP ownership</dc:title>"), "ODP meta");
-    const parsed = parsePresentation(generated);
+    const parsed = await parsePresentation(generated);
     assertEqual(parsed.slides?.[0]?.notes, source.slides[0].notes, "ODP semantic round trip");
     assertEqual(
       collectText(parsed.slides?.[0]?.children),
@@ -227,7 +231,7 @@ export const ODF_COVERAGE_FIXTURES = {
     );
     return { semanticRoundTrip: true };
   },
-  "chart-embedded-object"(): OdfCoverageFixtureResult {
+  async "chart-embedded-object"(): Promise<OdfCoverageFixtureResult> {
     const chart = {
       name: "Embedded chart",
       type: "column",
@@ -240,10 +244,10 @@ export const ODF_COVERAGE_FIXTURES = {
       extentCx: 2160000,
       extentCy: 1440000,
     } as const;
-    const generated = generateWorkbook({
+    const generated = await generateWorkbook({
       worksheets: [{ name: "Data", charts: [chart] }],
     });
-    const parsed = parseWorkbook(generated);
+    const parsed = await parseWorkbook(generated);
     const parsedChart = parsed.worksheets?.[0]?.charts?.[0];
     assertEqual(parsedChart?.name, chart.name, "embedded chart name");
     assertEqual(
@@ -257,7 +261,7 @@ export const ODF_COVERAGE_FIXTURES = {
     assert(chartFiles.length > 0, `chart subdocument part: ${chartFiles.join(", ")}`);
     return { semanticRoundTrip: true };
   },
-  "database-formula-embedded-object"(): OdfCoverageFixtureResult {
+  async "database-formula-embedded-object"(): Promise<OdfCoverageFixtureResult> {
     const databaseSource = {
       dataSource: {
         name: "db:data-source",
@@ -269,7 +273,7 @@ export const ODF_COVERAGE_FIXTURES = {
         ],
       },
     } as const;
-    const parsedDatabase = parseDatabaseDocument(generateDatabaseDocument(databaseSource));
+    const parsedDatabase = await parseDatabaseDocument(generateDatabaseDocument(databaseSource));
     assertEqual(
       parsedDatabase.dataSource.children?.[0]?.children?.[0]?.text,
       databaseSource.dataSource.children[0].children[0].text,
@@ -287,7 +291,7 @@ export const ODF_COVERAGE_FIXTURES = {
       extentCx: 1800000,
       extentCy: 1080000,
     } as const;
-    const workbook = generateWorkbook({
+    const workbook = await generateWorkbook({
       worksheets: [
         {
           name: "Data",
@@ -296,7 +300,7 @@ export const ODF_COVERAGE_FIXTURES = {
         },
       ],
     });
-    const parsedWorkbook = parseWorkbook(workbook);
+    const parsedWorkbook = await parseWorkbook(workbook);
     assertEqual(
       parsedWorkbook.worksheets?.[0]?.rows?.[0]?.cells?.[0]?.formula,
       "SUM(B1:B1)",
@@ -309,18 +313,18 @@ export const ODF_COVERAGE_FIXTURES = {
     );
     return { semanticRoundTrip: true };
   },
-  "chart-column-series"(): OdfCoverageFixtureResult {
+  async "chart-column-series"(): Promise<OdfCoverageFixtureResult> {
     const source = {
       title: "Chart",
       chart: { type: "column", series: [{ name: "Sales", values: [1, 2] }] },
     } as const;
-    const parsed = parseChartDocument(generateChartDocument(source));
+    const parsed = await parseChartDocument(generateChartDocument(source));
     assertEqual(parsed.title, source.title, "chart title");
     assertEqual(parsed.chart.series[0]?.name, source.chart.series[0].name, "chart series name");
     assertEqual(parsed.chart.series[0]?.values, source.chart.series[0].values, "chart values");
     return { semanticRoundTrip: true };
   },
-  "database-connection"(): OdfCoverageFixtureResult {
+  async "database-connection"(): Promise<OdfCoverageFixtureResult> {
     const source = {
       title: "Database",
       dataSource: {
@@ -333,7 +337,7 @@ export const ODF_COVERAGE_FIXTURES = {
         ],
       },
     } as const;
-    const parsed = parseDatabaseDocument(generateDatabaseDocument(source));
+    const parsed = await parseDatabaseDocument(generateDatabaseDocument(source));
     assertEqual(parsed.dataSource.name, source.dataSource.name, "database root");
     assertEqual(
       parsed.dataSource.children?.[0]?.children?.[0]?.name,
@@ -347,19 +351,19 @@ export const ODF_COVERAGE_FIXTURES = {
     );
     return { semanticRoundTrip: true };
   },
-  "form-grid-xforms"(): OdfCoverageFixtureResult {
-    const source = {
-      forms: [
+  async "form-grid-xforms"(): Promise<OdfCoverageFixtureResult> {
+    const source: OfficeFormsOptions = {
+      containers: [
         {
           name: "Library",
           controls: [
             {
-              kind: "form:grid",
-              id: "grid",
+              control: "grid",
+              xmlId: "grid",
               columns: [
                 {
-                  attributes: { "form:name": "title" },
-                  controls: [{ kind: "form:text", id: "title" }],
+                  name: "title",
+                  controls: [{ control: "text", xmlId: "title" }],
                 },
               ],
             },
@@ -368,17 +372,17 @@ export const ODF_COVERAGE_FIXTURES = {
       ],
     } as const;
     const parsed = parseOfficeForms(element(officeFormsXml(source)));
-    const control = parsed.forms[0]?.controls[0];
-    assertEqual(parsed.forms[0]?.name, source.forms[0].name, "form name");
-    assertEqual(control?.kind, source.forms[0].controls[0].kind, "form control kind");
+    const control = parsed.containers[0]?.controls[0];
+    assertEqual(parsed.containers[0]?.name, source.containers[0]?.name, "form name");
+    assertEqual(control?.control, source.containers[0]?.controls[0]?.control, "form control kind");
     assertEqual(
-      control?.columns?.[0]?.controls[0]?.kind,
-      source.forms[0].controls[0].columns[0].controls[0].kind,
+      control?.columns?.[0]?.controls[0]?.control,
+      source.containers[0]?.controls[0]?.columns?.[0]?.controls[0]?.control,
       "nested form control",
     );
     return { semanticRoundTrip: true };
   },
-  "encrypted-manifest"(): OdfCoverageFixtureResult {
+  async "encrypted-manifest"(): Promise<OdfCoverageFixtureResult> {
     const source = {
       version: "1.3",
       entries: [
@@ -406,7 +410,7 @@ export const ODF_COVERAGE_FIXTURES = {
     assertEqual(parsed.encryptedKeys, source.encryptedKeys, "encrypted manifest keys");
     return { semanticRoundTrip: true };
   },
-  "linked-graphics"(): OdfCoverageFixtureResult {
+  async "linked-graphics"(): Promise<OdfCoverageFixtureResult> {
     const image = {
       type: "image",
       href: "https://example.com/logo.png",
@@ -414,21 +418,23 @@ export const ODF_COVERAGE_FIXTURES = {
       width: 914400,
       height: 914400,
     } as const;
-    const generated = generateWorkbook({
+    const generated = await generateWorkbook({
       worksheets: [{ rows: [{ cells: [{ value: "Logo", graphics: [image] }] }] }],
     });
     assertEqual(
-      Object.keys(readOcf(generated, "application/vnd.oasis.opendocument.spreadsheet").binaries),
+      Object.keys(
+        (await readOcf(generated, "application/vnd.oasis.opendocument.spreadsheet")).binaries,
+      ),
       [],
       "linked image has no media part",
     );
-    const parsed = parseWorkbook(generated);
+    const parsed = await parseWorkbook(generated);
     const graphic = parsed.worksheets?.[0]?.rows?.[0]?.cells?.[0]?.graphics?.[0];
     assertEqual(graphic?.sourceUrl, image.sourceUrl, "linked image source");
     assertEqual(graphic?.data, undefined, "linked image has no bytes");
     return { semanticRoundTrip: true };
   },
-  "percent-length-overlay"(): OdfCoverageFixtureResult {
+  async "percent-length-overlay"(): Promise<OdfCoverageFixtureResult> {
     const overlays = [
       {
         name: "ro99",
@@ -446,7 +452,7 @@ export const ODF_COVERAGE_FIXTURES = {
         properties: [{ name: "style:paragraph-properties", attributes: { "fo:line-height": 150 } }],
       },
     ] as const;
-    const generated = generateWorkbook({
+    const generated = await generateWorkbook({
       worksheets: [{ rows: [{ cells: [{ value: "Overlay" }] }] }],
       styleOverlays: overlays,
     });
@@ -460,12 +466,12 @@ export const ODF_COVERAGE_FIXTURES = {
         contentXml.replace("<table:table-row>", '<table:table-row table:style-name="ro99">'),
       ),
     });
-    const parsed = parseWorkbook(referenced);
+    const parsed = await parseWorkbook(referenced);
     assertEqual(parsed.worksheets?.[0]?.rows?.[0]?.height, 20, "raw length fallback semantics");
     assertEqual(parsed.styleOverlays, [overlays[1]], "raw percent overlay semantic round trip");
     return {
       semanticRoundTrip: true,
-      rawFallbackElements: ["style:table-row-properties", "style:paragraph-properties"],
+      rawFallbackElements: ["style:paragraph-properties"],
     };
   },
 } as const;
@@ -491,10 +497,10 @@ export const ODF_NEGATIVE_FIXTURES = {
   },
   "ODT rejects foreign body element"() {
     assertThrows(
-      () =>
-        parseDocument(
+      async () =>
+        await parseDocument(
           replaceOdfXml(
-            generateDocument({ sections: [{ children: [{ paragraph: "ODT" }] }] }),
+            await generateDocument({ sections: [{ children: [{ paragraph: "ODT" }] }] }),
             "</office:text>",
             "<office:unknown/></office:text>",
           ),
@@ -504,10 +510,10 @@ export const ODF_NEGATIVE_FIXTURES = {
   },
   "ODS rejects foreign body element"() {
     assertThrows(
-      () =>
-        parseWorkbook(
+      async () =>
+        await parseWorkbook(
           replaceOdfXml(
-            generateWorkbook({ worksheets: [{ rows: [{ cells: [{ value: 1.5 }] }] }] }),
+            await generateWorkbook({ worksheets: [{ rows: [{ cells: [{ value: 1.5 }] }] }] }),
             "</office:spreadsheet>",
             "<office:unknown/></office:spreadsheet>",
           ),
@@ -517,10 +523,10 @@ export const ODF_NEGATIVE_FIXTURES = {
   },
   "ODP rejects foreign slide element"() {
     assertThrows(
-      () =>
-        parsePresentation(
+      async () =>
+        await parsePresentation(
           replaceOdfXml(
-            generatePresentation({ slides: [{ notes: "ODP" }] }),
+            await generatePresentation({ slides: [{ notes: "ODP" }] }),
             "</draw:page>",
             "<draw:unknown/></draw:page>",
           ),
@@ -536,8 +542,8 @@ export const ODF_NEGATIVE_FIXTURES = {
   },
   "database rejects foreign element"() {
     assertThrows(
-      () =>
-        parseDatabaseDocument(
+      async () =>
+        await parseDatabaseDocument(
           generateDatabaseDocument({
             dataSource: {
               name: "db:data-source",
@@ -587,12 +593,14 @@ function collectText(value: unknown, result: string[] = []): string[] {
   return result.filter(Boolean);
 }
 
-export function runOdfCoverageFixture(
+export async function runOdfCoverageFixture(
   testId: keyof typeof ODF_COVERAGE_FIXTURES,
-): OdfCoverageFixtureResult {
-  return ODF_COVERAGE_FIXTURES[testId]();
+): Promise<OdfCoverageFixtureResult> {
+  return await ODF_COVERAGE_FIXTURES[testId]();
 }
 
-export function runOdfNegativeFixture(testId: keyof typeof ODF_NEGATIVE_FIXTURES): void {
-  ODF_NEGATIVE_FIXTURES[testId]();
+export async function runOdfNegativeFixture(
+  testId: keyof typeof ODF_NEGATIVE_FIXTURES,
+): Promise<void> {
+  await ODF_NEGATIVE_FIXTURES[testId]();
 }

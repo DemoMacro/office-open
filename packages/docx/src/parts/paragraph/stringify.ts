@@ -86,7 +86,7 @@ export function paragraphIdentityAttrs(opts: ParagraphOptions): string {
 export function borderStr(name: string, opts: BorderOptions): string {
   const a = attrsRaw({
     "w:val": opts.style,
-    "w:color": opts.color !== undefined ? hexColorValue(opts.color) : undefined,
+    "w:color": opts.colorRaw ?? (opts.color !== undefined ? hexColorValue(opts.color) : undefined),
     "w:sz": opts.size !== undefined ? eighthPointMeasureValue(opts.size) : undefined,
     "w:space": opts.space !== undefined ? pointMeasureValue(opts.space) : undefined,
     "w:themeColor": opts.themeColor,
@@ -102,17 +102,28 @@ export function borderStr(name: string, opts: BorderOptions): string {
 
 export function shadingStr(opts: ShadingProperties): string {
   const a = attrsRaw({
-    "w:val": opts.type !== undefined ? xsdShadingPattern.to(opts.type) : "clear",
-    "w:color": opts.color !== undefined ? hexColorValue(opts.color) : undefined,
-    "w:fill": opts.fill !== undefined ? hexColorValue(opts.fill) : undefined,
+    "w:val":
+      opts.type === null
+        ? undefined
+        : opts.type === undefined
+          ? "clear"
+          : xsdShadingPattern.to(opts.type),
+    "w:color": opts.colorRaw ?? (opts.color !== undefined ? hexColorValue(opts.color) : undefined),
+    "w:fill": opts.fillRaw ?? (opts.fill !== undefined ? hexColorValue(opts.fill) : undefined),
     "w:themeColor": opts.themeColor,
-    "w:themeTint": opts.themeTint !== undefined ? uCharHexNumber(opts.themeTint) : undefined,
-    "w:themeShade": opts.themeShade !== undefined ? uCharHexNumber(opts.themeShade) : undefined,
+    "w:themeTint":
+      opts.themeTintRaw ??
+      (opts.themeTint !== undefined ? uCharHexNumber(opts.themeTint) : undefined),
+    "w:themeShade":
+      opts.themeShadeRaw ??
+      (opts.themeShade !== undefined ? uCharHexNumber(opts.themeShade) : undefined),
     "w:themeFill": opts.themeFill,
     "w:themeFillTint":
-      opts.themeFillTint !== undefined ? uCharHexNumber(opts.themeFillTint) : undefined,
+      opts.themeFillTintRaw ??
+      (opts.themeFillTint !== undefined ? uCharHexNumber(opts.themeFillTint) : undefined),
     "w:themeFillShade":
-      opts.themeFillShade !== undefined ? uCharHexNumber(opts.themeFillShade) : undefined,
+      opts.themeFillShadeRaw ??
+      (opts.themeFillShade !== undefined ? uCharHexNumber(opts.themeFillShade) : undefined),
   });
   return `<w:shd${a}/>`;
 }
@@ -121,15 +132,30 @@ export function shadingStr(opts: ShadingProperties): string {
 
 function spacingStr(opts: SpacingProperties): string {
   const a = attrsRaw({
-    "w:after": opts.after !== undefined ? twipsMeasureValue(opts.after) : undefined,
+    "w:after":
+      opts.after !== undefined
+        ? typeof opts.after === "string"
+          ? opts.after
+          : twipsMeasureValue(opts.after)
+        : undefined,
     "w:afterAutospacing":
       opts.afterAutoSpacing !== undefined ? (opts.afterAutoSpacing ? 1 : 0) : undefined,
     "w:afterLines": opts.afterLines !== undefined ? decimalNumber(opts.afterLines) : undefined,
-    "w:before": opts.before !== undefined ? twipsMeasureValue(opts.before) : undefined,
+    "w:before":
+      opts.before !== undefined
+        ? typeof opts.before === "string"
+          ? opts.before
+          : twipsMeasureValue(opts.before)
+        : undefined,
     "w:beforeAutospacing":
       opts.beforeAutoSpacing !== undefined ? (opts.beforeAutoSpacing ? 1 : 0) : undefined,
     "w:beforeLines": opts.beforeLines !== undefined ? decimalNumber(opts.beforeLines) : undefined,
-    "w:line": opts.line !== undefined ? signedTwipsMeasureValue(opts.line) : undefined,
+    "w:line":
+      opts.line !== undefined
+        ? typeof opts.line === "string"
+          ? opts.line
+          : signedTwipsMeasureValue(opts.line)
+        : undefined,
     "w:lineRule": opts.lineRule,
   });
   return `<w:spacing${a}/>`;
@@ -179,10 +205,12 @@ function indentStr(opts: IndentProperties): string {
           : opts.right
         : undefined,
     "w:rightChars": opts.rightChars !== undefined ? decimalNumber(opts.rightChars) : undefined,
-    "w:hanging": hanging !== undefined ? twipsMeasureValue(hanging) : undefined,
+    "w:hanging":
+      opts.hangingRaw ?? (hanging !== undefined ? twipsMeasureValue(hanging) : undefined),
     "w:hangingChars":
       opts.hangingChars !== undefined ? decimalNumber(opts.hangingChars) : undefined,
-    "w:firstLine": firstLine !== undefined ? twipsMeasureValue(firstLine) : undefined,
+    "w:firstLine":
+      opts.firstLineRaw ?? (firstLine !== undefined ? twipsMeasureValue(firstLine) : undefined),
     "w:firstLineChars":
       opts.firstLineChars !== undefined ? decimalNumber(opts.firstLineChars) : undefined,
   });
@@ -252,7 +280,11 @@ function framePrStr(opts: FrameOptions): string {
     "w:x": mapOptional(position?.x, convertToTwip),
     "w:y": mapOptional(position?.y, convertToTwip),
   });
-  return `<w:framePr${a}/>`;
+  const fillColor =
+    opts.fillColorRaw === undefined
+      ? ""
+      : ` ${opts.fillColorAttrRaw ?? "w:fillcolor"}="${escapeXml(opts.fillColorRaw)}"`;
+  return `<w:framePr${a}${fillColor}/>`;
 }
 
 // ── Number properties ──
@@ -305,7 +337,7 @@ function colorStr(colorOrOptions: string | ColorOptions): string {
   }
   const opts = colorOrOptions;
   const a = attrsRaw({
-    "w:val": opts.val !== undefined ? hexColorValue(opts.val) : undefined,
+    "w:val": opts.valRaw ?? (opts.val !== undefined ? hexColorValue(opts.val) : undefined),
     "w:themeColor": opts.themeColor,
     "w:themeTint": opts.themeTint !== undefined ? uCharHexNumber(opts.themeTint) : undefined,
     "w:themeShade": opts.themeShade !== undefined ? uCharHexNumber(opts.themeShade) : undefined,
@@ -332,6 +364,7 @@ function runFontsStr(nameOrAttrs: string | FontProperties, hint?: string): strin
     "w:cstheme": attrs.complexScriptTheme,
     "w:eastAsia": attrs.eastAsia,
     "w:eastAsiaTheme": attrs.eastAsiaTheme,
+    "w:hAscii": attrs.hAscii,
     "w:hAnsi": attrs.hAnsi,
     "w:hAnsiTheme": attrs.hAnsiTheme,
     "w:hint": attrs.hint,
@@ -342,7 +375,7 @@ function runFontsStr(nameOrAttrs: string | FontProperties, hint?: string): strin
 function underlineStr(opts: NonNullable<RunPropertiesOptions["underline"]>): string {
   const a = attrsRaw({
     "w:val": opts.type,
-    "w:color": opts.color !== undefined ? hexColorValue(opts.color) : undefined,
+    "w:color": opts.colorRaw ?? (opts.color !== undefined ? hexColorValue(opts.color) : undefined),
     "w:themeColor": opts.themeColor,
     "w:themeTint": opts.themeTint !== undefined ? uCharHexNumber(opts.themeTint) : undefined,
     "w:themeShade": opts.themeShade !== undefined ? uCharHexNumber(opts.themeShade) : undefined,
@@ -448,12 +481,17 @@ export function stringifyParagraphProperties(
         options.numbering.insertion,
       );
     } else {
-      (numberingReferences ??= []).push({
-        instance: options.numbering.instance ?? 0,
-        reference: options.numbering.reference,
-      });
-
-      const numId = `${options.numbering.reference}-${options.numbering.instance ?? 0}`;
+      const sourceNumId = options.numbering.sourceNumId;
+      if (sourceNumId === undefined) {
+        (numberingReferences ??= []).push({
+          instance: options.numbering.instance ?? 0,
+          reference: options.numbering.reference,
+        });
+      }
+      const numId =
+        sourceNumId !== undefined
+          ? sourceNumId
+          : `${options.numbering.reference}-${options.numbering.instance ?? 0}`;
       s += numPrStr(
         numId,
         options.numbering.level,
@@ -476,7 +514,7 @@ export function stringifyParagraphProperties(
   // 9: pBdr — single writer (CT_PPrBase allows exactly one). thematicBreak is
   // sugar for a bottom single border; an explicit border wins per edge and
   // thematicBreak fills a missing bottom.
-  if (options.border || options.thematicBreak) {
+  if (options.border) {
     const bParts: string[] = [];
     if (options.border?.top) bParts.push(borderStr("w:top", options.border.top));
     if (options.border?.left) bParts.push(borderStr("w:left", options.border.left));
@@ -490,7 +528,18 @@ export function stringifyParagraphProperties(
     if (options.border?.right) bParts.push(borderStr("w:right", options.border.right));
     if (options.border?.between) bParts.push(borderStr("w:between", options.border.between));
     if (options.border?.bar) bParts.push(borderStr("w:bar", options.border.bar));
-    if (bParts.length) s += `<w:pBdr>${bParts.join("")}</w:pBdr>`;
+    if (options.border?.insideHorizontal)
+      bParts.push(borderStr("w:insideH", options.border.insideHorizontal));
+    if (options.border?.insideVertical)
+      bParts.push(borderStr("w:insideV", options.border.insideVertical));
+    s += `<w:pBdr>${bParts.join("")}</w:pBdr>`;
+  } else if (options.thematicBreak) {
+    s += `<w:pBdr>${borderStr("w:bottom", {
+      color: "auto",
+      size: 6,
+      space: 1,
+      style: BorderStyle.SINGLE,
+    })}</w:pBdr>`;
   }
 
   // 10: shd
@@ -511,12 +560,14 @@ export function stringifyParagraphProperties(
         ? [{ position: options.leftTabStop, type: "left" as const }]
         : []),
     ];
-    if (tabDefs.length > 0) s += tabStopsStr(tabDefs);
+    if (options.tabStops !== undefined || tabDefs.length > 0) s += tabStopsStr(tabDefs);
   }
 
   // 12-18: suppressAutoHyphens, kinsoku, wordWrap, overflowPunct, topLinePunct, autoSpaceDE, autoSpaceDN
   if (options.suppressAutoHyphens !== undefined)
     s += onOff("w:suppressAutoHyphens", options.suppressAutoHyphens);
+  if (options.hyphenationLines !== undefined)
+    s += `<w:hyphenationLines w:val="${options.hyphenationLines}"/>`;
   if (options.kinsoku !== undefined) s += onOff("w:kinsoku", options.kinsoku);
   if (options.wordWrap !== undefined) s += onOff("w:wordWrap", options.wordWrap);
   if (options.overflowPunctuation !== undefined)
@@ -534,10 +585,10 @@ export function stringifyParagraphProperties(
   if (options.snapToGrid !== undefined) s += onOff("w:snapToGrid", options.snapToGrid);
 
   // 22-24: spacing, ind, contextualSpacing
-  if (options.spacing) s += spacingStr(options.spacing);
+  if (options.spacing !== undefined) s += spacingStr(options.spacing);
   if (options.indent) s += indentStr(options.indent);
   if (options.contextualSpacing !== undefined)
-    s += onOff("w:contextualSpacing", options.contextualSpacing);
+    s += onOff("w:contextualSpacing", options.contextualSpacing, options.contextualSpacingRaw);
 
   // 25-26: mirrorIndents, suppressOverlap
   if (options.mirrorIndents !== undefined) s += onOff("w:mirrorIndents", options.mirrorIndents);
@@ -736,13 +787,17 @@ export function stringifyRunPropertiesInner(
   if (opts.shading) s += shadingStr(opts.shading);
 
   // Fit text — EG_RPrBase order: shd, fitText, vertAlign, rtl, cs, em, lang
-  if (opts.fitText !== undefined) s += `<w:fitText w:val="${opts.fitText}"/>`;
+  if (opts.fitText !== undefined)
+    s +=
+      `<w:fitText w:val="${opts.fitText}"` +
+      (opts.fitTextId === undefined ? "" : ` w:id="${opts.fitTextId}"`) +
+      "/>";
 
   // Vertical alignment
   if (opts.verticalAlign) s += `<w:vertAlign w:val="${opts.verticalAlign}"/>`;
 
   // RTL
-  if (opts.rightToLeft !== undefined) s += onOff("w:rtl", opts.rightToLeft);
+  if (opts.rightToLeft !== undefined) s += onOff("w:rtl", opts.rightToLeft, opts.rightToLeftRaw);
 
   // Complex script
   if (opts.complexScript !== undefined) s += onOff("w:cs", opts.complexScript);
@@ -768,10 +823,28 @@ export function stringifyRunPropertiesInner(
   // Revision (rPrChange)
   if (opts.revision) {
     const rev = opts.revision as RunPropertiesChangeOptions;
-    const { author: _a, date: _d, id: _i, ...originalProps } = rev;
+    const {
+      author: _a,
+      date: _d,
+      id: _i,
+      insertion,
+      deletion,
+      movedFrom,
+      movedTo,
+      ...originalProps
+    } = rev;
     const inner = stringifyRunPropertiesInner(originalProps as RunPropertiesOptions, scope);
     const date = rev.date ? ` w:date="${escapeXml(rev.date)}"` : "";
-    s += `<w:rPrChange w:author="${escapeXml(rev.author)}"${date} w:id="${rev.id ?? autoRevisionId(scope)}"><w:rPr>${inner ?? ""}</w:rPr></w:rPrChange>`;
+    const revisionAttrs = ({ id, author, date }: ChangedProperties) =>
+      ` w:id="${id ?? autoRevisionId(scope)}" w:author="${escapeXml(author)}"${date ? ` w:date="${escapeXml(String(date))}"` : ""}`;
+    const markers = [
+      insertion && `<w:ins${revisionAttrs(insertion)}/>`,
+      deletion && `<w:del${revisionAttrs(deletion)}/>`,
+      movedFrom && `<w:moveFrom${revisionAttrs(movedFrom)}/>`,
+      movedTo && `<w:moveTo${revisionAttrs(movedTo)}/>`,
+    ].filter(Boolean);
+    const originalXml = markers.join("") + (inner ?? "");
+    s += `<w:rPrChange w:author="${escapeXml(rev.author)}"${date} w:id="${rev.id ?? autoRevisionId(scope)}"><w:rPr>${originalXml}</w:rPr></w:rPrChange>`;
   }
 
   // w14:* text effects — typed emission first (EG_RPrTextEffects +

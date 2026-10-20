@@ -12,13 +12,20 @@ import {
   textOf,
   xmlElement,
 } from "@office-open/odf";
+import type { GraphicStyle } from "@office-open/odf";
 import type {
   CellOptions,
+  CellRangeSourceOptions,
   ColumnOptions,
   CommentOptions,
+  DetectiveHighlightedRangeOptions,
+  DetectiveOperationOptions,
+  DxfOptions,
   MergeCellOptions,
   RowOptions,
+  SelectionOptions,
   StyleOptions,
+  TableDetectiveOptions,
   WorksheetOptions,
 } from "@office-open/xlsx";
 import type { Element } from "@office-open/xml";
@@ -27,7 +34,13 @@ import { cellDecorationXml } from "./comments";
 import { cellGraphicXml, type OdsChartFrame } from "./drawing-chart";
 import { OdsParseError } from "./error";
 import { odfDateValue } from "./numbering";
-import { addCellStyle, addDimensionStyle, type DimensionStyle } from "./styles";
+import {
+  cellShapeXml,
+  conditionalFormatsXml,
+  parseDrawingShape,
+  tableProtectionXml,
+} from "./spreadsheet";
+import { addCellStyle, addDimensionStyle, addTableStyle, type DimensionStyle } from "./styles";
 import { assertElementNames, unknownOdsElement } from "./workbook";
 
 export const COLUMN_CONTAINERS = new Set([
@@ -45,6 +58,11 @@ export const ROW_CONTAINERS = new Set([
 const MAX_COLUMNS = 16384;
 const MAX_ROWS = 1048576;
 const MAX_MATERIALIZED_EMPTY_REPEATS = 100;
+
+type DetectiveHighlightedRangeDirection = Extract<
+  DetectiveHighlightedRangeOptions,
+  { direction: unknown }
+>["direction"];
 
 function repeatCount(
   element: Element,
@@ -88,7 +106,33 @@ export function worksheetXml(
   index: number,
   styles: string[],
   embeddedCharts: OdsChartFrame[],
+  localNamedExpressions = "",
+  validationNames = new Map<string, string>(),
+  dxfs: DxfOptions[] = [],
+  formsXml = "",
 ): string {
+  const conditionalStyleNames = new Map<number, string>();
+  for (const rule of (worksheet.conditionalFormats ?? []).flatMap((format) => format.rules)) {
+    const dxfId = rule.dxfId;
+    if (dxfId === undefined || conditionalStyleNames.has(dxfId)) continue;
+    const dxf = dxfs[dxfId];
+    if (!dxf) continue;
+    conditionalStyleNames.set(
+      dxfId,
+      addCellStyle(
+        {
+          font: dxf.font,
+          fill: dxf.fill,
+          border: dxf.border,
+          numFmt: typeof dxf.numFmt === "string" ? dxf.numFmt : dxf.numFmt?.formatCode,
+          alignment: dxf.alignment,
+          protection: dxf.protection,
+        },
+        styles,
+      ),
+    );
+  }
+  const tableSheetName = worksheet.name ?? `Sheet${index}`;
   const merges = (worksheet.mergeCells ?? []).flatMap((merge) => {
     const match = /^([A-Z]+)(\d+):([A-Z]+)(\d+)$/u.exec(merge.ref);
     if (!match) return [];
@@ -156,7 +200,11 @@ export function worksheetXml(
         return cellXml(
           cell,
           styles,
-          cellDecorationXml(worksheet, cell.reference ?? ""),
+          [
+            ...cellDecorationXml(worksheet, cell.reference ?? ""),
+            ...cellShapeXml(worksheet.shapes, cell.reference ?? "", styles),
+          ],
+          validationNames.get(`${tableSheetName}:${cell.reference ?? ""}`),
           start
             ? {
                 columnsSpanned: start.lastColumn - start.firstColumn + 1,
@@ -173,6 +221,20 @@ export function worksheetXml(
       : [xmlElement("table:table-row", undefined, [xmlElement("table:table-cell")])],
   );
   const sheetName = worksheet.name ?? `Sheet${index}`;
+  const tableStyleName =
+    worksheet.sheetView?.showFormulas !== undefined ||
+    worksheet.sheetView?.showRowColHeaders !== undefined ||
+    worksheet.state === "hidden"
+      ? addTableStyle(
+          {
+            hidden: worksheet.state === "hidden",
+            showFormulas: worksheet.sheetView?.showFormulas,
+            showColumnHeaders: worksheet.sheetView?.showRowColHeaders,
+            showRowHeaders: worksheet.sheetView?.showRowColHeaders,
+          },
+          styles,
+        )
+      : undefined;
   const frames = embeddedCharts
     .filter((entry) => entry.worksheet === sheetName)
     .map((entry) =>
@@ -206,11 +268,21 @@ export function worksheetXml(
         ],
       ),
     );
-  return xmlElement("table:table", { "table:name": sheetName }, [
-    ...(frames.length ? [xmlElement("table:shapes", undefined, frames)] : []),
-    columns,
-    rows,
-  ]);
+  const selectionXml = worksheet.selection?.length ? gnumericSelectionXml(worksheet.selection) : [];
+  return xmlElement(
+    "table:table",
+    { "table:name": sheetName, "table:style-name": tableStyleName },
+    [
+      formsXml,
+      ...(frames.length ? [xmlElement("table:shapes", undefined, frames)] : []),
+      tableProtectionXml(worksheet),
+      columns,
+      rows,
+      conditionalFormatsXml(worksheet.conditionalFormats ?? [], sheetName, conditionalStyleNames),
+      localNamedExpressions,
+      ...selectionXml,
+    ],
+  );
 }
 
 function concatenate(parts: readonly string[]): string {
@@ -231,6 +303,7 @@ export function cellXml(
   cell: CellOptions,
   styles: string[],
   decorations: string[] = [],
+  contentValidationName?: string,
   span?: { columnsSpanned: number; rowsSpanned: number },
 ): string {
   if (cell.covered) {
@@ -240,6 +313,7 @@ export function cellXml(
         "table:style-name":
           typeof cell.style === "object" ? addCellStyle(cell.style, styles) : undefined,
         "office:value-type": cell.covered.valueType,
+        "table:content-validation-name": contentValidationName,
       },
       cell.covered.text === undefined
         ? []
@@ -253,12 +327,22 @@ export function cellXml(
   let type = cached.type;
   if (valueKind === "time") type = "time";
   else if (valueKind === "currency") type = "currency";
+  const children = [
+    ...(cell.cellRangeSource ? [cellRangeSourceXml(cell.cellRangeSource)] : []),
+    ...decorations,
+    ...(cell.detective ? [tableDetectiveXml(cell.detective)] : []),
+    ...(cached.type === "string"
+      ? [xmlElement("text:p", undefined, [escapeText(String(cached.value ?? ""))])]
+      : []),
+    ...(cell.graphics ?? []).map((graphic) => cellGraphicXml(graphic)),
+  ];
   return xmlElement(
     "table:table-cell",
     {
       "table:style-name": styleOptions ? addCellStyle(styleOptions, styles) : undefined,
       "table:number-columns-spanned": span?.columnsSpanned,
       "table:number-rows-spanned": span?.rowsSpanned,
+      "table:content-validation-name": contentValidationName,
       "table:formula": formula ? `of:=${formula}` : undefined,
       "office:value-type": type,
       "office:value": cached.type === "float" ? cached.value : undefined,
@@ -271,14 +355,59 @@ export function cellXml(
       "office:boolean-value": cached.type === "boolean" ? cached.value : undefined,
       "office:date-value": cached.type === "date" ? cached.value : undefined,
     },
-    [
-      ...(cached.type === "string"
-        ? [xmlElement("text:p", undefined, [escapeText(String(cached.value ?? ""))])]
-        : []),
-      ...decorations,
-      ...(cell.graphics ?? []).map((graphic) => cellGraphicXml(graphic)),
-    ],
+    children,
   );
+}
+
+function cellRangeSourceXml(source: CellRangeSourceOptions): string {
+  return xmlElement("table:cell-range-source", {
+    "table:name": source.name,
+    "table:last-column-spanned": source.lastColumnSpanned,
+    "table:last-row-spanned": source.lastRowSpanned,
+    "xlink:type": "simple",
+    "xlink:href": source.href,
+    "xlink:actuate": source.actuate,
+    "table:filter-name": source.filterName,
+    "table:filter-options": source.filterOptions,
+    "table:refresh-delay": source.refreshDelay,
+  });
+}
+
+const HIGHLIGHT_DIRECTIONS: Record<DetectiveHighlightedRangeDirection, string> = {
+  fromAnotherTable: "from-another-table",
+  toAnotherTable: "to-another-table",
+  fromSameTable: "from-same-table",
+};
+
+const OPERATION_NAMES: Record<DetectiveOperationOptions["name"], string> = {
+  traceDependents: "trace-dependents",
+  removeDependents: "remove-dependents",
+  tracePrecedents: "trace-precedents",
+  removePrecedents: "remove-precedents",
+  traceErrors: "trace-errors",
+};
+
+function tableDetectiveXml(detective: TableDetectiveOptions): string {
+  return xmlElement("table:detective", undefined, [
+    ...(detective.highlightedRanges ?? []).map((range) =>
+      xmlElement(
+        "table:highlighted-range",
+        "markedInvalid" in range
+          ? { "table:marked-invalid": range.markedInvalid }
+          : {
+              "table:cell-range-address": range.cellRangeAddress,
+              "table:direction": HIGHLIGHT_DIRECTIONS[range.direction],
+              "table:contains-error": range.containsError,
+            },
+      ),
+    ),
+    ...(detective.operations ?? []).map((operation) =>
+      xmlElement("table:operation", {
+        "table:name": OPERATION_NAMES[operation.name],
+        "table:index": operation.index,
+      }),
+    ),
+  ]);
 }
 
 export function cacheAttributes(value: CellOptions["value"]): {
@@ -332,43 +461,165 @@ export function worksheet(
   index: number,
   dimensions: Map<string, DimensionStyle>,
   cellStyles: Map<string, StyleOptions>,
+  graphicStyles: Map<string, GraphicStyle> = new Map(),
 ): WorksheetOptions {
   const comments: CommentOptions[] = [];
   const mergeCells: MergeCellOptions[] = [];
+  const shapes: WorksheetOptions["shapes"] = [];
   validateTableChildren(table);
   const columns: ColumnOptions[] = [];
   let columnNumber = 1;
   for (const column of tableColumns(table)) {
-    const repeat = repeatCount(column, "table:number-columns-repeated", MAX_COLUMNS);
+    const repeat = repeatCount(column, "table:number-columns-repeated");
     const parsed = parseColumn(column, columnNumber, dimensions);
-    parsed.max = columnNumber + repeat - 1;
-    const previous = columns[columns.length - 1];
-    if (
-      previous &&
-      previous.max === columnNumber - 1 &&
-      previous.width === parsed.width &&
-      previous.hidden === parsed.hidden
-    ) {
-      previous.max = parsed.max;
-    } else {
-      columns.push(parsed);
+    const remainingColumns = MAX_COLUMNS - columnNumber + 1;
+    if (remainingColumns > 0) {
+      const visibleRepeat = Math.min(repeat, remainingColumns);
+      parsed.max = columnNumber + visibleRepeat - 1;
+      const previous = columns[columns.length - 1];
+      if (
+        previous &&
+        previous.max === columnNumber - 1 &&
+        previous.width === parsed.width &&
+        previous.hidden === parsed.hidden
+      ) {
+        previous.max = parsed.max;
+      } else {
+        columns.push(parsed);
+      }
     }
     columnNumber += repeat;
   }
-  const parsedRows = parseRows(table, dimensions, cellStyles, comments, mergeCells);
+  const parsedRows = parseRows(
+    table,
+    dimensions,
+    cellStyles,
+    graphicStyles,
+    comments,
+    mergeCells,
+    shapes,
+  );
+  const tableStyle = dimensions.get(attributeString(table, "table:style-name") ?? "");
+  const sheetView =
+    tableStyle?.showFormulas !== undefined || tableStyle?.showColumnHeaders !== undefined
+      ? {
+          ...(tableStyle?.showFormulas !== undefined
+            ? { showFormulas: tableStyle.showFormulas }
+            : {}),
+          ...(tableStyle?.showColumnHeaders !== undefined
+            ? { showRowColHeaders: tableStyle.showColumnHeaders }
+            : {}),
+        }
+      : undefined;
   const worksheetOptions: WorksheetOptions = {
     name: attributeString(table, "table:name") ?? `Sheet${index}`,
     ...(columns.length ? { columns } : {}),
+    ...(sheetView ? { sheetView } : {}),
+    ...(tableStyle?.hidden ? { state: "hidden" as const } : {}),
     ...(parsedRows.defaultRowHeight === undefined
       ? {}
       : { sheetFormat: { defaultRowHeight: parsedRows.defaultRowHeight } }),
     rows: parsedRows.rows,
   };
+  const selection = gnumericSelection(table);
   return {
     ...worksheetOptions,
+    ...(selection ? { selection } : {}),
     ...(comments.length ? { comments } : {}),
     ...(mergeCells.length ? { mergeCells } : {}),
+    ...(shapes?.length ? { shapes } : {}),
   };
+}
+
+function gnumericSelection(table: Element): SelectionOptions[] | undefined {
+  const container = childNamed(table, "gnm:selections");
+  if (!container) return undefined;
+  const cursorColumn = attributeNumber(container, "gnm:cursor-col") ?? 0;
+  const cursorRow = attributeNumber(container, "gnm:cursor-row") ?? 0;
+  const ranges = childrenNamed(container, "gnm:selection").map((selection) => {
+    const startColumn = (attributeNumber(selection, "gnm:start-col") ?? cursorColumn) + 1;
+    const startRow = (attributeNumber(selection, "gnm:start-row") ?? cursorRow) + 1;
+    const endColumn = (attributeNumber(selection, "gnm:end-col") ?? startColumn - 1) + 1;
+    const endRow = (attributeNumber(selection, "gnm:end-row") ?? startRow - 1) + 1;
+    return cellAddress(startColumn, startRow) === cellAddress(endColumn, endRow)
+      ? cellAddress(startColumn, startRow)
+      : `${cellAddress(startColumn, startRow)}:${cellAddress(endColumn, endRow)}`;
+  });
+  return [
+    {
+      activeCell: cellAddress(cursorColumn + 1, cursorRow + 1),
+      ...(ranges.length ? { sqref: ranges.join(" ") } : {}),
+    },
+  ];
+}
+
+type ParsedSelectionRange = {
+  startColumn: number;
+  startRow: number;
+  endColumn: number;
+  endRow: number;
+};
+
+function gnumericSelectionXml(selections: readonly SelectionOptions[]): string[] {
+  const selection = selections[0];
+  if (!selection) return [];
+  const active = parseCellReference(selection.activeCell);
+  const ranges: (ParsedSelectionRange | undefined)[] = (
+    selection.sqref ??
+    selection.activeCell ??
+    ""
+  )
+    .split(/\s+/u)
+    .filter(Boolean)
+    .map((range) => {
+      const [start, end = start] = range.split(":") as [string, string?];
+      const startCell = parseCellReference(start);
+      const endCell = parseCellReference(end);
+      if (!startCell || !endCell) return undefined;
+      return {
+        startColumn: startCell.column,
+        startRow: startCell.row,
+        endColumn: endCell.column,
+        endRow: endCell.row,
+      };
+    });
+  const firstRange = ranges[0];
+  const cursor =
+    active ??
+    (firstRange
+      ? {
+          column: firstRange.startColumn,
+          row: firstRange.startRow,
+        }
+      : undefined);
+  if (!cursor) return [];
+  return [
+    xmlElement(
+      "gnm:selections",
+      {
+        "gnm:cursor-col": cursor.column - 1,
+        "gnm:cursor-row": cursor.row - 1,
+      },
+      ranges
+        .filter((range): range is ParsedSelectionRange => range !== undefined)
+        .map((range) =>
+          xmlElement("gnm:selection", {
+            "gnm:start-col": range.startColumn - 1,
+            "gnm:start-row": range.startRow - 1,
+            "gnm:end-col": range.endColumn - 1,
+            "gnm:end-row": range.endRow - 1,
+          }),
+        ),
+    ),
+  ];
+}
+
+function parseCellReference(
+  reference: string | undefined,
+): { column: number; row: number } | undefined {
+  const match = /^([A-Z]+)(\d+)$/u.exec(reference ?? "");
+  if (!match) return undefined;
+  return { column: columnNumber(match[1]!), row: Number(match[2]!) };
 }
 
 export function validateTableChildren(table: Element): void {
@@ -379,6 +630,14 @@ export function validateTableChildren(table: Element): void {
       child.name === "table:table-row" ||
       child.name === "office:forms" ||
       child.name === "table:shapes" ||
+      child.name === "table:named-expressions" ||
+      child.name === "loext:table-protection" ||
+      child.name === "table:table-source" ||
+      child.name === "table:scenario" ||
+      child.name === "calcext:conditional-formats" ||
+      child.name === "calcext:sparkline-groups" ||
+      child.name === "table:detective" ||
+      child.name === "gnm:selections" ||
       child.name === "draw:frame" ||
       COLUMN_CONTAINERS.has(child.name) ||
       ROW_CONTAINERS.has(child.name)
@@ -423,15 +682,26 @@ function parseRows(
   table: Element,
   dimensions: Map<string, DimensionStyle>,
   cellStyles: Map<string, StyleOptions>,
+  graphicStyles: Map<string, GraphicStyle>,
   comments: CommentOptions[],
   mergeCells: MergeCellOptions[],
+  shapes: WorksheetOptions["shapes"],
 ): { rows: RowOptions[]; defaultRowHeight?: number } {
   const rows: RowOptions[] = [];
   let defaultRowHeight: number | undefined;
   let rowNumber = 1;
   for (const row of tableRows(table)) {
     const repeat = repeatCount(row, "table:number-rows-repeated");
-    const parsed = parseRow(row, rowNumber, dimensions, cellStyles, comments, mergeCells);
+    const parsed = parseRow(
+      row,
+      rowNumber,
+      dimensions,
+      cellStyles,
+      graphicStyles,
+      comments,
+      mergeCells,
+      shapes,
+    );
     const hasRowData = (parsed.cells ?? []).some(hasCellContent) || parsed.hidden === true;
     if (repeat > MAX_ROWS && hasRowData) {
       throw new OdsParseError(
@@ -493,8 +763,10 @@ export function parseRow(
   rowNumber: number,
   dimensions: Map<string, DimensionStyle>,
   cellStyles: Map<string, StyleOptions>,
+  graphicStyles: Map<string, GraphicStyle>,
   comments: CommentOptions[],
   mergeCells: MergeCellOptions[] = [],
+  shapes: WorksheetOptions["shapes"] = [],
 ): RowOptions {
   const style = dimensions.get(attributeString(row, "table:style-name") ?? "");
   const cellStartColumns: number[] = [];
@@ -517,7 +789,20 @@ export function parseRow(
         if (cell.name === "table:covered-table-cell") {
           assertElementNames(
             cell,
-            ["table:style-name", "office:value-type", "calcext:value-type"],
+            [
+              "table:style-name",
+              "office:value-type",
+              "calcext:value-type",
+              "table:number-columns-repeated",
+              "table:content-validation-name",
+              "table:formula",
+              "office:value",
+              "office:string-value",
+              "office:currency",
+              "office:date-value",
+              "office:boolean-value",
+              "office:time-value",
+            ],
             ["text:p"],
           );
           const coveredCell = {
@@ -612,6 +897,13 @@ export function parseRow(
               const image = childNamed(child, "draw:image");
               const href = attributeString(object ?? image, "xlink:href");
               const description = textOf(childNamed(child, "svg:desc"));
+              const updateNotification = childNamed(child, "loext:p");
+              const notifyOnUpdateOfRanges = attributeString(
+                updateNotification,
+                "draw:notify-on-update-of-ranges",
+              );
+              if (updateNotification)
+                assertElementNames(updateNotification, ["draw:notify-on-update-of-ranges"]);
               if (!href) {
                 throw unknownOdsElement(
                   child,
@@ -635,11 +927,12 @@ export function parseRow(
                   "table:end-y",
                   "draw:style-name",
                   "draw:text-style-name",
+                  "loext:p",
                   "xmlns:presentation",
                   "style:rel-width",
                   "style:rel-height",
                 ],
-                ["draw:image", "draw:object", "draw:object-ole", "svg:desc"],
+                ["loext:p", "draw:image", "draw:object", "draw:object-ole", "svg:desc"],
               );
               parsed.graphics = [
                 ...(parsed.graphics ?? []),
@@ -651,6 +944,7 @@ export function parseRow(
                         ? { name: attributeString(child, "draw:name") }
                         : {}),
                       ...(description ? { description } : {}),
+                      ...(notifyOnUpdateOfRanges === undefined ? {} : { notifyOnUpdateOfRanges }),
                       x: lengthToEmu(attributeString(child, "svg:x")),
                       y: lengthToEmu(attributeString(child, "svg:y")),
                       width: lengthToEmu(attributeString(child, "svg:width")),
@@ -691,6 +985,7 @@ export function parseRow(
                         ? { name: attributeString(child, "draw:name") }
                         : {}),
                       ...(description ? { description } : {}),
+                      ...(notifyOnUpdateOfRanges === undefined ? {} : { notifyOnUpdateOfRanges }),
                       x: lengthToEmu(attributeString(child, "svg:x")),
                       y: lengthToEmu(attributeString(child, "svg:y")),
                       width: lengthToEmu(attributeString(child, "svg:width")),
@@ -725,6 +1020,19 @@ export function parseRow(
                     },
               ];
             }
+            if (
+              child.name === "draw:rect" ||
+              child.name === "draw:control" ||
+              child.name === "draw:ellipse" ||
+              child.name === "draw:circle" ||
+              child.name === "draw:line" ||
+              child.name === "draw:measure" ||
+              child.name === "draw:polygon" ||
+              child.name === "draw:polyline" ||
+              child.name === "draw:custom-shape"
+            ) {
+              shapes?.push(parseDrawingShape(child, rowNumber, column, graphicStyles));
+            }
           }
           return parsed;
         });
@@ -748,8 +1056,8 @@ export function parseCell(
     !Number.isInteger(rowSpan) ||
     columnSpan < 1 ||
     rowSpan < 1 ||
-    column + columnSpan - 1 > MAX_COLUMNS ||
-    row + rowSpan - 1 > MAX_ROWS
+    columnSpan - 1 > Number.MAX_SAFE_INTEGER - column ||
+    rowSpan - 1 > Number.MAX_SAFE_INTEGER - row
   ) {
     throw new OdsParseError(
       "Invalid OpenDocument spreadsheet cell span",
@@ -767,7 +1075,23 @@ export function parseCell(
   for (const child of cell.elements ?? []) {
     if (
       child.type === "element" &&
-      !["text:p", "office:annotation", "draw:frame"].includes(child.name ?? "")
+      ![
+        "text:p",
+        "loext:p",
+        "office:annotation",
+        "table:cell-range-source",
+        "table:detective",
+        "draw:frame",
+        "draw:rect",
+        "draw:control",
+        "draw:ellipse",
+        "draw:circle",
+        "draw:line",
+        "draw:measure",
+        "draw:polygon",
+        "draw:polyline",
+        "draw:custom-shape",
+      ].includes(child.name ?? "")
     ) {
       throw unknownOdsElement(
         child,
@@ -777,6 +1101,10 @@ export function parseCell(
       );
     }
   }
+  const source = childNamed(cell, "table:cell-range-source");
+  if (source) result.cellRangeSource = parseCellRangeSource(source);
+  const detective = childNamed(cell, "table:detective");
+  if (detective) result.detective = parseTableDetective(detective);
   const style = cellStyles.get(attributeString(cell, "table:style-name") ?? "");
   if (style) result.style = style;
   const formula = attributeString(cell, "table:formula");
@@ -799,6 +1127,145 @@ export function parseCell(
     result.value = new Date(`${attributeString(cell, "office:date-value")}Z`);
   else if (valueType === "string") result.value = textOf(childNamed(cell, "text:p"));
   return result;
+}
+
+function parseCellRangeSource(source: Element): CellRangeSourceOptions {
+  assertElementNames(source, [
+    "table:name",
+    "table:last-column-spanned",
+    "table:last-row-spanned",
+    "xlink:type",
+    "xlink:href",
+    "xlink:actuate",
+    "table:filter-name",
+    "table:filter-options",
+    "table:refresh-delay",
+  ]);
+  const name = attributeString(source, "table:name");
+  const lastColumnSpanned = attributeNumber(source, "table:last-column-spanned");
+  const lastRowSpanned = attributeNumber(source, "table:last-row-spanned");
+  const href = attributeString(source, "xlink:href");
+  if (
+    !name ||
+    !lastColumnSpanned ||
+    !lastRowSpanned ||
+    href === undefined ||
+    attributeString(source, "xlink:type") !== "simple"
+  ) {
+    throw unknownOdsElement(
+      source,
+      "office:body/office:spreadsheet/table:table-cell",
+      source.name ?? "",
+      "invalid linked cell range",
+    );
+  }
+  return {
+    name,
+    lastColumnSpanned,
+    lastRowSpanned,
+    href,
+    ...(attributeString(source, "xlink:actuate") === "onRequest"
+      ? { actuate: "onRequest" as const }
+      : {}),
+    ...(attributeString(source, "table:filter-name")
+      ? { filterName: attributeString(source, "table:filter-name") }
+      : {}),
+    ...(attributeString(source, "table:filter-options")
+      ? { filterOptions: attributeString(source, "table:filter-options") }
+      : {}),
+    ...(attributeString(source, "table:refresh-delay")
+      ? { refreshDelay: attributeString(source, "table:refresh-delay") }
+      : {}),
+  };
+}
+
+const HIGHLIGHT_DIRECTION_VALUES: Record<string, DetectiveHighlightedRangeDirection> = {
+  "from-another-table": "fromAnotherTable",
+  "to-another-table": "toAnotherTable",
+  "from-same-table": "fromSameTable",
+};
+
+const OPERATION_NAME_VALUES: Record<string, DetectiveOperationOptions["name"]> = {
+  "trace-dependents": "traceDependents",
+  "remove-dependents": "removeDependents",
+  "trace-precedents": "tracePrecedents",
+  "remove-precedents": "removePrecedents",
+  "trace-errors": "traceErrors",
+};
+
+function parseTableDetective(detective: Element): TableDetectiveOptions {
+  assertElementNames(detective, [], ["table:highlighted-range", "table:operation"]);
+  const highlightedRanges = childrenNamed(detective, "table:highlighted-range").map(
+    (range): DetectiveHighlightedRangeOptions => {
+      assertElementNames(range, [
+        "table:cell-range-address",
+        "table:direction",
+        "table:contains-error",
+        "table:marked-invalid",
+      ]);
+      const direction = HIGHLIGHT_DIRECTION_VALUES[attributeString(range, "table:direction") ?? ""];
+      const markedInvalid = attributeString(range, "table:marked-invalid");
+      if (markedInvalid !== undefined) {
+        if (
+          direction ||
+          markedInvalid === undefined ||
+          !["true", "false"].includes(markedInvalid)
+        ) {
+          throw unknownOdsElement(
+            range,
+            "office:body/office:spreadsheet/table:table-cell/table:detective",
+            range.name ?? "",
+            "invalid highlighted range",
+          );
+        }
+        return { markedInvalid: markedInvalid === "true" };
+      }
+      if (!direction) {
+        throw unknownOdsElement(
+          range,
+          "office:body/office:spreadsheet/table:table-cell/table:detective",
+          range.name ?? "",
+          "highlight direction is required",
+        );
+      }
+      const containsError = attributeString(range, "table:contains-error");
+      if (containsError !== undefined && !["true", "false"].includes(containsError)) {
+        throw unknownOdsElement(
+          range,
+          "office:body/office:spreadsheet/table:table-cell/table:detective",
+          range.name ?? "",
+          "invalid contains-error value",
+        );
+      }
+      return {
+        ...(attributeString(range, "table:cell-range-address")
+          ? { cellRangeAddress: attributeString(range, "table:cell-range-address") }
+          : {}),
+        direction,
+        ...(containsError !== undefined ? { containsError: containsError === "true" } : {}),
+      };
+    },
+  );
+  const operations = childrenNamed(detective, "table:operation").map(
+    (operation): DetectiveOperationOptions => {
+      assertElementNames(operation, ["table:name", "table:index"]);
+      const name = OPERATION_NAME_VALUES[attributeString(operation, "table:name") ?? ""];
+      const index = attributeNumber(operation, "table:index");
+      if (!name || index === undefined || !Number.isInteger(index) || index < 0) {
+        throw unknownOdsElement(
+          operation,
+          "office:body/office:spreadsheet/table:table-cell/table:detective",
+          operation.name ?? "",
+          "invalid detective operation",
+        );
+      }
+      return { name, index };
+    },
+  );
+  return {
+    ...(highlightedRanges.length ? { highlightedRanges } : {}),
+    ...(operations.length ? { operations } : {}),
+  };
 }
 
 export function columnName(column: number): string {

@@ -187,7 +187,7 @@ export function toDocxShapeParts(source: PptxShapeOptions | XlsxShapeOptions): D
       spPr.flipHorizontal,
       spPr.flipVertical,
     );
-    const preset = toPresetGeometry(spPr.geometry);
+    const preset = toPresetGeometry(spPr.geometry ?? undefined);
     return {
       data: {
         children: source.textBody ? textBodyToDocxChildren(source.textBody) : [],
@@ -209,7 +209,7 @@ export function toDocxShapeParts(source: PptxShapeOptions | XlsxShapeOptions): D
     source.rotation,
     source.flipHorizontal,
   );
-  const preset = toPresetGeometry(spPr.geometry);
+  const preset = toPresetGeometry(spPr.geometry ?? undefined);
   return {
     data: {
       children: source.textBody ? textBodyToDocxChildren(source.textBody) : [],

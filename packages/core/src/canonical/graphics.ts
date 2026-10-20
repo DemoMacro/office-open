@@ -20,6 +20,8 @@ export interface CellImageGraphicOptions {
   styleName?: string;
   /** Text style reference for labels attached to the frame. */
   textStyleName?: string;
+  /** ODF cell ranges that request update notifications for this image frame. */
+  notifyOnUpdateOfRanges?: string;
   /** Relative frame width from the package style system. */
   relativeWidth?: string;
   /** Relative frame height from the package style system. */
@@ -60,6 +62,8 @@ export interface CellObjectGraphicOptions {
   styleName?: string;
   /** Text style reference for labels attached to the frame. */
   textStyleName?: string;
+  /** ODF cell ranges that request update notifications for this object frame. */
+  notifyOnUpdateOfRanges?: string;
   /** Relative frame width from the package style system. */
   relativeWidth?: string;
   /** Relative frame height from the package style system. */

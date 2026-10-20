@@ -102,9 +102,10 @@ function stringifyPresentation(
   // sldMasterIdLst
   parts.push("<p:sldMasterIdLst>");
   for (let mi = 0; mi < opts.masterCount; mi++) {
-    parts.push(
-      `<p:sldMasterId id="${opts.masterIds?.[mi] ?? 2147483648 + mi * 12}" r:id="rId${mi + 1}"/>`,
-    );
+    const masterId =
+      opts.masterIds?.[mi] === undefined ? 2147483648 + mi * 12 : opts.masterIds[mi]!;
+    const masterIdAttr = masterId === null ? "" : ` id="${masterId}"`;
+    parts.push(`<p:sldMasterId${masterIdAttr} r:id="rId${mi + 1}"/>`);
   }
   parts.push("</p:sldMasterIdLst>");
 
@@ -280,10 +281,9 @@ function stringifyPresentation(
       const ids = sec.slideIndices
         .map((idx) => opts.slideIds[idx])
         .filter((id): id is number => id !== undefined);
-      if (ids.length === 0) continue;
       const sldIds = ids.map((id) => `<p14:sldId id="${id}"/>`).join("");
       sectionXml.push(
-        `<p14:section name="${escapeXml(sec.name)}" id="{${(reproducible?.nextUuid() ?? uniqueUuid()).toUpperCase()}}"><p14:sldIdLst>${sldIds}</p14:sldIdLst></p14:section>`,
+        `<p14:section name="${escapeXml(sec.name)}" id="{${sec.id ?? (reproducible?.nextUuid() ?? uniqueUuid()).toUpperCase()}}"><p14:sldIdLst>${sldIds}</p14:sldIdLst></p14:section>`,
       );
     }
     if (sectionXml.length > 0) {
@@ -376,12 +376,12 @@ function parsePresentation(el: XmlElement): PresentationPartOptions {
   const sldMasterIdLst = findChild(el, "p:sldMasterIdLst");
   if (sldMasterIdLst) {
     let masterCount = 0;
-    const masterIds: number[] = [];
+    const masterIds: (number | null)[] = [];
     for (const child of sldMasterIdLst.elements ?? []) {
       if (child.name !== "p:sldMasterId") continue;
       masterCount++;
       const id = attrNum(child, "id");
-      if (id !== undefined) masterIds.push(id);
+      masterIds.push(id ?? null);
     }
     result.masterCount = masterCount;
     if (masterIds.length > 0) result.masterIds = masterIds;

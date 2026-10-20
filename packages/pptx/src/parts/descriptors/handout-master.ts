@@ -6,7 +6,8 @@
 
 import { parseColorMapping, stringifyColorMapping } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
-import { findChild, stringify } from "@office-open/xml";
+import { parseBlackWhiteMode, parseNonVisualDrawingProperties } from "@office-open/core/drawing";
+import { attrNum, findChild, stringify } from "@office-open/xml";
 import { buildHfAttrs, buildHandoutMasterXml, parseHeaderFooter } from "@parts/handout-master";
 import type { HandoutMasterOptions } from "@parts/handout-master";
 import { NS } from "@parts/slide-layout";
@@ -34,15 +35,31 @@ export const handoutMasterDesc: CustomDescriptor<HandoutMasterDescriptorOptions,
     stringify(opts, ctx) {
       // A parsed source carries its spTree shapes; a fresh one keeps the
       // minimal Office default.
-      if (opts.options?.children?.length) {
+      if (
+        opts.options?.children?.length ||
+        opts.options?.ext !== undefined ||
+        opts.options?.shapeTreeId !== undefined ||
+        opts.options?.shapeTreeName !== undefined ||
+        opts.options?.shapeTreeCreationId !== undefined ||
+        opts.options?.shapeTreeExt !== undefined
+      ) {
         const parts: string[] = [];
         parts.push(`<p:handoutMaster ${NS}>`);
         parts.push("<p:cSld>");
         parts.push(buildBackgroundXml(opts.options.background, ctx));
         parts.push("<p:spTree>");
-        parts.push(stringifySpTreeHeader(1, "", opts.options.shapeTreeBlackWhiteMode));
+        parts.push(
+          stringifySpTreeHeader(
+            opts.options.shapeTreeId,
+            opts.options.shapeTreeName,
+            opts.options.shapeTreeBlackWhiteMode,
+            opts.options.groupTransformless,
+            opts.options.shapeTreeCreationId,
+            opts.options.shapeTreeExt,
+          ),
+        );
         let childId = 100;
-        for (const child of opts.options.children) {
+        for (const child of opts.options.children ?? []) {
           const xml = stringifyChild(withChildId(child, childId++), ctx);
           if (xml) parts.push(xml);
         }
@@ -72,10 +89,24 @@ export const handoutMasterDesc: CustomDescriptor<HandoutMasterDescriptorOptions,
 
         const spTree = findChild(cSld, "p:spTree");
         if (spTree) {
-          const blackWhiteMode = findChild(spTree, "p:grpSpPr")?.attributes?.["bwMode"];
+          const groupProperties = findChild(spTree, "p:grpSpPr");
+          if (groupProperties && findChild(groupProperties, "a:xfrm") === undefined) {
+            options.groupTransformless = true;
+          }
+          const blackWhiteMode = groupProperties?.attributes?.["bwMode"];
           if (blackWhiteMode !== undefined)
-            options.shapeTreeBlackWhiteMode =
-              blackWhiteMode as HandoutMasterOptions["shapeTreeBlackWhiteMode"];
+            options.shapeTreeBlackWhiteMode = parseBlackWhiteMode(blackWhiteMode);
+          const nvGrpSpPr = findChild(spTree, "p:nvGrpSpPr");
+          const rootCnvPr = nvGrpSpPr ? findChild(nvGrpSpPr, "p:cNvPr") : undefined;
+          const rootProperties = parseNonVisualDrawingProperties(rootCnvPr);
+          if (rootCnvPr) {
+            const shapeTreeId = attrNum(rootCnvPr, "id");
+            if (shapeTreeId !== undefined) options.shapeTreeId = shapeTreeId;
+            if (rootProperties.name !== undefined) options.shapeTreeName = rootProperties.name;
+            if (rootProperties.creationId !== undefined)
+              options.shapeTreeCreationId = rootProperties.creationId;
+            if (rootProperties.ext !== undefined) options.shapeTreeExt = rootProperties.ext;
+          }
           const children: SlideChild[] = [];
           for (const child of spTree.elements ?? []) {
             if (child.name === "p:nvGrpSpPr" || child.name === "p:grpSpPr") continue;

@@ -23,6 +23,7 @@ export interface ChartData {
     relationshipId: string;
     fileName: string;
     data: DataType;
+    relationshipType?: "oleObject" | "package";
   };
   /**
    * User-shapes part behind c:userShapes (both directions). The compiler
@@ -31,7 +32,11 @@ export interface ChartData {
   userShapes?: {
     relationshipId: string;
     xml: string;
+    /** Zero-byte source parts carry a valid relationship but no XML body. */
+    empty?: boolean;
     path?: string;
+    /** Source relationship target; preserved so producers keep relative spelling. */
+    sourceTarget?: string;
   };
 
   /** Chart-owned themeOverride part parsed as a typed core theme model. */

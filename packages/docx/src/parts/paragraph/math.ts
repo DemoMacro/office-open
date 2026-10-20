@@ -90,10 +90,16 @@ export interface MathNaryProperties {
   limitLocation?: MathNaryLimitLocation;
   /** Whether the operator grows to content height (m:grow). */
   grow?: boolean;
+  /** Source `m:grow/@m:val`; null means a source-omitted attribute. */
+  growRaw?: string | null;
   /** Hide the subscript placeholder (m:subHide). */
   hideSubscript?: boolean;
+  /** Source `m:subHide/@m:val`; null means a source-omitted attribute. */
+  hideSubscriptRaw?: string | null;
   /** Hide the superscript placeholder (m:supHide). */
   hideSuperscript?: boolean;
+  /** Source `m:supHide/@m:val`; null means a source-omitted attribute. */
+  hideSuperscriptRaw?: string | null;
 }
 
 /** Matrix column justification (one m:mc entry inside m:mcs). */

@@ -113,10 +113,10 @@ export interface TextInputOptions {
  * Help or status text options.
  */
 export interface FormFieldTextOptions {
-  /** Text type: "text" for custom text, "autoText" for auto text reference */
-  type: "text" | "autoText";
-  /** The text value */
-  value: string;
+  /** Text type: "text" for custom text, "autoText" for auto text reference. */
+  type?: "text" | "autoText";
+  /** Text value; omitted when the source attribute is absent. */
+  value?: string;
 }
 
 /**
@@ -164,7 +164,9 @@ const valElement = (name: string, val: string | number): string => `<${name} w:v
  * Creates a help or status text element.
  */
 const createFormFieldText = (name: string, options: FormFieldTextOptions): string =>
-  `<${name} w:type="${options.type}" w:val="${options.value}"/>`;
+  `<${name}${options.type !== undefined ? ` w:type="${options.type}"` : ""}${
+    options.value !== undefined ? ` w:val="${options.value}"` : ""
+  }/>`;
 
 /**
  * Creates a checkbox form field element (w:checkBox).
@@ -178,11 +180,8 @@ const createCheckBox = (options: CheckBoxOptions): string => {
     children.push(`<w:sizeAuto/>`);
   }
 
-  // <w:default> is the reset/initial state Word renders the box in. Word will
-  // not render the box without it, so derive it from `checked` when omitted.
-  const defaultVal = options.default ?? options.checked;
-  if (defaultVal !== undefined) {
-    children.push(defaultVal ? `<w:default/>` : `<w:default w:val="0"/>`);
+  if (options.default !== undefined) {
+    children.push(options.default ? `<w:default/>` : `<w:default w:val="0"/>`);
   }
   if (options.checked !== undefined) {
     children.push(options.checked ? `<w:checked/>` : `<w:checked w:val="0"/>`);
@@ -293,13 +292,12 @@ export const createFormFieldData = (options: FormFieldOptions): string => {
   if (options.tabIndex !== undefined) {
     children.push(valElement("w:tabIndex", options.tabIndex));
   }
-  // Word requires an explicit <w:enabled/> to render the field; default true.
-  // (Previously emitted a val-less tag even for enabled:false, which is "true".)
-  const enabled = options.enabled ?? true;
-  children.push(enabled ? `<w:enabled/>` : `<w:enabled w:val="0"/>`);
-  // <w:calcOnExit> defaults to false (Word's standard).
-  const calcOnExit = options.calcOnExit ?? false;
-  children.push(calcOnExit ? `<w:calcOnExit/>` : `<w:calcOnExit w:val="0"/>`);
+  if (options.enabled !== undefined) {
+    children.push(options.enabled ? `<w:enabled/>` : `<w:enabled w:val="0"/>`);
+  }
+  if (options.calcOnExit !== undefined) {
+    children.push(options.calcOnExit ? `<w:calcOnExit/>` : `<w:calcOnExit w:val="0"/>`);
+  }
   if (options.entryMacro !== undefined) {
     children.push(valElement("w:entryMacro", options.entryMacro));
   }
@@ -351,6 +349,30 @@ export function parseFormFieldData(el: Element): FormFieldOptions {
   if (enabled) opts.enabled = attrBool(enabled, "w:val") ?? true;
   const calcOnExit = findChild(el, "w:calcOnExit");
   if (calcOnExit) opts.calcOnExit = attrBool(calcOnExit, "w:val") ?? true;
+  const entryMacro = findChild(el, "w:entryMacro");
+  const entryMacroName = entryMacro ? attr(entryMacro, "w:val") : undefined;
+  if (entryMacroName !== undefined) opts.entryMacro = entryMacroName;
+  const exitMacro = findChild(el, "w:exitMacro");
+  const exitMacroName = exitMacro ? attr(exitMacro, "w:val") : undefined;
+  if (exitMacroName !== undefined) opts.exitMacro = exitMacroName;
+  const helpText = findChild(el, "w:helpText");
+  if (helpText) {
+    const type = attr(helpText, "w:type");
+    const value = attr(helpText, "w:val");
+    opts.helpText = {
+      ...(type !== undefined ? { type: type as FormFieldTextOptions["type"] } : {}),
+      ...(value !== undefined ? { value } : {}),
+    };
+  }
+  const statusText = findChild(el, "w:statusText");
+  if (statusText) {
+    const type = attr(statusText, "w:type");
+    const value = attr(statusText, "w:val");
+    opts.statusText = {
+      ...(type !== undefined ? { type: type as FormFieldTextOptions["type"] } : {}),
+      ...(value !== undefined ? { value } : {}),
+    };
+  }
 
   const checkBox = findChild(el, "w:checkBox");
   if (checkBox) {

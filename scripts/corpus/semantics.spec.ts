@@ -1,7 +1,7 @@
+import { parseArchive } from "@office-open/core/opc";
 import { zipSync } from "fflate";
 import { describe, expect, it } from "vitest";
 
-import { parseArchive } from "../../packages/core/dist/index.mjs";
 import { encryptedPassthroughMatches, isEncryptedPassthrough } from "./library";
 import {
   archiveSemanticDiffDetails,
@@ -13,6 +13,7 @@ import {
   explainSemanticPartDiff,
   parseCanonicalXml,
   primaryPackagePart,
+  validatePrimaryPackagePart,
 } from "./semantics";
 
 function zip(files: Record<string, string | Uint8Array>): Uint8Array {
@@ -27,6 +28,192 @@ function zip(files: Record<string, string | Uint8Array>): Uint8Array {
 }
 
 describe("corpus semantic comparison", () => {
+  it("normalizes omitted CT_OnOff values to semantic true", () => {
+    const xml = (value?: string): string =>
+      `<w:rPr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">` +
+      `<w:smallCaps${value ?? ""}/></w:rPr>`;
+    const source = parseCanonicalXml(xml());
+    const output = parseCanonicalXml(xml(' w:val="on"'));
+
+    expect(canonicalXmlNodes(source, "word/document.xml")).toEqual(
+      canonicalXmlNodes(output, "word/document.xml"),
+    );
+  });
+
+  it("normalizes omitted Math CT_OnOff values to semantic true", () => {
+    const xml = (value?: string): string =>
+      `<m:rPr xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math">` +
+      `<m:nor${value ?? ""}/></m:rPr>`;
+    const source = parseCanonicalXml(xml());
+    const output = parseCanonicalXml(xml(' m:val="1"'));
+
+    expect(canonicalXmlNodes(source, "word/document.xml")).toEqual(
+      canonicalXmlNodes(output, "word/document.xml"),
+    );
+  });
+
+  it("normalizes empty CT_OnOff values tolerated by producers", () => {
+    const xml = (value?: string): string =>
+      `<w:rPr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">` +
+      `<w:docPartUnique${value ?? ""}/></w:rPr>`;
+    const source = parseCanonicalXml(xml(' w:val=""'));
+    const output = parseCanonicalXml(xml());
+
+    expect(canonicalXmlNodes(source, "word/document.xml")).toEqual(
+      canonicalXmlNodes(output, "word/document.xml"),
+    );
+  });
+
+  it("normalizes schema-ordered border containers after tolerant parsing", () => {
+    const source = new TextEncoder().encode(
+      '<w:pPr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+        '<w:pBdr><w:bottom w:val="single"/><w:top w:val="single"/></w:pBdr></w:pPr>',
+    );
+    const output = new TextEncoder().encode(
+      '<w:pPr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+        '<w:pBdr><w:top w:val="single"/><w:bottom w:val="single"/></w:pBdr></w:pPr>',
+    );
+
+    expect(explainSemanticPartDiff("word/document.xml", source, output)).toEqual([]);
+  });
+
+  it("ignores schema-invalid direct document-default properties", () => {
+    const source = new TextEncoder().encode(
+      '<w:docDefaults xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+        '<w:pPrDefault><w:pPr/><w:shd w:val="clear" w:color="auto" w:fill="FFCCCC"/>' +
+        "</w:pPrDefault>" +
+        '<w:rPrDefault><w:rPr/><w:color w:val="FF0000"/></w:rPrDefault>' +
+        "</w:docDefaults>",
+    );
+    const output = new TextEncoder().encode(
+      '<w:docDefaults xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+        "<w:pPrDefault><w:pPr/></w:pPrDefault><w:rPrDefault><w:rPr/></w:rPrDefault>" +
+        "</w:docDefaults>",
+    );
+
+    expect(explainSemanticPartDiff("word/styles.xml", source, output)).toEqual([]);
+  });
+
+  it("keeps the first schema-invalid duplicate table cell margin", () => {
+    const source = new TextEncoder().encode(
+      '<w:tblCellMar xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+        '<w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/>' +
+        '<w:bottom w:w="0" w:type="dxa"/><w:left w:w="400" w:type="dxa"/>' +
+        "</w:tblCellMar>",
+    );
+    const output = new TextEncoder().encode(
+      '<w:tblCellMar xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+        '<w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/>' +
+        '<w:bottom w:w="0" w:type="dxa"/></w:tblCellMar>',
+    );
+
+    expect(explainSemanticPartDiff("word/styles.xml", source, output)).toEqual([]);
+  });
+
+  it("normalizes schema-invalid nested runs from legacy text boxes", () => {
+    const namespace = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"';
+    const source = parseCanonicalXml(
+      `<w:r ${namespace}><w:r><w:rPr><w:i/></w:rPr><w:t>Test</w:t></w:r></w:r>`,
+    );
+    const output = parseCanonicalXml(
+      `<w:r ${namespace}><w:rPr><w:i/></w:rPr><w:t>Test</w:t></w:r>`,
+    );
+
+    expect(canonicalXmlNodes(source, "word/document.xml")).toEqual(
+      canonicalXmlNodes(output, "word/document.xml"),
+    );
+  });
+
+  it("keeps the first duplicate docPartObj gallery and unique flag", () => {
+    const namespace = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"';
+    const source = parseCanonicalXml(
+      `<w:docPartObj ${namespace}><w:docPartGallery w:val="First"/>` +
+        '<w:docPartUnique w:val=""/><w:docPartGallery w:val="Second"/>' +
+        '<w:docPartUnique w:val=""/></w:docPartObj>',
+    );
+    const output = parseCanonicalXml(
+      `<w:docPartObj ${namespace}><w:docPartGallery w:val="First"/><w:docPartUnique/></w:docPartObj>`,
+    );
+
+    expect(canonicalXmlNodes(source, "word/document.xml")).toEqual(
+      canonicalXmlNodes(output, "word/document.xml"),
+    );
+  });
+
+  it("normalizes paragraph-property order, legacy indents, and text spacing", () => {
+    const source = new TextEncoder().encode(
+      '<w:pPr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+        '<w:spacing w:after="0"/><w:ind left="240"/></w:pPr>',
+    );
+    const output = new TextEncoder().encode(
+      '<w:pPr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+        '<w:ind w:left="240"/><w:spacing w:after="0"/></w:pPr>',
+    );
+    expect(explainSemanticPartDiff("word/styles.xml", source, output)).toEqual([]);
+
+    const textSource = new TextEncoder().encode(
+      '<w:r xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:t> x </w:t></w:r>',
+    );
+    const textOutput = new TextEncoder().encode(
+      '<w:r xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+        '<w:t xml:space="preserve"> x </w:t></w:r>',
+    );
+    expect(explainSemanticPartDiff("word/document.xml", textSource, textOutput)).toEqual([]);
+
+    const whitespaceSource = new TextEncoder().encode(
+      '<w:r xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:t>  </w:t></w:r>',
+    );
+    const whitespaceOutput = new TextEncoder().encode(
+      '<w:r xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+        '<w:t xml:space="preserve">  </w:t></w:r>',
+    );
+    expect(
+      explainSemanticPartDiff("word/document.xml", whitespaceSource, whitespaceOutput),
+    ).toEqual([]);
+  });
+
+  it("normalizes percentage table widths to fiftieths of a percent", () => {
+    const source = new TextEncoder().encode(
+      '<w:tblPr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+        '<w:tblW w:w="9%" w:type="pct"/></w:tblPr>',
+    );
+    const output = new TextEncoder().encode(
+      '<w:tblPr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+        '<w:tblW w:w="450" w:type="pct"/></w:tblPr>',
+    );
+    expect(explainSemanticPartDiff("word/document.xml", source, output)).toEqual([]);
+  });
+
+  it("normalizes universal-measure anchor coordinates to EMU", () => {
+    const anchor = (position: string): Uint8Array =>
+      new TextEncoder().encode(
+        '<w:p xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" ' +
+          'xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing">' +
+          `<w:drawing><wp:anchor simplePos="1">${position}</wp:anchor></w:drawing></w:p>`,
+      );
+    const source = anchor('<wp:simplePos x="10cm" y="5cm"/>');
+    const output = anchor('<wp:simplePos x="3600000" y="1800000"/>');
+
+    expect(explainSemanticPartDiff("word/document.xml", source, output)).toEqual([]);
+  });
+
+  it("normalizes universal-measure shape transforms to EMU", () => {
+    const transform = (geometry: string): Uint8Array =>
+      new TextEncoder().encode(
+        '<pic:spPr xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture" ' +
+          'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">' +
+          `${geometry}<a:prstGeom prst="rect"/></pic:spPr>`,
+      );
+    const source = transform(
+      '<a:xfrm><a:off x="2cm" y="1cm"/><a:ext cx="25.4mm" cy="12.7mm"/></a:xfrm>',
+    );
+    const output = transform(
+      '<a:xfrm><a:off x="720000" y="360000"/><a:ext cx="914400" cy="457200"/></a:xfrm>',
+    );
+
+    expect(explainSemanticPartDiff("word/document.xml", source, output)).toEqual([]);
+  });
+
   it("compares encrypted containers as opaque passthrough payloads", () => {
     const data = new Uint8Array([0xd0, 0xcf, 0x11, 0xe0, 1, 2, 3]);
     const options = { encrypted: { data } };
@@ -52,6 +239,41 @@ describe("corpus semantic comparison", () => {
     expect(canonicalXmlNodes(source, "docProps/app.xml")).toEqual(
       canonicalXmlNodes(output, "docProps/app.xml"),
     );
+  });
+
+  it("normalizes schema-all glossary properties and legacy customization order", () => {
+    const source = new TextEncoder().encode(
+      '<w:docPartPr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+        '<w:guid value="1"/><w:category/><w:name value="A"/></w:docPartPr>',
+    );
+    const output = new TextEncoder().encode(
+      '<w:docPartPr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+        '<w:name value="A"/><w:category/><w:guid value="1"/></w:docPartPr>',
+    );
+    expect(explainSemanticPartDiff("word/glossary/document.xml", source, output)).toEqual([]);
+
+    const wne = "http://schemas.microsoft.com/office/word/2006/wordml";
+    const customizationSource = new TextEncoder().encode(
+      `<wne:tcg xmlns:wne="${wne}"><wne:acds/><wne:toolbars/><wne:keymaps/></wne:tcg>`,
+    );
+    const customizationOutput = new TextEncoder().encode(
+      `<wne:tcg xmlns:wne="${wne}"><wne:keymaps/><wne:toolbars/><wne:acds/></wne:tcg>`,
+    );
+    expect(
+      explainSemanticPartDiff("word/customizations.xml", customizationSource, customizationOutput),
+    ).toEqual([]);
+  });
+
+  it("folds duplicate cell-properties containers with last-one-wins", () => {
+    const namespace = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
+    const source = new TextEncoder().encode(
+      `<w:tc xmlns:w="${namespace}"><w:tcPr><w:tcW w:w="100" w:type="dxa"/></w:tcPr>` +
+        '<w:tcPr><w:tcW w:w="200" w:type="dxa"/></w:tcPr></w:tc>',
+    );
+    const output = new TextEncoder().encode(
+      `<w:tc xmlns:w="${namespace}"><w:tcPr><w:tcW w:w="200" w:type="dxa"/></w:tcPr></w:tc>`,
+    );
+    expect(explainSemanticPartDiff("word/document.xml", source, output)).toEqual([]);
   });
 
   it("normalizes strict relationship URIs to transitional equivalents", () => {
@@ -81,6 +303,32 @@ describe("corpus semantic comparison", () => {
     expect(explainSemanticPartDiff("xl/sharedStrings.xml", source, output)).toEqual([]);
   });
 
+  it("normalizes schema-invalid chart producer order and advisory formula spacing", () => {
+    const source = parseCanonicalXml('<c:title xmlns:c="urn:c"><c:overlay/><c:tx/></c:title>');
+    const output = parseCanonicalXml('<c:title xmlns:c="urn:c"><c:tx/><c:overlay/></c:title>');
+    expect(canonicalXmlNodes(source, "xl/charts/chart1.xml")).toEqual(
+      canonicalXmlNodes(output, "xl/charts/chart1.xml"),
+    );
+
+    const labelsSource = parseCanonicalXml(
+      '<c:dLbls xmlns:c="urn:c"><c:dLblPos val="ctr"/><c:leaderLines/><c:showVal val="1"/></c:dLbls>',
+    );
+    const labelsOutput = parseCanonicalXml(
+      '<c:dLbls xmlns:c="urn:c"><c:dLblPos val="ctr"/><c:showVal val="1"/><c:leaderLines/></c:dLbls>',
+    );
+    expect(canonicalXmlNodes(labelsSource, "xl/charts/chart1.xml")).toEqual(
+      canonicalXmlNodes(labelsOutput, "xl/charts/chart1.xml"),
+    );
+
+    const formulaSource = parseCanonicalXml(
+      '<c:f xmlns:c="urn:c" xmlns:xml="http://www.w3.org/XML/1998/namespace" xml:space="preserve">A</c:f>',
+    );
+    const formulaOutput = parseCanonicalXml('<c:f xmlns:c="urn:c">A</c:f>');
+    expect(canonicalXmlNodes(formulaSource, "xl/charts/chart1.xml")).toEqual(
+      canonicalXmlNodes(formulaOutput, "xl/charts/chart1.xml"),
+    );
+  });
+
   it("normalizes legacy CT_Color type/value lexemes", () => {
     const source = new TextEncoder().encode(
       '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
@@ -94,6 +342,35 @@ describe("corpus semantic comparison", () => {
         '<fonts><font><color theme="1"/><color rgb="FF112233"/><color indexed="9"/></font>' +
         '<fills><fill><pattern patternType="solid"><fgColor theme="3" tint="0.5"/>' +
         '<bgColor indexed="65"/></pattern></fill></fills></styleSheet>',
+    );
+    expect(explainSemanticPartDiff("xl/styles.xml", source, output)).toEqual([]);
+  });
+
+  it("ignores container whitespace even when xml:space is preserve", () => {
+    const source = new TextEncoder().encode(
+      '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xml:space="preserve">\n' +
+        '  <sheets><sheet name="A" sheetId="1" r:id="rId1" ' +
+        'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"/></sheets>\n' +
+        "</workbook>",
+    );
+    const output = new TextEncoder().encode(
+      '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xml:space="preserve">' +
+        '<sheets><sheet name="A" sheetId="1" r:id="rId1" ' +
+        'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"/></sheets></workbook>',
+    );
+    expect(explainSemanticPartDiff("xl/workbook.xml", source, output)).toEqual([]);
+  });
+
+  it("ignores stray text in element-only style containers", () => {
+    const source = new TextEncoder().encode(
+      '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
+        '<fills><fill><patternFill patternType="none"/></fill>$-$' +
+        "</fills></styleSheet>",
+    );
+    const output = new TextEncoder().encode(
+      '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
+        '<fills count="1"><fill><patternFill patternType="none"/></fill></fills>' +
+        "</styleSheet>",
     );
     expect(explainSemanticPartDiff("xl/styles.xml", source, output)).toEqual([]);
   });
@@ -154,6 +431,108 @@ describe("corpus semantic comparison", () => {
         '<w:bCs w:val="false"/></w:rPr></w:pPr></w:p></w:body></w:document>',
     );
     expect(explainSemanticPartDiff("word/document.xml", source, output)).toEqual([]);
+  });
+
+  it("merges duplicate compatibility containers instead of keeping an empty tail", () => {
+    const namespace = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
+    const source = new TextEncoder().encode(
+      `<w:settings xmlns:w="${namespace}">` +
+        "<w:compat><w:doNotExpandShiftReturn/></w:compat>" +
+        "<w:compat></w:compat>" +
+        "</w:settings>",
+    );
+    const output = new TextEncoder().encode(
+      `<w:settings xmlns:w="${namespace}">` +
+        "<w:compat><w:doNotExpandShiftReturn/></w:compat>" +
+        "</w:settings>",
+    );
+    expect(explainSemanticPartDiff("word/settings.xml", source, output)).toEqual([]);
+  });
+
+  it("normalizes canonical writer repairs for schema-required containers", () => {
+    const source = new TextEncoder().encode(
+      '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+        "<w:body><w:tbl><w:tr><w:tc/></w:tr></w:tbl>" +
+        '<w:p><w:pPr><w:pPrChange w:id="1" w:author="A"/></w:pPr></w:p>' +
+        "</w:body></w:document>",
+    );
+    const output = new TextEncoder().encode(
+      '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+        "<w:body><w:tbl><w:tblPr/><w:tr><w:tc><w:p/></w:tc></w:tr></w:tbl>" +
+        '<w:p><w:pPr><w:pPrChange w:id="1" w:author="A"><w:pPr/>' +
+        "</w:pPrChange></w:pPr></w:p></w:body></w:document>",
+    );
+    expect(explainSemanticPartDiff("word/document.xml", source, output)).toEqual([]);
+  });
+
+  it("ignores a qFormat copy parked in style paragraph properties", () => {
+    const source = new TextEncoder().encode(
+      '<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+        '<w:style w:type="paragraph" w:styleId="A"><w:qFormat/>' +
+        "<w:pPr><w:qFormat/></w:pPr></w:style></w:styles>",
+    );
+    const output = new TextEncoder().encode(
+      '<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+        '<w:style w:type="paragraph" w:styleId="A"><w:qFormat/>' +
+        "<w:pPr/></w:style></w:styles>",
+    );
+    expect(explainSemanticPartDiff("word/styles.xml", source, output)).toEqual([]);
+  });
+
+  it("normalizes writer-default qFormat and paired revision identifiers", () => {
+    const source = new TextEncoder().encode(
+      '<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+        '<w:style w:type="paragraph" w:styleId="A"><w:qFormat/></w:style></w:styles>',
+    );
+    const output = new TextEncoder().encode(
+      '<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+        '<w:style w:type="paragraph" w:styleId="A"><w:qFormat w:val="1"/></w:style></w:styles>',
+    );
+    expect(explainSemanticPartDiff("word/styles.xml", source, output)).toEqual([]);
+
+    const revisionSource = new TextEncoder().encode(
+      '<w:p xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+        '<w:pPr><w:pPrChange w:id="9" w:author="A"/></w:pPr></w:p>',
+    );
+    const revisionOutput = new TextEncoder().encode(
+      '<w:p xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+        '<w:pPr><w:pPrChange w:id="10" w:author="A"/></w:pPr></w:p>',
+    );
+    expect(explainSemanticPartDiff("word/document.xml", revisionSource, revisionOutput)).toEqual(
+      [],
+    );
+  });
+
+  it("accepts a required override for a source part lacking any declaration", () => {
+    const source = new TextEncoder().encode(
+      '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+        '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+        '<Default Extension="xml" ContentType="application/xml"/>' +
+        "</Types>",
+    );
+    const output = new TextEncoder().encode(
+      '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+        '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+        '<Default Extension="xml" ContentType="application/xml"/>' +
+        '<Override PartName="/word/media/image1.png" ContentType="image/png"/>' +
+        "</Types>",
+    );
+    expect(explainSemanticPartDiff("[Content_Types].xml", source, output)).toEqual([]);
+  });
+
+  it("treats a source default and output override as equivalent coverage", () => {
+    const source = new TextEncoder().encode(
+      '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+        '<Default Extension="bin" ContentType="image/x-wmf"/>' +
+        "</Types>",
+    );
+    const output = new TextEncoder().encode(
+      '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+        '<Default Extension="bin" ContentType="image/x-wmf"/>' +
+        '<Override PartName="/word/media/image1.bin" ContentType="application/vnd.openxmlformats-officedocument.oleObject"/>' +
+        "</Types>",
+    );
+    expect(explainSemanticPartDiff("[Content_Types].xml", source, output)).toEqual([]);
   });
 
   it("normalizes legacy Office relationship URIs to transitional equivalents", () => {
@@ -251,6 +630,16 @@ describe("corpus semantic comparison", () => {
       canonicalXmlNodes(footnotesOutput, "word/footnotes.xml"),
     );
 
+    const namespacedFootnotesSource = parseCanonicalXml(
+      "<footnotes><footnote w:id='5'/><footnote w:id='4'/></footnotes>",
+    );
+    const namespacedFootnotesOutput = parseCanonicalXml(
+      "<footnotes><footnote w:id='4'/><footnote w:id='5'/></footnotes>",
+    );
+    expect(canonicalXmlNodes(namespacedFootnotesSource, "word/footnotes.xml")).toEqual(
+      canonicalXmlNodes(namespacedFootnotesOutput, "word/footnotes.xml"),
+    );
+
     const propertiesSource = parseCanonicalXml("<docPartPr><name/><guid/><category/></docPartPr>");
     const propertiesOutput = parseCanonicalXml("<docPartPr><name/><category/><guid/></docPartPr>");
     expect(canonicalXmlNodes(propertiesSource, "word/glossary/document.xml")).toEqual(
@@ -261,6 +650,26 @@ describe("corpus semantic comparison", () => {
     const paragraphPropertiesOutput = parseCanonicalXml("<pPr><keepNext/><spacing/></pPr>");
     expect(canonicalXmlNodes(paragraphPropertiesSource, "word/document.xml")).toEqual(
       canonicalXmlNodes(paragraphPropertiesOutput, "word/document.xml"),
+    );
+
+    const fontsSource = parseCanonicalXml(
+      "<fonts><font name='B'><pitch variable='1'/></font><font name='A'/></fonts>",
+    );
+    const fontsOutput = parseCanonicalXml(
+      "<fonts><font name='A'/><font name='B'><pitch variable='1'/></font></fonts>",
+    );
+    expect(canonicalXmlNodes(fontsSource, "word/fontTable.xml")).toEqual(
+      canonicalXmlNodes(fontsOutput, "word/fontTable.xml"),
+    );
+
+    const fontChildrenSource = parseCanonicalXml(
+      "<fonts><font><charset/><pitch/><family/><panose1/></font></fonts>",
+    );
+    const fontChildrenOutput = parseCanonicalXml(
+      "<fonts><font><panose1/><charset/><family/><pitch/></font></fonts>",
+    );
+    expect(canonicalXmlNodes(fontChildrenSource, "word/fontTable.xml")).toEqual(
+      canonicalXmlNodes(fontChildrenOutput, "word/fontTable.xml"),
     );
   });
 
@@ -409,6 +818,22 @@ describe("corpus semantic comparison", () => {
     ]);
   });
 
+  it("pairs duplicate glossary identities one-to-one", () => {
+    const source = new TextEncoder().encode(
+      '<w:docParts xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+        '<w:docPart><w:docPartPr><w:name w:val="Same"/></w:docPartPr></w:docPart>' +
+        '<w:docPart><w:docPartPr><w:name w:val="Same"/></w:docPartPr></w:docPart>' +
+        "</w:docParts>",
+    );
+    const output = new TextEncoder().encode(
+      '<w:docParts xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+        '<w:docPart><w:docPartPr><w:name w:val="Same"/></w:docPartPr></w:docPart>' +
+        '<w:docPart><w:docPartPr><w:name w:val="Same"/></w:docPartPr></w:docPart>' +
+        "</w:docParts>",
+    );
+    expect(explainSemanticPartDiff("word/glossary/document.xml", source, output)).toEqual([]);
+  });
+
   it("decodes UTF-16 XML parts by BOM", () => {
     const source = new TextEncoder().encode("<root><item/></root>");
     const utf16 = new TextDecoder().decode(source);
@@ -438,6 +863,87 @@ describe("corpus semantic comparison", () => {
     expect(() => primaryPackagePart(parseArchive(source), "word/document.xml")).toThrow(
       "word/document.xml package primary part not found",
     );
+  });
+
+  it("classifies raw run text as invalid instead of valid round-trip output", () => {
+    const source = zip({
+      "_rels/.rels":
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>' +
+        "</Relationships>",
+      "word/document.xml":
+        '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+        "<w:body><w:p><w:r>customXml</w:r></w:p></w:body></w:document>",
+    });
+    expect(() =>
+      validatePrimaryPackagePart(parseArchive(source), "docx", "word/document.xml"),
+    ).toThrow("word/document.xml has raw text directly inside w:r");
+  });
+
+  it("rejects a primary relationship that points at a foreign root", () => {
+    const source = zip({
+      "_rels/.rels":
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="theme/theme.xml"/>' +
+        "</Relationships>",
+      "theme/theme.xml": '<a:themeManager xmlns:a="urn:a"/>',
+    });
+    const archive = parseArchive(source);
+    expect(() => validatePrimaryPackagePart(archive, "docx", "word/document.xml")).toThrow(
+      "primary part is not a docx document",
+    );
+  });
+
+  it("rejects relationship declarations without required identity fields", () => {
+    const source = zip({
+      "_rels/.rels":
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        '<Relationship Id="rId1" Type="urn:officeDocument" Target="word/document.xml"/>' +
+        "</Relationships>",
+      "word/document.xml": '<w:document xmlns:w="urn:w"/>',
+      "word/_rels/document.xml.rels":
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        '<Relationship Id="rId2" Type="urn:image"/>' +
+        "</Relationships>",
+    });
+    expect(() =>
+      validatePrimaryPackagePart(parseArchive(source), "docx", "word/document.xml"),
+    ).toThrow("relationship is missing Target");
+  });
+
+  it("rejects duplicate singleton section properties", () => {
+    const source = zip({
+      "_rels/.rels":
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>' +
+        "</Relationships>",
+      "word/document.xml":
+        '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+        "<w:body><w:p><w:pPr><w:sectPr>" +
+        '<w:pgSz w:w="12240" w:h="15840"/><w:pgSz w:w="12240" w:h="15840"/>' +
+        "</w:sectPr></w:pPr></w:p></w:body></w:document>",
+    });
+    expect(() =>
+      validatePrimaryPackagePart(parseArchive(source), "docx", "word/document.xml"),
+    ).toThrow("duplicates w:pgSz in w:sectPr");
+  });
+
+  it("rejects worksheet children outside the XSD sequence", () => {
+    const worksheet =
+      '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
+      "<sheetData/><pageMargins/><sheetProtection/></worksheet>";
+    const source = zip({
+      "_rels/.rels":
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>' +
+        "</Relationships>",
+      "xl/workbook.xml":
+        '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"/>',
+      "xl/worksheets/sheet1.xml": worksheet,
+    });
+    expect(() =>
+      validatePrimaryPackagePart(parseArchive(source), "xlsx", "xl/workbook.xml"),
+    ).toThrow("worksheet children out of XSD order");
   });
 
   it("keeps transitional tag counting for the baseline gate", () => {

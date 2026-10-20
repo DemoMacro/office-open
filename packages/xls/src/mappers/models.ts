@@ -42,7 +42,10 @@ export interface WorkbookState {
   definedNames: DefinedNameOptions[];
   externSheetNames: Map<number, string>;
   styleTable: Map<number, XfStyle>;
-  drawingImages: { data: Uint8Array; type: "png" | "jpg" | "webp" | "wmf" | "emf" }[];
+  drawingImages: { data: Uint8Array; type: "png" | "jpg" | "wmf" | "emf" }[];
+  saveExternalLinkValues?: boolean;
+  refreshAllConnections?: boolean;
+  builtInGroupCount?: number;
 }
 
 export interface XfStyle {

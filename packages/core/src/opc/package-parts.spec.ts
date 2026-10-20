@@ -14,6 +14,9 @@ describe("opaque part policy", () => {
     expect(docx.opaquePatterns.some((pattern) => pattern.test("word/embeddings/ole.bin"))).toBe(
       true,
     );
+    expect(docx.opaquePatterns.some((pattern) => pattern.test("word/activeX/activeX1.bin"))).toBe(
+      true,
+    );
     expect(docx.opaquePatterns.some((pattern) => pattern.test("word/theme/theme1.xml"))).toBe(
       false,
     );
@@ -32,8 +35,14 @@ describe("opaque part policy", () => {
     expect(PACKAGE_PART_MANIFESTS.docx.opaquePrefixes).toContain("docProps/thumbnail.");
     expect(PACKAGE_PART_MANIFESTS.pptx.opaquePrefixes).toContain("ppt/embeddings/");
     expect(PACKAGE_PART_MANIFESTS.pptx.opaquePrefixes).toContain("ppt/media/");
+    expect(PACKAGE_PART_MANIFESTS.pptx.opaquePrefixes).toContain("ppt/ddp/");
+    expect(PACKAGE_PART_MANIFESTS.pptx.opaquePrefixes).toContain("ddp/");
+    expect(PACKAGE_PART_MANIFESTS.pptx.opaquePrefixes).toContain("ppt/activeX/activeX");
     expect(PACKAGE_PART_MANIFESTS.pptx.opaquePrefixes).toContain("ppt/printerSettings/");
     expect(PACKAGE_PART_MANIFESTS.pptx.opaquePrefixes).toContain("ppt/ink/");
+    expect(PACKAGE_PART_MANIFESTS.pptx.opaquePrefixes).toContain("ppt/fonts/");
+    expect(PACKAGE_PART_MANIFESTS.pptx.opaquePrefixes).toContain("ppt/drawings/legacyDiagramText");
+    expect(PACKAGE_PART_MANIFESTS.pptx.opaquePrefixes).toContain("ppt/legacyDocTextInfo.bin");
     expect(PACKAGE_PART_MANIFESTS.pptx.opaquePrefixes).toContain("docProps/thumbnail.");
     expect(PACKAGE_PART_MANIFESTS.xlsx.opaquePrefixes).toContain("xl/printerSettings/");
   });
@@ -42,6 +51,7 @@ describe("opaque part policy", () => {
     const pptx = opaquePassthroughPolicy("pptx");
     expect(pptx.opaquePatterns.some((pattern) => pattern.test("ppt/revisionInfo.xml"))).toBe(true);
     expect(pptx.opaquePatterns.some((pattern) => pattern.test("ppt/ink/ink1.xml"))).toBe(true);
+    expect(pptx.opaquePatterns.some((pattern) => pattern.test("ddp/ddpfile.xen"))).toBe(true);
   });
 
   it("resolves printer settings parts to their family content types", () => {

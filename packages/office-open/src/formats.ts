@@ -1,4 +1,5 @@
-import { CompoundFileReader, OOXML_PACKAGE_FORMATS } from "@office-open/core";
+import { CompoundFileReader } from "@office-open/core/cfb";
+import { OOXML_PACKAGE_FORMATS } from "@office-open/core/opc";
 import { unzipSync } from "fflate";
 
 export type OfficeFormat =

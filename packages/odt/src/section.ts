@@ -1,4 +1,4 @@
-import type { FormContainerOptions } from "@office-open/core";
+import type { OfficeFormsOptions } from "@office-open/core";
 import type { DocumentOptions, ParagraphChild, SectionChild } from "@office-open/docx";
 import {
   attributeNumber,
@@ -11,15 +11,9 @@ import {
 } from "@office-open/odf";
 import type { Element } from "@office-open/xml";
 
-import {
-  assertElementNames,
-  blocksXml,
-  parseBlocks,
-  unknownOdtElement,
-  type ParseContext,
-} from "./body";
-import type { CanonicalFormControl, OdtChart, OdtImage } from "./drawing";
-import type { OdtEmbeddedObjectOptions } from "./package";
+import { blocksXml, parseBlocks, unknownOdtElement, type ParseContext } from "./body";
+import type { OdtChart, OdtImage } from "./drawing";
+import type { OdtEmbeddedObjectOptions } from "./embedded-objects";
 import type { CanonicalRevision } from "./paragraph";
 
 /** Footnote/endnote entry, indexed from the shared docx document model. */
@@ -59,8 +53,10 @@ export interface NotesContext {
   bookmarkNames: Map<number, string>;
   sequenceNames: Set<string>;
   variableTypes: Map<string, "float" | "string">;
-  forms: FormContainerOptions[];
+  forms: OfficeFormsOptions;
   revisions: Map<number, CanonicalRevision>;
+  comments: Map<number, NonNullable<DocumentOptions["comments"]>[number]>;
+  annotationNames: Map<number, string>;
 }
 
 export function sectionChildText(child: SectionChild): string {
@@ -68,38 +64,6 @@ export function sectionChildText(child: SectionChild): string {
   if ("paragraph" in child)
     return typeof child.paragraph === "string" ? child.paragraph : (child.paragraph.text ?? "");
   return "";
-}
-
-export function formControlXml(control: CanonicalFormControl): string {
-  const common = {
-    "form:id": control.id,
-    "form:name": control.name,
-    "form:disabled": control.disabled,
-    "form:tab-index": control.tabIndex,
-    "form:automatic-focus": control.automaticFocus,
-  };
-  if (control.control === "checkBox")
-    return xmlElement("form:checkbox", {
-      ...common,
-      "form:current-state": control.checked ? "checked" : "unchecked",
-    });
-  if (control.control === "dropDownList")
-    return xmlElement(
-      "form:listbox",
-      common,
-      control.entries.map((label, optionIndex) =>
-        xmlElement(
-          "form:option",
-          { "form:selected": control.selectedIndex === optionIndex || undefined },
-          [escapeText(label)],
-        ),
-      ),
-    );
-  return xmlElement("form:text", {
-    ...common,
-    "form:current-value": control.value,
-    "form:max-length": control.maxLength,
-  });
 }
 
 /** Note reference renders inline as text:note carrying its body paragraphs. */
@@ -139,10 +103,12 @@ export function annotationXml(
   author: string | undefined,
   date: Date | string | null | undefined,
   paragraphs: string[],
+  name?: string,
 ): string {
   return xmlElement(
     "office:annotation",
     {
+      "office:name": name,
       "dc:creator": author,
       "dc:date": date instanceof Date ? date.toISOString() : (date ?? undefined),
     },
@@ -159,6 +125,12 @@ export function bibliographyMarkXml(bibliographyType: string, cachedValue?: stri
 }
 
 export function indexXml(value: Extract<SectionChild, { toc: unknown }>["toc"]): string {
+  if (value.captionLabelIncludingNumbers === undefined) {
+    return xmlElement("text:table-of-content", { "text:name": value.alias }, [
+      xmlElement("text:table-of-content-source", { "text:outline-level": 10 }),
+      indexBodyXml(value.entries?.map(sectionChildText) ?? []),
+    ]);
+  }
   return xmlElement(
     "text:illustration-index",
     {
@@ -177,6 +149,14 @@ export function indexXml(value: Extract<SectionChild, { toc: unknown }>["toc"]):
           .map((text) => xmlElement("text:p", undefined, [escapeText(text)])),
       ),
     ],
+  );
+}
+
+function indexBodyXml(texts: string[]): string {
+  return xmlElement(
+    "text:index-body",
+    undefined,
+    texts.map((text) => xmlElement("text:p", undefined, [escapeText(text)])),
   );
 }
 
@@ -214,103 +194,6 @@ export function nextBookmarkId(context: ParseContext): number {
   return Math.max(0, ...context.bookmarkIds.values()) + 1;
 }
 
-export function parseForms(element: Element, context: ParseContext): SectionChild[] {
-  const forms = childrenNamed(element, "form:form");
-  const parsedForms = forms.map((form) => {
-    assertElementNames(form, ["form:name"], ["form:text", "form:checkbox", "form:listbox"]);
-    return {
-      ...(attributeString(form, "form:name") ? { name: attributeString(form, "form:name") } : {}),
-      ...(attributeString(element, "form:automatic-focus") === "true"
-        ? { automaticFocus: true }
-        : {}),
-      ...(attributeString(element, "form:apply-design-mode") === "true"
-        ? { designMode: true }
-        : {}),
-      controls:
-        form.elements
-          ?.filter((child) => child.type === "element")
-          .map((control) => parseFormControl(control)) ?? [],
-    };
-  });
-  context.notes.forms.push(...parsedForms);
-  return [];
-}
-
-export function parseFormControl(control: Element): CanonicalFormControl {
-  const id = attributeString(control, "form:id");
-  const name = attributeString(control, "form:name");
-  if (id && !/^field\d+$/.test(id)) {
-    if (name) throw unknownOdtElement(control);
-    if (!/^[A-Za-z_:][\w.:-]*$/.test(id)) throw unknownOdtElement(control);
-  }
-  const common = {
-    ...((name ?? id) ? { name: name ?? id } : {}),
-    ...(attributeString(control, "form:disabled") === "true" ? { disabled: true } : {}),
-    ...(attributeNumber(control, "form:tab-index") !== undefined
-      ? { tabIndex: attributeNumber(control, "form:tab-index") }
-      : {}),
-  };
-  return (() => {
-    if (control.name === "form:text") {
-      assertElementNames(
-        control,
-        [
-          "form:id",
-          "form:name",
-          "form:disabled",
-          "form:tab-index",
-          "form:current-value",
-          "form:max-length",
-        ],
-        [],
-      );
-      const value = attributeString(control, "form:current-value");
-      return {
-        control: "text",
-        ...common,
-        ...(value ? { value } : {}),
-        ...(attributeNumber(control, "form:max-length") !== undefined
-          ? { maxLength: attributeNumber(control, "form:max-length") }
-          : {}),
-      };
-    }
-    if (control.name === "form:checkbox") {
-      assertElementNames(
-        control,
-        ["form:id", "form:name", "form:disabled", "form:tab-index", "form:current-state"],
-        [],
-      );
-      const state = attributeString(control, "form:current-state");
-      if (state !== "checked" && state !== "unchecked") throw unknownOdtElement(control);
-      return {
-        control: "checkBox",
-        ...common,
-        checked: state === "checked",
-      };
-    }
-    assertElementNames(
-      control,
-      ["form:id", "form:name", "form:disabled", "form:tab-index", "form:automatic-focus"],
-      ["form:option", "form:item"],
-    );
-    const entries = (control.elements ?? [])
-      .filter((child) => ["form:option", "form:item"].includes(child.name ?? ""))
-      .map((child) => {
-        assertElementNames(child, ["form:selected"]);
-        return textOf(child);
-      });
-    const selectedIndex = (control.elements ?? []).findIndex(
-      (child) => attributeString(child, "form:selected") === "true",
-    );
-    return {
-      control: "dropDownList",
-      ...common,
-      entries,
-      ...(selectedIndex >= 0 ? { selectedIndex } : {}),
-    };
-  })();
-}
-
 export function parseAnnotation(element: Element): ParagraphChild {
   if (attributeString(element, "office:display") === "true") throw unknownOdtElement(element);
   return {
@@ -320,6 +203,27 @@ export function parseAnnotation(element: Element): ParagraphChild {
       children: childrenNamed(element, "text:p").map((paragraph) => ({ text: textOf(paragraph) })),
     },
   };
+}
+
+export function parseAnnotationStart(element: Element, context: ParseContext): ParagraphChild[] {
+  const name = attributeString(element, "office:name");
+  if (!name) return [parseAnnotation(element)];
+  const id = context.comments.length + 1;
+  context.annotationIds.set(name, id);
+  context.comments.push({
+    id,
+    author: attributeString(element, "dc:creator"),
+    date: attributeString(element, "dc:date"),
+    children: childrenNamed(element, "text:p").map((paragraph) => textOf(paragraph)),
+  });
+  return [{ commentRangeStart: { id } }, { commentReference: id }];
+}
+
+export function parseAnnotationEnd(element: Element, context: ParseContext): ParagraphChild[] {
+  const name = attributeString(element, "office:name") ?? "";
+  const id = context.annotationIds.get(name);
+  if (id === undefined) throw unknownOdtElement(element);
+  return [{ commentRangeEnd: { id } }];
 }
 
 export function parseIndex(element: Element): Extract<SectionChild, { toc: unknown }>["toc"] {
@@ -334,6 +238,29 @@ export function parseIndex(element: Element): Extract<SectionChild, { toc: unkno
     alias: attributeString(element, "text:name"),
     captionLabelIncludingNumbers:
       attributeString(source, "text:use-caption") === "true" ? "Figure" : undefined,
+    entries: title ? [{ paragraph: { text: textOf(title) } }, ...entries] : entries,
+  };
+}
+
+export function parseContentIndex(
+  element: Element,
+  sourceName: string,
+): Extract<SectionChild, { toc: unknown }>["toc"] {
+  const source = childNamed(element, sourceName);
+  const title = childNamed(source, "text:index-title-template");
+  const entries = childrenNamed(childNamed(element, "text:index-body"), "text:p").map(
+    (paragraph): SectionChild => ({ paragraph: { text: textOf(paragraph) } }),
+  );
+  return {
+    alias: attributeString(element, "text:name"),
+    hyperlink: childrenNamed(source, "text:table-of-content-entry-template").some((template) =>
+      childNamed(template, "text:index-entry-link-start"),
+    ),
+    ...(sourceName === "text:table-of-content-source"
+      ? {
+          headingStyleRange: `1-${attributeNumber(source, "text:outline-level") ?? 10}`,
+        }
+      : {}),
     entries: title ? [{ paragraph: { text: textOf(title) } }, ...entries] : entries,
   };
 }

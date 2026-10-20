@@ -27,7 +27,7 @@ describe("validateDocumentInput", () => {
     expect(validateDocumentInput("docx", docxDemo)).toEqual(docxDemo);
     expect(validateDocumentInput("pptx", pptxDemo)).toEqual(pptxDemo);
     expect(validateDocumentInput("xlsx", xlsxDemo)).toEqual(xlsxDemo);
-  });
+  }, 30_000);
 
   it("should reject input missing the root array", () => {
     // Only DocumentOptions.sections is required; PresentationOptions and

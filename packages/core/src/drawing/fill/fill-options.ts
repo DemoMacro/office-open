@@ -33,6 +33,12 @@ export interface BlipFillConfigOptions {
    */
   noEmbed?: true;
   /**
+   * Source a:blipFill omitted its optional a:blip child; writer preserves the
+   * attribute/tile-only shape instead of inventing an empty image reference.
+   * Round-trip only ? do not hand-author.
+   */
+  omitBlip?: true;
+  /**
    * External image URL referenced by a:blip @r:link. Linked-only fills carry
    * this instead of data/imageType; the writer registers an external image
    * relationship.
@@ -44,6 +50,9 @@ export interface BlipFillConfigOptions {
    * fabricating image bytes or degrading the fill.
    */
   unresolvedTarget?: string;
+  /** Source a:blip relationship id retained when its relationship declaration
+   *  itself is absent (round-trip only — do not hand-author). */
+  sourceReferenceId?: string;
   /** Image data: raw bytes, ArrayBuffer, or a base64 data URL string. */
   data?: DataType;
   imageType?: "png" | "jpg" | "gif" | "bmp" | "tif" | "ico" | "emf" | "wmf";
@@ -61,6 +70,10 @@ export interface BlipFillConfigOptions {
   rotWithShape?: boolean;
   /** Image adjustment effects (brightness, contrast, grayscale, etc.) */
   blipEffects?: BlipEffectsOptions;
+  /** Verbatim `a:blip` extension-list inner XML; round-trip only. */
+  blipExtensionXml?: string;
+  /** a14:useLocalDpi display hint; `"default"` preserves an omitted value. */
+  useLocalDpi?: boolean | "default";
   /** Source rectangle for cropping */
   sourceRectangle?: SourceRectangleOptions;
   /** Fill rectangle inside a:stretch; false keeps the bare stretch element. */

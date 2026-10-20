@@ -35,6 +35,7 @@ export interface HeaderFooterGroup<T> {
   default?: T;
   first?: T;
   even?: T;
+  odd?: T;
 }
 
 export interface SectionPropertiesOptionsBase {
@@ -72,6 +73,11 @@ export interface SectionPropertiesOptionsBase {
   columns?: ColumnsProperties;
   /** Section-break placement: "nextPage"/"nextColumn" start there, "continuous" flows on, "evenPage"/"oddPage" next even/odd page. */
   type?: (typeof SectionType)[keyof typeof SectionType];
+  /**
+   * Tolerated misplaced settings element (`w:mirrorMargins`) inside a source
+   * section; round-trip only — author document settings instead.
+   */
+  mirrorMargins?: boolean;
   /** Printer settings binary part path, e.g. word/printerSettings/printerSettings1.bin. */
   printerSettingsPath?: string;
   noEndnote?: boolean;
@@ -82,6 +88,10 @@ export interface SectionPropertiesOptionsBase {
     first?: number;
     other?: number;
   };
+  /** Vendor-defined gutter marker (w:tmGutter, round-trip only). */
+  tmGutter?: number;
+  /** Vendor-defined section marker (w:tmSection, round-trip only). */
+  tmSection?: TmSectionPropertiesOptions;
   footnoteProperties?: FootnotePropertiesOptions;
   endnoteProperties?: EndnotePropertiesOptions;
   /** Number of columns for the section footnotes (w15:footnoteColumns, Word 2013+). */
@@ -97,11 +107,19 @@ export interface SectionPropertiesOptionsBase {
 /** One w:headerReference/w:footerReference slot identified by kind and type. */
 export type HeaderFooterReferenceSlot =
   | "header-default"
+  | "header-odd"
   | "header-first"
   | "header-even"
   | "footer-default"
+  | "footer-odd"
   | "footer-first"
   | "footer-even";
+
+/** Vendor extension attributes for w:tmSection (round-trip only). */
+export interface TmSectionPropertiesOptions {
+  /** Vendor-defined section marker height (w:h, round-trip only). */
+  height?: number;
+}
 
 export type SectionPropertiesChangeOptions = ChangedProperties & SectionPropertiesOptionsBase;
 

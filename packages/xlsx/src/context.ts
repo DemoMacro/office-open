@@ -4,15 +4,10 @@
  * @module
  */
 
-import {
-  ChartCollection,
-  partPathToRelsPath,
-  Relationships,
-  resolveRelationshipTarget,
-  type RelationshipType,
-} from "@office-open/core";
+import { ChartCollection, Relationships, type RelationshipType } from "@office-open/core";
 import type { ExternalDataOptions } from "@office-open/core/chart";
 import type { HyperlinkTarget, ReadContext, WriteContext } from "@office-open/core/descriptor";
+import { partPathToRelsPath, resolveRelationshipTarget } from "@office-open/core/opc";
 import type { ReproducibleScope } from "@office-open/core/util";
 import type { Element } from "@office-open/xml";
 import type { ExternalLinkOptions } from "@parts/external-link";

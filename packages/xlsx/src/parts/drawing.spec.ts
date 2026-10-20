@@ -1,5 +1,5 @@
-import { unzipSync, zipSync } from "@office-open/core";
 import type { HyperlinkTarget, ReadContext, WriteContext } from "@office-open/core/descriptor";
+import { unzipSync, zipSync } from "@office-open/core/opc";
 import { parse as parseXml } from "@office-open/xml";
 import { describe, expect, it } from "vite-plus/test";
 
@@ -75,6 +75,32 @@ describe("drawingDesc round-trip", () => {
     expect(result.images![0]).toMatchObject({ dpi: 300, rotWithShape: false });
   });
 
+  it("round-trips a picture with explicit fill-rectangle presence", () => {
+    const result = roundTrip({
+      images: [{ col: 1, row: 1, rId: "rId1", fillRectangle: false }],
+    });
+    expect(result.images![0]?.fillRectangle).toBe(false);
+
+    const bare = roundTrip({
+      images: [{ col: 1, row: 1, rId: "rId1", fillRectangle: true }],
+    });
+    expect(bare.images![0]?.fillRectangle).toBe(true);
+  });
+
+  it("round-trips a legacy picture without blipFill", () => {
+    const xml = drawingDesc.stringify(
+      {
+        images: [{ col: 1, row: 1, rId: "rId1", macro: "", blipFillPresent: false }],
+      },
+      writeCtx,
+    );
+    expect(xml).toContain('<xdr:pic macro="">');
+    expect(xml).not.toContain("<xdr:blipFill");
+    expect(
+      roundTrip({ images: [{ col: 1, row: 1, rId: "rId1", blipFillPresent: false }] }),
+    ).toMatchObject({ images: [{ blipFillPresent: false }] });
+  });
+
   it("round-trips image locksWithSheet and printsWithSheet", () => {
     const opts: DrawingOptions = {
       images: [{ col: 1, row: 1, rId: "rId1", locksWithSheet: false, printsWithSheet: false }],
@@ -132,6 +158,81 @@ describe("drawingDesc round-trip", () => {
     expect(smartArt.toCol).toBe(8);
     expect(smartArt.toRow).toBe(12);
     expect(smartArt.name).toBe("Diagram 1");
+  });
+
+  it("round-trips ChartEx graphic frames", () => {
+    const opts: DrawingOptions = {
+      chartExs: [
+        {
+          col: 2,
+          row: 3,
+          toCol: 8,
+          toRow: 12,
+          rId: "rId1",
+          frameExtentCx: 5486400,
+          frameExtentCy: 3200400,
+          name: "Waterfall 1",
+        },
+      ],
+    };
+    const xml = drawingDesc.stringify(opts, writeCtx)!;
+    expect(xml).toContain('uri="http://schemas.microsoft.com/office/drawing/2014/chartex"');
+    expect(xml).toContain("<cx:chart xmlns:cx=");
+    const result = roundTrip(opts);
+    expect(result.chartExs?.[0]).toMatchObject({
+      col: 2,
+      row: 3,
+      toCol: 8,
+      toRow: 12,
+      rId: "rId1",
+      frameExtentCx: 5486400,
+      frameExtentCy: 3200400,
+      name: "Waterfall 1",
+    });
+  });
+
+  it("classifies ISO strict chart frames as charts", () => {
+    const source = drawingDesc
+      .stringify(
+        {
+          charts: [{ col: 1, row: 2, toCol: 5, toRow: 8, rId: "rId1" }],
+        },
+        writeCtx,
+      )!
+      .replace(
+        "http://schemas.openxmlformats.org/drawingml/2006/chart",
+        "http://purl.oclc.org/ooxml/drawingml/chart",
+      );
+
+    const parsed = parseXml(source).elements?.[0];
+    if (!parsed) throw new Error("parsed drawing has no root element");
+    const result = drawingDesc.parse(parsed, readCtx);
+
+    expect(result.charts).toHaveLength(1);
+    expect(result.charts?.[0]).toMatchObject({ col: 1, row: 2, rId: "rId1" });
+    expect(result.chartExs).toBeUndefined();
+  });
+
+  it("classifies legacy ChartML frames as charts", () => {
+    const source = drawingDesc
+      .stringify(
+        {
+          charts: [{ col: 1, row: 2, toCol: 5, toRow: 8, rId: "rId1" }],
+        },
+        writeCtx,
+      )!
+      .replace(
+        "http://schemas.openxmlformats.org/drawingml/2006/chart",
+        "http://schemas.microsoft.com/office/excel/2005/8/ChartML",
+      );
+
+    const parsed = parseXml(source).elements?.[0];
+    if (!parsed) throw new Error("parsed drawing has no root element");
+    const result = drawingDesc.parse(parsed, readCtx);
+
+    expect(result.charts).toHaveLength(1);
+    expect(result.charts?.[0]).toMatchObject({ col: 1, row: 2, rId: "rId1" });
+    expect(result.chartExs).toBeUndefined();
   });
 
   it("round-trips image blip useLocalDpi", () => {
@@ -744,6 +845,47 @@ describe("drawingDesc — anchored content parts", () => {
 });
 
 describe("drawing shape hyperlink — compiler resolution", () => {
+  it("preserves uppercase media names and a legacy picture without blipFill", async () => {
+    const source = (await generateWorkbook(
+      {
+        worksheets: [
+          {
+            name: "Sheet1",
+            shapes: [{ col: 1, row: 1, properties: { geometry: "rect" } }],
+          },
+        ],
+      },
+      { type: "uint8array" },
+    )) as Uint8Array;
+    const archive = unzipSync(source);
+    archive["xl/drawings/drawing1.xml"] = new TextEncoder().encode(
+      `<xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">` +
+        `<xdr:twoCellAnchor editAs="oneCell"><xdr:from><xdr:col>0</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>0</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from>` +
+        `<xdr:to><xdr:col>2</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>2</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:to>` +
+        `<xdr:pic macro=""><xdr:nvPicPr><xdr:cNvPr id="2" name="Legacy"/><xdr:cNvPicPr/></xdr:nvPicPr>` +
+        `<xdr:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="100" cy="100"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr>` +
+        `</xdr:pic><xdr:clientData/></xdr:twoCellAnchor></xdr:wsDr>`,
+    );
+    archive["xl/drawings/_rels/drawing1.xml.rels"] = new TextEncoder().encode(
+      `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">` +
+        `<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/Image.PNG"/>` +
+        `</Relationships>`,
+    );
+    archive["xl/media/Image.PNG"] = new Uint8Array([1, 2, 3]);
+
+    const parsed = parseWorkbookSync(zipSync(archive));
+    expect(parsed.worksheets![0]!.images).toMatchObject([
+      { macro: "", sourcePath: "xl/media/Image.PNG", blipFillPresent: false },
+    ]);
+
+    const output = (await generateWorkbook(parsed, { type: "uint8array" })) as Uint8Array;
+    const result = unzipSync(output);
+    const drawing = new TextDecoder().decode(result["xl/drawings/drawing1.xml"]!);
+    expect(drawing).toContain('<xdr:pic macro="">');
+    expect(drawing).not.toContain("<xdr:blipFill");
+    expect(result["xl/media/Image.PNG"]).toEqual(new Uint8Array([1, 2, 3]));
+  });
+
   it("resolves {hlink:key} placeholders to real rIds and emits External hyperlink rels", async () => {
     const buffer = (await generateWorkbook(
       {

@@ -7,14 +7,10 @@
  * @module
  */
 
-import {
-  RELATIONSHIP_TYPES,
-  Relationships,
-  buildRootRelationships,
-  type RelationshipType,
-} from "@office-open/core";
+import { Relationships, type RelationshipType } from "@office-open/core";
 import { ChartCollection, ChartExCollection } from "@office-open/core/chart";
 import type { HyperlinkTarget, ReadContext, WriteContext } from "@office-open/core/descriptor";
+import { buildRootRelationships, RELATIONSHIP_TYPES } from "@office-open/core/opc";
 import { SmartArtCollection } from "@office-open/core/smartart";
 import type { ReproducibleScope } from "@office-open/core/util";
 import type { Element } from "@office-open/xml";
@@ -42,6 +38,7 @@ import type { SectionOptions } from "@shared/section";
 import type { SectionChild } from "@shared/section";
 
 import type { DocxDocument } from "./parse";
+import { collectRawXmlRelationshipIds } from "./util/raw-relationship-ids";
 
 /** User styles override factory defaults with the same styleId; keep the rest. */
 function mergeById<T extends { id: string }>(
@@ -132,22 +129,28 @@ interface DocumentTreeScan {
 }
 
 function scanDocumentTree(value: unknown, acc: DocumentTreeScan): void {
-  if (value === null || value === undefined || typeof value !== "object") return;
-  if (value instanceof Uint8Array || value instanceof Date) return;
-  if (Array.isArray(value)) {
-    for (const item of value) scanDocumentTree(item, acc);
-    return;
+  const pending: unknown[] = [value];
+  while (pending.length > 0) {
+    const item = pending.pop();
+    if (item === null || item === undefined || typeof item !== "object") continue;
+    if (item instanceof Uint8Array || item instanceof Date) continue;
+    if (Array.isArray(item)) {
+      for (let index = item.length - 1; index >= 0; index -= 1) pending.push(item[index]);
+      continue;
+    }
+    const obj = item as Record<string, unknown>;
+    const rangeMarker = obj.bookmarkStart ?? obj.moveFromRangeStart ?? obj.moveToRangeStart;
+    if (isNumericIdMarker(rangeMarker) && rangeMarker.id > acc.maxRangeId)
+      acc.maxRangeId = rangeMarker.id;
+    const moveRun = obj.movedFrom ?? obj.movedTo;
+    if (isNumericIdMarker(moveRun) && moveRun.id > acc.maxMoveRunId) acc.maxMoveRunId = moveRun.id;
+    if (typeof obj.comment === "object" && obj.comment !== null) acc.hasCommentSugar = true;
+    const children: unknown[] = [];
+    // for...in walks own enumerable keys without allocating a keys array (options
+    // trees are JSON literals / class instances whose methods are non-enumerable).
+    for (const key in obj) children.push(obj[key]);
+    for (let index = children.length - 1; index >= 0; index -= 1) pending.push(children[index]);
   }
-  const obj = value as Record<string, unknown>;
-  const rangeMarker = obj.bookmarkStart ?? obj.moveFromRangeStart ?? obj.moveToRangeStart;
-  if (isNumericIdMarker(rangeMarker) && rangeMarker.id > acc.maxRangeId)
-    acc.maxRangeId = rangeMarker.id;
-  const moveRun = obj.movedFrom ?? obj.movedTo;
-  if (isNumericIdMarker(moveRun) && moveRun.id > acc.maxMoveRunId) acc.maxMoveRunId = moveRun.id;
-  if (typeof obj.comment === "object" && obj.comment !== null) acc.hasCommentSugar = true;
-  // for...in walks own enumerable keys without allocating a keys array (options
-  // trees are JSON literals / class instances whose methods are non-enumerable).
-  for (const key in obj) scanDocumentTree(obj[key], acc);
 }
 
 /** Interface for document view wrappers — provides relationships access. */
@@ -212,6 +215,7 @@ export class DocxWriteContext implements WriteContext {
   declare public footNotes: {
     relationships: Relationships;
     notes: Map<number, NoteChild[]>;
+    autoReferenceMarks: Map<number, boolean>;
     separator?: FootnoteSeparator | null;
     continuationSeparator?: FootnoteSeparator | null;
     continuationNotice?: FootnoteSeparator;
@@ -219,6 +223,7 @@ export class DocxWriteContext implements WriteContext {
   declare public endnotes: {
     relationships: Relationships;
     notes: Map<number, NoteChild[]>;
+    autoReferenceMarks: Map<number, boolean>;
     separator?: EndnoteSeparator | null;
     continuationSeparator?: EndnoteSeparator | null;
     continuationNotice?: EndnoteSeparator;
@@ -357,7 +362,8 @@ export class DocxWriteContext implements WriteContext {
                     .replaceAll("-", "")
                     .includes("/coreproperties"),
               )
-            : this.hasSourcePart("docProps/core.xml")),
+            : this.hasSourcePart(this._options.corePropertiesPath ?? "docProps/core.xml")),
+        corePropertiesPath: this._options.corePropertiesPath,
         includeAppProperties:
           this._options.appProperties !== undefined ||
           !options.contentTypes ||
@@ -377,8 +383,16 @@ export class DocxWriteContext implements WriteContext {
             : this.hasSourcePart("docProps/app.xml")),
       },
     );
-    this.footNotes = { relationships: new Relationships(), notes: new Map() };
-    this.endnotes = { relationships: new Relationships(), notes: new Map() };
+    this.footNotes = {
+      relationships: new Relationships(),
+      notes: new Map(),
+      autoReferenceMarks: new Map(),
+    };
+    this.endnotes = {
+      relationships: new Relationships(),
+      notes: new Map(),
+      autoReferenceMarks: new Map(),
+    };
     this.document = {
       relationships: new Relationships(this.primaryDocumentPath),
       partName: this.primaryDocumentPath,
@@ -509,16 +523,22 @@ export class DocxWriteContext implements WriteContext {
     // Resolve footnote/endnote presence from the source [Content_Types]: a
     // round-tripped package only carries these parts when the source declared
     // them. Fresh compile (no contentTypes) always emits both.
-    const sourceOverrides = options.contentTypes?.overrides ?? [];
-    this._hasFootnotes =
-      !options.contentTypes || sourceOverrides.some((o) => o.partName === "/word/footnotes.xml");
-    this._hasEndnotes =
-      !options.contentTypes || sourceOverrides.some((o) => o.partName === "/word/endnotes.xml");
-    // Numbering follows the source [Content_Types] on round-trip — the part is
-    // optional, and emitting it without a matching Override is an OPC violation.
-    // Fresh compile always emits it (Word ships a default bullet list).
-    this._hasNumbering =
-      !options.contentTypes || sourceOverrides.some((o) => o.partName === "/word/numbering.xml");
+    // Round-trip requires both the source declaration and the source
+    // document relationship. Some templates retain orphan declarations for
+    // notes/numbering after those relationships have been removed.
+    const sourcePartOrFresh = (partName: string, relationshipKind: string): boolean =>
+      !options.contentTypes ||
+      (options.contentTypes.overrides.some(
+        (o) => o.partName.toLowerCase() === `/${partName.toLowerCase()}`,
+      ) &&
+        (options.passthroughRelationships ?? []).some(
+          (rel) =>
+            rel.source === this.primaryDocumentPath &&
+            rel.relationshipType.split("/").pop() === relationshipKind,
+        ));
+    this._hasFootnotes = sourcePartOrFresh("word/footnotes.xml", "footnotes");
+    this._hasEndnotes = sourcePartOrFresh("word/endnotes.xml", "endnotes");
+    this._hasNumbering = sourcePartOrFresh("word/numbering.xml", "numbering");
 
     this.addDefaultRelationships();
 
@@ -536,6 +556,9 @@ export class DocxWriteContext implements WriteContext {
         const id = note.id ?? nextNoteId;
         nextNoteId = Math.max(nextNoteId, id + 1);
         this.footNotes.notes.set(id, note.children);
+        if (note.autoReferenceMark === false) {
+          this.footNotes.autoReferenceMarks.set(id, false);
+        }
       }
       // A present separators object comes from parse — its missing members are
       // null (source carried none); an absent object is fresh (defaults apply).
@@ -554,6 +577,9 @@ export class DocxWriteContext implements WriteContext {
         const id = note.id ?? nextNoteId;
         nextNoteId = Math.max(nextNoteId, id + 1);
         this.endnotes.notes.set(id, note.children);
+        if (note.autoReferenceMark === false) {
+          this.endnotes.autoReferenceMarks.set(id, false);
+        }
       }
       this.endnotes.separator = options.endnoteSeparators
         ? (options.endnoteSeparators.separator ?? null)
@@ -575,7 +601,11 @@ export class DocxWriteContext implements WriteContext {
       );
     }
 
-    if (this.webSettings) {
+    if (
+      this.webSettings &&
+      this.hasSourcePart("word/webSettings.xml") &&
+      this.hasSourceDocumentRelationship("webSettings")
+    ) {
       this.registerDocumentRel(RELATIONSHIP_TYPES.webSettings, "webSettings.xml");
     }
   }
@@ -590,7 +620,19 @@ export class DocxWriteContext implements WriteContext {
 
   // --- Private helpers ---
 
-  private addSection({ headers = {}, footers = {}, properties }: SectionOptions): void {
+  registerInlineSection({
+    headers = {},
+    footers = {},
+    properties,
+  }: Pick<
+    SectionOptions,
+    "headers" | "footers" | "properties"
+  >): SectionPropertiesDescriptorOptions {
+    return this.sectionDescriptor({ headers, footers, properties });
+  }
+
+  private addSection(section: Pick<SectionOptions, "headers" | "footers" | "properties">): void {
+    const { headers = {}, footers = {}, properties } = section;
     // A section with no properties and no header/footer references had no
     // sectPr in the source (Word writes one whenever any of these exist) —
     // keep it absent so the body round-trips.
@@ -598,13 +640,27 @@ export class DocxWriteContext implements WriteContext {
       headers.default !== undefined ||
       headers.even !== undefined ||
       headers.first !== undefined ||
+      headers.odd !== undefined ||
       footers.default !== undefined ||
       footers.even !== undefined ||
-      footers.first !== undefined;
+      footers.first !== undefined ||
+      footers.odd !== undefined;
     if (properties === undefined && !hasRefs) {
       this._sectionProperties.push(undefined);
       return;
     }
+    const sectPrOptions = this.sectionDescriptor(section);
+    this._sectionProperties.push(sectPrOptions);
+  }
+
+  private sectionDescriptor({
+    headers = {},
+    footers = {},
+    properties,
+  }: Pick<
+    SectionOptions,
+    "headers" | "footers" | "properties"
+  >): SectionPropertiesDescriptorOptions {
     const sectPrOptions: SectionPropertiesDescriptorOptions = {
       ...properties,
       footerReferences: {
@@ -615,6 +671,7 @@ export class DocxWriteContext implements WriteContext {
         first: footers.first
           ? this.createFooter(footers.first, footers.partNames?.first)
           : undefined,
+        odd: footers.odd ? this.createFooter(footers.odd, footers.partNames?.odd) : undefined,
       },
       headerReferences: {
         default: headers.default
@@ -624,6 +681,7 @@ export class DocxWriteContext implements WriteContext {
         first: headers.first
           ? this.createHeader(headers.first, headers.partNames?.first)
           : undefined,
+        odd: headers.odd ? this.createHeader(headers.odd, headers.partNames?.odd) : undefined,
       },
     };
     if (properties?.printerSettingsPath !== undefined) {
@@ -631,7 +689,7 @@ export class DocxWriteContext implements WriteContext {
         properties.printerSettingsPath,
       );
     }
-    this._sectionProperties.push(sectPrOptions);
+    return sectPrOptions;
   }
 
   private createHeader(header: SectionChild[], partName?: string): HeaderFooterEntry {
@@ -779,9 +837,8 @@ export class DocxWriteContext implements WriteContext {
       this.registerDocumentRel(RELATIONSHIP_TYPES.bibliography, "bibliography.xml");
     }
 
-    // Theme — always present on fresh compile (default theme); a round-trip
-    // keeps the source relationship only, because some producers ship the
-    // theme part without a document→theme relationship.
+    // Theme is emitted on fresh compile. Producers may deliberately ship an
+    // unreferenced theme part; parse preserves that package shape as raw.
     const themeRel = (this._options.passthroughRelationships ?? []).find(
       (r) => r.source === this.primaryDocumentPath && r.relationshipType.endsWith("/theme"),
     );
@@ -852,10 +909,13 @@ export class DocxWriteContext implements WriteContext {
    * test instead of guessing from conventional target-directory prefixes.
    */
   public addPassthroughDocumentRelationships(): void {
+    const rawReferences = collectRawXmlRelationshipIds(this._options.sections);
     for (const rel of this._options.passthroughRelationships ?? []) {
       if (rel.source !== this.primaryDocumentPath || rel.relationshipType.endsWith("/theme"))
         continue;
-      this.document.relationships.claimSourceRel(rel);
+      this.document.relationships.claimSourceRel(rel, {
+        force: rawReferences.has(rel.rId),
+      });
     }
   }
 
@@ -887,6 +947,10 @@ export class DocxReadContext implements ReadContext {
    * drawing parts use this set instead of the old overwrite-by-path hack.
    */
   public consumedPartPaths = new Set<string>();
+
+  /** Active move-range depth while parsing sibling content. */
+  public activeMoveRangeDepth = 0;
+  public nestedSectionHostDepth = 0;
 
   constructor(
     public docx: DocxDocument,

@@ -7,8 +7,6 @@
  */
 
 import {
-  RELATIONSHIP_TYPES,
-  Relationships,
   addSmartArtRelationships,
   collectPlaceholderKeys,
   convertToEmu,
@@ -18,18 +16,17 @@ import {
   getReferencedMedia,
   getVideoRefs,
   hasPlaceholders,
-  replaceAudioPlaceholders,
+  Relationships,
   replaceChartPlaceholders,
   replaceImageLinkPlaceholders,
   replaceImagePlaceholders,
-  replaceMediaPlaceholders,
   replaceOleLinkPlaceholders,
   replaceOlePlaceholders,
   replacePlaceholders,
   replaceSmartArtPlaceholders,
-  replaceVideoPlaceholders,
 } from "@office-open/core";
 import { ChartCollection } from "@office-open/core/chart";
+import { partPathToRelsPath, relativePartTarget, RELATIONSHIP_TYPES } from "@office-open/core/opc";
 import { SmartArtCollection } from "@office-open/core/smartart";
 import type { AuthorEntry, CommentEntry } from "@parts/comment";
 import { stringifyControls, stringifyCustDataLst } from "@parts/slide/c-sld";
@@ -51,7 +48,10 @@ import {
   XML_DECL,
   type XmlifyedFileMapping,
   promoteLayoutToSourceId,
+  claimMediaSourceRelationships,
   reserveClaimedSourceRids,
+  sourceMediaRelationshipIds,
+  sourceMediaRelationshipIdsByKind,
   wirePartHyperlinks,
 } from "./shared";
 
@@ -65,8 +65,15 @@ export function stringifySlide(slideOpts: SlideOptions, ctx: PptxWriteContext): 
   ctx.beginShapeScope();
 
   const sldAttrs: string[] = [];
-  if (slideOpts.showMasterShapes === false) sldAttrs.push(' showMasterSp="0"');
-  if (slideOpts.showMasterPlaceholderAnimations === false) sldAttrs.push(' showMasterPhAnim="0"');
+  if (slideOpts.showMasterShapesPresent || slideOpts.showMasterShapes === false)
+    sldAttrs.push(` showMasterSp="${slideOpts.showMasterShapes === false ? 0 : 1}"`);
+  if (
+    slideOpts.showMasterPlaceholderAnimationsPresent ||
+    slideOpts.showMasterPlaceholderAnimations === false
+  )
+    sldAttrs.push(
+      ` showMasterPhAnim="${slideOpts.showMasterPlaceholderAnimations === false ? 0 : 1}"`,
+    );
   if (slideOpts.showRaw) sldAttrs.push(` show="${slideOpts.showRaw}"`);
   else if (slideOpts.hidden) sldAttrs.push(' show="0"');
   parts.push(
@@ -80,7 +87,16 @@ export function stringifySlide(slideOpts: SlideOptions, ctx: PptxWriteContext): 
   }
 
   parts.push("<p:spTree>");
-  parts.push(stringifySpTreeHeader(1, "", undefined, slideOpts.groupTransformless));
+  parts.push(
+    stringifySpTreeHeader(
+      slideOpts.shapeTreeId,
+      slideOpts.shapeTreeName,
+      slideOpts.shapeTreeBlackWhiteMode,
+      slideOpts.groupTransformless,
+      slideOpts.shapeTreeCreationId,
+      slideOpts.shapeTreeExt,
+    ),
+  );
 
   if (slideOpts.children) {
     for (const child of slideOpts.children) {
@@ -109,7 +125,7 @@ export function stringifySlide(slideOpts: SlideOptions, ctx: PptxWriteContext): 
   parts.push("</p:spTree>");
 
   parts.push(stringifyCustDataLst(slideOpts.customerData));
-  parts.push(stringifyControls(slideOpts.controls));
+  parts.push(stringifyControls(slideOpts.controls, (picture) => stringifyChild({ picture }, ctx)));
 
   // cSld-tail extLst (p14:creationId's home) — verbatim, before the cSld close
   // and distinct from the root-level extLst emitted after timing.
@@ -145,22 +161,23 @@ export function buildCommentData(
   authors: AuthorEntry[] | undefined;
   perSlide: (CommentEntry[] | undefined)[];
 } {
-  const authorMap = new Map<
-    string,
+  const authorMapById = new Map<
+    number,
     { id: number; name: string; initials: string; clrIdx: number; lastIdx: number; ext?: string }
   >();
   let nextAuthorId = 0;
   // Seed from existing authors so appended comments continue author ids and the
   // per-author idx counter (commentCount resumes at lastIdx).
   for (const a of existingAuthors) {
-    authorMap.set(a.name, {
+    const author = {
       id: a.id,
       name: a.name,
       initials: a.initials,
       clrIdx: a.clrIdx,
       lastIdx: a.lastIdx,
-      ...(a.ext ? { ext: a.ext } : {}),
-    });
+      ...(a.ext !== undefined ? { ext: a.ext } : {}),
+    };
+    authorMapById.set(a.id, author);
     if (a.id >= nextAuthorId) nextAuthorId = a.id + 1;
   }
 
@@ -173,10 +190,19 @@ export function buildCommentData(
     const commentEntries: CommentEntry[] = [];
 
     for (const c of slideComments) {
-      let author = authorMap.get(c.author);
+      let author:
+        | {
+            id: number;
+            name: string;
+            initials: string;
+            clrIdx: number;
+            lastIdx: number;
+            ext?: string;
+          }
+        | undefined;
       if (c.authorId !== undefined) {
         const sourceAuthor = existingAuthors.find((candidate) => candidate.id === c.authorId);
-        author = {
+        author = authorMapById.get(c.authorId) ?? {
           id: c.authorId,
           name: sourceAuthor?.name ?? c.author,
           initials: sourceAuthor?.initials ?? (c.initials || deriveInitials(c.author)),
@@ -184,8 +210,8 @@ export function buildCommentData(
           lastIdx: sourceAuthor?.lastIdx ?? c.idx ?? 0,
           ...(sourceAuthor?.ext || c.ext ? { ext: sourceAuthor?.ext ?? c.ext } : {}),
         };
-        authorMap.set(c.author, author);
-      } else if (!author) {
+        authorMapById.set(c.authorId, author);
+      } else {
         const id = nextAuthorId++;
         author = {
           id,
@@ -194,7 +220,7 @@ export function buildCommentData(
           clrIdx: id,
           lastIdx: 0,
         };
-        authorMap.set(c.author, author);
+        authorMapById.set(id, author);
       }
       author.lastIdx = c.idx === undefined ? author.lastIdx + 1 : Math.max(author.lastIdx, c.idx);
 
@@ -214,14 +240,14 @@ export function buildCommentData(
   }
 
   const authors =
-    existingAuthors.length > 0 || authorMap.size > 0
-      ? Array.from(authorMap.values(), (a) => ({
+    existingAuthors.length > 0 || authorMapById.size > 0
+      ? Array.from(authorMapById.values(), (a) => ({
           id: a.id,
           name: a.name,
           initials: a.initials,
           clrIdx: a.clrIdx,
           lastIdx: a.lastIdx,
-          ...(a.ext ? { ext: a.ext } : {}),
+          ...(a.ext !== undefined ? { ext: a.ext } : {}),
         }))
       : undefined;
 
@@ -272,6 +298,7 @@ export function compileSlideParts(
   smartArts: SmartArtCollection,
   passthroughRelationships: PresentationOptions["passthroughRelationships"],
   existingAuthors: AuthorEntry[] = [],
+  preserveEmptyAuthors = false,
 ): SlideCompileArtifacts {
   const media = descCtx.mediaCollection;
 
@@ -297,10 +324,12 @@ export function compileSlideParts(
     }
   }
 
-  const { authors: commentAuthorEntries, perSlide: slideCommentEntries } = buildCommentData(
-    slides,
-    existingAuthors,
-  );
+  const builtCommentData = buildCommentData(slides, existingAuthors);
+  const commentAuthorEntries =
+    preserveEmptyAuthors && builtCommentData.authors === undefined
+      ? existingAuthors
+      : builtCommentData.authors;
+  const { perSlide: slideCommentEntries } = builtCommentData;
   const slideCommentPaths = slides.map((slide) => slide.commentSourcePath);
 
   // Group passthrough rels by source part once — the per-slide loop below
@@ -320,43 +349,61 @@ export function compileSlideParts(
     const slideMediaData = getReferencedMedia(slideXml, media.array);
     const currentSlideRels = slideRels[i];
     if (!currentSlideRels) continue; // slideRels is built one-per-slide in lockstep with slides
+    const slidePath = slide.sourcePath ?? `ppt/slides/slide${i + 1}.xml`;
     absorbSlideSourceKinds(
       currentSlideRels,
       slide,
       slideXml,
       slideMediaData,
-      `ppt/slides/slide${i + 1}.xml`,
+      slidePath,
       passthroughRelationships,
       descCtx,
     );
     // Promote the slide layout rel to its source id up front — the model's
     // layout registration is rId1 by construction and the source id is free
     // below it, so the rename never collides.
-    promoteLayoutToSourceId(
-      currentSlideRels,
-      slidePassthroughBySource.get(`ppt/slides/slide${i + 1}.xml`),
+    promoteLayoutToSourceId(currentSlideRels, slidePassthroughBySource.get(slidePath));
+    const slideSourceMediaIds = sourceMediaRelationshipIds(slidePath, passthroughRelationships);
+    for (const relationship of passthroughRelationships ?? []) {
+      if (
+        relationship.source === slidePath &&
+        MEDIA_REL_KINDS.has(relationship.relationshipType.split("/").pop() ?? "")
+      ) {
+        currentSlideRels.reserveId(relationship.rId);
+      }
+    }
+    for (const sourceId of slideSourceMediaIds.values()) currentSlideRels.reserveId(sourceId);
+    const slideMediaOffset = currentSlideRels.nextRelationshipId;
+    let slideMediaId = slideMediaOffset;
+    const slideMediaIds = slideMediaData.map(
+      (mediaItem) => slideSourceMediaIds.get(mediaItem.fileName) ?? `rId${slideMediaId++}`,
     );
-    const slideImageOffset = currentSlideRels.nextRelationshipId;
     for (const [idx, mediaItem] of slideMediaData.entries()) {
       currentSlideRels.addRelationship(
-        slideImageOffset + idx,
+        slideMediaIds[idx]!,
         RELATIONSHIP_TYPES.image,
         `../media/${mediaItem.fileName}`,
       );
     }
-
     const replacedSlideXml = wireSlidePlaceholderBatches(
-      replaceImagePlaceholders(slideXml, slideMediaData, slideImageOffset),
+      replaceImagePlaceholders(
+        slideXml,
+        slideMediaData,
+        slideMediaOffset,
+        "rId",
+        slideSourceMediaIds,
+      ),
       currentSlideRels,
       descCtx,
       charts,
       smartArts,
-      slidePassthroughBySource.get(`ppt/slides/slide${i + 1}.xml`),
+      slidePassthroughBySource.get(slidePath),
+      slidePath,
     );
 
     mapping[`Slide${i}`] = {
       data: replacedSlideXml,
-      path: `ppt/slides/slide${i + 1}.xml`,
+      path: slidePath,
     };
 
     const commentFileName = slideCommentPaths[i]?.split("/").pop() ?? `comment${i + 1}.xml`;
@@ -397,39 +444,33 @@ export function compileSlideParts(
     // whose kind+target the model already owns mean the source rel was
     // absorbed; different targets of the same kind are independent package
     // members (legacy VML art beside a modeled picture, for example).
-    const sourceMediaRelationshipCounts = new Map<string, number>();
-    const claimedDuplicateMediaRelationships = new Map<string, number>();
-    for (const rel of passthroughRelationships ?? []) {
-      if (rel.source !== `ppt/slides/slide${i + 1}.xml`) continue;
-      if (!MEDIA_REL_KINDS.has(rel.relationshipType.split("/").pop()!)) continue;
-      const key = `${rel.relationshipType.split("/").pop()}:${rel.target}`;
-      sourceMediaRelationshipCounts.set(key, (sourceMediaRelationshipCounts.get(key) ?? 0) + 1);
-      claimedDuplicateMediaRelationships.set(key, 0);
+    const slideSourceRelationships = (passthroughRelationships ?? []).filter(
+      (rel) => rel.source === slidePath,
+    );
+    if (
+      slideSourceRelationships.some((rel) =>
+        MEDIA_REL_KINDS.has(rel.relationshipType.split("/").pop() ?? ""),
+      )
+    ) {
+      claimMediaSourceRelationships(
+        currentSlideRels,
+        slidePath,
+        passthroughRelationships,
+        new Set([...replacedSlideXml.matchAll(/\brId\d+\b/g)].map((match) => match[0])),
+      );
     }
     for (const rel of passthroughRelationships ?? []) {
-      if (rel.source !== `ppt/slides/slide${i + 1}.xml`) continue;
-      const kind = rel.relationshipType.split("/").pop()!;
-      if (kind === "slideLayout" && currentSlideRels.hasRelationshipKind(kind)) {
-        continue;
-      }
-      if (MEDIA_REL_KINDS.has(kind)) {
-        const key = `${kind}:${rel.target}`;
-        const sourceCount = sourceMediaRelationshipCounts.get(key) ?? 0;
-        const modelCount = currentSlideRels.countRelationships(rel.relationshipType, rel.target);
-        const duplicatesToClaim = Math.max(0, sourceCount - modelCount);
-        const claimedCount = claimedDuplicateMediaRelationships.get(key) ?? 0;
-        if (claimedCount >= duplicatesToClaim) continue;
-        claimedDuplicateMediaRelationships.set(key, claimedCount + 1);
-        currentSlideRels.claimSourceRel(rel, { force: true });
-        continue;
-      }
+      if (rel.source !== slidePath) continue;
+      const kind = rel.relationshipType.split("/").pop() ?? "";
+      if (MEDIA_REL_KINDS.has(kind)) continue;
+      if (kind === "slideLayout" && currentSlideRels.hasRelationshipKind(kind)) continue;
       if (currentSlideRels.hasRelationship(rel.relationshipType, rel.target)) continue;
       currentSlideRels.claimSourceRel(rel);
     }
 
     mapping[`SlideRelationships${i}`] = {
       data: XML_DECL + currentSlideRels.serialize(),
-      path: `ppt/slides/_rels/slide${i + 1}.xml.rels`,
+      path: partPathToRelsPath(slidePath),
     };
   }
 
@@ -455,6 +496,7 @@ function wireSlidePlaceholderBatches(
   charts: ChartCollection,
   smartArts: SmartArtCollection,
   sourceRelationships: PresentationOptions["passthroughRelationships"],
+  slidePath: string,
 ): string {
   let replacedSlideXml = slideXml;
   const media = descCtx.mediaCollection;
@@ -479,7 +521,7 @@ function wireSlidePlaceholderBatches(
       rels.addRelationship(
         slideChartOffset + ci,
         RELATIONSHIP_TYPES.chart,
-        chartPath.startsWith("ppt/charts/") ? `../${chartPath.slice("ppt/".length)}` : chartPath,
+        relativePartTarget(slidePath, chartPath),
       );
     }
   }
@@ -493,7 +535,26 @@ function wireSlidePlaceholderBatches(
     const allSaKeys = [...xmlCompSmartArts.map((s) => s.key), ...descSmartArts.map((s) => s.key)];
     const smartArtsByKey = new Map([...xmlCompSmartArts, ...descSmartArts].map((s) => [s.key, s]));
     const saOffset = rels.nextRelationshipId;
-    replacedSlideXml = replaceSmartArtPlaceholders(replacedSlideXml, allSaKeys, saOffset);
+    const saSourceRelIds = new Map<
+      string,
+      { dm?: string; lo?: string; qs?: string; cs?: string }
+    >();
+    const saSourcePaths = new Map<
+      string,
+      { data?: string; layout?: string; quickStyle?: string; colors?: string }
+    >();
+    for (const key of allSaKeys) {
+      const sa = smartArtsByKey.get(key);
+      if (sa?.sourceRelIds) saSourceRelIds.set(key, sa.sourceRelIds);
+      if (sa?.sourcePaths) saSourcePaths.set(key, sa.sourcePaths);
+    }
+    replacedSlideXml = replaceSmartArtPlaceholders(
+      replacedSlideXml,
+      allSaKeys,
+      saOffset,
+      "rId",
+      saSourceRelIds,
+    );
     const firstSaKey = allSaKeys[0];
     if (firstSaKey !== undefined) {
       const saGlobalStart = computeSmartArtGlobalStart(
@@ -515,7 +576,13 @@ function wireSlidePlaceholderBatches(
             const smartArt = smartArtsByKey.get(key);
             return smartArt?.raw?.drawing !== undefined || smartArt?.raw === undefined;
           },
+          sourceTargetFor: (key, kind) => {
+            if (kind === "drawing") return undefined;
+            const source = saSourcePaths.get(key)?.[kind];
+            return source ? relativePartTarget(slidePath, source) : undefined;
+          },
         },
+        saSourceRelIds,
       );
     }
   }
@@ -562,6 +629,22 @@ function wireSlidePlaceholderBatches(
     replacedSlideXml = replacePlaceholders(replacedSlideXml, replacements);
   }
 
+  // Externally linked video (a:videoFile @r:link), including legacy frames
+  // that carry no p14:media extension copy.
+  const slideVideoLinkKeys = collectPlaceholderKeys(replacedSlideXml, "video-link:");
+  if (slideVideoLinkKeys.length > 0) {
+    const slideVideoLinkSet = new Set(slideVideoLinkKeys);
+    const slideVideoLinks = descCtx.videoLinks.filter((l) => slideVideoLinkSet.has(l.key));
+    const videoLinkOffset = rels.nextRelationshipId;
+    const replacements = new Map<string, string>();
+    for (const [vi, videoLink] of slideVideoLinks.entries()) {
+      const id = videoLinkOffset + vi;
+      replacements.set(`video-link:${videoLink.key}`, `rId${id}`);
+      rels.addRelationship(id, RELATIONSHIP_TYPES.video, videoLink.url, "External");
+    }
+    replacedSlideXml = replacePlaceholders(replacedSlideXml, replacements);
+  }
+
   // Linked OLE objects (p:oleObj @r:id with p:link) — one External
   // oleObject relationship per referenced URL.
   const slideOleLinkKeys = collectPlaceholderKeys(replacedSlideXml, "ole-link:");
@@ -588,30 +671,51 @@ function wireSlidePlaceholderBatches(
     const mediaOffset = rels.nextRelationshipId;
     const audioOffset = mediaOffset + slideMediaRefs.length;
     const videoOffset = audioOffset + slideAudioRefs.length;
-    replacedSlideXml = replaceMediaPlaceholders(replacedSlideXml, slideMediaRefs, mediaOffset);
-    replacedSlideXml = replaceAudioPlaceholders(replacedSlideXml, slideAudioRefs, audioOffset);
-    replacedSlideXml = replaceVideoPlaceholders(replacedSlideXml, slideVideoRefs, videoOffset);
-    for (const [mi, mediaRef] of slideMediaRefs.entries()) {
+    const sourceMediaIds = sourceMediaRelationshipIdsByKind(slidePath, sourceRelationships);
+    const replacements = new Map<string, string>();
+    const addMediaRelationship = (
+      id: string,
+      fallback: number,
+      prefix: "media" | "audio" | "video",
+      type: (typeof RELATIONSHIP_TYPES)["mediaMs" | "audio" | "video"],
+      fileName: string,
+    ): void => {
+      const sourceId = Number(/^rId(\d+)$/.exec(id)?.[1] ?? NaN);
+      replacements.set(`${prefix}:${fileName}`, Number.isNaN(sourceId) ? `rId${fallback}` : id);
       rels.addRelationship(
+        Number.isNaN(sourceId) ? fallback : sourceId,
+        type,
+        `../media/${fileName}`,
+      );
+    };
+    for (const [mi, mediaRef] of slideMediaRefs.entries()) {
+      addMediaRelationship(
+        sourceMediaIds.get(`media:${mediaRef.fileName}`) ?? "",
         mediaOffset + mi,
+        "media",
         RELATIONSHIP_TYPES.mediaMs,
-        `../media/${mediaRef.fileName}`,
+        mediaRef.fileName,
       );
     }
     for (const [ai, audioRef] of slideAudioRefs.entries()) {
-      rels.addRelationship(
+      addMediaRelationship(
+        sourceMediaIds.get(`audio:${audioRef.fileName}`) ?? "",
         audioOffset + ai,
+        "audio",
         RELATIONSHIP_TYPES.audio,
-        `../media/${audioRef.fileName}`,
+        audioRef.fileName,
       );
     }
     for (const [vi, videoRef] of slideVideoRefs.entries()) {
-      rels.addRelationship(
+      addMediaRelationship(
+        sourceMediaIds.get(`video:${videoRef.fileName}`) ?? "",
         videoOffset + vi,
+        "video",
         RELATIONSHIP_TYPES.video,
-        `../media/${videoRef.fileName}`,
+        videoRef.fileName,
       );
     }
+    replacedSlideXml = replacePlaceholders(replacedSlideXml, replacements);
   }
 
   // OLE embeddings
@@ -682,6 +786,7 @@ function absorbSlideSourceKinds(
     slideAbsorbedKinds.add("diagramColors");
     slideAbsorbedKinds.add("diagramQuickStyle");
   }
+
   const media = descCtx.mediaCollection;
   const slideEmbeddedMediaRefs = getMediaRefs(slideXml, media.array);
   const slideAudioRefs = getAudioRefs(slideXml, media.array);

@@ -10,7 +10,7 @@
 
 // ── Descriptor ──
 
-import { escapeXml } from "@office-open/xml";
+import { escapeXml, textOf } from "@office-open/xml";
 
 import type { CustomDescriptor } from "../descriptor";
 import { parseOnOff } from "../util/values";
@@ -62,11 +62,11 @@ export interface AppPropertiesOptions {
   /** Hyperlink base URL */
   hyperlinkBase?: string;
   /**
-   * Hyperlink metadata vector (HLinks) — Word's internal per-link records
-   * (six entries per link). Round-trip only: fields are undocumented, so the
-   * flat variant values are carried as-is.
+   * Hyperlink metadata (HLinks) — Word's internal per-link records (six
+   * entries per link). Round-trip only: flat variant values are carried as-is;
+   * `null` preserves a source HLinks container with no vt:vector child.
    */
-  hlinks?: VariantValue[];
+  hlinks?: VariantValue[] | null;
   /** Application name */
   application?: string;
   /** Application version */
@@ -188,8 +188,10 @@ export const appPropertiesDesc: CustomDescriptor<AppPropertiesInput> = {
       p.push(`<${t("SharedDoc")}>${xsdBoolean(opts.sharedDoc)}</${t("SharedDoc")}>`);
     if (opts.hyperlinkBase !== undefined)
       p.push(`<${t("HyperlinkBase")}>${escapeXml(opts.hyperlinkBase)}</${t("HyperlinkBase")}>`);
-    if (opts.hlinks !== undefined && opts.hlinks.length > 0)
-      p.push(`<${t("HLinks")}>${stringifyVariantVector(opts.hlinks)}</${t("HLinks")}>`);
+    if (opts.hlinks !== undefined) {
+      const vector = opts.hlinks === null ? "" : stringifyVariantVector(opts.hlinks);
+      p.push(`<${t("HLinks")}>${vector}</${t("HLinks")}>`);
+    }
     if (opts.hyperlinksChanged !== undefined)
       p.push(
         `<${t("HyperlinksChanged")}>${xsdBoolean(opts.hyperlinksChanged)}</${t("HyperlinksChanged")}>`,
@@ -215,7 +217,7 @@ export const appPropertiesDesc: CustomDescriptor<AppPropertiesInput> = {
     if (el.name === "ap:Properties") result.apPrefix = true;
     for (const child of el.elements ?? []) {
       if (typeof child.name !== "string") continue;
-      const text = child.elements?.[0]?.text;
+      const text = textOf(child);
       // String fields are presence-based: Word writes empty elements
       // ("<Company>\n</Company>", which the XML parser reduces to no text)
       // — capture "" so the element round-trips instead of being dropped.
@@ -303,8 +305,7 @@ export const appPropertiesDesc: CustomDescriptor<AppPropertiesInput> = {
           break;
         case "HLinks": {
           const vector = child.elements?.find((e) => e.name === "vt:vector");
-          const values = parseVector(vector);
-          if (values.length > 0) result.hlinks = values;
+          result.hlinks = vector ? parseVector(vector) : null;
           break;
         }
         case "HyperlinksChanged":

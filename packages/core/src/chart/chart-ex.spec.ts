@@ -80,6 +80,45 @@ describe("ChartEx descriptor", () => {
     expect(reparsed).toEqual(options);
   });
 
+  it("uses the ChartEx namespace for color mapping overrides", () => {
+    const options = parseDescriptor(chartExSpaceDesc, root(CHART_EX_XML), READ_CONTEXT);
+    options.colorMapping = {
+      background1: "light1",
+      text1: "dark1",
+      background2: "light2",
+      text2: "dark2",
+      accent1: "accent1",
+      accent2: "accent2",
+      accent3: "accent3",
+      accent4: "accent4",
+      accent5: "accent5",
+      accent6: "accent6",
+      hyperlink: "hyperlink",
+      followedHyperlink: "followedHyperlink",
+    };
+    const generated = stringifyDescriptor(chartExSpaceDesc, options, WRITE_CONTEXT)!;
+    const reparsed = parseDescriptor(chartExSpaceDesc, root(generated), READ_CONTEXT);
+    expect(generated).toContain("<cx:clrMapOvr ");
+    expect(reparsed.colorMapping).toEqual(options.colorMapping);
+  });
+
+  it("preserves value-only titles, color dimensions, and chart-space properties", () => {
+    const source = root(
+      `<cx:chartSpace xmlns:cx="http://schemas.microsoft.com/office/drawing/2014/chartex" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">` +
+        `<cx:chartData><cx:data id="0"><cx:numDim type="colorVal"><cx:f>_xlchart.v1.0</cx:f></cx:numDim></cx:data></cx:chartData>` +
+        `<cx:chart><cx:title><cx:tx><cx:txData><cx:v>Title</cx:v></cx:txData></cx:tx></cx:title><cx:plotArea><cx:plotAreaRegion><cx:series layoutId="clusteredColumn"><cx:dataId val="0"/></cx:series></cx:plotAreaRegion></cx:plotArea></cx:chart>` +
+        `<cx:spPr><a:noFill/></cx:spPr></cx:chartSpace>`,
+    );
+    const options = parseDescriptor(chartExSpaceDesc, source, READ_CONTEXT);
+    const generated = stringifyDescriptor(chartExSpaceDesc, options, WRITE_CONTEXT)!;
+    const reparsed = parseDescriptor(chartExSpaceDesc, root(generated), READ_CONTEXT);
+
+    expect(options.chartData?.data[0]?.dimensions[0]).toMatchObject({ type: "colorVal" });
+    expect(options.chart?.title?.text).toEqual({ value: "Title" });
+    expect(options.shapeProperties?.fill).toEqual({ type: "none" });
+    expect(reparsed).toEqual(options);
+  });
+
   it("rejects malformed series and roots with structured failures", () => {
     expect(() => parseDescriptor(chartExSpaceDesc, root("<chart/>"), READ_CONTEXT)).toThrow(
       "ChartEx root must be chartSpace",

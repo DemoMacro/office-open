@@ -104,4 +104,22 @@ describe("core properties", () => {
     expect(xml).not.toContain("dc:language");
     expect(xml).not.toContain("cp:version");
   });
+
+  it("preserves subject language and timestamp type attributes", () => {
+    const xml =
+      `<cp:coreProperties ${NS}>` +
+      '<dc:subject xml:lang="en-US">Subject</dc:subject>' +
+      "<dcterms:created>2001-01-01T00:00:00Z</dcterms:created>" +
+      '<dcterms:modified xsi:type="custom:type">2002-01-01T00:00:00Z</dcterms:modified>' +
+      "</cp:coreProperties>";
+    const parsed = parseCorePropsElement(parseXml(xml).elements?.[0]);
+    expect(parsed.subjectLanguage).toBe("en-US");
+    expect(parsed.createdType).toBe(false);
+    expect(parsed.modifiedType).toBe("custom:type");
+
+    const rebuilt = buildCorePropertiesXmlString(parsed);
+    expect(rebuilt).toContain('<dc:subject xml:lang="en-US">Subject</dc:subject>');
+    expect(rebuilt).toContain("<dcterms:created>2001-01-01T00:00:00Z</dcterms:created>");
+    expect(rebuilt).toContain('<dcterms:modified xsi:type="custom:type">');
+  });
 });

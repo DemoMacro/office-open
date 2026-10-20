@@ -24,7 +24,7 @@ import type {
   MoveRangeOptions,
 } from "./links/bookmark";
 import type { MathInput } from "./math";
-import type { ParagraphPropertiesOptions } from "./properties";
+import type { NumberingChangeOptions, ParagraphPropertiesOptions } from "./properties";
 import type { RunOptions, RunPropertiesOptions } from "./run";
 import type { ChartExOptions } from "./run/chart-ex-run";
 import type { ChartOptions } from "./run/chart-run";
@@ -64,8 +64,12 @@ export interface FootnoteEndnoteReferenceOptions {
  */
 export interface ComplexFieldOptions {
   instruction: string;
+  /** Whether an explicit cached-result stage begins at w:fldChar separate. */
+  hasResult?: boolean;
   /** Field lock (w:fldChar/`@w:fldLock` on the begin marker). */
   fieldLock?: boolean;
+  /** Field data carried by the begin marker (`w:fldData`, round-trip). */
+  fieldData?: string;
   /** Ordered members when nested simple fields occur inside a field code. */
   instructionMembers?: ComplexFieldInstructionMember[];
   /** Source `xml:space="preserve"` marker on the plain instruction text. */
@@ -78,16 +82,22 @@ export interface ComplexFieldOptions {
   additionRsid?: string;
   /** Revision save ID of the begin run properties (w:rsidRPr, round-trip). */
   runPropertiesRsid?: LongHexNumber;
+  /** Revision save ID when the begin run was deleted (w:rsidDel, round-trip). */
+  deletionRsid?: LongHexNumber;
   /** Revision save ID of the instruction run (w:rsidR, round-trip). */
   instructionAdditionRsid?: LongHexNumber;
   /** Revision save ID of the instruction run properties (w:rsidRPr, round-trip). */
   instructionRunPropertiesRsid?: LongHexNumber;
+  /** Revision save ID when the instruction run was deleted (w:rsidDel, round-trip). */
+  instructionDeletionRsid?: LongHexNumber;
   /** Verbatim instruction-run properties; empty string means explicitly absent. */
   instructionRPrXml?: string;
   /** Revision save ID of the separator run (w:rsidR, round-trip). */
   separatorAdditionRsid?: LongHexNumber;
   /** Revision save ID of the separator run properties (w:rsidRPr, round-trip). */
   separatorRunPropertiesRsid?: LongHexNumber;
+  /** Revision save ID when the separator run was deleted (w:rsidDel, round-trip). */
+  separatorDeletionRsid?: LongHexNumber;
   /** Verbatim separator-run properties; empty string means explicitly absent. */
   separatorRPrXml?: string;
   resultRPrXml?: string;
@@ -95,6 +105,8 @@ export interface ComplexFieldOptions {
   resultAdditionRsid?: string;
   /** Revision save ID of the first plain result run's properties (w:rsidRPr). */
   resultRunPropertiesRsid?: string;
+  /** Revision save ID when the result run was deleted (w:rsidDel, round-trip). */
+  resultDeletionRsid?: string;
   /** Verbatim run-properties of the end fldChar run (may differ from the
    *  control rPr — Word styles the end run like the result). */
   endRPrXml?: string;
@@ -102,6 +114,8 @@ export interface ComplexFieldOptions {
   endAdditionRsid?: LongHexNumber;
   /** Revision save ID of the end run properties (w:rsidRPr, round-trip). */
   endRunPropertiesRsid?: LongHexNumber;
+  /** Revision save ID when the end run was deleted (w:rsidDel, round-trip). */
+  endDeletionRsid?: LongHexNumber;
   /** Verbatim XML of the instruction runs (begin → separate/end) when the
    *  source split them across runs with per-run properties or line breaks —
    *  shapes the plain instruction template cannot reproduce. */
@@ -110,23 +124,132 @@ export interface ComplexFieldOptions {
    *  the cached value across runs with per-run properties — e.g. Word's
    *  locale-mixed date results where every segment carries its own rFonts. */
   resultRunsXml?: string;
+  /** Complete source run when one producer packed all field stages into it
+   *  (round-trip only — do not hand-author). */
+  compoundRunXml?: string;
+  /** End marker run paired with `compoundRunXml` when the producer split the
+   *  final field boundary into its own run. */
+  compoundEndRunXml?: string;
   /** Ordered typed members when non-run markers interrupt the cached result. */
   resultMembers?: ComplexFieldInstructionMember[];
   /** A pagination hint Word parked on the begin run itself (w:r >
    * w:lastRenderedPageBreak + w:fldChar begin in one run). */
   lastRenderedPageBreak?: boolean;
+  /** Revision metadata embedded in the begin marker (round-trip). */
+  beginNumberingChange?: NumberingChangeOptions;
+  /** Revision metadata embedded in the end marker (round-trip). */
+  endNumberingChange?: NumberingChangeOptions;
+}
+
+/** A canonical orphan field-stage marker (`w:r > w:fldChar`). */
+export interface FieldMarkerOptions {
+  type: "separate" | "end";
+  /** Run properties of the marker run (round-trip). */
+  rPrXml?: string;
+  additionRsid?: LongHexNumber;
+  runPropertiesRsid?: LongHexNumber;
+  deletionRsid?: LongHexNumber;
+  lastRenderedPageBreak?: boolean;
+  /** Revision metadata embedded in the field marker (round-trip). */
+  numberingChange?: NumberingChangeOptions;
+}
+
+/** A complete canonical form-field chain, including round-trip run metadata. */
+export interface FormFieldChild {
+  formField: FormFieldOptions;
+  /** Field lock (w:fldChar/`@w:fldLock` on the begin marker). */
+  fieldLock?: boolean;
+  /** Revision save ID of the begin run (w:rsidR, round-trip). */
+  additionRsid?: LongHexNumber;
+  /** Revision save ID of the begin run properties (w:rsidRPr, round-trip). */
+  runPropertiesRsid?: LongHexNumber;
+  /** Revision save ID when the begin run was deleted (w:rsidDel, round-trip). */
+  deletionRsid?: LongHexNumber;
+  /** Control-run properties shared by begin/separate (round-trip). */
+  rPrXml?: string;
+  /** Whether the source carried a separate marker and result (round-trip). */
+  hasResult?: boolean;
+  /** Revision save ID of the separator run (w:rsidR, round-trip). */
+  separatorAdditionRsid?: LongHexNumber;
+  /** Revision save ID of the separator run properties (w:rsidRPr, round-trip). */
+  separatorRunPropertiesRsid?: LongHexNumber;
+  /** Verbatim separator-run properties; empty string means explicitly absent. */
+  separatorRPrXml?: string;
+  /** Ordered typed members when markers interrupt the field code. */
+  instructionMembers?: ComplexFieldInstructionMember[];
+  /** Revision save ID of the instruction run (w:rsidR, round-trip). */
+  instructionAdditionRsid?: LongHexNumber;
+  /** Revision save ID of the instruction run properties (w:rsidRPr, round-trip). */
+  instructionRunPropertiesRsid?: LongHexNumber;
+  /** Revision save ID when the instruction run was deleted (w:rsidDel, round-trip). */
+  instructionDeletionRsid?: LongHexNumber;
+  /** Verbatim instruction-run properties (round-trip; defaults to control rPr). */
+  instructionRPrXml?: string;
+  /** Complete instruction-stage runs (round-trip only — do not hand-author). */
+  instrRunsXml?: string;
+  /** Ordered typed members when markers interrupt the cached result. */
+  resultMembers?: ComplexFieldInstructionMember[];
+  /** Revision save ID of the result run (w:rsidR, round-trip). */
+  resultAdditionRsid?: LongHexNumber;
+  /** Revision save ID of the result run properties (w:rsidRPr, round-trip). */
+  resultRunPropertiesRsid?: LongHexNumber;
+  /** Revision save ID when the result run was deleted (w:rsidDel, round-trip). */
+  resultDeletionRsid?: LongHexNumber;
+  /** Result-run properties (round-trip; differs from the control rPr). */
+  resultRPrXml?: string;
+  /** Complete result-stage runs after the separate marker (round-trip only). */
+  resultRunsXml?: string;
+  /** Revision save ID of the end run (w:rsidR, round-trip). */
+  endAdditionRsid?: LongHexNumber;
+  /** Revision save ID of the end run properties (w:rsidRPr, round-trip). */
+  endRunPropertiesRsid?: LongHexNumber;
+  /** Revision save ID when the end run was deleted (w:rsidDel, round-trip). */
+  endDeletionRsid?: LongHexNumber;
+  /** Verbatim run-properties of the end fldChar run (round-trip). */
+  endRPrXml?: string;
+  /** A pagination hint Word parked on the begin run itself (round-trip only). */
+  lastRenderedPageBreak?: boolean;
+  /** Revision metadata embedded in the begin marker (round-trip). */
+  numberingChange?: NumberingChangeOptions;
 }
 
 /**
- * One ordered member of a mixed complex-field instruction. Runs retain the
- * existing verbatim fidelity channel; nested `w:fldSimple` fields remain
- * canonical `SimpleFieldOptions`.
+ * One ordered member of a mixed complex-field stage. Runs, nested fields,
+ * bookmarks, proofing markers, and other canonical paragraph children stay in
+ * source order so nested fields do not fall back to a raw XML channel.
  */
 export type ComplexFieldInstructionMember =
   | { run: RunOptions }
   | { simpleField: SimpleFieldOptions }
   | { bookmarkStart: BookmarkStartOptions }
-  | { bookmarkEnd: MarkupRangeOptions };
+  | { bookmarkEnd: MarkupRangeOptions }
+  | { proofErr: "spellStart" | "spellEnd" | "gramStart" | "gramEnd" }
+  | FormFieldChild
+  | { complexField: ComplexFieldOptions }
+  | { fieldMarker: FieldMarkerOptions }
+  | { sdt: SdtRunOptions }
+  | { insertion: ChangedProperties & { children: TrackChangeChild[] } }
+  | { deletion: ChangedProperties & { children: TrackChangeChild[] } }
+  | { movedFrom: ChangedProperties & { children: TrackChangeChild[] } }
+  | { movedTo: ChangedProperties & { children: TrackChangeChild[] } }
+  | {
+      hyperlink: {
+        url?: string;
+        /** Source document relationship id; round-trip only. */
+        sourceRelationshipId?: string;
+        anchor?: string;
+        tooltip?: string;
+        /** Target frame for the hyperlink (CT_Hyperlink `@tgtFrame`) */
+        targetFrame?: string;
+        /** Location within the target document (CT_Hyperlink `@docLocation`) */
+        docLocation?: string;
+        /** Add the target to the navigation history (CT_Hyperlink `@history`) */
+        history?: boolean;
+        /** Link content: text runs plus drawings (image links) and other
+         *  run-level children the paragraph dispatch serializes. */
+        children?: (RunOptions | string | ParagraphChild)[];
+      };
+    };
 
 /**
  * Children allowed inside a track-change wrapper (w:ins/w:del/w:moveFrom/
@@ -139,11 +262,19 @@ export type TrackChangeChild =
   | string
   | { commentRangeStart: MarkupRangeOptions }
   | { commentRangeEnd: MarkupRangeOptions }
+  | { bookmarkStart: BookmarkStartOptions }
+  | { bookmarkEnd: MarkupRangeOptions }
   | { pageBreak: true }
   | { columnBreak: true }
   | { complexField: ComplexFieldOptions }
+  | { fieldMarker: FieldMarkerOptions }
+  | {
+      hyperlink: Extract<ParagraphChild, { hyperlink: unknown }>["hyperlink"];
+    }
   | {
       formField: FormFieldOptions;
+      /** Field lock (w:fldChar/`@w:fldLock` on the begin marker). */
+      fieldLock?: boolean;
       /** Revision save ID of the begin run (w:rsidR, round-trip). */
       additionRsid?: LongHexNumber;
       /** Revision save ID of the begin run properties (w:rsidRPr, round-trip). */
@@ -158,6 +289,8 @@ export type TrackChangeChild =
       separatorRunPropertiesRsid?: LongHexNumber;
       /** Verbatim separator-run properties; empty string means explicitly absent. */
       separatorRPrXml?: string;
+      /** Ordered typed members when markers interrupt the field code. */
+      instructionMembers?: ComplexFieldInstructionMember[];
       /** Revision save ID of the instruction run (w:rsidR, round-trip). */
       instructionAdditionRsid?: LongHexNumber;
       /** Revision save ID of the instruction run properties (w:rsidRPr, round-trip). */
@@ -166,6 +299,8 @@ export type TrackChangeChild =
       instructionRPrXml?: string;
       /** Complete instruction-stage runs (round-trip only — do not hand-author). */
       instrRunsXml?: string;
+      /** Ordered typed members when markers interrupt the cached result. */
+      resultMembers?: ComplexFieldInstructionMember[];
       /** Revision save ID of the result run (w:rsidR, round-trip). */
       resultAdditionRsid?: LongHexNumber;
       /** Revision save ID of the result run properties (w:rsidRPr, round-trip). */
@@ -174,6 +309,9 @@ export type TrackChangeChild =
       resultRPrXml?: string;
       /** Complete result-stage runs after the separate marker (round-trip only). */
       resultRunsXml?: string;
+      /** Complete source run when one producer packed all field stages into it
+       *  (round-trip only — do not hand-author). */
+      compoundRunXml?: string;
       /** Revision save ID of the end run (w:rsidR, round-trip). */
       endAdditionRsid?: LongHexNumber;
       /** Revision save ID of the end run properties (w:rsidRPr, round-trip). */
@@ -182,6 +320,8 @@ export type TrackChangeChild =
       endRPrXml?: string;
     }
   | { proofErr: "spellStart" | "spellEnd" | "gramStart" | "gramEnd" }
+  | { rawXml: string }
+  | { sdt: SdtRunOptions }
   | { symbolRun: SymbolRunOptions }
   | { object: ObjectElementOptions }
   | { pict: PictOptions }
@@ -249,8 +389,8 @@ export type ParagraphChild =
   | {
       hyperlink: {
         url?: string;
-        /** Source document relationship number; round-trip only. */
-        sourceRelationshipId?: number;
+        /** Source document relationship id; round-trip only. */
+        sourceRelationshipId?: string;
         anchor?: string;
         tooltip?: string;
         /** Target frame for the hyperlink (CT_Hyperlink `@tgtFrame`) */
@@ -318,49 +458,10 @@ export type ParagraphChild =
   | { conflictDel: ChangedProperties & { children: TrackChangeChild[] } }
   // Simple field
   | { simpleField: SimpleFieldOptions }
-  // Form field (checkbox, dropdown list, text input) — control-run rsids and
-  // run properties round-trip like ComplexFieldOptions.
-  | {
-      formField: FormFieldOptions;
-      /** Revision save ID of the begin run (w:rsidR, round-trip). */
-      additionRsid?: LongHexNumber;
-      /** Revision save ID of the begin run properties (w:rsidRPr, round-trip). */
-      runPropertiesRsid?: LongHexNumber;
-      /** Control-run properties shared by begin/separate (round-trip). */
-      rPrXml?: string;
-      /** Whether the source carried a separate marker and result (round-trip). */
-      hasResult?: boolean;
-      /** Revision save ID of the separator run (w:rsidR, round-trip). */
-      separatorAdditionRsid?: LongHexNumber;
-      /** Revision save ID of the separator run properties (w:rsidRPr, round-trip). */
-      separatorRunPropertiesRsid?: LongHexNumber;
-      /** Verbatim separator-run properties; empty string means explicitly absent. */
-      separatorRPrXml?: string;
-      /** Revision save ID of the instruction run (w:rsidR, round-trip). */
-      instructionAdditionRsid?: LongHexNumber;
-      /** Revision save ID of the instruction run properties (w:rsidRPr, round-trip). */
-      instructionRunPropertiesRsid?: LongHexNumber;
-      /** Verbatim instruction-run properties (round-trip; defaults to control rPr). */
-      instructionRPrXml?: string;
-      /** Complete instruction-stage runs (round-trip only — do not hand-author). */
-      instrRunsXml?: string;
-      /** Revision save ID of the result run (w:rsidR, round-trip). */
-      resultAdditionRsid?: LongHexNumber;
-      /** Revision save ID of the result run properties (w:rsidRPr, round-trip). */
-      resultRunPropertiesRsid?: LongHexNumber;
-      /** Result-run properties (round-trip; differs from the control rPr). */
-      resultRPrXml?: string;
-      /** Complete result-stage runs after the separate marker (round-trip only). */
-      resultRunsXml?: string;
-      /** Revision save ID of the end run (w:rsidR, round-trip). */
-      endAdditionRsid?: LongHexNumber;
-      /** Revision save ID of the end run properties (w:rsidRPr, round-trip). */
-      endRunPropertiesRsid?: LongHexNumber;
-      /** Verbatim run-properties of the end fldChar run (round-trip). */
-      endRPrXml?: string;
-    }
+  | FormFieldChild
   // Complex field (PAGE/DATE/TOC/HYPERLINK... — see ComplexFieldOptions)
   | { complexField: ComplexFieldOptions }
+  | { fieldMarker: FieldMarkerOptions }
   // Sequential identifier (SEQ field)
   | { seqIdentifier: string }
   // Page reference (PAGEREF field)

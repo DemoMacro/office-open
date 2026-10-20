@@ -249,8 +249,9 @@ export function deriveContentTypes(
       const desiredType = derivedTypeByPath.get(key);
       if (desiredType === undefined) continue;
       const ext = extensionOf(file)?.toLowerCase();
-      if (ext === "xml" && sourceDefaultByExt.get("xml") === "application/xml") continue;
-      if (ext && sourceDefaultByExt.has(ext)) continue;
+      // A generic source Default remains valid OPC coverage, but rebuilt XML
+      // parts still get their specific Override. The semantic comparator
+      // treats that as equivalent; dropping it would lose package intent.
       if (ext && sourceDefaultByExt.get(ext) === desiredType) continue;
       if (covered.has(key)) continue;
       covered.add(key);
@@ -336,7 +337,7 @@ function mergeSourceContentTypes(
     if (keptSourceTypeByPath.has(key)) continue; // rebuilt, same part kind — keep source type
     const ext = partExt(key);
     const coveringDefault = ext ? defaultTypeByExt.get(ext) : undefined;
-    if (coveringDefault === o.contentType) continue; // covered by a Default
+    if (coveringDefault === o.contentType) continue;
     seenOverride.add(key);
     overrides.push(o);
   }
@@ -454,7 +455,15 @@ export function finalizeContentTypes(
     const dot = part.path.lastIndexOf(".");
     const slash = part.path.lastIndexOf("/");
     const ext = dot > slash ? part.path.slice(dot + 1).toLowerCase() : undefined;
-    if (ext && coveredExt.has(ext)) continue;
+    if (!ext || coveredExt.has(ext)) continue;
+    const sourceDefault = options.source?.defaults.find(
+      (entry) => entry.extension.toLowerCase() === ext,
+    );
+    if (sourceDefault) {
+      input.defaults.push(sourceDefault);
+      coveredExt.add(ext);
+      continue;
+    }
     input.overrides.push({ partName: `/${part.path}`, contentType: part.contentType });
   }
   for (const override of options.forcedOverrides ?? []) {

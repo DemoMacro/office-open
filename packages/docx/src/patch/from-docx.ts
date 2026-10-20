@@ -1,10 +1,4 @@
 import {
-  RELATIONSHIP_TYPES,
-  IMAGE_MEDIA_CONTENT_TYPES,
-  Relationships,
-  TargetModeType,
-} from "@office-open/core";
-import {
   DOCX_NS,
   OoxmlMimeType,
   appendContentType,
@@ -16,13 +10,18 @@ import {
   getReferencedMedia,
   nextNumericId,
   replaceImagePlaceholders,
-  strFromU8,
   toJson,
-  unzipSync,
   zipAndConvert,
 } from "@office-open/core";
 import type { BasePatchOptions, OutputByType, OutputType } from "@office-open/core";
 import { toUint8Array } from "@office-open/core";
+import { Relationships } from "@office-open/core/opc";
+import {
+  IMAGE_MEDIA_CONTENT_TYPES,
+  RELATIONSHIP_TYPES,
+  TargetModeType,
+} from "@office-open/core/opc";
+import { strFromU8, unzipSync } from "@office-open/core/opc";
 import { OOXML_XML_DECLARATION } from "@office-open/xml";
 import { escapeXml, stringify, parse } from "@office-open/xml";
 import type { Element } from "@office-open/xml";

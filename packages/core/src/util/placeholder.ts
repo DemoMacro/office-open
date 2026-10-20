@@ -88,11 +88,12 @@ export function replaceImagePlaceholders(
   mediaData: { fileName: string }[],
   offset: number,
   idFormat: IdFormat = "rId",
+  sourceIds?: ReadonlyMap<string, string>,
 ): string {
   if (mediaData.length === 0) return xml;
   const map = new Map<string, string>();
   for (const [i, item] of mediaData.entries()) {
-    map.set(item.fileName, formatId(offset, i, idFormat));
+    map.set(item.fileName, sourceIds?.get(item.fileName) ?? formatId(offset, i, idFormat));
   }
   return replacePlaceholders(xml, map);
 }
@@ -230,6 +231,7 @@ export function replaceSmartArtPlaceholders(
   keys: string[],
   dataOffset: number,
   idFormat: IdFormat = "rId",
+  sourceRelIds?: Map<string, { dm?: string; lo?: string; qs?: string; cs?: string }>,
 ): string {
   if (keys.length === 0) return xml;
   const count = keys.length;
@@ -239,10 +241,11 @@ export function replaceSmartArtPlaceholders(
 
   const map = new Map<string, string>();
   for (let i = 0; i < count; i++) {
-    map.set(`smartart:${keys[i]}`, formatId(dataOffset, i, idFormat));
-    map.set(`smartart-lo:${keys[i]}`, formatId(loOffset, i, idFormat));
-    map.set(`smartart-qs:${keys[i]}`, formatId(qsOffset, i, idFormat));
-    map.set(`smartart-cs:${keys[i]}`, formatId(csOffset, i, idFormat));
+    const source = sourceRelIds?.get(keys[i]!);
+    map.set(`smartart:${keys[i]}`, source?.dm ?? formatId(dataOffset, i, idFormat));
+    map.set(`smartart-lo:${keys[i]}`, source?.lo ?? formatId(loOffset, i, idFormat));
+    map.set(`smartart-qs:${keys[i]}`, source?.qs ?? formatId(qsOffset, i, idFormat));
+    map.set(`smartart-cs:${keys[i]}`, source?.cs ?? formatId(csOffset, i, idFormat));
   }
   return replacePlaceholders(xml, map);
 }
@@ -253,32 +256,38 @@ export function addSmartArtRelationships(
   baseOffset: number,
   globalStartIndex: number,
   options: SmartArtRelOptions,
+  sourceRelIds?: Map<string, { dm?: string; lo?: string; qs?: string; cs?: string }>,
 ): void {
   const { pathPrefix, styleRelType, hasDrawing, sourceTargetFor } = options;
   const count = keys.length;
   const loOffset = baseOffset + count;
   const qsOffset = loOffset + count;
   const csOffset = qsOffset + count;
+  const toId = (rId: string | undefined, fallback: number): number => {
+    const n = /^rId(\d+)$/.exec(rId ?? "")?.[1];
+    return n ? Number(n) : fallback;
+  };
 
   for (let i = 0; i < keys.length; i++) {
     const gi = globalStartIndex + i;
+    const source = sourceRelIds?.get(keys[i]!);
     addRel(
-      baseOffset + i,
+      toId(source?.dm, baseOffset + i),
       RELATIONSHIP_TYPES.diagramData,
       sourceTargetFor?.(keys[i]!, "data") ?? `${pathPrefix}diagrams/data${gi + 1}.xml`,
     );
     addRel(
-      loOffset + i,
+      toId(source?.lo, loOffset + i),
       RELATIONSHIP_TYPES.diagramLayout,
       sourceTargetFor?.(keys[i]!, "layout") ?? `${pathPrefix}diagrams/layout${gi + 1}.xml`,
     );
     addRel(
-      qsOffset + i,
+      toId(source?.qs, qsOffset + i),
       styleRelType,
       sourceTargetFor?.(keys[i]!, "quickStyle") ?? `${pathPrefix}diagrams/quickStyle${gi + 1}.xml`,
     );
     addRel(
-      csOffset + i,
+      toId(source?.cs, csOffset + i),
       RELATIONSHIP_TYPES.diagramColors,
       sourceTargetFor?.(keys[i]!, "colors") ?? `${pathPrefix}diagrams/colors${gi + 1}.xml`,
     );

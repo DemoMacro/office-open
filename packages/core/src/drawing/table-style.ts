@@ -13,10 +13,18 @@ import type { Element } from "@office-open/xml";
 
 import type { ReadContext, WriteContext } from "../descriptor";
 import { parse as parseDesc, stringify as stringifyDesc } from "../descriptor";
-import { xsdCompoundLine } from "../util/mappings";
+import { xsdCompoundLine, xsdLineCap, xsdLineEndSize, xsdPenAlignment } from "../util/mappings";
+import type { Percentage } from "../util/values";
 import { parseColorChoice, stringifyColorChoice } from "./color/color-descriptors";
 import type { SolidFillOptions } from "./color/solid-fill";
-import type { CompoundLine } from "./outline/outline";
+import { fillDesc } from "./fill/fill-descriptors";
+import type { FillOptions } from "./fill/fill-options";
+import { createCustomDash } from "./outline/custom-dash";
+import { parsePositivePercentage } from "./outline/custom-dash";
+import type { DashStop } from "./outline/custom-dash";
+import { createLineEnd } from "./outline/line-end";
+import type { LineEndOptions } from "./outline/line-end";
+import type { CompoundLine, LineCap, LineJoin, PenAlignment, PresetDash } from "./outline/outline";
 import type { StyleMatrixReferenceOptions } from "./style-reference";
 import { cell3DDesc } from "./three-d/three-d-descriptors";
 import type { Cell3DOptions } from "./three-d/three-d-descriptors";
@@ -47,7 +55,7 @@ export type TableStyleRegion =
   | "nwCell";
 
 /** Style-part on/off state (ST_OnOffStyleType). */
-export type OnOffStyleType = "on" | "off" | "default";
+export type OnOffStyleType = "on" | "off" | "def";
 
 /**
  * Font reference — a:fontRef (CT_FontReference). Unlike lnRef/fillRef/effectRef
@@ -84,10 +92,14 @@ export interface TableTextStyleOptions {
   bold?: OnOffStyleType;
   /** Italic style */
   italic?: OnOffStyleType;
+  /** Underline style */
+  underline?: OnOffStyleType;
   /** Font reference (themeable) */
   fontReference?: TableFontReferenceOptions;
   /** Color element */
   color?: string;
+  /** `a:font` explicit font table; alternative to `fontReference`. */
+  font?: string;
 }
 
 export interface TableCellStyleOptions {
@@ -108,15 +120,37 @@ export interface TableCellBorderOptions {
   bottom?: ThemeableLineStyleOptions;
   insideH?: ThemeableLineStyleOptions;
   insideV?: ThemeableLineStyleOptions;
+  /** Diagonal border from the top-left to the bottom-right corner. */
+  topLeftToBottomRight?: ThemeableLineStyleOptions;
+  /** Diagonal border from the top-right to the bottom-left corner. */
+  topRightToBottomLeft?: ThemeableLineStyleOptions;
+  /** Trailing a:extLst inner XML for border extensions. */
+  ext?: string;
 }
 
 export interface ThemeableLineStyleOptions {
   /** Line width in EMUs */
   width?: number;
+  /** Line end cap (`a:ln/@cap`). */
+  cap?: LineCap;
   /** Compound line type (@cmpd) */
   compound?: CompoundLine;
-  /** Fill color component */
-  color?: string;
+  /** Preset dash pattern (`a:prstDash`). */
+  dash?: PresetDash;
+  /** Custom dash stops (`a:custDash`); mutually exclusive with `dash`. */
+  customDash?: readonly DashStop[];
+  /** Line join style (`a:round`, `a:bevel`, or `a:miter`). */
+  join?: LineJoin;
+  /** Pen alignment (`a:ln/@algn`). */
+  alignment?: PenAlignment;
+  /** Miter join limit; `800` means 800% and `"800%"` preserves source syntax. */
+  miterLimit?: number | Percentage;
+  /** Line fill (`a:noFill`, `a:solidFill`, `a:gradFill`, `a:pattFill`, or `a:grpFill`). */
+  fill?: FillOptions;
+  /** Starting arrowhead (`a:headEnd`). */
+  headEnd?: LineEndOptions;
+  /** Ending arrowhead (`a:tailEnd`). */
+  tailEnd?: LineEndOptions;
   /** Line reference (a:lnRef) into the theme style matrix */
   lineReference?: StyleMatrixReferenceOptions;
 }
@@ -165,7 +199,8 @@ function createStyleMatrixRef(elementName: string, opts: StyleMatrixReferenceOpt
 function createThemeableLine(opts: ThemeableLineStyleOptions): string {
   if (opts.lineReference !== undefined) {
     const children: string[] = [];
-    if (opts.color) children.push(toStr(opts.color));
+    if (opts.lineReference.color)
+      children.push(stringifyColorChoice(opts.lineReference.color, EMPTY_WRITE_CTX));
     return element(
       "a:lnRef",
       { idx: String(opts.lineReference.index) },
@@ -173,23 +208,42 @@ function createThemeableLine(opts: ThemeableLineStyleOptions): string {
     );
   }
   const children: string[] = [];
-  if (opts.color) children.push(toStr(opts.color));
   const attrs: Record<string, string> = {};
   if (opts.width !== undefined) attrs.w = String(opts.width);
   if (opts.compound) attrs.cmpd = xsdCompoundLine.to(opts.compound);
+  if (opts.cap) attrs.cap = xsdLineCap.to(opts.cap);
+  if (opts.alignment) attrs.algn = xsdPenAlignment.to(opts.alignment);
+  if (opts.fill) children.push(fillDesc.stringify(opts.fill, EMPTY_WRITE_CTX) ?? "");
+  if (opts.customDash) children.push(createCustomDash(opts.customDash));
+  else if (opts.dash) children.push(`<a:prstDash val="${opts.dash}"/>`);
+  if (opts.join === "miter") {
+    const limit =
+      opts.miterLimit === undefined
+        ? undefined
+        : typeof opts.miterLimit === "string"
+          ? opts.miterLimit
+          : opts.miterLimit * 1000;
+    children.push(`<a:miter${limit ? ` lim="${limit}"` : ""}/>`);
+  } else if (opts.join) {
+    children.push(`<a:${opts.join}/>`);
+  }
+  if (opts.headEnd) children.push(createLineEnd("a:headEnd", opts.headEnd));
+  if (opts.tailEnd) children.push(createLineEnd("a:tailEnd", opts.tailEnd));
   return element("a:ln", attrs, children.length > 0 ? children : undefined);
 }
 
 // ── Part builders ──
 
 /** Each cell-border side: Options key → a:tcBdr child element name. */
-const BORDER_SIDES: ReadonlyArray<[keyof TableCellBorderOptions, string]> = [
+const BORDER_SIDES: ReadonlyArray<[Exclude<keyof TableCellBorderOptions, "ext">, string]> = [
   ["left", "a:left"],
   ["right", "a:right"],
   ["top", "a:top"],
   ["bottom", "a:bottom"],
   ["insideH", "a:insideH"],
   ["insideV", "a:insideV"],
+  ["topLeftToBottomRight", "a:tl2br"],
+  ["topRightToBottomLeft", "a:tr2bl"],
 ];
 
 /** CT_TableCellBorderStyle: each side wraps an EG_ThemeableLineStyle choice. */
@@ -199,6 +253,7 @@ function buildCellBorders(opts: TableCellBorderOptions): string {
     const line = opts[key];
     if (line) children.push(element(name, undefined, [createThemeableLine(line)]));
   }
+  if (opts.ext) children.push(`<a:extLst>${opts.ext}</a:extLst>`);
   return element("a:tcBdr", undefined, children);
 }
 
@@ -210,10 +265,12 @@ function buildTextStyle(opts: TableTextStyleOptions): string {
       : "";
     children.push(`<a:fontRef idx="${opts.fontReference.collection}">${color}</a:fontRef>`);
   }
+  if (opts.font) children.push(toStr(opts.font));
   if (opts.color) children.push(toStr(opts.color));
   const attrs: Record<string, string> = {};
-  if (opts.bold && opts.bold !== "default") attrs.b = opts.bold;
-  if (opts.italic && opts.italic !== "default") attrs.i = opts.italic;
+  if (opts.bold) attrs.b = opts.bold;
+  if (opts.italic) attrs.i = opts.italic;
+  if (opts.underline) attrs.u = opts.underline;
   return element("a:tcTxStyle", attrs, children.length > 0 ? children : undefined);
 }
 
@@ -343,6 +400,17 @@ const ELEMENT_TO_REGION = Object.fromEntries(
   Object.entries(REGION_ELEMENTS).map(([region, name]) => [name, region]),
 ) as Record<string, TableStyleRegion>;
 
+const COLOR_CHOICE_ELEMENTS = new Set([
+  "a:scrgbClr",
+  "a:srgbClr",
+  "a:hslClr",
+  "a:sysClr",
+  "a:schemeClr",
+  "a:prstClr",
+]);
+
+const FILL_ELEMENTS = new Set(["a:noFill", "a:solidFill", "a:gradFill", "a:pattFill", "a:grpFill"]);
+
 /** Parse a:tblStyleLst → TableStyleListOptions (reverse of createTableStyleList). */
 export function parseTableStyleList(el: Element): TableStyleListOptions {
   const defaultStyleId = attr(el, "def") ?? "";
@@ -392,7 +460,7 @@ function parseTableBackgroundStyle(el: Element): TablePartStyleOptions | undefin
   }
   const effectRefEl = findChild(el, "a:effectRef");
   if (effectRefEl) background.effectReference = parseStyleMatrixRef(effectRefEl);
-  return Object.keys(background).length > 0 ? { background } : undefined;
+  return { background };
 }
 
 function parsePartStyle(el: Element): TablePartStyleOptions | undefined {
@@ -400,7 +468,7 @@ function parsePartStyle(el: Element): TablePartStyleOptions | undefined {
   const txStyle = findChild(el, "a:tcTxStyle");
   if (txStyle) {
     const text = parseTableTextStyle(txStyle);
-    if (text) part.text = text;
+    part.text = text ?? {};
   }
   const cellStyle = findChild(el, "a:tcStyle");
   if (cellStyle) {
@@ -413,9 +481,11 @@ function parsePartStyle(el: Element): TablePartStyleOptions | undefined {
 function parseTableTextStyle(el: Element): TableTextStyleOptions | undefined {
   const opts: TableTextStyleOptions = {};
   const b = attr(el, "b");
-  if (b === "on" || b === "off") opts.bold = b;
+  if (b === "on" || b === "off" || b === "def") opts.bold = b;
   const i = attr(el, "i");
-  if (i === "on" || i === "off") opts.italic = i;
+  if (i === "on" || i === "off" || i === "def") opts.italic = i;
+  const u = attr(el, "u");
+  if (u === "on" || u === "off" || u === "def") opts.underline = u;
   const fontRefEl = findChild(el, "a:fontRef");
   if (fontRefEl) {
     const idx = attr(fontRefEl, "idx");
@@ -425,13 +495,10 @@ function parseTableTextStyle(el: Element): TableTextStyleOptions | undefined {
         color && Object.keys(color).length > 0 ? { collection: idx, color } : { collection: idx };
     }
   }
-  // color: first non-fontRef child element, serialized back to the raw string
-  // buildTextStyle stores (it pushes opts.color verbatim).
-  for (const child of el.elements ?? []) {
-    if (child.name === "a:fontRef") continue;
-    opts.color = serializeChild(child);
-    break;
-  }
+  const fontEl = (el.elements ?? []).find((child) => child.name === "a:font");
+  if (fontEl) opts.font = serializeChild(fontEl);
+  const colorEl = (el.elements ?? []).find((child) => COLOR_CHOICE_ELEMENTS.has(child.name ?? ""));
+  if (colorEl) opts.color = serializeChild(colorEl);
   return Object.keys(opts).length > 0 ? opts : undefined;
 }
 
@@ -449,6 +516,7 @@ function parseTableCellStyle(el: Element): TableCellStyleOptions | undefined {
     // fill: first non-tcBdr/non-cell3D child element, serialized
     // (buildCellStyle pushes opts.fill verbatim).
     for (const child of el.elements ?? []) {
+      if (child.type !== "element") continue;
       if (child.name === "a:tcBdr" || child.name === "a:cell3D") continue;
       opts.fill = serializeChild(child);
       break;
@@ -470,6 +538,8 @@ function parseCellBorders(el: Element): TableCellBorderOptions | undefined {
     const line = parseThemeableLine(lineEl);
     if (line) borders[key] = line;
   }
+  const extLst = findChild(el, "a:extLst");
+  if (extLst) borders.ext = serializeChild(extLst).replace(/^<a:extLst>|<\/a:extLst>$/g, "");
   // An empty a:tcBdr is meaningful — it overrides the outer-region borders
   // with none — so presence round-trips as an empty borders object.
   return borders;
@@ -478,19 +548,63 @@ function parseCellBorders(el: Element): TableCellBorderOptions | undefined {
 function parseThemeableLine(el: Element): ThemeableLineStyleOptions | undefined {
   const opts: ThemeableLineStyleOptions = {};
   if (el.name === "a:lnRef") {
-    const idx = attrNum(el, "idx");
-    if (idx !== undefined) opts.lineReference = { index: idx };
+    opts.lineReference = parseStyleMatrixRef(el);
   } else {
     const w = attrNum(el, "w");
     if (w !== undefined) opts.width = w;
+    const cap = attr(el, "cap");
+    if (cap !== undefined)
+      opts.cap = xsdLineCap.from(String(cap)) as ThemeableLineStyleOptions["cap"];
     const cmpd = attr(el, "cmpd");
     if (cmpd) opts.compound = xsdCompoundLine.from(cmpd) as CompoundLine;
+    const alignment = attr(el, "algn");
+    if (alignment)
+      opts.alignment = xsdPenAlignment.from(
+        String(alignment),
+      ) as ThemeableLineStyleOptions["alignment"];
   }
-  for (const child of el.elements ?? []) {
-    opts.color = serializeChild(child);
-    break;
+  const fillElement = (el.elements ?? []).find((child) => FILL_ELEMENTS.has(child.name ?? ""));
+  if (fillElement) opts.fill = fillDesc.parse(fillElement, EMPTY_READ_CTX);
+  const presetDash = findChild(el, "a:prstDash");
+  if (presetDash?.attributes?.["val"] !== undefined) {
+    opts.dash = String(presetDash.attributes["val"]) as ThemeableLineStyleOptions["dash"];
   }
+  const customDash = findChild(el, "a:custDash");
+  if (customDash) {
+    opts.customDash = (customDash.elements ?? [])
+      .filter((stop) => stop.name === "a:ds")
+      .map((stop) => ({
+        d: parsePositivePercentage(attr(stop, "d") ?? ""),
+        sp: parsePositivePercentage(attr(stop, "sp") ?? ""),
+      }));
+  }
+  if (findChild(el, "a:round")) opts.join = "round";
+  else if (findChild(el, "a:bevel")) opts.join = "bevel";
+  else {
+    const miter = findChild(el, "a:miter");
+    if (miter) {
+      opts.join = "miter";
+      const limit = String(attr(miter, "lim") ?? "");
+      if (limit)
+        opts.miterLimit = limit.endsWith("%") ? (limit as Percentage) : Number(limit) / 1000;
+    }
+  }
+  const headEnd = findChild(el, "a:headEnd");
+  if (headEnd) opts.headEnd = parseLineEnd(headEnd);
+  const tailEnd = findChild(el, "a:tailEnd");
+  if (tailEnd) opts.tailEnd = parseLineEnd(tailEnd);
   return Object.keys(opts).length > 0 ? opts : undefined;
+}
+
+function parseLineEnd(el: Element): LineEndOptions {
+  const options: LineEndOptions = {};
+  const type = attr(el, "type");
+  if (type) options.type = type as LineEndOptions["type"];
+  const width = attr(el, "w");
+  if (width) options.width = xsdLineEndSize.from(width) as LineEndOptions["width"];
+  const length = attr(el, "len");
+  if (length) options.length = xsdLineEndSize.from(length) as LineEndOptions["length"];
+  return options;
 }
 
 function parseStyleMatrixRef(el: Element): StyleMatrixReferenceOptions {

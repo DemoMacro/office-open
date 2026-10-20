@@ -14,6 +14,8 @@ import type { ReproducibleScope } from "../util/reproducible";
 export interface CorePropertiesOptions {
   title?: string;
   subject?: string;
+  /** Subject XML language attribute; round-trip only. */
+  subjectLanguage?: string;
   creator?: string;
   keywords?: string;
   description?: string;
@@ -28,8 +30,12 @@ export interface CorePropertiesOptions {
    * default to now.
    */
   created?: string | null;
+  /** Created xsi:type; false preserves absence, undefined uses W3CDTF. */
+  createdType?: string | false;
   /** Last modified timestamp (W3CDTF); same null/undefined semantics as the created field. */
   modified?: string | null;
+  /** Modified xsi:type; false preserves absence, undefined uses W3CDTF. */
+  modifiedType?: string | false;
   /** Document category, round-tripped from cp:category. */
   category?: string;
   /** Document status (e.g. "Draft"), round-tripped from cp:contentStatus. */
@@ -40,6 +46,12 @@ export interface CorePropertiesOptions {
   identifier?: string;
   /** Document language (RFC 3066), round-tripped from dc:language. */
   language?: string;
+  /** Publisher names, in source order; ODF stores repeatable dc:publisher values. */
+  publishers?: string[];
+  /** ODF/LibreOffice auto-filler names, in source order. */
+  autoFillers?: string[];
+  /** Source references, in source order; ODF stores repeatable dc:source values. */
+  sources?: string[];
   /** Document version number, round-tripped from cp:version. */
   version?: string;
   /** Generating application name, round-tripped from ODF meta:generator. */
@@ -229,6 +241,22 @@ export function parseCorePropsElement(el: Element | undefined): CorePropertiesOp
     if (child) (props as Record<string, unknown>)[field.key] = textOf(child);
   }
 
+  const subjectElement = el.elements?.find((child) => child.name === "dc:subject");
+  const subjectLanguage = subjectElement?.attributes?.["xml:lang"];
+  if (typeof subjectLanguage === "string") {
+    props.subjectLanguage = subjectLanguage;
+  }
+  const createdElement = el.elements?.find((child) => child.name === "dcterms:created");
+  if (createdElement) {
+    const createdType = createdElement.attributes?.["xsi:type"];
+    props.createdType = typeof createdType === "string" ? createdType : false;
+  }
+  const modifiedElement = el.elements?.find((child) => child.name === "dcterms:modified");
+  if (modifiedElement) {
+    const modifiedType = modifiedElement.attributes?.["xsi:type"];
+    props.modifiedType = typeof modifiedType === "string" ? modifiedType : false;
+  }
+
   const revEl = el.elements?.find(
     (e) =>
       e.name === "cp:revision" ||
@@ -361,7 +389,9 @@ export function buildCorePropertiesXmlString(
   add(
     "subject",
     opts.subject,
-    `<${dublinCore("subject")}>${escapeXml(opts.subject ?? "")}</${dublinCore("subject")}>`,
+    `<${dublinCore("subject")}${
+      opts.subjectLanguage === undefined ? "" : ` xml:lang="${escapeXml(opts.subjectLanguage)}"`
+    }>${escapeXml(opts.subject ?? "")}</${dublinCore("subject")}>`,
   );
   add(
     "creator",
@@ -393,13 +423,15 @@ export function buildCorePropertiesXmlString(
       "revision",
       `<${coreProperty("revision")}>${opts.revision ?? ""}</${coreProperty("revision")}>`,
     ]);
+  const timestampType = (type: string | false | undefined, fallback = "dcterms:W3CDTF"): string =>
+    type === false ? "" : ` xsi:type="${escapeXml(type ?? fallback)}"`;
   if (opts.created !== null)
     add(
       "created",
       opts.created ?? now,
       legacy
         ? `<DateCreated>${opts.created ?? now}</DateCreated>`
-        : `<dcterms:created xsi:type="dcterms:W3CDTF">${opts.created ?? now}</dcterms:created>`,
+        : `<dcterms:created${timestampType(opts.createdType)}>${opts.created ?? now}</dcterms:created>`,
     );
   if (opts.modified !== null)
     add(
@@ -407,7 +439,7 @@ export function buildCorePropertiesXmlString(
       opts.modified ?? now,
       legacy
         ? `<DateModified>${opts.modified ?? now}</DateModified>`
-        : `<dcterms:modified xsi:type="dcterms:W3CDTF">${opts.modified ?? now}</dcterms:modified>`,
+        : `<dcterms:modified${timestampType(opts.modifiedType)}>${opts.modified ?? now}</dcterms:modified>`,
     );
   add(
     "category",

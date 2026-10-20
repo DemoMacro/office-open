@@ -47,6 +47,13 @@ export interface FormControlPropertiesOptions {
   dropStyle?: FormControlDropStyle;
   /** Linked-cell formula, e.g. fmlaLink="Sheet1!$A$1". */
   fmlaLink?: string;
+  /**
+   * Wire form for `fmlaLink`. Legacy writers use the attribute form; the
+   * extension part normally uses the child element. Omitted means child.
+   */
+  fmlaLinkSyntax?: "attribute" | "child";
+  /** Distance from the control edge to its linked cell (formControlPr @dx). */
+  dx?: number;
   /** Source range formula, e.g. fmlaRange="Sheet1!$A$1:$A$4". */
   fmlaRange?: string;
   /** Macro formula, e.g. fmlaMacro="[0]!Module1.Run". */
@@ -116,6 +123,8 @@ const FORM_CONTROL_OPTIONS = new Set([
   "firstButton",
   "dropStyle",
   "fmlaLink",
+  "fmlaLinkSyntax",
+  "dx",
   "fmlaRange",
   "fmlaMacro",
   "min",
@@ -162,6 +171,7 @@ function readFormControlProperties(el: Element): FormControlPropertiesOptions {
   const result: FormControlPropertiesOptions = {
     objectType: objectType as FormControlObjectType,
   };
+  const fmlaLinkAttribute = attr(el, "fmlaLink");
   const checked = attr(el, "checked");
   if (checked) {
     if (!FORM_CONTROL_CHECKED.has(checked)) {
@@ -202,6 +212,12 @@ function readFormControlProperties(el: Element): FormControlPropertiesOptions {
     else if (childName === "fmlaMacro") result.fmlaMacro = textOfElement(child);
     else result.items = [...(result.items ?? []), textOfElement(child)];
   }
+  if (fmlaLinkAttribute !== undefined) {
+    result.fmlaLink = fmlaLinkAttribute;
+    result.fmlaLinkSyntax = "attribute";
+  }
+  const dx = attrNum(el, "dx");
+  if (dx !== undefined) result.dx = dx;
   const min = attrNum(el, "min");
   if (min !== undefined) result.min = min;
   const max = attrNum(el, "max");
@@ -260,6 +276,9 @@ function writeFormControlProperties(options: FormControlPropertiesOptions): stri
   const attributes = [`objectType="${options.objectType}"`];
   if (options.checked) attributes.push(`checked="${options.checked}"`);
   if (options.dropStyle) attributes.push(`dropStyle="${options.dropStyle}"`);
+  if (options.fmlaLinkSyntax === "attribute" && options.fmlaLink !== undefined)
+    attributes.push(`fmlaLink="${escapeXml(options.fmlaLink)}"`);
+  if (options.dx !== undefined) attributes.push(`dx="${options.dx}"`);
   if (options.min !== undefined) attributes.push(`min="${options.min}"`);
   if (options.max !== undefined) attributes.push(`max="${options.max}"`);
   if (options.increment !== undefined) attributes.push(`inc="${options.increment}"`);
@@ -273,7 +292,7 @@ function writeFormControlProperties(options: FormControlPropertiesOptions): stri
   if (options.noThreeD !== undefined) attributes.push(`noThreeD="${options.noThreeD ? 1 : 0}"`);
   if (options.noThreeD2 !== undefined) attributes.push(`noThreeD2="${options.noThreeD2 ? 1 : 0}"`);
   const children: string[] = [];
-  if (options.fmlaLink !== undefined)
+  if (options.fmlaLink !== undefined && options.fmlaLinkSyntax !== "attribute")
     children.push(`<fmlaLink>${escapeXml(options.fmlaLink)}</fmlaLink>`);
   if (options.fmlaRange !== undefined)
     children.push(`<fmlaRange>${escapeXml(options.fmlaRange)}</fmlaRange>`);

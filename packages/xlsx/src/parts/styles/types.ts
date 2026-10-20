@@ -1,6 +1,9 @@
 import type { ArgbHexColor, HexColor } from "@office-open/core";
 
 import type { ColorOptions } from "../../shared/color";
+import type { ForeignAttributeOptions } from "../../shared/foreign";
+
+export type { ForeignAttributeOptions };
 /**
  * Styles — option types for xl/styles.xml.
  *
@@ -15,6 +18,12 @@ import type { ColorOptions } from "../../shared/color";
 export type FontUnderline = boolean | "single" | "double" | "singleAccounting" | "doubleAccounting";
 
 export interface FontOptions {
+  /** Foreign-namespace attributes on `<font>` (e.g. hs:extension); round-trip only. */
+  foreignAttributes?: ForeignAttributeOptions[];
+  /** Foreign-namespace children of `<font>`, verbatim; round-trip only. */
+  foreignChildren?: ForeignChildOptions[];
+  /** Vendor mc:AlternateContent font branch; round-trip only. */
+  alternateContent?: FontAlternateContentOptions;
   bold?: boolean;
   /** Source lexical form of `bold/@val`; round-trip only — do not hand-author. */
   boldRaw?: string;
@@ -234,16 +243,44 @@ export interface IndexedColorOptions {
   rgb: ArgbHexColor;
 }
 
+export interface LegacyThemeColorOptions {
+  /** Legacy numeric color value from `rgbColor/@val`; round-trip only. */
+  value: string;
+}
+
+export type ThemeColorOptions = IndexedColorOptions | LegacyThemeColorOptions;
+
 /** Colors palette (CT_Colors) */
 export interface ColorsOptions {
   /** Indexed color palette (CT_IndexedColors) */
   indexedColors?: IndexedColorOptions[];
-  /** Legacy theme-palette integer channels; round-trip only. */
-  themeColors?: number[];
-  /** Most recently used colors (CT_MRUColors) */
+  /** Legacy theme palette (`rgbColor/@rgb` or numeric `rgbColor/@val`); round-trip only. */
+  themeColors?: ThemeColorOptions[];
+  /** Most recently used colors (CT_MRUColors); 8-char lexemes keep the
+   * source alpha prefix verbatim. */
   mruColors?: HexColor[];
   /** Legacy MRU channels (`type` + decimal `val`); round-trip only. */
   legacyMruColors?: { type: "rgb" | "theme" | "icv"; value: string }[];
+}
+
+/** Foreign-namespace child element captured verbatim; round-trip only. */
+export interface ForeignChildOptions {
+  /** Prefixed element name. */
+  name: string;
+  /** Element XML, verbatim. */
+  xml: string;
+}
+
+/** mc:AlternateContent font branch (vendor Choice + Fallback); round-trip only. */
+export interface FontAlternateContentOptions {
+  /** Choice Requires token, e.g. "hs". */
+  requires?: string;
+  /** Namespace declarations on the Choice (prefix to URI). */
+  namespaces?: Record<string, string>;
+  /** Preferred vendor font. */
+  choice: FontOptions;
+  /** Compatibility fallback font. */
+  fallback?: FontOptions;
 }
 
 /**
@@ -261,6 +298,10 @@ export interface DxfNumFmtOptions {
  * `{ font: { color: "9C0006", bold: true }, fill: { color: "C6EFCE" } }`.
  */
 export interface DxfOptions {
+  /** Foreign-namespace attributes on `<dxf>` (e.g. hs:applyExtension); round-trip only. */
+  foreignAttributes?: ForeignAttributeOptions[];
+  /** Vendor mc:AlternateContent dxf branch; round-trip only. */
+  alternateContent?: DxfAlternateContentOptions;
   font?: FontOptions;
   fill?: CellFillOptions;
   border?: BorderSideOptions;
@@ -270,6 +311,16 @@ export interface DxfOptions {
   protection?: CellProtectionOptions;
   /** Trailing dxf extensions (CT_Dxf/extLst) — round-trip only. */
   extensions?: StyleExtensionOptions[];
+}
+
+/** mc:AlternateContent dxf branch (vendor Choice + Fallback); round-trip only. */
+export interface DxfAlternateContentOptions {
+  /** Choice Requires token, e.g. "hs". */
+  requires?: string;
+  /** Namespace declarations on the Choice (prefix to URI). */
+  namespaces?: Record<string, string>;
+  /** Compatibility fallback dxf. */
+  fallback?: DxfOptions;
 }
 
 // ── Table / cell-style types ──
@@ -380,6 +431,10 @@ export interface CellXfEntry {
  * which derives applyXxx.
  */
 export interface CellStyleXfOptions {
+  /** Unmodeled namespaced or vendor attributes on `<xf>`; round-trip only. */
+  foreignAttributes?: ForeignAttributeOptions[];
+  /** Foreign-namespace children of `<xf>`, verbatim; round-trip only. */
+  foreignChildren?: ForeignChildOptions[];
   font?: FontOptions;
   /** Source fontId when the index has no resolvable font (dangling reference);
    * round-trip only — do not hand-author. */
@@ -389,6 +444,8 @@ export interface CellStyleXfOptions {
   numFmt?: string;
   /** Raw numFmtId when the source id has no resolvable format code (round-trip only). */
   numFmtId?: number;
+  /** Named-style parent index (cellStyleXfs xf `@xfId`); 0 = Normal. */
+  xfId?: number;
   /** True when the source xf declared `@fillId`. Round-trip only: attribute
    * presence and absence stay distinct in rebuilt styles.xml. */
   fillIdDeclared?: boolean;
@@ -432,6 +489,12 @@ export interface StylesState {
  * resolve indices into fonts/fills/borders arrays.
  */
 export interface IndexedXfEntry {
+  /** Foreign-namespace attributes on `<xf>` (e.g. hs:applyExtension); round-trip only. */
+  foreignAttributes?: ForeignAttributeOptions[];
+  /** Foreign-namespace children of `<xf>`, verbatim; round-trip only. */
+  foreignChildren?: ForeignChildOptions[];
+  /** Vendor mc:AlternateContent xf branch; round-trip only. */
+  alternateContent?: XfAlternateContentOptions;
   fontId?: number;
   fillId?: number;
   borderId?: number;
@@ -463,6 +526,16 @@ export interface IndexedXfEntry {
   applyNumberFormat?: boolean;
   applyAlignment?: boolean;
   applyProtection?: boolean;
+}
+
+/** mc:AlternateContent xf branch (vendor Choice + Fallback); round-trip only. */
+export interface XfAlternateContentOptions {
+  /** Choice Requires token, e.g. "hs". */
+  requires?: string;
+  /** Namespace declarations on the Choice (prefix to URI). */
+  namespaces?: Record<string, string>;
+  /** Compatibility fallback xf. */
+  fallback?: IndexedXfEntry;
 }
 
 /** Table styles block (CT_TableStyles), including its container attributes. */
@@ -505,4 +578,6 @@ export interface StylesParseResult {
 export interface StylesDocOptions {
   /** The Styles accumulator instance (for stringify). */
   styles: import("./styles").Styles;
+  /** Root `<styleSheet/@xml:space>`; round-trip only. */
+  rootXmlSpace?: "default" | "preserve";
 }

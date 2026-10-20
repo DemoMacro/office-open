@@ -64,6 +64,8 @@ export interface TransitionOptions {
   type?: TransitionType;
   /** Transition playback speed. */
   speed?: "slow" | "medium" | "fast";
+  /** Transition duration in milliseconds (p14:dur). */
+  duration?: number;
   advanceOnClick?: boolean;
   advanceAfterTime?: number;
   /** Motion direction; see TransitionDirection. */
@@ -77,6 +79,8 @@ export interface TransitionOptions {
     data: DataType;
     /** Audio container format — becomes the media part extension. */
     type: "mp3" | "wav" | "wma" | "aac";
+    /** Source media file name, pinned so relationship targets stay stable. */
+    fileName?: string;
     name?: string;
     loop?: boolean;
   };
@@ -93,21 +97,21 @@ function buildTransitionElement(
   const dir = direction ? DIRECTION_MAP[direction] : undefined;
   const attrs: string[] = [];
 
-  if (
-    dir &&
-    (ORIENT_TYPES.has(type) ||
-      ((SIDE_DIR_TYPES.has(type) || EIGHT_DIR_TYPES.has(type)) && dir !== "l") ||
-      (type === "strips" && dir !== "lu"))
+  if (ORIENT_TYPES.has(type)) {
+    if (orient !== undefined) attrs.push(`dir="${xsdOrient.to(orient)}"`);
+  } else if (
+    ((SIDE_DIR_TYPES.has(type) || EIGHT_DIR_TYPES.has(type)) && dir !== undefined) ||
+    (type === "strips" && dir !== undefined)
   ) {
     attrs.push(`dir="${dir}"`);
   } else if ((type === "fade" || type === "cut") && thruBlk !== undefined) {
     attrs.push(`thruBlk="${thruBlk ? 1 : 0}"`);
   } else if (type === "split") {
-    if (orient && orient !== "horizontal") attrs.push(`orient="${xsdOrient.to(orient)}"`);
-    if (dir && dir !== "out") attrs.push(`dir="${dir}"`);
+    if (orient !== undefined) attrs.push(`orient="${xsdOrient.to(orient)}"`);
+    if (dir !== undefined) attrs.push(`dir="${dir}"`);
   } else if (type === "wheel") {
-    if (spokes !== undefined && spokes !== 4) attrs.push(`spokes="${spokes}"`);
-  } else if (type === "zoom" && dir && dir !== "in") {
+    if (spokes !== undefined) attrs.push(`spokes="${spokes}"`);
+  } else if (type === "zoom" && dir !== undefined) {
     attrs.push(`dir="${dir}"`);
   }
 
@@ -119,6 +123,11 @@ export function buildTransition(options: TransitionOptions, ctx?: WriteContext):
   if (options.speed)
     // OOXML ST_TransitionSpeed uses "med"; the friendly API token is "medium".
     attrParts.push(`spd="${options.speed === "medium" ? "med" : options.speed}"`);
+  if (options.duration !== undefined) {
+    attrParts.push(
+      `xmlns:p14="http://schemas.microsoft.com/office/powerpoint/2010/main" p14:dur="${options.duration}"`,
+    );
+  }
   if (options.advanceOnClick !== undefined)
     attrParts.push(`advClick="${options.advanceOnClick ? 1 : 0}"`);
   if (options.advanceAfterTime !== undefined) attrParts.push(`advTm="${options.advanceAfterTime}"`);
@@ -140,7 +149,11 @@ export function buildTransition(options: TransitionOptions, ctx?: WriteContext):
   // media through the write context; the {audio:…} placeholder is rewritten to
   // a real relationship id (and the audio relationship added) by the compiler.
   if (options.startSound && ctx) {
-    const ref = ctx.addMedia(toUint8Array(options.startSound.data), options.startSound.type);
+    const ref = ctx.addMedia(
+      toUint8Array(options.startSound.data),
+      options.startSound.type,
+      options.startSound.fileName,
+    );
     const audioRef = `{audio:${ref.slice(1, -1)}}`;
     const sndAttrs: string[] = [`r:embed="${audioRef}"`];
     if (options.startSound.name) sndAttrs.push(` name="${options.startSound.name}"`);

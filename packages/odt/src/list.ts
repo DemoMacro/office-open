@@ -12,8 +12,8 @@ import type { Element } from "@office-open/xml";
 
 import { blockXml } from "./body";
 import type { OdtChart, OdtImage } from "./drawing";
+import type { OdtEmbeddedObjectOptions } from "./embedded-objects";
 import { lengthToTwips, twipsToLength } from "./master-pages";
-import type { OdtEmbeddedObjectOptions } from "./package";
 import { normalizeParagraph } from "./paragraph";
 import { NUM_FORMAT_DOCX, NUM_FORMAT_ODF, type NotesContext } from "./section";
 

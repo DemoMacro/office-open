@@ -141,7 +141,8 @@ export interface PresentationPartOptions {
   notesHeight?: number;
   slideIds: number[];
   /** Source p:sldMasterIdLst identities; omitted entries use the compiler default. */
-  masterIds?: number[];
+  /** `null` preserves a source `p:sldMasterId` that omitted the optional id. */
+  masterIds?: (number | null)[];
   masterCount: number;
   notesMasterRId?: number;
   handoutMasterRId?: number;
@@ -187,6 +188,8 @@ export interface PresentationPartOptions {
 /** A named group of slides forming one p14:section in presentation.xml. */
 export interface PresentationSectionGroup {
   name: string;
+  /** Source p14:section @id; preserved instead of generating a new GUID. */
+  id?: string;
   /** Indices into PresentationPartOptions.slideIds belonging to this section. */
   slideIndices: number[];
 }

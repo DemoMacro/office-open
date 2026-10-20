@@ -4,7 +4,7 @@ import { describe, expect, it } from "vite-plus/test";
 
 import { documentNamespaceDialect } from "../document/document-attributes";
 import { mailMergeRecipientsDesc, settingsDesc } from "./descriptor";
-import type { CompatibilityOptions, SettingsOptions } from "./settings";
+import type { CompatibilityOptions, MailMergeRecipientsOptions, SettingsOptions } from "./settings";
 
 const writeCtx = {
   addRelationship: () => "rId1",
@@ -55,6 +55,62 @@ describe("settingsDesc round-trip", () => {
     expect(result.w14ConflictMode).toBe(true);
   });
 
+  it("round-trips mirror margins with the source on/off lexical form", () => {
+    const result = roundTrip({ mirrorMargins: "off" });
+    expect(result.mirrorMargins).toBe("off");
+    expect(roundTripXml({ mirrorMargins: true })).toContain("<w:mirrorMargins/>");
+    expect(roundTripXml({ mirrorMargins: false })).toContain('<w:mirrorMargins w:val="0"/>');
+  });
+
+  it("round-trips vendor tm settings in source order", () => {
+    const vendor: SettingsOptions = {
+      compatibility: false,
+      tmPrefOne: 17,
+      tmPrefTwo: 1,
+      tmFormatPreference: 55063659,
+      tmCommentsProperties: { place: 0, width: 3120, color: -1 },
+      tmReviewProperties: {
+        enabled: 0,
+        show: 1,
+        print: 0,
+        revisionNumber: 11,
+        insertionMark: 4,
+        insertionColor: -1,
+        deletionMark: 6,
+        deletionColor: -1,
+        formattingMark: 1,
+        formattingColor: -1,
+        lineMark: 1,
+        lineColor: 0,
+        tooltip: 1,
+      },
+      tmLastPosition: {
+        page: 0,
+        selection: 4,
+        frameIndex: 0,
+        caret: { paragraphIndex: 0, index: 0 },
+        anchor: { paragraphIndex: 0, index: 0 },
+        tableRectangle: { left: 0, top: 0, right: 0, bottom: 0 },
+      },
+      tmApplicationRevision: { date: 1533054491, val: 766 },
+    };
+    const result = roundTrip(vendor);
+    expect(result).toEqual(vendor);
+
+    const xml = roundTripXml(result);
+    const tags = [
+      "w:tmPrefOne",
+      "w:tmPrefTwo",
+      "w:tmFmtPref",
+      "w:tmCommentsPr",
+      "w:tmReviewPr",
+      "w:tmLastPos",
+      "w:tmAppRevision",
+    ].map((tag) => xml.indexOf(tag));
+    expect(tags).toEqual([...tags].sort((left, right) => left - right));
+    expect(xml).toContain('<w:tmLastPosTblRect w:left="0" w:top="0" w:right="0" w:bottom="0"/>');
+  });
+
   it("round-trips view", () => {
     const result = roundTrip({ view: "print" });
     expect(result.view).toBe("print");
@@ -72,6 +128,11 @@ describe("settingsDesc round-trip", () => {
     expect(zoom.val).toBe("fullPage");
   });
 
+  it("round-trips empty no-line-break attributes", () => {
+    const result = roundTrip({ noLineBreaksBefore: { lang: "", val: "" } });
+    expect(result.noLineBreaksBefore).toEqual({ lang: "", val: "" });
+  });
+
   it("round-trips defaultTabStop", () => {
     const result = roundTrip({ defaultTabStop: 720 });
     expect(result.defaultTabStop).toBe(720);
@@ -81,6 +142,46 @@ describe("settingsDesc round-trip", () => {
     const result = roundTrip({ defaultTabStop: "36pt" });
     expect(result.defaultTabStop).toBe("36pt");
     expect(roundTripXml({ defaultTabStop: "36pt" })).toContain('<w:defaultTabStop w:val="36pt"/>');
+  });
+
+  it("round-trips hyphenation and drawing-grid measure literals", () => {
+    const result = roundTrip({
+      hyphenationZone: "21.25pt",
+      drawingGridHorizontalSpacing: "14.20pt",
+      drawingGridVerticalSpacing: 280,
+    });
+    expect(result.hyphenationZone).toBe("21.25pt");
+    expect(result.drawingGridHorizontalSpacing).toBe("14.20pt");
+    expect(result.drawingGridVerticalSpacing).toBe(280);
+    expect(roundTripXml(result)).toContain('<w:hyphenationZone w:val="21.25pt"/>');
+    expect(roundTripXml(result)).toContain('<w:drawingGridHorizontalSpacing w:val="14.20pt"/>');
+  });
+
+  it("parses revision save IDs as typed values", () => {
+    const xml =
+      '<w:settings xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+      '<w:rsids><w:rsidRoot w:val="00000000"/><w:rsid w:val="AF0B12C0"/></w:rsids>' +
+      "</w:settings>";
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed settings has no root element");
+    const result = settingsDesc.parse(el, readCtx);
+    expect(result.rsids).toEqual({ rsidRoot: "00000000", rsids: ["AF0B12C0"] });
+    const roundTripped = roundTrip(result);
+    expect(roundTripped.rsids).toEqual({ rsidRoot: "00000000", rsids: ["AF0B12C0"] });
+  });
+
+  it("round-trips a bare rsid element without a value attribute", () => {
+    const xml =
+      '<w:settings xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+      '<w:rsids><w:rsid/><w:rsid w:val="AF0B12C0"/></w:rsids>' +
+      "</w:settings>";
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed settings has no root element");
+    const result = settingsDesc.parse(el, readCtx);
+    expect(result.rsids).toEqual({ rsids: ["", "AF0B12C0"] });
+    expect(settingsDesc.stringify(result, writeCtx)).toContain(
+      '<w:rsids><w:rsid/><w:rsid w:val="AF0B12C0"/></w:rsids>',
+    );
   });
 
   it("round-trips characterSpacingControl", () => {
@@ -103,6 +204,32 @@ describe("settingsDesc round-trip", () => {
     expect((result.compatibility as CompatibilityOptions).version).toBe(15);
   });
 
+  it("preserves explicit compatibility false values and empty mail-merge strings", () => {
+    const xml =
+      '<w:settings xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+      '<w:compat><w:useFELayout w:val="0"/>' +
+      '<w:doNotExpandShiftReturn w:val="0"/>' +
+      '<w:compatSetting w:name="doNotFlipMirrorIndents" w:uri="http://schemas.microsoft.com/office/word" w:val="0"/>' +
+      "</w:compat>" +
+      '<w:mailMerge><w:connectString w:val=""/></w:mailMerge>' +
+      "</w:settings>";
+
+    const options = settingsDesc.parse(parseXml(xml).elements![0]!, readCtx)!;
+    expect(options.compatibility).toMatchObject({
+      useFELayout: false,
+      doNotExpandShiftReturn: false,
+      doNotFlipMirrorIndents: false,
+    });
+    expect(options.mailMerge).toEqual({ connectString: "" });
+
+    const output = settingsDesc.stringify(options, writeCtx)!;
+    expect(output).toContain('<w:useFELayout w:val="0"/>');
+    expect(output).toContain('<w:doNotExpandShiftReturn w:val="0"/>');
+    expect(output).toContain('w:name="doNotFlipMirrorIndents" w:uri=');
+    expect(output).toContain('w:val="0"/>');
+    expect(output).toContain('<w:connectString w:val=""/>');
+  });
+
   it("folds a settings-root compatSetting into the compatibility domain", () => {
     // Word 2010 transitional documents can strand the entry outside w:compat.
     const xml =
@@ -121,6 +248,26 @@ describe("settingsDesc round-trip", () => {
     );
   });
 
+  it("merges duplicate compatibility containers on parse", () => {
+    const xml =
+      '<w:settings xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+      "<w:compat><w:doNotExpandShiftReturn/></w:compat>" +
+      '<w:compat><w:compatSetting w:name="compatibilityMode" w:uri="http://schemas.microsoft.com/office/word" w:val="12"/></w:compat>' +
+      "</w:settings>";
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("no root");
+    const parsed = settingsDesc.parse(el, readCtx);
+    expect(parsed.compatibility).toMatchObject({
+      doNotExpandShiftReturn: true,
+      version: 12,
+    });
+
+    const output = settingsDesc.stringify(parsed, writeCtx)!;
+    expect(output.match(/<w:compat>/g)).toHaveLength(1);
+    expect(output).toContain("<w:doNotExpandShiftReturn/>");
+    expect(output).toContain('w:name="compatibilityMode"');
+  });
+
   it("emits MS Office default compatSettings for fresh documents", () => {
     const xml = settingsDesc.stringify({}, writeCtx)!;
     expect(xml).toContain(
@@ -129,6 +276,26 @@ describe("settingsDesc round-trip", () => {
     expect(xml).toContain('w:name="overrideTableStyleFontSizeAndJustification"');
     expect(xml).toContain('w:name="enableOpenTypeFeatures"');
     expect(xml).toContain('w:name="doNotFlipMirrorIndents"');
+  });
+
+  it("retains duplicate known compatSettings", () => {
+    const xml =
+      '<w:settings xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+      "<w:compat>" +
+      '<w:compatSetting w:name="overrideTableStyleFontSizeAndJustification" w:uri="http://schemas.microsoft.com/office/word" w:val="0"/>' +
+      '<w:compatSetting w:name="overrideTableStyleFontSizeAndJustification" w:uri="http://schemas.microsoft.com/office/word" w:val="1"/>' +
+      "</w:compat></w:settings>";
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("no root");
+    const parsed = settingsDesc.parse(el, readCtx);
+    expect(parsed.compatibility).toMatchObject({
+      overrideTableStyleFontSizeAndJustification: false,
+    });
+    expect((parsed.compatibility as CompatibilityOptions).compatSettings).toHaveLength(2);
+    const output = settingsDesc.stringify(parsed, writeCtx)!;
+    expect(output.match(/w:name="overrideTableStyleFontSizeAndJustification"/g)).toHaveLength(2);
+    expect(output).toContain('w:val="0"');
+    expect(output).toContain('w:val="1"');
   });
 
   it("omits <w:compat> when compatibility is false", () => {
@@ -201,6 +368,42 @@ describe("settingsDesc round-trip", () => {
 
     const xml = settingsDesc.stringify(parsed, writeCtx)!;
     expect(xml).toContain('<w:documentProtection w:enforcement="0" w:edit="readOnly"/>');
+  });
+
+  it("preserves source-absent documentProtection enforcement", () => {
+    const source =
+      '<w:settings xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+      '<w:documentProtection w:edit="forms"/>' +
+      "</w:settings>";
+    const element = parseXml(source).elements?.[0];
+    if (!element) throw new Error("parsed settings has no root element");
+    const result = settingsDesc.parse(element, readCtx);
+    expect(result.documentProtection).toMatchObject({ edit: "forms", enforcement: null });
+    expect(settingsDesc.stringify(result, writeCtx)).toContain(
+      '<w:documentProtection w:edit="forms"/>',
+    );
+    expect(settingsDesc.stringify({ documentProtection: { edit: "forms" } }, writeCtx)).toContain(
+      '<w:documentProtection w:enforcement="1" w:edit="forms"/>',
+    );
+  });
+
+  it("retains empty legacy documentProtection credentials", () => {
+    const source =
+      '<w:settings xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+      '<w:documentProtection w:enforcement="1" w:edit="readOnly" w:cryptAlgorithmSid="" w:hash="" w:salt=""/>' +
+      "</w:settings>";
+    const element = parseXml(source).elements?.[0];
+    if (!element) throw new Error("parsed settings has no root element");
+    const parsed = settingsDesc.parse(element, readCtx);
+    expect(parsed.documentProtection).toMatchObject({
+      cryptoAlgorithmSidRaw: "",
+      hashRaw: "",
+      saltRaw: "",
+    });
+    const xml = settingsDesc.stringify(parsed, writeCtx)!;
+    expect(xml).toContain('w:cryptAlgorithmSid=""');
+    expect(xml).toContain('w:hash=""');
+    expect(xml).toContain('w:salt=""');
   });
 
   it("round-trips embedTrueTypeFonts", () => {
@@ -390,6 +593,17 @@ describe("mailMergeRecipientsDesc round-trip", () => {
     expect(xml).toContain('<w:active w:val="0"/>');
     expect(xml).toContain('<w:column w:val="2"/>');
     expect(xml).toContain('<w:uniqueTag w:val="BB=="/>');
+    expect(mailMergeRecipientsDesc.parse(parseXml(xml).elements![0]!, readCtx)).toEqual(opts);
+  });
+
+  it("round-trips the legacy wne recipient vocabulary", () => {
+    const opts: MailMergeRecipientsOptions = {
+      namespace: "wne",
+      recipients: [{ active: true, hash: "65" }, { hash: "66" }],
+    };
+    const xml = mailMergeRecipientsDesc.stringify(opts, unsupportedWriteCtx)!;
+    expect(xml).toContain("<wne:recipients");
+    expect(xml).toContain('<wne:recipientData><wne:active wne:val="1"/><wne:hash wne:val="65"/>');
     expect(mailMergeRecipientsDesc.parse(parseXml(xml).elements![0]!, readCtx)).toEqual(opts);
   });
 });

@@ -9,13 +9,11 @@
 
 import {
   Relationships,
-  RELATIONSHIP_TYPES,
-  type XmlifyedFile,
-  toUint8Array,
-  partPathToRelsPath,
   replacePlaceholders,
+  toUint8Array,
   withDiagramNamespaces,
 } from "@office-open/core";
+import { partPathToRelsPath, RELATIONSHIP_TYPES, type XmlifyedFile } from "@office-open/core/opc";
 import {
   getColorXml,
   getLayoutXml,
@@ -26,7 +24,7 @@ import {
 } from "@office-open/core/smartart";
 
 import type { DocxWriteContext } from "../context";
-import { PACKAGE_RELATIONSHIP, XML_DECL } from "./shared";
+import { XML_DECL, embeddingRelationshipType } from "./shared";
 
 /** Chart part → user-shapes part relationship (c:userShapes bridge). */
 const CHART_USER_SHAPES_REL = RELATIONSHIP_TYPES.chartUserShapes;
@@ -71,10 +69,16 @@ export function compileChartParts(ctx: DocxWriteContext): {
       // part. Relationship ids are carried verbatim so the re-emitted
       // r:ids resolve without rewriting.
       const relationships = new Relationships(chartPath);
+      for (const rel of ctx._options.passthroughRelationships ?? []) {
+        if (rel.source === chartPath) relationships.claimSourceRel(rel);
+      }
+      for (const rel of chartData.sourceRelationships ?? []) {
+        relationships.claimSourceRel(rel);
+      }
       if (chartData.embedding) {
         relationships.addRelationship(
           chartData.embedding.relationshipId,
-          PACKAGE_RELATIONSHIP,
+          embeddingRelationshipType(chartData.embedding.relationshipType),
           relativeTarget(chartPath, `word/embeddings/${chartData.embedding.fileName}`),
         );
       }
@@ -87,12 +91,6 @@ export function compileChartParts(ctx: DocxWriteContext): {
             chartData.userShapes.path ?? `word/charts/userShapes${i + 1}.xml`,
           ),
         );
-      }
-      for (const rel of ctx._options.passthroughRelationships ?? []) {
-        if (rel.source === chartPath) relationships.claimSourceRel(rel);
-      }
-      for (const rel of chartData.sourceRelationships ?? []) {
-        relationships.claimSourceRel(rel);
       }
       if (relationships.relationshipCount > 0) {
         parts.push({
@@ -125,13 +123,14 @@ export function compileChartExParts(ctx: DocxWriteContext): {
   if (ctx.chartExes.array.length === 0) return {};
   return {
     ChartEx: ctx.chartExes.array
-      .map((chartExData) => {
-        const chartExPath =
-          chartExData.sourcePath ??
-          `word/charts/chartEx${Number(chartExData.key.replace(/^chartEx_/, ""))}.xml`;
+      .map((chartExData, index) => {
+        const chartExPath = chartExData.sourcePath ?? `word/charts/chartEx${index + 1}.xml`;
         const relationships = new Relationships(chartExPath);
         for (const rel of chartExData.sourceRelationships ?? []) {
           relationships.claimSourceRel(rel);
+        }
+        for (const rel of ctx._options.passthroughRelationships ?? []) {
+          if (rel.source === chartExPath) relationships.claimSourceRel(rel);
         }
         const parts: Array<{ data: string; path: string }> = [
           { data: XML_DECL + chartExData.chartExXml, path: chartExPath },
@@ -159,23 +158,42 @@ export function compileSmartArtParts(ctx: DocxWriteContext): {
   if (ctx.smartArts.array.length === 0) return {};
   const smartArtParts = ctx.smartArts.array.map((smartArtData, i) => {
     const dataPath = smartArtData.sourcePaths?.data ?? `word/diagrams/data${i + 1}.xml`;
+    const drawingFileIndex = ctx.smartArts.array.indexOf(smartArtData) + 1;
+    const drawingPath =
+      smartArtData.sourcePaths?.drawing ?? `word/diagrams/drawing${drawingFileIndex}.xml`;
     const hasDrawingRelationship =
       smartArtData.raw?.drawing !== undefined && smartArtData.raw.drawingRelationship !== false;
-    const mediaIds = new Map(
-      (smartArtData.raw?.media ?? []).map((media, mediaIndex) => [
-        media.fileName,
-        `rId${(hasDrawingRelationship ? 2 : 1) + mediaIndex}`,
-      ]),
-    );
+    const relationships = new Relationships(dataPath);
+    for (const relationship of smartArtData.sourceRelationships ?? []) {
+      relationships.claimSourceRel(relationship);
+    }
+    const drawingTarget = relativeTarget(dataPath, drawingPath);
+    if (
+      hasDrawingRelationship &&
+      !relationships.hasRelationship(RELATIONSHIP_TYPES.diagramDrawingMs, drawingTarget)
+    ) {
+      relationships.add(RELATIONSHIP_TYPES.diagramDrawingMs, drawingTarget);
+    }
+    const media = smartArtData.raw?.media ?? [];
+    const mediaIds = new Map<string, string>();
+    for (const mediaReference of media) {
+      const mediaPath = mediaReference.partPath ?? `word/media/${mediaReference.fileName}`;
+      const target = relativeTarget(dataPath, mediaPath);
+      const existingId = relationships.idOf(RELATIONSHIP_TYPES.image, target);
+      mediaIds.set(
+        mediaReference.fileName,
+        existingId ?? `rId${relationships.add(RELATIONSHIP_TYPES.image, target)}`,
+      );
+    }
     return {
       smartArtData,
       dataPath,
-      hasDrawingRelationship,
+      relationships,
       dataXml: replacePlaceholders(
         XML_DECL + withDiagramNamespaces(smartArtData.dataModelXml),
         mediaIds,
       ),
-      media: smartArtData.raw?.media ?? [],
+      media,
     };
   });
   return {
@@ -207,38 +225,32 @@ export function compileSmartArtParts(ctx: DocxWriteContext): {
     DiagramDrawing: ctx.smartArts.array
       .map((smartArtData, i) => ({ smartArtData, i }))
       .filter(({ smartArtData }) => smartArtData.raw?.drawing !== undefined)
-      .map(({ smartArtData, i }) => ({
-        data: toUint8Array(smartArtData.raw!.drawing!),
-        path: smartArtData.sourcePaths?.drawing ?? `word/diagrams/drawing${i + 1}.xml`,
-      })),
-    SmartArtDataRels: smartArtParts.flatMap(
-      ({ smartArtData, dataPath, hasDrawingRelationship, media }) => {
-        const drawingFileIndex = ctx.smartArts.array.indexOf(smartArtData) + 1;
+      .flatMap(({ smartArtData, i }) => {
         const drawingPath =
-          smartArtData.sourcePaths?.drawing ?? `word/diagrams/drawing${drawingFileIndex}.xml`;
-        const rels = new Relationships(dataPath);
-        if (hasDrawingRelationship) {
-          rels.addRelationship(
-            1,
-            RELATIONSHIP_TYPES.diagramDrawingMs,
-            relativeTarget(dataPath, drawingPath),
-          );
-        }
-        for (const [mediaIndex, mediaReference] of media.entries()) {
-          rels.addRelationship(
-            (hasDrawingRelationship ? 2 : 1) + mediaIndex,
-            RELATIONSHIP_TYPES.image,
-            `../media/${mediaReference.fileName}`,
-          );
-        }
-        if (rels.relationshipCount === 0) return [];
+          smartArtData.sourcePaths?.drawing ?? `word/diagrams/drawing${i + 1}.xml`;
         return [
           {
-            data: XML_DECL + rels.serialize(),
-            path: partPathToRelsPath(dataPath),
+            data: toUint8Array(smartArtData.raw!.drawing!),
+            path: drawingPath,
           },
+          ...(smartArtData.raw?.drawingRels === undefined
+            ? []
+            : [
+                {
+                  data: toUint8Array(smartArtData.raw.drawingRels),
+                  path: partPathToRelsPath(drawingPath),
+                },
+              ]),
         ];
-      },
-    ),
+      }),
+    SmartArtDataRels: smartArtParts.flatMap(({ dataPath, relationships }) => {
+      if (relationships.relationshipCount === 0) return [];
+      return [
+        {
+          data: XML_DECL + relationships.serialize(),
+          path: partPathToRelsPath(dataPath),
+        },
+      ];
+    }),
   };
 }

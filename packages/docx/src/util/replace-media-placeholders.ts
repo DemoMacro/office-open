@@ -25,6 +25,7 @@ export function replaceRelsWithPlaceholders(
     const mediaPath = ctx.resolveRelationship(rId);
     const data = mediaPath ? ctx.getRaw(mediaPath) : undefined;
     if (!mediaPath || !data) return match;
+    if (!/(^|\/)media\//.test(mediaPath)) return match;
     // Embedding references (w:objectEmbed/w:objectLink inside fallback
     // w:object twins) resolve through the embedding type map, not media —
     // swap the rId for its placeholder but skip media collection, otherwise

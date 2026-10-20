@@ -88,6 +88,24 @@ describe("shapeDesc round-trip", () => {
     expect(emitted).toContain("<a:extLst></a:extLst></p:spPr>");
   });
 
+  it("round-trips an empty shape blip extension and attributeless placeholder", () => {
+    const xml =
+      '<p:sp xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" ' +
+      'xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">' +
+      '<p:nvSpPr><p:cNvPr id="1" name="S"/><p:cNvSpPr/><p:nvPr><p:ph/></p:nvPr></p:nvSpPr>' +
+      "<p:spPr><a:blipFill><a:blip><a:extLst/></a:blip>" +
+      "<a:stretch><a:fillRect/></a:stretch></a:blipFill></p:spPr></p:sp>";
+    const element = parseXml(xml).elements?.[0];
+    if (!element) throw new Error("fixture has no root element");
+    const parsed = shapeDesc.parse(element, readCtx);
+
+    expect(parsed.placeholder).toBe(true);
+    expect(parsed.properties?.fill).toMatchObject({ blipExtensionXml: "" });
+    const emitted = shapeDesc.stringify(parsed, new MockWriteContext() as unknown as WriteContext)!;
+    expect(emitted).toContain("<p:ph/>");
+    expect(emitted).toContain("<a:blip><a:extLst></a:extLst></a:blip>");
+  });
+
   it("round-trips basic shape with position", () => {
     const result = roundTrip({ x: 100, y: 200, width: 400, height: 300 });
     expect(result.x).toBe(100);
@@ -111,6 +129,22 @@ describe("shapeDesc round-trip", () => {
       customerData: [{ rId: "rId4", kind: "tags" }],
     });
     expect(result.customerData).toEqual([{ rId: "rId4", kind: "tags" }]);
+  });
+
+  it("round-trips foreign and empty nvPr extension lists", () => {
+    const result = roundTrip({
+      x: 0,
+      y: 0,
+      width: 100,
+      height: 100,
+      nvPrExtensions: [{ uri: "{TEST}", content: '<test:x xmlns:test="urn:test"/>' }],
+    });
+    expect(result.nvPrExtensions).toEqual([
+      { uri: "{TEST}", content: '<test:x xmlns:test="urn:test"/>' },
+    ]);
+
+    const empty = roundTrip({ x: 0, y: 0, width: 100, height: 100, nvPrExtensions: [] });
+    expect(empty.nvPrExtensions).toEqual([]);
   });
 
   it("round-trips shape with textBody text", () => {
@@ -198,6 +232,21 @@ describe("shapeDesc round-trip", () => {
       rotation: 45,
     });
     expect(result.rotation).toBe(45);
+  });
+
+  it("preserves a source shape with omitted geometry", () => {
+    const xml =
+      '<p:sp xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" ' +
+      'xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">' +
+      '<p:nvSpPr><p:cNvPr id="1" name="Shape"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>' +
+      '<p:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="100" cy="100"/></a:xfrm></p:spPr>' +
+      "</p:sp>";
+    const element = parseXml(xml).elements?.[0];
+    if (!element) throw new Error("fixture has no root element");
+    const parsed = shapeDesc.parse(element, readCtx);
+    expect(parsed.properties?.geometry).toBeNull();
+    const emitted = shapeDesc.stringify(parsed, new MockWriteContext() as unknown as WriteContext);
+    expect(emitted).not.toContain("<a:prstGeom");
   });
 
   it("round-trips shape with flipHorizontal", () => {
@@ -567,6 +616,65 @@ describe("pictureDesc round-trip", () => {
 
     expect(result.rotWithShape).toBe(true);
     expect(result.blackWhiteMode).toBe("gray");
+  });
+
+  it("round-trips structured picture shape-property extensions", () => {
+    const result = roundTripPicture({
+      id: 9,
+      name: "Hidden Properties",
+      data: "dummy",
+      type: "png",
+      x: 0,
+      y: 0,
+      width: 100,
+      height: 50,
+      shapePropertiesExtensions: [
+        {
+          uri: "{909E8E84-426E-40DD-AFC4-6F175D3DCCD1}",
+          hiddenFill: { type: "solid", color: { value: "FF0000" } },
+        },
+        {
+          uri: "{91240B29-F687-4F45-9708-019B960494DF}",
+          hiddenLine: { type: "noFill" },
+        },
+      ],
+    });
+
+    expect(result.shapePropertiesExtensions).toEqual([
+      {
+        uri: "{909E8E84-426E-40DD-AFC4-6F175D3DCCD1}",
+        hiddenFill: { type: "solid", color: { value: "FF0000" } },
+      },
+      {
+        uri: "{91240B29-F687-4F45-9708-019B960494DF}",
+        hiddenLine: { type: "noFill" },
+      },
+    ]);
+  });
+
+  it("round-trips custom picture geometry", () => {
+    const result = roundTripPicture({
+      id: 10,
+      name: "Custom Picture",
+      data: "dummy",
+      type: "png",
+      x: 0,
+      y: 0,
+      width: 100,
+      height: 100,
+      customGeometry: {
+        pathList: [
+          {
+            commands: [
+              { command: "moveTo", point: { x: "0", y: "0" } },
+              { command: "lineTo", point: { x: "100000", y: "100000" } },
+              { command: "close" },
+            ],
+          },
+        ],
+      },
+    });
+    expect(result.customGeometry?.pathList?.[0]?.commands).toHaveLength(3);
   });
 
   it("emits a linked-only blip (r:link, no media registration)", () => {

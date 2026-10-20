@@ -93,6 +93,13 @@ describe("outlineDesc", () => {
     expect(result.dash).toBe("dash");
   });
 
+  it("round-trips a bare preset dash element", () => {
+    const document = parseXml("<a:ln><a:prstDash/></a:ln>");
+    const result = parse(outlineDesc, document.elements![0]!, {} as ReadContext);
+    expect(result.dashPresent).toBe(true);
+    expect(stringify(outlineDesc, result, {} as WriteContext)).toBe("<a:ln><a:prstDash/></a:ln>");
+  });
+
   it("round-trips custom dash", () => {
     const opts: OutlineOptions = {
       type: "noFill",
@@ -106,6 +113,14 @@ describe("outlineDesc", () => {
     expect(result.customDash).toHaveLength(2);
     expect(result.customDash?.[0]?.d).toBe("1000%");
     expect(result.customDash?.[0]?.sp).toBe("500%");
+  });
+
+  it("reads transitional numeric percentage dash stops", () => {
+    const document = parseXml(
+      `<a:ln><a:custDash><a:ds d="200000" sp="50000"/></a:custDash></a:ln>`,
+    );
+    const result = parse(outlineDesc, document.elements![0]!, {} as ReadContext);
+    expect(result.customDash).toEqual([{ d: "200%", sp: "50%" }]);
   });
 
   it("round-trips join styles", () => {

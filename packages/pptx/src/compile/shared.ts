@@ -6,13 +6,9 @@
  * @module
  */
 
-import {
-  RELATIONSHIP_TYPES,
-  Relationships,
-  collectPlaceholderKeys,
-  replacePlaceholders,
-} from "@office-open/core";
+import { collectPlaceholderKeys, Relationships, replacePlaceholders } from "@office-open/core";
 import type { RelationshipType } from "@office-open/core";
+import { RELATIONSHIP_TYPES, resolveRelationshipTarget } from "@office-open/core/opc";
 import { OOXML_XML_DECLARATION } from "@office-open/xml";
 import type { PresentationOptions } from "@shared/file";
 
@@ -34,6 +30,58 @@ export interface XmlifyedFileMapping {
 
 /** Rel kinds whose targets are media files the model may rename on absorb. */
 export const MEDIA_REL_KINDS = new Set(["image", "media", "audio", "video"]);
+
+/**
+ * Source relationship ids for embedded media referenced by one rebuilt part.
+ * Placeholder replacement and relationship registration must agree on these
+ * ids; otherwise valid XML can point at a different target after renumbering.
+ */
+export function sourceMediaRelationshipIds(
+  source: string,
+  passthroughRelationships: PresentationOptions["passthroughRelationships"],
+): ReadonlyMap<string, string> {
+  const ids = new Map<string, string>();
+  for (const relationship of passthroughRelationships ?? []) {
+    if (
+      relationship.source !== source ||
+      !MEDIA_REL_KINDS.has(relationship.relationshipType.split("/").pop() ?? "")
+    ) {
+      continue;
+    }
+    const target = resolveRelationshipTarget("", relationship.target);
+    const fileName = target.split("/").pop();
+    if (!fileName) continue;
+    if (!fileName) continue;
+    const current = ids.get(fileName);
+    const currentId = current === undefined ? Number.MAX_SAFE_INTEGER : Number(current.slice(3));
+    const nextId = Number(relationship.rId.slice(3));
+    if (current === undefined || nextId < currentId) ids.set(fileName, relationship.rId);
+  }
+  return ids;
+}
+
+/** Source relationship ids keyed by media kind and file name. Canonical media
+ * placeholders use these ids so rebuilt content and raw markup branches can
+ * share one relationship table without renumbering either reference. */
+export function sourceMediaRelationshipIdsByKind(
+  source: string,
+  passthroughRelationships: PresentationOptions["passthroughRelationships"],
+): ReadonlyMap<string, string> {
+  const ids = new Map<string, string>();
+  for (const relationship of passthroughRelationships ?? []) {
+    if (relationship.source !== source) continue;
+    const kind = relationship.relationshipType.split("/").pop() ?? "";
+    if (!MEDIA_REL_KINDS.has(kind)) continue;
+    const fileName = resolveRelationshipTarget("", relationship.target).split("/").pop();
+    if (!fileName) continue;
+    const key = `${kind}:${fileName}`;
+    const current = ids.get(key);
+    const currentId = current === undefined ? Number.MAX_SAFE_INTEGER : Number(current.slice(3));
+    const nextId = Number(relationship.rId.slice(3));
+    if (current === undefined || nextId < currentId) ids.set(key, relationship.rId);
+  }
+  return ids;
+}
 
 export function buildRels(entries: RelEntry[]): Relationships {
   const rels = new Relationships();
@@ -154,5 +202,49 @@ export function reserveClaimedSourceRids(
     if (absorbedKinds.has(kind) && (!MEDIA_REL_KINDS.has(kind) || ownedTargets?.has(rel.target)))
       continue;
     rels.reserveId(rel.rId);
+  }
+}
+
+/** Claim captured media relationships that the rebuilt part did not absorb.
+ * Media ownership is target-specific: a modeled picture owns its target, while
+ * an independent bullet image or legacy reference remains its own relationship.
+ * Comparing source and model counts per kind+target keeps legal duplicates. */
+export function claimMediaSourceRelationships(
+  rels: Relationships,
+  source: string,
+  passthroughRelationships: PresentationOptions["passthroughRelationships"],
+  referencedIds?: ReadonlySet<string>,
+): void {
+  const sourceRelationships = (passthroughRelationships ?? []).filter(
+    (rel) =>
+      rel.source === source && MEDIA_REL_KINDS.has(rel.relationshipType.split("/").pop() ?? ""),
+  );
+  const sourceCounts = new Map<string, number>();
+  const claimedCounts = new Map<string, number>();
+  for (const rel of sourceRelationships) {
+    const kind = rel.relationshipType.split("/").pop()!;
+    const key = `${kind}:${resolveRelationshipTarget("", rel.target)}`;
+    sourceCounts.set(key, (sourceCounts.get(key) ?? 0) + 1);
+    claimedCounts.set(key, 0);
+  }
+  for (const rel of sourceRelationships) {
+    const kind = rel.relationshipType.split("/").pop()!;
+    const semanticTarget = resolveRelationshipTarget("", rel.target);
+    const key = `${kind}:${semanticTarget}`;
+    if (
+      referencedIds?.has(rel.rId) &&
+      !(rels.hasId(rel.rId) && rels.idOf(rel.relationshipType, semanticTarget) === rel.rId)
+    ) {
+      rels.claimSourceRel(rel, { force: true });
+      continue;
+    }
+    const duplicatesToClaim = Math.max(
+      0,
+      (sourceCounts.get(key) ?? 0) - rels.countRelationships(rel.relationshipType, semanticTarget),
+    );
+    const claimedCount = claimedCounts.get(key) ?? 0;
+    if (claimedCount >= duplicatesToClaim) continue;
+    claimedCounts.set(key, claimedCount + 1);
+    rels.claimSourceRel(rel, { force: true });
   }
 }

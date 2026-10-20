@@ -1,10 +1,10 @@
+import type { DataType } from "@office-open/core";
 import type { Element } from "@office-open/xml";
 
-import { generateOcf, readOcf, readXml } from "../container/package";
-import { OdfSchemaError } from "../errors";
-import { formsXml, parseOfficeForms, type OfficeFormsOptions } from "../forms/forms";
-import { metaXml, ODF_NAMESPACES, parseMeta } from "../meta/core-properties";
-import { childNamed, childrenNamed, textOf, xmlElement } from "../runtime/xml";
+import { generateOcf, readOcf, readXml } from "./container/package";
+import { OdfSchemaError } from "./errors";
+import { metaXml, ODF_NAMESPACES, parseMeta } from "./meta";
+import { childNamed, childrenNamed, textOf, xmlElement } from "./runtime/xml";
 
 const MIME = "application/vnd.oasis.opendocument.database";
 const NAMESPACES = `${ODF_NAMESPACES} xmlns:db="urn:oasis:names:tc:opendocument:xmlns:database:1.0" xmlns:xforms="http://www.w3.org/2002/xforms"`;
@@ -140,7 +140,6 @@ export interface OdfDatabaseElement {
   attributes?: DatabaseAttributes;
   children?: OdfDatabaseElement[];
   text?: string;
-  forms?: OfficeFormsOptions;
 }
 
 export interface DatabaseDocumentOptions {
@@ -198,20 +197,6 @@ function parseDatabaseElement(element: Element, part: string, path: string): Odf
         ? textOf(element)
         : undefined,
   };
-  if (element.name === "db:forms") {
-    options.forms = parseOfficeForms(element, part, elementPath);
-    for (const child of element.elements ?? []) {
-      if (child.type === "element" && child.name !== "form:form") {
-        throw databaseError(
-          part,
-          elementPath,
-          child.name ?? "unknown",
-          "child has no canonical database form mapping",
-        );
-      }
-    }
-    return options;
-  }
   const children = (element.elements ?? []).filter(
     (child): child is Element => child.type === "element",
   );
@@ -243,8 +228,6 @@ function parseDatabaseElement(element: Element, part: string, path: string): Odf
 }
 
 function databaseElementXml(element: OdfDatabaseElement): string {
-  if (element.name === "db:forms")
-    return xmlElement(element.name, element.attributes, [formsXml(element.forms)]);
   const children = [
     ...(element.text !== undefined ? [element.text] : []),
     ...(element.children ?? []).map(databaseElementXml),
@@ -260,8 +243,8 @@ export function generateDatabaseDocument(options: DatabaseDocumentOptions): Uint
   });
 }
 
-export function parseDatabaseDocument(data: Uint8Array): DatabaseDocumentOptions {
-  const { files } = readOcf(data, MIME);
+export async function parseDatabaseDocument(data: DataType): Promise<DatabaseDocumentOptions> {
+  const { files } = await readOcf(data, MIME);
   const content = readXml(files, "content.xml");
   const body = childNamed(childNamed(content, "office:body"), "office:database");
   const dataSourceElement = childrenNamed(body, "db:data-source")[0];

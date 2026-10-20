@@ -1,4 +1,4 @@
-import { unzipSync } from "@office-open/core";
+import { unzipSync } from "@office-open/core/opc";
 import type {
   ColorDefinitionOptions,
   LayoutDefinitionOptions,

@@ -123,8 +123,7 @@ function pageNumberXml(opts: NonNullable<PageNumberTypeProperties>): string {
   if (opts.format !== undefined) attrs.push(`w:fmt="${opts.format}"`);
   if (opts.separator !== undefined) attrs.push(`w:chapSep="${opts.separator}"`);
   if (opts.chapterStyle !== undefined) attrs.push(`w:chapStyle="${opts.chapterStyle}"`);
-  // No attributes → omit pgNumType (never fabricate an empty element).
-  return attrs.length ? `<w:pgNumType ${attrs.join(" ")}/>` : "";
+  return attrs.length ? `<w:pgNumType ${attrs.join(" ")}/>` : "<w:pgNumType/>";
 }
 
 function docGridXml(linePitch: number, charSpace?: number, type?: string): string {
@@ -217,6 +216,7 @@ function appendHeaderFooterRefs(
 ): void {
   if (!group) return;
   if (group.default) parts.push(headerFooterRefXml(type, group.default.referenceId, "default"));
+  if (group.odd) parts.push(headerFooterRefXml(type, group.odd.referenceId, "odd"));
   if (group.first) parts.push(headerFooterRefXml(type, group.first.referenceId, "first"));
   if (group.even) parts.push(headerFooterRefXml(type, group.even.referenceId, "even"));
 }
@@ -229,7 +229,7 @@ function appendOrderedHeaderFooterRefs(
 ): void {
   for (const slot of order) {
     const kind = slot.startsWith("header") ? "w:headerReference" : "w:footerReference";
-    const type = slot.slice(slot.indexOf("-") + 1) as "default" | "first" | "even";
+    const type = slot.slice(slot.indexOf("-") + 1) as "default" | "odd" | "first" | "even";
     const group = kind === "w:headerReference" ? opts.headerReferences : opts.footerReferences;
     const entry = group?.[type];
     if (entry) parts.push(headerFooterRefXml(kind, entry.referenceId, type));
@@ -278,7 +278,7 @@ function stringifySectionPropertiesInner(
     orientation,
     code,
   } = typeof opts.pageSize === "object" ? opts.pageSize : {};
-  const { pageNumberType = {}, pageBorders: borders, textDirection } = opts;
+  const { pageBorders: borders, textDirection } = opts;
 
   const {
     linePitch = 312,
@@ -325,6 +325,10 @@ function stringifySectionPropertiesInner(
     parts.push(`<w:paperSrc ${psAttr.join(" ")}/>`);
   }
 
+  if (opts.tmGutter !== undefined) parts.push(`<w:tmGutter w:val="${opts.tmGutter}"/>`);
+  if (opts.tmSection?.height !== undefined)
+    parts.push(`<w:tmSection w:h="${opts.tmSection.height}"/>`);
+
   // Page borders
   if (borders) parts.push(pageBordersXml(borders));
 
@@ -332,7 +336,7 @@ function stringifySectionPropertiesInner(
   if (opts.lineNumberType) parts.push(lineNumberXml(opts.lineNumberType));
 
   // Page numbers
-  parts.push(pageNumberXml(pageNumberType));
+  if (opts.pageNumberType !== undefined) parts.push(pageNumberXml(opts.pageNumberType));
 
   // Columns
   if (opts.columns) parts.push(columnsXml(opts.columns));
@@ -345,6 +349,8 @@ function stringifySectionPropertiesInner(
   // noEndnote, titlePg, textDirection, bidi, rtlGutter, docGrid.
   if (opts.formProtection !== undefined)
     parts.push(opts.formProtection ? "<w:formProt/>" : '<w:formProt w:val="0"/>');
+  if (opts.mirrorMargins !== undefined)
+    parts.push(opts.mirrorMargins ? "<w:mirrorMargins/>" : '<w:mirrorMargins w:val="0"/>');
   if (opts.verticalAlign) parts.push(verticalAlignXml(opts.verticalAlign));
   if (opts.noEndnote !== undefined)
     parts.push(opts.noEndnote ? "<w:noEndnote/>" : '<w:noEndnote w:val="0"/>');
@@ -510,7 +516,7 @@ export function parseSectionPropertiesEl(el: Element): SectionPropertiesOptions 
     }
     const chapStyle = attrNum(pgNumType, "w:chapStyle");
     if (chapStyle !== undefined) pageNumberType.chapterStyle = chapStyle;
-    if (Object.keys(pageNumberType).length > 0) opts.pageNumberType = pageNumberType;
+    opts.pageNumberType = pageNumberType;
   }
 
   // Columns
@@ -561,6 +567,9 @@ export function parseSectionPropertiesEl(el: Element): SectionPropertiesOptions 
   // Title page
   const titlePg = findChild(el, "w:titlePg");
   if (titlePg) opts.titlePage = attrBool(titlePg, "w:val") ?? true;
+
+  const mirrorMargins = findChild(el, "w:mirrorMargins");
+  if (mirrorMargins) opts.mirrorMargins = attrBool(mirrorMargins, "w:val") ?? true;
 
   // On/off properties
   for (const [name, optKey] of [
@@ -660,6 +669,16 @@ export function parseSectionPropertiesEl(el: Element): SectionPropertiesOptions 
     const other = attrNum(paperSrc, "w:other");
     if (other !== undefined) ps.other = other;
     if (Object.keys(ps).length > 0) opts.paperSrc = ps;
+  }
+
+  const tmGutter = findChild(el, "w:tmGutter");
+  const tmGutterValue = tmGutter ? attrNum(tmGutter, "w:val") : undefined;
+  if (tmGutterValue !== undefined) opts.tmGutter = tmGutterValue;
+
+  const tmSection = findChild(el, "w:tmSection");
+  if (tmSection) {
+    const height = attrNum(tmSection, "w:h");
+    if (height !== undefined) opts.tmSection = { height };
   }
 
   // Header/footer references are not emitted: users author headers/footers

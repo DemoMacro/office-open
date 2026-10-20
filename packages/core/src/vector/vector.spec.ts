@@ -237,6 +237,22 @@ describe("v:group", () => {
     const result = roundTrip(stringifyVmlGroup, parseVmlGroup, opts);
     expect(result).toEqual(opts);
   });
+
+  it("preserves a lock before nested group children", () => {
+    const xml =
+      '<v:group id="g1" coordsize="200,200">' +
+      '<o:lock v:ext="edit" grouping="t"/>' +
+      '<v:rect id="r1" style="width:100pt;height:40pt"/>' +
+      "</v:group>";
+    const el = parseXml(`<v:carrier>${xml}</v:carrier>`).elements?.[0]?.elements?.[0];
+    if (!el) throw new Error("carrier has no group");
+    const parsed = parseVmlGroup(el);
+    expect(parsed.memberOrder).toEqual([
+      { kind: "element", field: "lock" },
+      { kind: "child", index: 0 },
+    ]);
+    expect(stringifyVmlGroup(parsed)).toBe(xml);
+  });
 });
 
 describe("v:background", () => {
@@ -510,6 +526,7 @@ describe("office shape elements (o:)", () => {
       fillcolor: "#3366ff",
       strokecolor: "silver",
       allowincell: false,
+      allowoverlap: true,
       fillElement: { type: "tile", src: "bg.png" },
       textbox: { inset: "1mm,1mm,1mm,1mm" },
       colormru: { colors: "#ff0000,#00ff00" },

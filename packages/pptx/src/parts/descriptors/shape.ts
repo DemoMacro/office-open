@@ -7,7 +7,12 @@
  * @module
  */
 
-import { parseOnOff, toUint8Array, xsdPlaceholderType } from "@office-open/core";
+import {
+  parseOnOff,
+  presetGeometryDesc,
+  toUint8Array,
+  xsdPlaceholderType,
+} from "@office-open/core";
 import type { NonVisualDrawingPropertiesOptions, ShapeLockingOptions } from "@office-open/core";
 import type { CustomDescriptor, WriteContext, ReadContext } from "@office-open/core/descriptor";
 import { parse, stringify } from "@office-open/core/descriptor";
@@ -22,6 +27,9 @@ import {
   parseNonVisualDrawingProperties,
   pictureLockingDesc,
   blipDesc,
+  customGeometryDesc,
+  sourceRectangleDesc,
+  stretchDesc,
   createSourceRectangle,
   fillDesc,
   findFillChild,
@@ -38,9 +46,13 @@ import type {
   Transform2DOptions,
 } from "@office-open/core/drawing";
 import type { Element as XmlElement } from "@office-open/xml";
-import { findChild, findFirst, attrNum, attr } from "@office-open/xml";
+import { findChild, findFirst, attrNum, attr, stringifyElement } from "@office-open/xml";
 import { parseCustDataLst, stringifyCustDataLst } from "@parts/slide/c-sld";
 import { imageTypeFromPath } from "@shared/media/image-type";
+import type {
+  AlternatePictureBlipFillOptions,
+  AlternatePictureFillBranchOptions,
+} from "@shared/picture";
 import type { PictureOptions } from "@shared/picture";
 import {
   readShapeStyle,
@@ -180,23 +192,29 @@ export const pictureDesc: CustomDescriptor<PictureOptions> = {
     parts.push(stringifyNvPicPr(id, name, opts, ctx));
 
     // ── p:blipFill ──
-    parts.push(
-      stringifyPptxBlipFill(
-        {
-          fileName: blipReferenceId,
-          rawReferenceId: blipRawReferenceId,
-          sourceUrl: opts.sourceUrl,
-          compression: opts.compression,
-        },
-        opts.sourceRectangle,
-        opts.blipEffects,
-        ctx,
-        opts.useLocalDpi,
-        opts.blipExt,
-        opts.fillRectangle,
-        opts.rotWithShape,
-      ),
-    );
+    if (opts.alternateBlipFill) {
+      parts.push(stringifyAlternateBlipFill(opts.alternateBlipFill, ctx));
+    } else if (opts.blipFillPresent === "empty") {
+      parts.push("<p:blipFill/>");
+    } else if (opts.blipFillPresent !== false) {
+      parts.push(
+        stringifyPptxBlipFill(
+          {
+            fileName: blipReferenceId,
+            rawReferenceId: blipRawReferenceId,
+            sourceUrl: opts.sourceUrl,
+            compression: opts.compression,
+          },
+          opts.sourceRectangle,
+          opts.blipEffects,
+          ctx,
+          opts.useLocalDpi,
+          opts.blipExt,
+          opts.fillRectangle,
+          opts.rotWithShape,
+        ),
+      );
+    }
 
     // ── p:spPr ──
     const spPrXml = stringifyPicSpPr(opts, ctx);
@@ -246,9 +264,17 @@ export const pictureDesc: CustomDescriptor<PictureOptions> = {
         result.geometry = null;
       } else if (prstGeom) {
         const prst = attr(prstGeom, "prst");
-        // rect is the writer default — only a non-rect preset round-trips.
-        if (prst && prst !== "rect") result.geometry = prst as ShapeType;
+        const avLst = findChild(prstGeom, "a:avLst");
+        const hasGuides = (avLst?.elements ?? []).some((e) => e.name === "a:gd");
+        if (hasGuides) {
+          result.geometry = presetGeometryDesc.parse(prstGeom, ctx);
+        } else if (prst && prst !== "rect") {
+          // rect is the writer default — only a non-rect preset round-trips.
+          result.geometry = prst as ShapeType;
+        }
       }
+      const customGeometry = findChild(spPr, "a:custGeom");
+      if (customGeometry) result.customGeometry = customGeometryDesc.parse(customGeometry, ctx);
       const xfrm = findChild(spPr, "a:xfrm");
       if (xfrm) {
         const off = findChild(xfrm, "a:off");
@@ -294,7 +320,12 @@ export const pictureDesc: CustomDescriptor<PictureOptions> = {
       const bwMode = spPr.attributes?.["bwMode"];
       if (bwMode !== undefined) result.blackWhiteMode = bwMode as PictureOptions["blackWhiteMode"];
       const spProperties = shapePropertiesDesc.parse(spPr, ctx);
-      if (spProperties.ext !== undefined) result.shapePropertiesExt = spProperties.ext;
+      if (spProperties.extensions !== undefined) {
+        result.shapePropertiesExtensions = spProperties.extensions;
+      }
+      if (spProperties.extensions !== undefined) {
+        result.shapePropertiesExt = spProperties.ext ?? "";
+      }
     }
 
     // p:style
@@ -302,7 +333,16 @@ export const pictureDesc: CustomDescriptor<PictureOptions> = {
     if (picStyle) result.style = readShapeStyle(picStyle, ctx);
 
     // Crop rectangle from p:blipFill → a:srcRect (‰ → percent)
+    const alternateBlipFill = findChild(el, "mc:AlternateContent");
     const blipFill = findChild(el, "p:blipFill");
+    if (alternateBlipFill) result.alternateBlipFill = readAlternateBlipFill(alternateBlipFill, ctx);
+    else if (!blipFill) result.blipFillPresent = false;
+    else if (
+      !findChild(blipFill, "a:blip") &&
+      !findChild(blipFill, "a:srcRect") &&
+      !findChild(blipFill, "a:stretch")
+    )
+      result.blipFillPresent = "empty";
     if (parseOnOff(blipFill?.attributes?.["rotWithShape"])) result.rotWithShape = true;
     const srcRectEl = blipFill ? findChild(blipFill, "a:srcRect") : undefined;
     if (srcRectEl) {
@@ -395,25 +435,35 @@ function stringifyNvSpPr(id: number, name: string, opts: ShapeOptions, ctx: Writ
   if (opts.userDrawn) nvPrAttrs.push('userDrawn="1"');
   const nvPrAttrsXml = nvPrAttrs.length > 0 ? ` ${nvPrAttrs.join(" ")}` : "";
   const customerDataXml = stringifyCustDataLst(opts.customerData);
+  const nvPrExtensionXml =
+    opts.nvPrExtensions !== undefined
+      ? `<p:extLst>${opts.nvPrExtensions
+          .map((extension) => `<p:ext uri="${extension.uri}">${extension.content ?? ""}</p:ext>`)
+          .join("")}</p:extLst>`
+      : "";
   const nvPrChildren: string[] = [];
+  // The true marker preserves a source p:ph with no attributes.
   if (opts.placeholder || opts.placeholderIndex !== undefined) {
     const phAttrs: string[] = [];
-    if (opts.placeholder) phAttrs.push(`type="${xsdPlaceholderType.to(opts.placeholder)}"`);
+    if (typeof opts.placeholder === "string")
+      phAttrs.push(`type="${xsdPlaceholderType.to(opts.placeholder)}"`);
     if (opts.placeholderIndex !== undefined) phAttrs.push(`idx="${opts.placeholderIndex}"`);
     if (opts.placeholderSize !== undefined) phAttrs.push(`sz="${opts.placeholderSize}"`);
     if (opts.placeholderOrientation !== undefined)
       phAttrs.push(`orient="${opts.placeholderOrientation}"`);
     if (opts.hasCustomPrompt) phAttrs.push('hasCustomPrompt="1"');
-    nvPrChildren.push(`<p:ph ${phAttrs.join(" ")}/>`);
+    const phAttrsXml = phAttrs.join(" ");
+    nvPrChildren.push(`<p:ph${phAttrsXml ? ` ${phAttrsXml}` : ""}/>`);
   }
   if (customerDataXml) nvPrChildren.push(customerDataXml);
+  if (nvPrExtensionXml) nvPrChildren.push(nvPrExtensionXml);
   const nvPrContent =
     nvPrAttrs.length > 0 || nvPrChildren.length > 0
       ? `<p:nvPr${nvPrAttrsXml}>${nvPrChildren.join("")}</p:nvPr>`
       : "<p:nvPr/>";
 
   // cNvSpPr (with optional locking)
-  const txBoxAttr = opts.textBox ? ' txBox="1"' : "";
+  const txBoxAttr = opts.textBox === undefined ? "" : ` txBox="${opts.textBox ? "1" : "0"}"`;
   let cNvSpPrContent = `<p:cNvSpPr${txBoxAttr}/>`;
   if (opts.locking) {
     const lockAttrs = buildLockAttrs(opts.locking);
@@ -485,11 +535,16 @@ function stringifySpPr(opts: ShapeOptions, ctx: WriteContext): string {
   // and noFill. A p:ph with no @type (idx-only) is still a placeholder —
   // placeholderIndex alone carries its identity.
   const isPlaceholder = !!opts.placeholder || opts.placeholderIndex !== undefined;
-  const geometry = sp.customGeometry
-    ? undefined
-    : isPlaceholder
-      ? sp.geometry
-      : (sp.geometry ?? "rect");
+  const geometry =
+    sp.geometry === null
+      ? undefined
+      : sp.customGeometry
+        ? undefined
+        : sp.geometry === undefined
+          ? isPlaceholder
+            ? undefined
+            : "rect"
+          : sp.geometry;
   // A shape whose p:style carries a fillRef inherits its fill from the style
   // matrix — an explicit noFill would override that, so leave the spPr fill
   // unset unless the source (or the fresh caller) says otherwise. `fill: null`
@@ -502,7 +557,7 @@ function stringifySpPr(opts: ShapeOptions, ctx: WriteContext): string {
         ? sp.fill
         : (sp.fill ?? ({ type: "none" } as const));
 
-  const spPrContent = shapePropertiesDesc.stringify(
+  let spPrContent = shapePropertiesDesc.stringify(
     {
       x: opts.x,
       y: opts.y,
@@ -584,6 +639,47 @@ function stringifyNvPicPr(
 }
 
 /** PPTX uses p:blipFill (not pic:blipFill). */
+function stringifyAlternateBlipFillBranch(
+  branch: AlternatePictureFillBranchOptions,
+  ctx: WriteContext,
+): string {
+  const blipXml = stringify(
+    blipDesc,
+    {
+      rawReferenceId: branch.relationshipId,
+      compression: branch.compression,
+      blipEffects: branch.blipEffects,
+      ext: branch.blipExt,
+    },
+    ctx,
+  );
+  const sourceRectangle =
+    branch.sourceRectangle === undefined
+      ? ""
+      : branch.sourceRectangle === null
+        ? "<a:srcRect/>"
+        : createSourceRectangle(branch.sourceRectangle);
+  const fillRectangle =
+    branch.fillRectangle === false
+      ? "<a:stretch/>"
+      : `<a:stretch>${createSourceRectangle(branch.fillRectangle ?? {}, "a:fillRect")}</a:stretch>`;
+  return `<p:blipFill>${blipXml}${sourceRectangle}${fillRectangle}</p:blipFill>`;
+}
+
+function stringifyAlternateBlipFill(
+  alternate: AlternatePictureBlipFillOptions,
+  ctx: WriteContext,
+): string {
+  const prefix = alternate.choiceRequires;
+  const choice = stringifyAlternateBlipFillBranch(alternate.choice, ctx);
+  const fallback = stringifyAlternateBlipFillBranch(alternate.fallback, ctx);
+  return (
+    `<mc:AlternateContent><mc:Choice xmlns:${prefix}="${alternate.choiceRequiresNamespace}" ` +
+    `Requires="${prefix}">${choice}</mc:Choice><mc:Fallback>${fallback}</mc:Fallback>` +
+    "</mc:AlternateContent>"
+  );
+}
+
 function stringifyPptxBlipFill(
   blip: {
     /** Embedded media file name; undefined on a linked-only picture. */
@@ -598,7 +694,7 @@ function stringifyPptxBlipFill(
   sourceRectangle?: SourceRectangleOptions,
   blipEffects?: PictureOptions["blipEffects"],
   ctx?: WriteContext,
-  useLocalDpi?: boolean,
+  useLocalDpi?: boolean | "default",
   ext?: string,
   fillRectangle?: SourceRectangleOptions | false,
   rotWithShape?: boolean,
@@ -644,12 +740,17 @@ function stringifyPicSpPr(opts: PictureOptions, ctx: WriteContext): string {
       rotation: opts.rotation,
       // Pictures default to a rect frame; a parsed non-rect preset and an
       // explicit null (source omitted geometry) round-trip as written.
-      geometry: opts.geometry === null ? undefined : (opts.geometry ?? "rect"),
+      geometry:
+        opts.geometry === null || opts.customGeometry !== undefined
+          ? undefined
+          : (opts.geometry ?? "rect"),
+      customGeometry: opts.customGeometry,
       fill: opts.fill,
       outline: opts.outline,
       effects: opts.effects,
       scene3d: opts.scene3d,
       shape3d: opts.shape3d,
+      extensions: opts.shapePropertiesExtensions,
       ext: opts.shapePropertiesExt,
     },
     ctx,
@@ -722,8 +823,21 @@ export function readNvSpPr(nvSpPr: XmlElement, ctx: ReadContext): ShapeOptions {
         ] as ShapeOptions["placeholderOrientation"];
       if (ph.attributes["hasCustomPrompt"] !== undefined)
         result.hasCustomPrompt = parseOnOff(ph.attributes["hasCustomPrompt"]) ?? false;
+    } else if (ph) {
+      result.placeholder = true;
     }
     result.customerData = parseCustDataLst(findChild(nvPr, "p:custDataLst"));
+    const extLst = findChild(nvPr, "p:extLst");
+    if (extLst) {
+      result.nvPrExtensions = (extLst.elements ?? [])
+        .filter((ext) => ext.name === "p:ext")
+        .map((ext) => ({
+          uri: attr(ext, "uri") ?? "",
+          ...(ext.elements?.length
+            ? { content: ext.elements.map((child) => stringifyElement(child)).join("") }
+            : {}),
+        }));
+    }
   }
 
   const cNvSpPr = findChild(nvSpPr, "p:cNvSpPr");
@@ -732,7 +846,8 @@ export function readNvSpPr(nvSpPr: XmlElement, ctx: ReadContext): ShapeOptions {
     if (spLocks) {
       result.locking = shapeLockingDesc.parse(spLocks, {} as ReadContext) as ShapeLockingOptions;
     }
-    if (parseOnOff(cNvSpPr.attributes?.["txBox"])) result.textBox = true;
+    if (cNvSpPr.attributes?.["txBox"] !== undefined)
+      result.textBox = parseOnOff(cNvSpPr.attributes["txBox"]) ?? false;
   }
 
   return result;
@@ -743,18 +858,22 @@ export function readNvSpPr(nvSpPr: XmlElement, ctx: ReadContext): ShapeOptions {
 function readSpPr(
   spPr: XmlElement,
   ctx: ReadContext,
-): Transform2DOptions & { properties: NonNullable<ShapeOptions["properties"]> } {
+): Transform2DOptions & {
+  properties: NonNullable<ShapeOptions["properties"]>;
+} {
   const parsed = parse(shapePropertiesDesc, spPr, ctx);
   const { x, y, width, height, flipHorizontal, flipVertical, rotation, ...paint } = parsed;
 
   // A source spPr with no fill child inherits its fill — mark the absence so
   // stringify does not apply the fresh-authoring noFill default.
   if (paint.fill === undefined) paint.fill = null;
+  if (paint.geometry === undefined) paint.geometry = null;
 
   // Collapse a preset geometry without adjustment values to the bare string
   // shorthand the public options accept.
   const geometry = paint.geometry;
   if (
+    geometry !== null &&
     typeof geometry === "object" &&
     (!geometry.adjustmentValues || geometry.adjustmentValues.length === 0) &&
     geometry.preset
@@ -775,6 +894,52 @@ function readSpPr(
 }
 
 /** Read x/y/width/height (in EMU) from an a:xfrm element. */
+function readAlternateBlipFillBranch(
+  fillEl: XmlElement,
+  ctx: ReadContext,
+): AlternatePictureFillBranchOptions {
+  const blip = findChild(fillEl, "a:blip");
+  const parsedBlip = blip ? parse(blipDesc, blip, ctx) : undefined;
+  const sourceRectangleEl = findChild(fillEl, "a:srcRect");
+  const stretchEl = findChild(fillEl, "a:stretch");
+  const fillRectangleEl = stretchEl ? findChild(stretchEl, "a:fillRect") : undefined;
+  return {
+    relationshipId: blip ? (attr(blip, "r:embed") ?? "") : "",
+    ...(parsedBlip?.compression !== undefined
+      ? { compression: parsedBlip.compression as BlipCompression }
+      : {}),
+    ...(sourceRectangleEl
+      ? { sourceRectangle: parse(sourceRectangleDesc, sourceRectangleEl, ctx) }
+      : {}),
+    ...(stretchEl
+      ? {
+          fillRectangle: fillRectangleEl ? parse(stretchDesc, stretchEl, ctx) : (false as const),
+        }
+      : {}),
+    ...(parsedBlip?.blipEffects ? { blipEffects: parsedBlip.blipEffects } : {}),
+    ...(parsedBlip?.ext !== undefined ? { blipExt: parsedBlip.ext } : {}),
+  };
+}
+
+function readAlternateBlipFill(
+  alternateEl: XmlElement,
+  ctx: ReadContext,
+): AlternatePictureBlipFillOptions | undefined {
+  const choice = findChild(alternateEl, "mc:Choice");
+  const fallback = findChild(alternateEl, "mc:Fallback");
+  const choiceFill = choice ? findChild(choice, "p:blipFill") : undefined;
+  const fallbackFill = fallback ? findChild(fallback, "p:blipFill") : undefined;
+  if (!choice || !choiceFill || !fallbackFill) return undefined;
+  const choiceRequires = attr(choice, "Requires");
+  if (!choiceRequires) return undefined;
+  return {
+    choiceRequires,
+    choiceRequiresNamespace: attr(choice, `xmlns:${choiceRequires}`) ?? "",
+    choice: readAlternateBlipFillBranch(choiceFill, ctx),
+    fallback: readAlternateBlipFillBranch(fallbackFill, ctx),
+  };
+}
+
 export function readPositionFromXfrm(xfrm: XmlElement): Record<string, number> {
   const result: Record<string, number> = {};
   const off = findChild(xfrm, "a:off");

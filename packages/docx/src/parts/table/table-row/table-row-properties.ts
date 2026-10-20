@@ -106,6 +106,8 @@ export interface CnfStyleOptions {
 export interface TableRowPropertiesOptionsBase {
   /** Conditional formatting style (cnfStyle) */
   cnfStyle?: CnfStyleOptions;
+  /** Marks a source `<w:trPr/>` so an empty element round-trips. */
+  rowProperties?: boolean;
   /** Whether the row can be split across pages (cantSplit) */
   cantSplit?: boolean;
   /** Whether the row should be repeated as a header row on each page (tblHeader) */

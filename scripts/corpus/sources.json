@@ -35,6 +35,18 @@
       "repository": "https://github.com/scanny/python-pptx.git",
       "destination": ".temp/corpus/python-pptx",
       "commit": "278b47b1dedd5b46ee84c286e77cdfb0bf4594be"
+    },
+    {
+      "id": "apache-poi",
+      "repository": "https://github.com/apache/poi.git",
+      "destination": ".temp/corpus/apache-poi",
+      "commit": "62322b97f3f1bca39cdcd0b7705973833c74ad25"
+    },
+    {
+      "id": "libreoffice-core",
+      "repository": "https://github.com/LibreOffice/core.git",
+      "destination": ".temp/corpus/libreoffice-core",
+      "commit": "1fd35eecddee02f06dbd67b2d41f06dbf8e17e1a"
     }
   ]
 }

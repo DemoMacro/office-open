@@ -119,6 +119,13 @@ export class ParsedArchive {
       ...entry,
       name: entry.name.replace(/\\/g, "/"),
     }));
+    const seenParts = new Set<string>();
+    for (const entry of normalizedEntries) {
+      if (entry.name.endsWith("/") || entry.uncompSize === 0) continue;
+      const partKey = entry.name.toLowerCase();
+      if (seenParts.has(partKey)) throw new Error(`duplicate ZIP part name: ${entry.name}`);
+      seenParts.add(partKey);
+    }
     this.index = new Map(normalizedEntries.map((entry) => [entry.name, entry]));
     this.order = normalizedEntries.map((entry) => entry.name);
     for (const name of this.order) this.indexPath(name);

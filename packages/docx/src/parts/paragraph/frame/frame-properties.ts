@@ -86,6 +86,10 @@ interface BaseFrameOptions {
   };
   /** Height rule determining how frame height is calculated */
   rule?: (typeof HeightRule)[keyof typeof HeightRule];
+  /** Vendor fill color on legacy w:framePr; round-trip only — do not hand-author. */
+  fillColorRaw?: string;
+  /** Vendor fill color attribute spelling; round-trip only — do not hand-author. */
+  fillColorAttrRaw?: "fillcolor" | "w:fillcolor";
 }
 
 /**
@@ -135,7 +139,16 @@ export type MixedFrameOptions = {
   };
 } & BaseFrameOptions;
 
+/** A source-present `w:framePr` with every attribute omitted. */
+export type EmptyFrameOptions = {
+  readonly [Key in keyof BaseFrameOptions]?: undefined;
+};
+
 /**
  * Union type for all frame positioning options.
  */
-export type FrameOptions = XYFrameOptions | AlignmentFrameOptions | MixedFrameOptions;
+export type FrameOptions =
+  | XYFrameOptions
+  | AlignmentFrameOptions
+  | MixedFrameOptions
+  | EmptyFrameOptions;

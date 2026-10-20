@@ -4,7 +4,12 @@
  * @module
  */
 import type { LongHexNumber } from "@office-open/core";
-import type { EffectListOptions, FillOptions } from "@office-open/core/drawing";
+import type {
+  BlackWhiteMode,
+  EffectListOptions,
+  FillOptions,
+  OfficeArtExtensionOptions,
+} from "@office-open/core/drawing";
 import type { BackgroundRawMediaOptions } from "@parts/document/document-background/document-background";
 import type { DocPropertiesOptions } from "@parts/drawing/doc-properties/doc-properties";
 import type { RunPropertiesOptions } from "@parts/paragraph/run/properties";
@@ -27,16 +32,27 @@ export * from "@parts/drawing/inline/graphic/graphic-data/wps/body-properties";
 export interface GroupOptions {
   children: GroupChildMediaData[];
   transformation: MediaTransformation;
+  /**
+   * Group extent from wpg:grpSpPr/a:xfrm/a:ext in EMUs when it differs from
+   * wp:extent; omitted when the two source sizes agree.
+   */
+  groupExtent?: { width: number; height: number };
   /** Child coordinate system offset X (a:chOff @x, EMU). */
   childOffsetX?: number;
   /** Child coordinate system offset Y (a:chOff @y, EMU). */
   childOffsetY?: number;
+  /** Source carried a:chOff; round-trip only. */
+  childOffsetPresent?: boolean;
   /** Child coordinate system extent width (a:chExt @cx, EMU). */
   childExtentWidth?: number;
   /** Child coordinate system extent height (a:chExt @cy, EMU). */
   childExtentHeight?: number;
+  /** Source carried a:chExt; round-trip only. */
+  childExtentPresent?: boolean;
   /** Group fill */
   fill?: FillOptions;
+  /** Black-and-white rendering mode on wpg:grpSpPr (`@bwMode`). */
+  blackWhiteMode?: BlackWhiteMode;
   /** Group effects */
   effects?: EffectListOptions;
   floating?: Floating;
@@ -67,4 +83,6 @@ export interface GroupOptions {
   extensionIds?: DrawingExtensionIds;
   /** Group shape locks (wpg:cNvGrpSpPr/a:grpSpLocks) for round-trip. */
   groupShapeLocks?: GroupShapeLocksOptions;
+  /** Group property extensions (wpg:grpSpPr/a:extLst). */
+  extensions?: OfficeArtExtensionOptions[];
 }

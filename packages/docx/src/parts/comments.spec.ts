@@ -64,7 +64,7 @@ describe("commentsDesc round-trip", () => {
     const xml =
       `<w:comments xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">` +
       `<w:comment w:id="1" w:author="A" w:date="2024-01-01T00:00:00Z">` +
-      `<w:tbl><w:tr><w:tc><w:p><w:r><w:t>cell</w:t></w:r></w:p></w:tc></w:tr></w:tbl>` +
+      `<w:tbl><w:tblGrid/><w:tr><w:tc><w:p><w:r><w:t>cell</w:t></w:r></w:p></w:tc></w:tr></w:tbl>` +
       `<w:p><w:r><w:t>after</w:t></w:r></w:p>` +
       `</w:comment></w:comments>`;
     const doc = parseXml(xml);

@@ -5,8 +5,9 @@
  *
  * @module
  */
-import { attr, children, findChild, findFirst, textOf } from "@office-open/xml";
+import { attr, findChild, findDeep, findFirst, textOf } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
+import { ON_OFF_LEXICAL_VALUES, type OnOffLexicalValue } from "@parts/paragraph/run/properties";
 import { parseRunProperties } from "@parts/paragraph/run/run-parse";
 import type {
   StyleLevel,
@@ -15,7 +16,8 @@ import type {
 import type { SectionChild } from "@shared/section";
 
 import type { DocxReadContext } from "../../context";
-import { captureTocFieldRPr } from "../../parse/body";
+import { DocxParseError } from "../../errors";
+import { captureTocFieldRPr, stripOuterTocField } from "../../parse/body";
 
 /**
  * Try to parse a w:sdt element as a TOC.
@@ -34,25 +36,31 @@ export function parseToc(
       alias?: string;
     } & TableOfContentsOptions)
   | undefined {
+  if (ctx.activeMoveRangeDepth > 0) return undefined;
   const sdtPr = findChild(el, "w:sdtPr");
   if (!sdtPr) return undefined;
 
-  // Detection method 1: docPartObj with gallery "Table of Contents"
+  // A gallery label is an editor hint, not proof that the content is a field.
+  // Require a real TOC instruction so arbitrary gallery-only content remains
+  // a generic SDT instead of gaining synthesized control paragraphs.
   const docPartObj = findChild(sdtPr, "w:docPartObj");
   let isToc = false;
-
   if (docPartObj) {
     const gallery = findChild(docPartObj, "w:docPartGallery");
-    if (gallery && textOf(gallery) === "Table of Contents") {
-      isToc = true;
+    const galleryValue = gallery ? (attr(gallery, "w:val") ?? textOf(gallery)) : undefined;
+    if (gallery && galleryValue === "Table of Contents") {
+      const sdtContent = findChild(el, "w:sdtContent");
+      isToc =
+        sdtContent !== undefined &&
+        !isMovedTocField(sdtContent) &&
+        hasTocFieldInstruction(sdtContent);
     }
   }
 
-  // Detection method 2: scan content for TOC field instruction
   if (!isToc) {
     const sdtContent = findChild(el, "w:sdtContent");
     if (sdtContent) {
-      isToc = hasTocFieldInstruction(sdtContent);
+      isToc = !isMovedTocField(sdtContent) && hasTocFieldInstruction(sdtContent);
     }
   }
 
@@ -78,7 +86,22 @@ export function parseToc(
     const num = val !== undefined ? Number(val) : NaN;
     if (!Number.isNaN(num)) tocOpts.id = num;
   }
-  if (docPartObj && findChild(docPartObj, "w:docPartUnique")) tocOpts.docPartUnique = true;
+  const unique = docPartObj ? findChild(docPartObj, "w:docPartUnique") : undefined;
+  if (unique) {
+    tocOpts.docPartUnique = true;
+    const raw = attr(unique, "w:val");
+    if (raw !== undefined) {
+      if (!(ON_OFF_LEXICAL_VALUES as readonly string[]).includes(raw)) {
+        throw new DocxParseError(
+          `unsupported w:docPartUnique value: ${raw}`,
+          ctx.currentPart,
+          "/w:sdt/w:sdtPr/w:docPartObj/w:docPartUnique/@w:val",
+          "invalid-value",
+        );
+      }
+      tocOpts.docPartUniqueRaw = raw as OnOffLexicalValue;
+    }
+  }
 
   // CT_SdtEndPr wraps its run properties in a w:rPr child; a bare element is
   // carried as an empty object so stringify re-emits it.
@@ -109,13 +132,45 @@ export function parseToc(
       // existing TOC instead of regenerating it from headings.
       const entryEls = selectTocEntryElements(fieldEls);
       if (entryEls.length > 0) {
-        tocOpts.entries = parseChildren(entryEls, ctx);
+        tocOpts.entries = parseChildren(entryEls, ctx).map((entry, index) => {
+          if (index !== 0 || !("paragraph" in entry) || typeof entry.paragraph === "string") {
+            return entry;
+          }
+          return {
+            paragraph: {
+              ...entry.paragraph,
+              children: stripOuterTocField(entry.paragraph.children),
+            },
+          };
+        });
       }
       const firstEntry = entryEls[0];
+      const firstEntryIndex = firstEntry ? fieldEls.indexOf(firstEntry) : -1;
+      if (firstEntryIndex >= 0 && entryEls.length > 0) {
+        const selected = new Set(entryEls);
+        const trailingFieldEls: Element[] = fieldEls
+          .slice(firstEntryIndex + entryEls.length)
+          .filter((element) => !selected.has(element));
+        if (trailingFieldEls.length > 0) {
+          const fieldTrailing: SectionChild[] = parseChildren(trailingFieldEls, ctx);
+          const existingTrailing = tocOpts.trailing;
+          tocOpts.trailing = [
+            ...fieldTrailing,
+            ...(Array.isArray(existingTrailing) ? existingTrailing : []),
+          ];
+          if (trailingFieldEls.some(hasFieldEnd)) tocOpts.endInBody = true;
+        }
+      }
       if (firstEntry?.name === "w:p" && tocHeadFollowsEntryText(firstEntry)) {
         tocOpts.headRunsAfterText = true;
       }
       const lastEntry = entryEls[entryEls.length - 1];
+      const directEndRun =
+        lastEntry?.name === "w:p" ? findVisibleFieldEndRun(lastEntry) : undefined;
+      if (directEndRun) {
+        tocOpts.endMarkerInEntries = true;
+        appendEndMarker(tocOpts as TableOfContentsOptions);
+      }
       if (lastEntry && hasTocFieldEndBeforeChildren(lastEntry)) {
         tocOpts.fieldEndBeforeChildren = true;
       }
@@ -123,6 +178,51 @@ export function parseToc(
   }
 
   return { alias, ...tocOpts } as { alias?: string } & TableOfContentsOptions;
+}
+
+function hasDirectFieldEnd(element: Element): boolean {
+  return (
+    element.name === "w:r" &&
+    (element.elements ?? []).some(
+      (child) => child.name === "w:fldChar" && attr(child, "w:fldCharType") === "end",
+    )
+  );
+}
+
+function findVisibleFieldEndRun(paragraph: Element): Element | undefined {
+  for (const child of paragraph.elements ?? []) {
+    if (hasDirectFieldEnd(child)) return child;
+  }
+  return undefined;
+}
+
+function appendEndMarker(options: TableOfContentsOptions): void {
+  const entry = options.entries?.at(-1);
+  if (!entry || !("paragraph" in entry) || typeof entry.paragraph === "string") return;
+  const children = entry.paragraph.children ?? [];
+  if (
+    children.some(
+      (child) =>
+        typeof child === "object" &&
+        child !== null &&
+        "fieldMarker" in child &&
+        child.fieldMarker.type === "end",
+    )
+  )
+    return;
+  const rPrXml = options.endRPrXml !== undefined ? options.endRPrXml : options.rPrXml;
+  const marker = {
+    fieldMarker: {
+      type: "end" as const,
+      ...(rPrXml !== undefined ? { rPrXml } : {}),
+      ...(options.endAdditionRsid !== undefined ? { additionRsid: options.endAdditionRsid } : {}),
+      ...(options.endRunPropertiesRsid !== undefined
+        ? { runPropertiesRsid: options.endRunPropertiesRsid }
+        : {}),
+      ...(options.endDeletionRsid !== undefined ? { deletionRsid: options.endDeletionRsid } : {}),
+    },
+  };
+  entry.paragraph.children = [...children, marker];
 }
 
 /**
@@ -182,15 +282,25 @@ function splitAroundOuterField(els: Element[]): {
  * (w:instrText with text starting with "TOC").
  */
 function hasTocFieldInstruction(el: Element): boolean {
-  for (const p of children(el, "w:p")) {
-    for (const r of children(p, "w:r")) {
-      for (const instrText of children(r, "w:instrText")) {
-        const instruction = textOf(instrText)?.trim();
-        if (instruction?.startsWith("TOC")) return true;
-      }
+  for (const child of el.elements ?? []) {
+    if (child.name === "w:sdt") continue;
+    if (child.name === "w:instrText" || child.name === "w:delInstrText") {
+      if (textOf(child)?.trim().startsWith("TOC")) return true;
+    } else if (hasTocFieldInstruction(child)) {
+      return true;
     }
   }
   return false;
+}
+
+function isMovedTocField(el: Element): boolean {
+  return (
+    findDeep(el, "w:moveFrom").some(hasTocFieldInstruction) ||
+    findDeep(el, "w:moveTo").some(hasTocFieldInstruction) ||
+    findDeep(el, "w:del").some(hasTocFieldInstruction) ||
+    findDeep(el, "w:moveFromRangeStart").length > 0 ||
+    findDeep(el, "w:moveToRangeStart").length > 0
+  );
 }
 
 /**
@@ -286,14 +396,26 @@ export function selectTocEntryElements(els: Element[]): Element[] {
       const closing = depthBefore > 0;
       const keep = closing
         ? keepTocClosingParagraph(el, entries.length > 0)
-        : findFirst(el, "w:t") !== undefined;
+        : hasRenderedTocText(el);
       if (keep) entries.push(el);
       afterSeparate = false;
-    } else if (afterSeparate && depth >= 1 && findFirst(el, "w:t") !== undefined) {
+    } else if (
+      afterSeparate &&
+      depth >= 1 &&
+      (hasRenderedTocText(el) || findChild(el, "w:pPr") !== undefined)
+    ) {
       entries.push(el);
     }
   }
   return entries;
+}
+
+function hasRenderedTocText(el: Element): boolean {
+  return findFirst(el, "w:t") !== undefined || findFirst(el, "w:delText") !== undefined;
+}
+
+function hasFieldEnd(el: Element): boolean {
+  return findDeep(el, "w:fldChar").some((node: Element) => attr(node, "w:fldCharType") === "end");
 }
 
 /**
@@ -305,7 +427,9 @@ export function tocHeadFollowsEntryText(paragraph: Element): boolean {
   const runs = (paragraph.elements ?? []).filter(
     (child): child is Element => child.type === "element" && child.name === "w:r",
   );
-  const firstText = runs.findIndex((run) => findChild(run, "w:t") !== undefined);
+  const firstText = runs.findIndex(
+    (run) => findChild(run, "w:t") !== undefined || findChild(run, "w:delText") !== undefined,
+  );
   const firstBegin = runs.findIndex((run) =>
     (run.elements ?? []).some(
       (child) => child.name === "w:fldChar" && attr(child, "w:fldCharType") === "begin",
@@ -320,7 +444,7 @@ export function tocHeadFollowsEntryText(paragraph: Element): boolean {
  * markers to the same source positions (round-trip only).
  */
 export function hasTocFieldEndBeforeChildren(el: Element): boolean {
-  if (findFirst(el, "w:t") !== undefined) return false;
+  if (hasRenderedTocText(el)) return false;
   const children = el.elements ?? [];
   const pPr = findChild(el, "w:pPr");
   const contentStart = pPr ? children.indexOf(pPr) + 1 : 0;
@@ -349,7 +473,7 @@ export function hasTocFieldEndBeforeChildren(el: Element): boolean {
  * body content and must stay in the body, not the TOC.
  */
 export function keepTocClosingParagraph(el: Element, hasEntries: boolean): boolean {
-  if (findFirst(el, "w:t") === undefined) {
+  if (!hasRenderedTocText(el)) {
     return hasEntries || findFirst(el, "w:pPr") !== undefined;
   }
   return isTocEntryClosingParagraph(el);
@@ -410,7 +534,11 @@ function collectOuterFieldInstruction(els: Element[]): string {
             if (depth === 1) inHead = false;
             depth--;
           }
-        } else if (c.name === "w:instrText" && inHead && depth === 1) {
+        } else if (
+          (c.name === "w:instrText" || c.name === "w:delInstrText") &&
+          inHead &&
+          depth === 1
+        ) {
           instruction += textOf(c) ?? "";
         }
       }

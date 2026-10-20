@@ -52,7 +52,7 @@ interface EscherDrawing {
 
 export interface EscherImage {
   data: Uint8Array;
-  type: PictureOptions["type"];
+  type: "png" | "jpg" | "wmf" | "emf";
 }
 
 export interface EscherDrawings {
@@ -223,7 +223,7 @@ export const CONNECTOR_PRESETS: Readonly<Record<number, ShapeType>> = {
   40: "curvedConnector5",
 };
 
-function imageType(bytes: Uint8Array): PictureOptions["type"] {
+function imageType(bytes: Uint8Array): EscherImage["type"] {
   if (bytes.length >= 2 && bytes[0] === 0xff && bytes[1] === 0xd8) return "jpg";
   if (bytes.length >= 4 && bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e)
     return "png";

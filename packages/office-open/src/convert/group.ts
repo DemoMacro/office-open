@@ -19,8 +19,8 @@
  * @module
  */
 
-import { pickGroupBase, pickNonVisualDrawingProperties } from "@office-open/core";
 import type { NonVisualDrawingPropertiesOptions } from "@office-open/core";
+import { pickNonVisualDrawingProperties } from "@office-open/core";
 import type { ShapePropertiesOptions, GroupTransform2DOptions } from "@office-open/core/drawing";
 import type {
   GroupOptions as DocxGroupOptions,
@@ -41,6 +41,7 @@ import type {
 } from "@office-open/xlsx";
 
 import { boxToEndpoints, endpointsToBox } from "./connector";
+import { pickGroupBase } from "./helpers";
 import {
   boxFromPptx,
   boxFromSpPr,
@@ -154,7 +155,7 @@ function spPrToPptxShape(spPr: ShapePropertiesOptions): PptxShapeOptions {
 
 /** xlsx group child shape → docx wps core (position lives on the wpg child wrapper). */
 function xlsxShapeChildToDocxData(s: GroupShapeChildOptions): ShapeCoreOptions {
-  const preset = toPresetGeometry(s.properties.geometry);
+  const preset = toPresetGeometry(s.properties.geometry ?? undefined);
   const cnvPr = pickNonVisualDrawingProperties(s);
   return {
     children: s.textBody ? textBodyToDocxChildren(s.textBody) : [],

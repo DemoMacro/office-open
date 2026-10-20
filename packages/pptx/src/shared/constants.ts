@@ -7,7 +7,7 @@
  * @module
  */
 
-import { escapeXml } from "@office-open/xml";
+import { stringifyNonVisualDrawingProperties } from "@office-open/core/drawing";
 
 // ── Shape tree defaults (p:spTree) ──
 
@@ -17,9 +17,21 @@ export function stringifySpTreeHeader(
   name = "",
   blackWhiteMode?: string,
   transformless?: boolean,
+  creationId?: string,
+  ext?: string,
 ): string {
+  const cNvPr = stringifyNonVisualDrawingProperties(
+    "p:cNvPr",
+    id,
+    {
+      name,
+      ...(creationId === undefined ? {} : { creationId }),
+      ...(ext === undefined ? {} : { ext }),
+    },
+    name,
+  );
   return (
-    `<p:nvGrpSpPr><p:cNvPr id="${id}" name="${escapeXml(name)}"/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>` +
+    `<p:nvGrpSpPr>${cNvPr}<p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>` +
     `<p:grpSpPr${blackWhiteMode ? ` bwMode="${blackWhiteMode}"` : ""}>` +
     (transformless
       ? "</p:grpSpPr>"

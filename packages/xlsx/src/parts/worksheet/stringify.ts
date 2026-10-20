@@ -91,6 +91,7 @@ export function stringifyWorksheet(
   const oleObjects = opts.oleObjects ?? [];
   const webPublishItems = opts.webPublishItems ?? [];
 
+  const rootSpaceAttr = opts.rootXmlSpace ? ` xml:space="${opts.rootXmlSpace}"` : "";
   const p: string[] = [
     part?.rootElement === "macrosheet"
       ? '<xm:macrosheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"' +
@@ -102,6 +103,7 @@ export function stringifyWorksheet(
         ' xmlns:xr2="http://schemas.microsoft.com/office/spreadsheetml/2015/revision2"' +
         ' xmlns:xr3="http://schemas.microsoft.com/office/spreadsheetml/2016/revision3"' +
         (opts.uid ? ` ${opts.uidPrefix ?? "xr"}:uid="${escapeXml(opts.uid)}"` : "") +
+        rootSpaceAttr +
         ">"
       : '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"' +
         ' xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"' +
@@ -112,6 +114,7 @@ export function stringifyWorksheet(
         ' xmlns:xr2="http://schemas.microsoft.com/office/spreadsheetml/2015/revision2"' +
         ' xmlns:xr3="http://schemas.microsoft.com/office/spreadsheetml/2016/revision3"' +
         (opts.uid ? ` ${opts.uidPrefix ?? "xr"}:uid="${escapeXml(opts.uid)}"` : "") +
+        rootSpaceAttr +
         ">",
   ];
 
@@ -137,10 +140,10 @@ export function stringifyWorksheet(
       sp.enableFormatConditionsCalculation !== undefined);
   const hasPageSetUpPr =
     opts.pageSetup?.pageSetUpPrPresent === true ||
-    !!opts.pageSetup?.fitToWidth ||
-    !!opts.pageSetup?.fitToHeight ||
     opts.pageSetup?.fitToPage !== undefined ||
-    opts.pageSetup?.autoPageBreaks !== undefined;
+    opts.pageSetup?.autoPageBreaks !== undefined ||
+    (opts.pageSetup?.pageSetupPresent !== true &&
+      (!!opts.pageSetup?.fitToWidth || !!opts.pageSetup?.fitToHeight));
   if (sp !== undefined || hasTabColor || hasOutline || hasSheetPrAttrs || hasPageSetUpPr) {
     const prParts: string[] = [];
     const prAttrs: Record<string, string | number | boolean | undefined> = {};
@@ -178,7 +181,11 @@ export function stringifyWorksheet(
       const psupAttrs: Record<string, string | number | boolean | undefined> = {};
       if (opts.pageSetup?.fitToPage !== undefined)
         psupAttrs.fitToPage = opts.pageSetup.fitToPage ? 1 : 0;
-      else if (opts.pageSetup?.fitToWidth || opts.pageSetup?.fitToHeight) psupAttrs.fitToPage = 1;
+      else if (
+        opts.pageSetup?.pageSetupPresent !== true &&
+        (!!opts.pageSetup?.fitToWidth || !!opts.pageSetup?.fitToHeight)
+      )
+        psupAttrs.fitToPage = 1;
       // autoPageBreaks defaults true — emit as written, explicit 0 included.
       if (opts.pageSetup?.autoPageBreaks !== undefined)
         psupAttrs.autoPageBreaks = opts.pageSetup.autoPageBreaks ? 1 : 0;
@@ -208,19 +215,22 @@ export function stringifyWorksheet(
   // Sheet views
   if (opts.freezePanes) {
     const fp = opts.freezePanes;
-    const ySplit = fp.row ? fp.row : 0;
-    const xSplit = fp.col ? fp.col : 0;
     const topRow = fp.row ? fp.row + 1 : 1;
     const leftCol = fp.col ? fp.col + 1 : 1;
-    const topLeftCell = fp.topLeftCell ?? defaultCellRef(topRow, leftCol);
-    const activePane =
-      fp.activePane ??
-      (ySplit > 0 && xSplit > 0 ? "bottomRight" : ySplit > 0 ? "bottomLeft" : "topRight");
-    const state = fp.state ?? (fp.split ? "split" : "frozen");
-    const paneAttrs =
-      (fp.row !== undefined ? ` ySplit="${fp.row}"` : "") +
-      (fp.col !== undefined ? ` xSplit="${fp.col}"` : "") +
-      ` topLeftCell="${topLeftCell}" activePane="${activePane}" state="${state}"`;
+    const paneParts: string[] = [];
+    if (fp.row !== undefined) paneParts.push(` ySplit="${fp.row}"`);
+    if (fp.col !== undefined) paneParts.push(` xSplit="${fp.col}"`);
+    const isRoundTrip = fp.activePanePresent !== undefined || fp.statePresent !== undefined;
+    if (fp.topLeftCell !== undefined || !isRoundTrip)
+      paneParts.push(` topLeftCell="${fp.topLeftCell ?? defaultCellRef(topRow, leftCol)}"`);
+    if (fp.activePanePresent === true)
+      paneParts.push(` activePane="${fp.activePane ?? "topLeft"}"`);
+    else if (!isRoundTrip) paneParts.push(` activePane="${fp.activePane ?? "topLeft"}"`);
+    if (fp.statePresent === true)
+      paneParts.push(` state="${fp.state ?? (fp.split ? "split" : "frozen")}"`);
+    else if (!isRoundTrip)
+      paneParts.push(` state="${fp.state ?? (fp.split ? "split" : "frozen")}"`);
+    const paneAttrs = paneParts.join("");
     const svAttrs = buildSheetViewAttrs(opts.sheetView);
     const selections = (opts.selection ?? []).map(buildSelectionXml).join("");
     p.push(
@@ -462,8 +472,13 @@ export function stringifyWorksheet(
         if (pane.col !== undefined) paneAttrs.push(`xSplit="${pane.col}"`);
         if (pane.topLeftCell !== undefined)
           paneAttrs.push(`topLeftCell="${escapeXml(pane.topLeftCell)}"`);
-        if (pane.activePane !== undefined) paneAttrs.push(`activePane="${pane.activePane}"`);
-        if (pane.state !== undefined || pane.split)
+        const isRoundTrip = pane.activePanePresent !== undefined || pane.statePresent !== undefined;
+        if (pane.activePanePresent === true || (!isRoundTrip && pane.activePane !== undefined))
+          paneAttrs.push(`activePane="${pane.activePane ?? "topLeft"}"`);
+        if (
+          pane.statePresent === true ||
+          (!isRoundTrip && (pane.state !== undefined || pane.split))
+        )
           paneAttrs.push(`state="${pane.state ?? (pane.split ? "split" : "frozen")}"`);
         paneXml = `<pane${paneAttrs.length > 0 ? ` ${paneAttrs.join(" ")}` : ""}/>`;
       }
@@ -507,8 +522,11 @@ export function stringifyWorksheet(
   }
 
   // Merge cells
-  if (mergeCells.length > 0) {
-    p.push(`<mergeCells count="${mergeCells.length}">`);
+  if (mergeCells.length > 0 || opts.mergeCellsCount !== undefined) {
+    const declaredCount =
+      opts.mergeCellsCount === false ? undefined : (opts.mergeCellsCount ?? mergeCells.length);
+    const countAttr = declaredCount === undefined ? "" : ` count="${declaredCount}"`;
+    p.push(`<mergeCells${countAttr}>`);
     for (const mc of mergeCells) {
       p.push(selfCloseElement("mergeCell", attrs({ ref: mc.ref })));
     }
@@ -545,8 +563,8 @@ export function stringifyWorksheet(
         if (rule.percentRaw !== undefined) ruleAttrs.percent = rule.percentRaw;
         else if (rule.percent) ruleAttrs.percent = 1;
         if (rule.text !== undefined) ruleAttrs.text = rule.text;
-        if (rule.equalAverage) ruleAttrs.equalAverage = 1;
-        if (rule.aboveAverage === false) ruleAttrs.aboveAverage = 0;
+        if (rule.equalAverage !== undefined) ruleAttrs.equalAverage = rule.equalAverage ? 1 : 0;
+        if (rule.aboveAverage !== undefined) ruleAttrs.aboveAverage = rule.aboveAverage ? 1 : 0;
         if (rule.stdDev !== undefined) ruleAttrs.stdDev = rule.stdDev;
         const ruleExt = rule.ext ? `<extLst>${rule.ext}</extLst>` : "";
 
@@ -630,9 +648,17 @@ export function stringifyWorksheet(
   const dataValidations = opts.dataValidations ?? [];
   if (dataValidations.length > 0) {
     const dvContainerAttrs: Record<string, string | number | boolean | undefined> = {
-      count: dataValidations.length,
+      count:
+        opts.dataValidationsCount === false
+          ? undefined
+          : (opts.dataValidationsCount ?? dataValidations.length),
     };
-    if (opts.dataValidationsDisablePrompts) dvContainerAttrs.disablePrompts = 1;
+    if (opts.dataValidationsDisablePrompts !== undefined)
+      dvContainerAttrs.disablePrompts = opts.dataValidationsDisablePrompts ? 1 : 0;
+    if (opts.dataValidationsXWindow !== undefined)
+      dvContainerAttrs.xWindow = opts.dataValidationsXWindow;
+    if (opts.dataValidationsYWindow !== undefined)
+      dvContainerAttrs.yWindow = opts.dataValidationsYWindow;
     p.push(`<dataValidations${attrs(dvContainerAttrs)}>`);
     for (const dv of dataValidations) {
       const dvAttrs: Record<string, string | number | boolean | undefined> = { sqref: dv.sqref };
@@ -734,16 +760,18 @@ export function stringifyWorksheet(
 
   // Page setup — fitToPage/autoPageBreaks are pageSetUpPr fields stashed on
   // the same object (emitted inside sheetPr above); alone they must not
-  // conjure a <pageSetup> the source never had.
+  // conjure a <pageSetup> the source never had. pageSetupPresent marks a
+  // parsed (possibly empty) element, which must survive the round trip.
   if (
     opts.pageSetup &&
-    Object.keys(opts.pageSetup).some(
-      (k) =>
-        k !== "fitToPage" &&
-        k !== "autoPageBreaks" &&
-        k !== "pageSetUpPrPresent" &&
-        k !== "pageSetupPresent",
-    )
+    (opts.pageSetup.pageSetupPresent === true ||
+      Object.keys(opts.pageSetup).some(
+        (k) =>
+          k !== "fitToPage" &&
+          k !== "autoPageBreaks" &&
+          k !== "pageSetUpPrPresent" &&
+          k !== "pageSetupPresent",
+      ))
   ) {
     p.push(stringifyPageSetupXml(opts.pageSetup));
   }
@@ -886,8 +914,12 @@ export function stringifyWorksheet(
     const XDR_NS = "http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing";
     const attrs = [
       `xmlns:xdr="${XDR_NS}"`,
-      ...(anchor.moveWithCells ? ['moveWithCells="1"'] : []),
-      ...(anchor.sizeWithCells ? ['sizeWithCells="1"'] : []),
+      ...(anchor.moveWithCells !== undefined
+        ? [`moveWithCells="${anchor.moveWithCells ? 1 : 0}"`]
+        : []),
+      ...(anchor.sizeWithCells !== undefined
+        ? [`sizeWithCells="${anchor.sizeWithCells ? 1 : 0}"`]
+        : []),
     ].join(" ");
     return `<anchor ${attrs}>${anchorMarkerXml("from", anchor.from)}${anchorMarkerXml("to", anchor.to)}</anchor>`;
   }
@@ -960,7 +992,7 @@ export function stringifyWorksheet(
   }
 
   // Controls (CT_Controls, after oleObjects per XSD sequence)
-  if (controls.length > 0) {
+  if (controls.length > 0 || opts.controlsAlternateContent) {
     const controlXml: string[] = [];
     for (const control of controls) {
       if (control.rId === undefined) {
@@ -976,17 +1008,24 @@ export function stringifyWorksheet(
       let full: string;
       if (properties) {
         const controlPrAttrs: string[] = [];
-        if (properties.locked === false) controlPrAttrs.push('locked="0"');
-        if (properties.defaultSize === false) controlPrAttrs.push('defaultSize="0"');
-        if (properties.print === false) controlPrAttrs.push('print="0"');
+        if (properties.locked !== undefined)
+          controlPrAttrs.push(`locked="${properties.locked ? 1 : 0}"`);
+        if (properties.defaultSize !== undefined)
+          controlPrAttrs.push(`defaultSize="${properties.defaultSize ? 1 : 0}"`);
+        if (properties.print !== undefined)
+          controlPrAttrs.push(`print="${properties.print ? 1 : 0}"`);
         if (properties.disabled) controlPrAttrs.push('disabled="1"');
         if (properties.recalcAlways) controlPrAttrs.push('recalcAlways="1"');
         if (properties.uiObject) controlPrAttrs.push('uiObject="1"');
-        if (properties.autoFill === false) controlPrAttrs.push('autoFill="0"');
-        if (properties.autoLine === false) controlPrAttrs.push('autoLine="0"');
-        if (properties.autoPict === false) controlPrAttrs.push('autoPict="0"');
+        if (properties.autoFill !== undefined)
+          controlPrAttrs.push(`autoFill="${properties.autoFill ? 1 : 0}"`);
+        if (properties.autoLine !== undefined)
+          controlPrAttrs.push(`autoLine="${properties.autoLine ? 1 : 0}"`);
+        if (properties.autoPict !== undefined)
+          controlPrAttrs.push(`autoPict="${properties.autoPict ? 1 : 0}"`);
         if (properties.macro) controlPrAttrs.push(`macro="${escapeXml(properties.macro)}"`);
-        if (properties.altText) controlPrAttrs.push(`altText="${escapeXml(properties.altText)}"`);
+        if (properties.altText !== undefined)
+          controlPrAttrs.push(`altText="${escapeXml(properties.altText)}"`);
         if (properties.linkedCell)
           controlPrAttrs.push(`linkedCell="${escapeXml(properties.linkedCell)}"`);
         if (properties.listFillRange)
@@ -1129,15 +1168,15 @@ function buildFormulaString(cellFormula: string | FormulaOptions): string {
   if (fOpts.type && fOpts.type !== FormulaType.NORMAL) fAttrs.t = fOpts.type;
   if (fOpts.reference) fAttrs.ref = fOpts.reference;
   if (fOpts.sharedIndex !== undefined) fAttrs.si = fOpts.sharedIndex;
-  if (fOpts.aca) fAttrs.aca = 1;
-  if (fOpts.dt2D) fAttrs.dt2D = 1;
-  if (fOpts.dtr) fAttrs.dtr = 1;
-  if (fOpts.del1) fAttrs.del1 = 1;
-  if (fOpts.del2) fAttrs.del2 = 1;
+  if (fOpts.aca !== undefined) fAttrs.aca = fOpts.aca ? 1 : 0;
+  if (fOpts.dt2D !== undefined) fAttrs.dt2D = fOpts.dt2D ? 1 : 0;
+  if (fOpts.dtr !== undefined) fAttrs.dtr = fOpts.dtr ? 1 : 0;
+  if (fOpts.del1 !== undefined) fAttrs.del1 = fOpts.del1 ? 1 : 0;
+  if (fOpts.del2 !== undefined) fAttrs.del2 = fOpts.del2 ? 1 : 0;
   if (fOpts.inputCell1) fAttrs.r1 = fOpts.inputCell1;
   if (fOpts.inputCell2) fAttrs.r2 = fOpts.inputCell2;
-  if (fOpts.calculateCell) fAttrs.ca = 1;
-  if (fOpts.arrayContext) fAttrs.bx = 1;
+  if (fOpts.calculateCell !== undefined) fAttrs.ca = fOpts.calculateCell ? 1 : 0;
+  if (fOpts.arrayContext !== undefined) fAttrs.bx = fOpts.arrayContext ? 1 : 0;
   if (/^\s|\s$/.test(fOpts.formula)) fAttrs["xml:space"] = "preserve";
 
   const hasContent = fOpts.formula !== undefined && fOpts.formula !== "";
@@ -1199,10 +1238,17 @@ export function appendSheetDataRows(
       hasStyle = true;
     }
     // A row style only takes effect when customFormat flags it (Excel always
-    // pairs @s with customFormat="1").
-    if (rowOpts.customFormat === undefined && hasStyle) rowAttr += ' customFormat="1"';
-    else if (rowOpts.customFormat !== undefined)
+    // pairs @s with customFormat="1"). A parsed row preserves the source's
+    // explicit presence or absence; fresh rows auto-flag styled rows.
+    if (rowOpts.customFormatDeclared === false) {
+      // Source omitted @customFormat — keep it omitted.
+    } else if (rowOpts.customFormatDeclared === true) {
       rowAttr += ` customFormat="${rowOpts.customFormat ? 1 : 0}"`;
+    } else if (rowOpts.customFormat !== undefined) {
+      rowAttr += ` customFormat="${rowOpts.customFormat ? 1 : 0}"`;
+    } else if (hasStyle) {
+      rowAttr += ' customFormat="1"';
+    }
     if (rowOpts.thickTop) rowAttr += ' thickTop="1"';
     if (rowOpts.thickBot) rowAttr += ' thickBot="1"';
     if (rowOpts.phonetic) rowAttr += ' ph="1"';
@@ -1303,15 +1349,22 @@ function buildCellString(
   }
 
   const rawValue =
-    typeof value === "number" || typeof value === "string" ? cell.valueRaw : undefined;
+    typeof value === "number" || typeof value === "string" || typeof value === "boolean"
+      ? cell.valueRaw
+      : undefined;
   const rawPreserve = rawValue !== undefined && /^\s|\s$/.test(rawValue);
+  const cachedTypeAttr =
+    cell.cachedValueTypeRaw !== undefined ? ` t="${escapeXml(cell.cachedValueTypeRaw)}"` : "";
   const valueElement = (content: string, preserve = false): string =>
-    `<v${preserve ? ' xml:space="preserve"' : ""}>${content}</v>`;
+    `<v${cachedTypeAttr}${preserve ? ' xml:space="preserve"' : ""}>${content}</v>`;
 
   // Formula path — formula takes precedence; value is the cached result.
   if (cell.formula) {
     const fStr = buildFormulaString(cell.formula);
-    const fTypeAttr = cell.typeRaw !== undefined ? ` t="${escapeXml(cell.typeRaw)}"` : "";
+    const fTypeAttr =
+      (value === null || value === undefined) && cell.typeRaw !== undefined
+        ? ` t="${escapeXml(cell.typeRaw)}"`
+        : "";
     if (value === null || value === undefined) {
       return `<c${rAttr}${sAttr}${mdAttr}${fTypeAttr}>${fStr}</c>`;
     }
@@ -1322,10 +1375,18 @@ function buildCellString(
       vStr = valueElement(rawValue !== undefined ? escapeXml(rawValue) : `${value}`, rawPreserve);
     } else if (typeof value === "boolean") {
       tAttr = ' t="b"';
-      vStr = `<v>${value ? 1 : 0}</v>`;
+      vStr = `<v${cachedTypeAttr}>${rawValue ?? (value ? 1 : 0)}</v>`;
     } else if (typeof value === "string") {
-      tAttr = cell.typeRaw === "d" ? ' t="d"' : ' t="str"';
-      vStr = valueElement(escapeXml(rawValue ?? value), rawValue !== undefined);
+      if (cell.sharedIndex !== undefined && sharedStrings) {
+        tAttr = ' t="s"';
+        vStr = `<v>${cell.sharedIndex}</v>`;
+      } else {
+        tAttr =
+          cell.typeRaw === "str" || cell.typeRaw === "d" || cell.typeRaw === "inlineStr"
+            ? ` t="${cell.typeRaw}"`
+            : ' t="str"';
+        vStr = valueElement(escapeXml(rawValue ?? value), rawValue !== undefined);
+      }
     } else if (value instanceof Date) {
       vStr = `<v>${dateToSerialNumber(value)}</v>`;
     }
@@ -1366,6 +1427,12 @@ function buildCellString(
   }
 
   if (typeof value === "string") {
+    if (cell.typeRaw === "n") {
+      return `<c${rAttr}${sAttr}${mdAttr} t="n">${valueElement(
+        escapeXml(rawValue ?? value),
+        rawPreserve,
+      )}</c>`;
+    }
     if (cell.typeRaw === "str") {
       return `<c${rAttr}${sAttr}${mdAttr} t="str">${valueElement(
         escapeXml(rawValue ?? value),
@@ -1399,7 +1466,7 @@ function buildCellString(
   }
 
   if (typeof value === "boolean") {
-    return `<c${rAttr}${sAttr}${mdAttr} t="b"><v>${value ? 1 : 0}</v></c>`;
+    return `<c${rAttr}${sAttr}${mdAttr} t="b"><v>${rawValue ?? (value ? 1 : 0)}</v></c>`;
   }
 
   if (value instanceof Date) {
@@ -1523,22 +1590,25 @@ export function stringifySheetProtectionXml(prot: SheetProtectionOptions): strin
   protAttrs.saltValue = prot.saltValue ?? derived?.saltValue;
   if (prot.spinCount !== undefined) protAttrs.spinCount = prot.spinCount;
   else if (derived) protAttrs.spinCount = derived.spinCount;
-  if (prot.sheet) protAttrs.sheet = 1;
-  if (prot.objects) protAttrs.objects = 1;
+  if (prot.sheet !== undefined) protAttrs.sheet = prot.sheet ? 1 : 0;
+  if (prot.objects !== undefined) protAttrs.objects = prot.objects ? 1 : 0;
   if (prot.scenariosRaw !== undefined) protAttrs.scenarios = prot.scenariosRaw;
-  else if (prot.scenarios) protAttrs.scenarios = 1;
-  if (prot.formatCells === false) protAttrs.formatCells = 0;
-  if (prot.formatColumns === false) protAttrs.formatColumns = 0;
-  if (prot.formatRows === false) protAttrs.formatRows = 0;
-  if (prot.insertColumns === false) protAttrs.insertColumns = 0;
-  if (prot.insertRows === false) protAttrs.insertRows = 0;
-  if (prot.insertHyperlinks === false) protAttrs.insertHyperlinks = 0;
-  if (prot.deleteColumns === false) protAttrs.deleteColumns = 0;
-  if (prot.deleteRows === false) protAttrs.deleteRows = 0;
-  if (prot.selectLockedCells) protAttrs.selectLockedCells = 1;
-  if (prot.sort === false) protAttrs.sort = 0;
-  if (prot.autoFilter === false) protAttrs.autoFilter = 0;
-  if (prot.pivotTables === false) protAttrs.pivotTables = 0;
-  if (prot.selectUnlockedCells) protAttrs.selectUnlockedCells = 1;
+  else if (prot.scenarios !== undefined) protAttrs.scenarios = prot.scenarios ? 1 : 0;
+  if (prot.formatCells !== undefined) protAttrs.formatCells = prot.formatCells ? 1 : 0;
+  if (prot.formatColumns !== undefined) protAttrs.formatColumns = prot.formatColumns ? 1 : 0;
+  if (prot.formatRows !== undefined) protAttrs.formatRows = prot.formatRows ? 1 : 0;
+  if (prot.insertColumns !== undefined) protAttrs.insertColumns = prot.insertColumns ? 1 : 0;
+  if (prot.insertRows !== undefined) protAttrs.insertRows = prot.insertRows ? 1 : 0;
+  if (prot.insertHyperlinks !== undefined)
+    protAttrs.insertHyperlinks = prot.insertHyperlinks ? 1 : 0;
+  if (prot.deleteColumns !== undefined) protAttrs.deleteColumns = prot.deleteColumns ? 1 : 0;
+  if (prot.deleteRows !== undefined) protAttrs.deleteRows = prot.deleteRows ? 1 : 0;
+  if (prot.selectLockedCells !== undefined)
+    protAttrs.selectLockedCells = prot.selectLockedCells ? 1 : 0;
+  if (prot.sort !== undefined) protAttrs.sort = prot.sort ? 1 : 0;
+  if (prot.autoFilter !== undefined) protAttrs.autoFilter = prot.autoFilter ? 1 : 0;
+  if (prot.pivotTables !== undefined) protAttrs.pivotTables = prot.pivotTables ? 1 : 0;
+  if (prot.selectUnlockedCells !== undefined)
+    protAttrs.selectUnlockedCells = prot.selectUnlockedCells ? 1 : 0;
   return selfCloseElement("sheetProtection", attrs(protAttrs));
 }

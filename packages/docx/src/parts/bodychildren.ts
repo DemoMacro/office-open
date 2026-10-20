@@ -7,19 +7,14 @@
  * @module
  */
 
-import {
-  type ReproducibleScope,
-  RELATIONSHIP_TYPES,
-  TargetModeType,
-  toUint8Array,
-  uniqueId,
-} from "@office-open/core";
+import { toUint8Array, type ReproducibleScope, uniqueId } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
+import { RELATIONSHIP_TYPES, TargetModeType } from "@office-open/core/opc";
 import { attr, escapeXml, findChild } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import type { AltChunkOptions } from "@parts/alt-chunk/alt-chunk";
 import type { CustomXmlPropertiesOptions } from "@parts/custom-xml/custom-xml";
-import type { RunPropertiesOptions } from "@parts/paragraph/run/properties";
+import type { OnOffLexicalValue, RunPropertiesOptions } from "@parts/paragraph/run/properties";
 import { parseRunProperties } from "@parts/paragraph/run/run-parse";
 import { onOff, stringifyRunPropertiesInner } from "@parts/paragraph/stringify";
 import { parseSdtProperties } from "@parts/sdt/sdt-parse";
@@ -109,6 +104,11 @@ export const altChunkDesc: CustomDescriptor<AltChunkOptions, BodyContext> = {
             case "rtf":
               opts.contentType = "application/rtf";
               opts.extension = "rtf";
+              break;
+            case "docx":
+              opts.contentType =
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+              opts.extension = "docx";
               break;
             default:
               opts.contentType = "text/plain";
@@ -260,7 +260,12 @@ function sdtColorXml(options: NonNullable<SdtPropertiesOptions["w15Color"]>): st
 
 function sdtDocPartXml(
   name: string,
-  options: { gallery?: string; category?: string; unique?: boolean },
+  options: {
+    gallery?: string;
+    category?: string;
+    unique?: boolean;
+    uniqueRaw?: OnOffLexicalValue;
+  },
 ): string {
   const parts: string[] = [];
   if (options.gallery !== undefined)
@@ -268,7 +273,13 @@ function sdtDocPartXml(
   if (options.category !== undefined)
     parts.push(`<w:docPartCategory w:val="${escapeXml(options.category)}"/>`);
   if (options.unique !== undefined)
-    parts.push(options.unique ? "<w:docPartUnique/>" : '<w:docPartUnique w:val="0"/>');
+    parts.push(
+      options.uniqueRaw !== undefined
+        ? `<w:docPartUnique w:val="${options.uniqueRaw}"/>`
+        : options.unique
+          ? "<w:docPartUnique/>"
+          : '<w:docPartUnique w:val="0"/>',
+    );
   return parts.length ? `<${name}>${parts.join("")}</${name}>` : `<${name}/>`;
 }
 
@@ -287,12 +298,30 @@ const DEFAULT_UNCHECKED: { val: string; font: string } = { val: "2610", font: CH
  * is valid wherever w:sdtPr appears. validate.ts tolerates the w14 namespace.
  */
 function sdtCheckboxXml(opts: SdtCheckboxOptions): string {
-  const checked = opts.checkedState ?? DEFAULT_CHECKED;
-  const unchecked = opts.uncheckedState ?? DEFAULT_UNCHECKED;
+  const checked =
+    opts.checkedState ?? (opts.checkedStatePresent === false ? undefined : DEFAULT_CHECKED);
+  const unchecked =
+    opts.uncheckedState ?? (opts.uncheckedStatePresent === false ? undefined : DEFAULT_UNCHECKED);
+  const checkedFont =
+    checked === undefined
+      ? undefined
+      : checked.font === null
+        ? undefined
+        : (checked.font ?? CHECKBOX_FONT);
+  const uncheckedFont =
+    unchecked === undefined
+      ? undefined
+      : unchecked.font === null
+        ? undefined
+        : (unchecked.font ?? CHECKBOX_FONT);
   const inner =
     (opts.checked ? "<w14:checked/>" : '<w14:checked w14:val="0"/>') +
-    `<w14:checkedState w14:val="${escapeXml(checked.val)}" w14:font="${escapeXml(checked.font ?? CHECKBOX_FONT)}"/>` +
-    `<w14:uncheckedState w14:val="${escapeXml(unchecked.val)}" w14:font="${escapeXml(unchecked.font ?? CHECKBOX_FONT)}"/>`;
+    (checked
+      ? `<w14:checkedState w14:val="${escapeXml(checked.val)}"${checkedFont !== undefined ? ` w14:font="${escapeXml(checkedFont)}"` : ""}/>`
+      : "") +
+    (unchecked
+      ? `<w14:uncheckedState w14:val="${escapeXml(unchecked.val)}"${uncheckedFont !== undefined ? ` w14:font="${escapeXml(uncheckedFont)}"` : ""}/>`
+      : "");
   return `<w14:checkbox ${W14_NS}>${inner}</w14:checkbox>`;
 }
 
@@ -302,9 +331,10 @@ export function checkboxSymbolRunInner(cb: SdtCheckboxOptions): string {
     (cb.checked ?? false)
       ? (cb.checkedState ?? DEFAULT_CHECKED)
       : (cb.uncheckedState ?? DEFAULT_UNCHECKED);
-  const font = escapeXml(symbol.font ?? CHECKBOX_FONT);
+  const fontValue = symbol.font === null ? undefined : (symbol.font ?? CHECKBOX_FONT);
+  const font = fontValue === undefined ? undefined : escapeXml(fontValue);
   const char = escapeXml(String.fromCodePoint(parseInt(symbol.val, 16)));
-  return `<w:r><w:rPr><w:rFonts w:ascii="${font}" w:hAnsi="${font}"/></w:rPr><w:t>${char}</w:t></w:r>`;
+  return `<w:r>${font !== undefined ? `<w:rPr><w:rFonts w:ascii="${font}" w:hAnsi="${font}"/></w:rPr>` : ""}<w:t>${char}</w:t></w:r>`;
 }
 
 const SDT_CHILD_ORDER: SdtChildOrder[] = [
@@ -361,8 +391,10 @@ function sdtChildFragments(
   set("lock", opts.lock !== undefined && `<w:lock w:val="${opts.lock}"/>`);
   set(
     "placeholder",
-    opts.placeholder?.docPart !== undefined &&
-      `<w:placeholder><w:docPart w:val="${escapeXml(opts.placeholder.docPart)}"/></w:placeholder>`,
+    opts.placeholder !== undefined &&
+      (opts.placeholder.docPart !== undefined
+        ? `<w:placeholder><w:docPart w:val="${escapeXml(opts.placeholder.docPart)}"/></w:placeholder>`
+        : "<w:placeholder/>"),
   );
   set("temporary", opts.temporary !== undefined && onOff("w:temporary", opts.temporary));
   const effectiveShowingPlcHdr = opts.showingPlaceholder ?? false;
@@ -391,7 +423,14 @@ function sdtChildFragments(
   else if (opts.picture) set("picture", "<w:picture/>");
   else if (opts.richText) set("richText", "<w:richText/>");
   else if (opts.text !== undefined)
-    set("text", opts.text.multiLine === true ? `<w:text w:multiLine="1"/>` : `<w:text/>`);
+    set(
+      "text",
+      opts.text.multiLineRaw !== undefined
+        ? `<w:text w:multiLine="${opts.text.multiLineRaw}"/>`
+        : opts.text.multiLine === true
+          ? '<w:text w:multiLine="1"/>'
+          : "<w:text/>",
+    );
   else if (opts.citation) set("citation", "<w:citation/>");
   else if (opts.group) set("group", "<w:group/>");
   else if (opts.bibliography) set("bibliography", "<w:bibliography/>");
@@ -425,6 +464,7 @@ function sdtChildFragments(
 }
 
 export function stringifySdtPr(opts: SdtPropertiesOptions, scope?: ReproducibleScope): string {
+  if (opts.propertiesPresent === false) return "";
   const fragments = sdtChildFragments(opts, scope);
   const ordered = opts.childOrder
     ? [
@@ -565,7 +605,9 @@ export const sdtBlockDesc: CustomDescriptor<SdtBlockOptions, BodyContext> = {
 
     // Parse sdtPr
     const sdtPr = findChild(el, "w:sdtPr");
-    const properties = sdtPr ? parseSdtProperties(sdtPr) : {};
+    const properties = sdtPr
+      ? { ...parseSdtProperties(sdtPr, dctx), propertiesPresent: true }
+      : { propertiesPresent: false };
 
     // Parse sdtEndPr (CT_SdtEndPr wraps its run properties in a w:rPr child)
     let endProperties: RunPropertiesOptions | undefined;

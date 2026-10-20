@@ -1,5 +1,5 @@
-import { parseSummaryInformation } from "@office-open/core";
-import type { CompoundFileReader } from "@office-open/core";
+import { parseSummaryInformation } from "@office-open/core/cfb";
+import type { CompoundFileReader } from "@office-open/core/cfb";
 import type { DocumentOptions } from "@office-open/docx";
 
 import { DocParseError } from "../errors";

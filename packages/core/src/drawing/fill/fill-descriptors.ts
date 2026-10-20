@@ -21,6 +21,7 @@ import type { Percentage } from "../../util/values";
 import { parseOnOff, stripColorHashPrefix } from "../../util/values";
 import { blipFillDesc, stretchDesc } from "../blip/blip-descriptors";
 import { createBlipEffects } from "../blip/blip-effects";
+import { createUseLocalDpiExtension } from "../blip/blip-extensions";
 import { createSourceRectangle } from "../blip/source-rectangle";
 import { createTileInfo } from "../blip/tile";
 import { solidFillDesc, parseColorChoice, emitColorChoice } from "../color/color-descriptors";
@@ -49,20 +50,20 @@ import type { PatternFillOptions } from "./pattern-fill";
 
 function stringifyRelativeRect(tag: string, rect: RelativeRect): string {
   const parts: string[] = [];
-  if (rect.left) parts.push(`l="${escapeXml(rect.left)}"`);
-  if (rect.top) parts.push(`t="${escapeXml(rect.top)}"`);
-  if (rect.right) parts.push(`r="${escapeXml(rect.right)}"`);
-  if (rect.bottom) parts.push(`b="${escapeXml(rect.bottom)}"`);
+  if (rect.left !== undefined) parts.push(`l="${escapeXml(rect.left)}"`);
+  if (rect.top !== undefined) parts.push(`t="${escapeXml(rect.top)}"`);
+  if (rect.right !== undefined) parts.push(`r="${escapeXml(rect.right)}"`);
+  if (rect.bottom !== undefined) parts.push(`b="${escapeXml(rect.bottom)}"`);
   const attrStr = parts.length ? " " + parts.join(" ") : "";
   return `<${tag}${attrStr}/>`;
 }
 
 function readRelativeRect(el: XmlElement): RelativeRect {
   const result: RelativeRect = {};
-  if (el.attributes?.["l"]) result.left = String(el.attributes["l"]);
-  if (el.attributes?.["t"]) result.top = String(el.attributes["t"]);
-  if (el.attributes?.["r"]) result.right = String(el.attributes["r"]);
-  if (el.attributes?.["b"]) result.bottom = String(el.attributes["b"]);
+  if (el.attributes?.["l"] !== undefined) result.left = String(el.attributes["l"]);
+  if (el.attributes?.["t"] !== undefined) result.top = String(el.attributes["t"]);
+  if (el.attributes?.["r"] !== undefined) result.right = String(el.attributes["r"]);
+  if (el.attributes?.["b"] !== undefined) result.bottom = String(el.attributes["b"]);
   return result as RelativeRect;
 }
 
@@ -241,23 +242,28 @@ export function emitFillXml(options: FillOptions, embedPlaceholder?: string): st
 
 /** Serialize a:gradFill from full GradientFillOptions (descriptor emission). */
 function emitGradientFillXml(opts: GradientFillOptions): string | undefined {
-  // a:gsLst requires at least two a:gs stops (CT_GradientStopList) — a single
-  // stop cannot form a gradient, so the fill is skipped rather than emitted
-  // as an illegal one-stop list.
-  if (opts.stops.length < 2) return undefined;
+  if (
+    !opts.stops &&
+    !opts.shade &&
+    !opts.tileRectangle &&
+    opts.flip === undefined &&
+    opts.rotateWithShape === undefined
+  ) {
+    return "<a:gradFill/>";
+  }
 
   const parts: string[] = [];
 
-  // Gradient stop list — a:gs expects EG_ColorChoice (direct color), NOT solidFill
-  const stopsXml = opts.stops
-    .map((stop) => {
-      const colorXml = emitColorChoice(toSolidColor(stop.color));
-      const pos = emitGradientPosition(stop.position);
-      if (!colorXml) return `<a:gs pos="${pos}"/>`;
-      return `<a:gs pos="${pos}">${colorXml}</a:gs>`;
-    })
-    .join("");
-  parts.push(`<a:gsLst>${stopsXml}</a:gsLst>`);
+  if (opts.stops?.length) {
+    const stopsXml = opts.stops
+      .map((stop) => {
+        const colorXml = emitColorChoice(toSolidColor(stop.color));
+        const pos = emitGradientPosition(stop.position);
+        return `<a:gs pos="${pos}">${colorXml}</a:gs>`;
+      })
+      .join("");
+    parts.push(`<a:gsLst>${stopsXml}</a:gsLst>`);
+  }
 
   // Shade
   if (opts.shade) parts.push(stringifyShade(opts.shade));
@@ -318,13 +324,21 @@ function emitBlipFill(
   if (options.blipEffects) {
     blipChildren.push(...createBlipEffects(options.blipEffects));
   }
+  if (options.blipExtensionXml !== undefined) {
+    blipChildren.push(`<a:extLst>${options.blipExtensionXml}</a:extLst>`);
+  } else if (options.useLocalDpi !== undefined) {
+    blipChildren.push(createUseLocalDpiExtension(options.useLocalDpi));
+  }
   // noEmbed: the source blip carried no r:embed (an empty marker) — re-emit
   // it bare instead of fabricating a media reference.
   // The r: prefix is declared inline on the blip: hosts whose root declares
   // only the a: namespace (a theme's fmtScheme) still get well-formed XML.
   const R_NS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
   const blip =
-    options.noEmbed && linkedReferenceId === undefined && unresolvedReferenceId === undefined
+    options.noEmbed &&
+    options.sourceReferenceId === undefined &&
+    linkedReferenceId === undefined &&
+    unresolvedReferenceId === undefined
       ? element("a:blip", undefined, blipChildren.length > 0 ? blipChildren : undefined)
       : element(
           "a:blip",
@@ -333,13 +347,15 @@ function emitBlipFill(
             "xmlns:r": R_NS,
             ...(unresolvedReferenceId !== undefined
               ? { "r:embed": unresolvedReferenceId }
-              : embedRef !== "" && { "r:embed": embedRef }),
+              : options.sourceReferenceId !== undefined
+                ? { "r:embed": options.sourceReferenceId }
+                : embedRef !== "" && { "r:embed": embedRef }),
             ...(linkedReferenceId !== undefined && { "r:link": linkedReferenceId }),
           },
           blipChildren.length > 0 ? blipChildren : undefined,
         );
 
-  const children: string[] = [blip];
+  const children: string[] = options.omitBlip ? [] : [blip];
   // a:srcRect is optional in CT_BlipFillProperties — emit it only when the
   // source carried one (round-trip); a bare <a:srcRect/> round-trips as {}.
   if (options.sourceRectangle !== undefined)
@@ -377,10 +393,9 @@ export const fillDesc: CustomDescriptor<FillOptions> = {
         );
       }
       if (opts.unresolvedTarget !== undefined) {
-        const unresolvedReferenceId = ctx.addRelationship(
-          RELATIONSHIP_TYPES.image,
-          opts.unresolvedTarget,
-        );
+        const unresolvedReferenceId =
+          opts.sourceReferenceId ??
+          ctx.addRelationship(RELATIONSHIP_TYPES.image, opts.unresolvedTarget);
         return emitBlipFill(
           { ...opts, noEmbed: true },
           undefined,
@@ -458,6 +473,8 @@ export const fillDesc: CustomDescriptor<FillOptions> = {
           if (blipOpts.compression !== undefined) blip.compression = blipOpts.compression;
           if (blipOpts.rotWithShape !== undefined) blip.rotWithShape = blipOpts.rotWithShape;
           if (blipOpts.blipEffects) blip.blipEffects = blipOpts.blipEffects;
+          if (blipOpts.ext !== undefined) blip.blipExtensionXml = blipOpts.ext;
+          else if (blipOpts.useLocalDpi !== undefined) blip.useLocalDpi = blipOpts.useLocalDpi;
           if (blipOpts.sourceRectangle) blip.sourceRectangle = blipOpts.sourceRectangle;
           if (blipOpts.tile) blip.tile = blipOpts.tile;
           if (preserveMissingStretch) blip.stretch = false;
@@ -470,6 +487,8 @@ export const fillDesc: CustomDescriptor<FillOptions> = {
           if (blipOpts.compression !== undefined) blip.compression = blipOpts.compression;
           if (blipOpts.rotWithShape !== undefined) blip.rotWithShape = blipOpts.rotWithShape;
           if (blipOpts.blipEffects) blip.blipEffects = blipOpts.blipEffects;
+          if (blipOpts.ext !== undefined) blip.blipExtensionXml = blipOpts.ext;
+          else if (blipOpts.useLocalDpi !== undefined) blip.useLocalDpi = blipOpts.useLocalDpi;
           if (blipOpts.sourceRectangle) blip.sourceRectangle = blipOpts.sourceRectangle;
           if (blipOpts.tile) blip.tile = blipOpts.tile;
           if (preserveMissingStretch) blip.stretch = false;
@@ -480,11 +499,38 @@ export const fillDesc: CustomDescriptor<FillOptions> = {
           const blip: BlipFillConfigOptions & { type: "blip" } = {
             type: "blip",
             unresolvedTarget: mediaPath,
+            ...(blipOpts.referenceId !== undefined && {
+              sourceReferenceId: blipOpts.referenceId,
+            }),
           };
           if (blipOpts.dpi !== undefined) blip.dpi = blipOpts.dpi;
           if (blipOpts.compression !== undefined) blip.compression = blipOpts.compression;
           if (blipOpts.rotWithShape !== undefined) blip.rotWithShape = blipOpts.rotWithShape;
           if (blipOpts.blipEffects) blip.blipEffects = blipOpts.blipEffects;
+          if (blipOpts.ext !== undefined) blip.blipExtensionXml = blipOpts.ext;
+          else if (blipOpts.useLocalDpi !== undefined) blip.useLocalDpi = blipOpts.useLocalDpi;
+          if (blipOpts.sourceRectangle) blip.sourceRectangle = blipOpts.sourceRectangle;
+          if (blipOpts.tile) blip.tile = blipOpts.tile;
+          if (preserveMissingStretch) blip.stretch = false;
+          if (fillRectangle !== undefined) blip.fillRectangle = fillRectangle;
+          return blip;
+        }
+        if (
+          blipOpts.referenceId !== undefined &&
+          mediaPath === undefined &&
+          linkedUrl === undefined
+        ) {
+          const blip: BlipFillConfigOptions & { type: "blip" } = {
+            type: "blip",
+            noEmbed: true,
+            sourceReferenceId: blipOpts.referenceId,
+          };
+          if (blipOpts.dpi !== undefined) blip.dpi = blipOpts.dpi;
+          if (blipOpts.compression !== undefined) blip.compression = blipOpts.compression;
+          if (blipOpts.rotWithShape !== undefined) blip.rotWithShape = blipOpts.rotWithShape;
+          if (blipOpts.blipEffects) blip.blipEffects = blipOpts.blipEffects;
+          if (blipOpts.ext !== undefined) blip.blipExtensionXml = blipOpts.ext;
+          else if (blipOpts.useLocalDpi !== undefined) blip.useLocalDpi = blipOpts.useLocalDpi;
           if (blipOpts.sourceRectangle) blip.sourceRectangle = blipOpts.sourceRectangle;
           if (blipOpts.tile) blip.tile = blipOpts.tile;
           if (preserveMissingStretch) blip.stretch = false;
@@ -495,11 +541,17 @@ export const fillDesc: CustomDescriptor<FillOptions> = {
           // Empty a:blip (no r:embed) — Word's pic:spPr duplicate of
           // pic:blipFill references no image of its own. Keep the fill shape
           // (attrs, srcRect, stretch) instead of degrading to noFill.
-          const blip: BlipFillConfigOptions & { type: "blip" } = { type: "blip", noEmbed: true };
+          const blip: BlipFillConfigOptions & { type: "blip" } = {
+            type: "blip",
+            noEmbed: true,
+            ...(findChild(fillEl, "a:blip") === undefined && { omitBlip: true }),
+          };
           if (blipOpts.dpi !== undefined) blip.dpi = blipOpts.dpi;
           if (blipOpts.compression !== undefined) blip.compression = blipOpts.compression;
           if (blipOpts.rotWithShape !== undefined) blip.rotWithShape = blipOpts.rotWithShape;
           if (blipOpts.blipEffects) blip.blipEffects = blipOpts.blipEffects;
+          if (blipOpts.ext !== undefined) blip.blipExtensionXml = blipOpts.ext;
+          else if (blipOpts.useLocalDpi !== undefined) blip.useLocalDpi = blipOpts.useLocalDpi;
           if (blipOpts.sourceRectangle) blip.sourceRectangle = blipOpts.sourceRectangle;
           if (blipOpts.tile) blip.tile = blipOpts.tile;
           if (preserveMissingStretch) blip.stretch = false;

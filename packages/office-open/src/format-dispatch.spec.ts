@@ -1,4 +1,4 @@
-import { OOXML_PACKAGE_FORMATS, type OoxmlPackageFormat } from "@office-open/core";
+import { OOXML_PACKAGE_FORMATS, type OoxmlPackageFormat } from "@office-open/core/opc";
 import { zipSync } from "fflate";
 import { describe, expect, it } from "vite-plus/test";
 

@@ -1,11 +1,13 @@
 import {
   convertOutput,
-  OOXML_PACKAGE_FORMATS,
+  toUint8ArrayAsync,
+  type DataType,
   type OutputByType,
   type OutputType,
   type PackerOptions,
   type ReproducibleGenerationOptions,
 } from "@office-open/core";
+import { OOXML_PACKAGE_FORMATS } from "@office-open/core/opc";
 import { parseDocument as parseDocDocument } from "@office-open/doc";
 import {
   generateDocument as generateDocxDocument,
@@ -48,15 +50,14 @@ export type DocumentPatchRequest<T extends OutputType = OutputType> = Omit<
   outputType?: T;
 };
 
-const ODT_MIME_TYPE = "application/vnd.oasis.opendocument.text";
 const RTF_MIME_TYPE = "application/rtf";
 
 export async function parseDocument(
-  input: Uint8Array | string,
+  input: DataType,
   options?: DocumentParseOptions,
-): Promise<DocumentOptions> {
-  const info = detectOffice(input);
-  const data = typeof input === "string" ? new TextEncoder().encode(input) : input;
+): Promise<DocumentOptions | OdtDocumentOptions> {
+  const data = await toUint8ArrayAsync(input);
+  const info = detectOffice(data);
 
   switch (info.format) {
     case "doc":
@@ -67,11 +68,9 @@ export async function parseDocument(
     case "dotm":
       return parseDocxDocument(data);
     case "rtf":
-      return parseRtfDocument(
-        typeof input === "string" ? input : new TextDecoder().decode(input),
-      ) as DocumentOptions;
+      return parseRtfDocument(new TextDecoder().decode(data)) as DocumentOptions;
     case "odt":
-      return parseOdtDocument(data) as DocumentOptions;
+      return parseOdtDocument(data);
     default:
       throw new Error(`${info.format} is not a document format`);
   }
@@ -82,7 +81,7 @@ export async function generateDocument<
   T extends OutputType = "nodebuffer",
 >(
   format: F,
-  options: DocumentOptions,
+  options: DocumentOptions | OdtDocumentOptions,
   output?: T,
   reproducible?: F extends "odt" ? never : ReproducibleGenerationOptions,
 ): Promise<OutputByType[T]> {
@@ -90,11 +89,7 @@ export async function generateDocument<
 
   if (format === "odt") {
     if (reproducible) throw new Error("Reproducible generation is not supported for ODT");
-    return convertOutput(
-      generateOdtDocument(options as OdtDocumentOptions),
-      outputType,
-      ODT_MIME_TYPE,
-    );
+    return generateOdtDocument(options as OdtDocumentOptions, outputType);
   }
 
   if (format === "rtf") {
@@ -106,7 +101,10 @@ export async function generateDocument<
   }
 
   return generateDocxDocument(
-    withRequestedPackageVariant(format as keyof typeof OOXML_PACKAGE_FORMATS, options),
+    withRequestedPackageVariant(
+      format as keyof typeof OOXML_PACKAGE_FORMATS,
+      options as DocumentOptions,
+    ),
     {
       type: outputType,
       packageVariant: OOXML_PACKAGE_FORMATS[format as keyof typeof OOXML_PACKAGE_FORMATS].variant,

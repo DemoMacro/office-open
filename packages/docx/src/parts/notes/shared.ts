@@ -27,6 +27,8 @@ export interface NoteSeparator {
 
 export interface NotesData {
   notes: Map<number, NoteChild[]>;
+  /** Source standard-reference-mark presence by note id; absent map means fresh defaults. */
+  autoReferenceMarks?: Map<number, boolean>;
   /**
    * Separator note — id + content round-tripped from the source so it stays
    * consistent with settings.footnoteProperties/endnoteProperties, which reference this id.
@@ -73,6 +75,8 @@ export interface NotesDescConfig {
   rootTag: string;
   /** Note element name (`w:footnote` / `w:endnote`). */
   noteTag: string;
+  /** Reference-mark element name inside note content. */
+  referenceMarkTag: string;
   /** Reference run injected at the start of each note's first paragraph. */
   refRunXml: string;
   /** Separator note emitted when no round-tripped separator is present. */
@@ -148,7 +152,13 @@ export function createNotesDesc(cfg: NotesDescConfig): CustomDescriptor<NotesDat
           // receive an invalid run outside w:p.
           const hasRefMark =
             childXml.includes("<w:footnoteRef/>") || childXml.includes("<w:endnoteRef/>");
-          if (i === 0 && isParagraphInput && !hasRefMark && !isEmptyParagraph(childXml)) {
+          if (
+            i === 0 &&
+            isParagraphInput &&
+            !hasRefMark &&
+            !isEmptyParagraph(childXml) &&
+            data.autoReferenceMarks?.get(id) !== false
+          ) {
             parts.push(injectRefRun(childXml, cfg));
           } else {
             parts.push(childXml);
@@ -163,6 +173,7 @@ export function createNotesDesc(cfg: NotesDescConfig): CustomDescriptor<NotesDat
 
     parse(el, ctx) {
       const notes = new Map<number, NoteChild[]>();
+      const autoReferenceMarks = new Map<number, boolean>();
       let separator: NoteSeparator | undefined;
       let continuationSeparator: NoteSeparator | undefined;
       let continuationNotice: NoteSeparator | undefined;
@@ -191,11 +202,28 @@ export function createNotesDesc(cfg: NotesDescConfig): CustomDescriptor<NotesDat
           continuationNotice = { id, children };
         } else {
           notes.set(id, children);
+          const firstElement = (child.elements ?? []).find((sub) => sub.type === "element");
+          autoReferenceMarks.set(
+            id,
+            firstElement ? containsElement(firstElement, cfg.referenceMarkTag) : false,
+          );
         }
       }
-      return { notes, separator, continuationSeparator, continuationNotice } as NotesData;
+      return {
+        notes,
+        autoReferenceMarks,
+        separator,
+        continuationSeparator,
+        continuationNotice,
+      } as NotesData;
     },
   };
+}
+
+function containsElement(element: Element | undefined, name: string): boolean {
+  if (!element) return false;
+  if (element.name === name) return true;
+  return (element.elements ?? []).some((child) => containsElement(child, name));
 }
 
 /** Insert the reference run into the first paragraph's XML. */

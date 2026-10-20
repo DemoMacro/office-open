@@ -1,5 +1,5 @@
+import { strFromU8, strToU8, unzipSync, zipSync } from "@office-open/core";
 import { parse } from "@office-open/xml";
-import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
 import { describe, expect, it } from "vite-plus/test";
 
 import {
@@ -63,7 +63,7 @@ describe("OCF runtime", () => {
     expect(manifestXml(mimeType, files)).toContain('manifest:full-path="Thumbnails/"');
   });
 
-  it("opens a manifest-identified package without a mimetype entry", () => {
+  it("opens a manifest-identified package without a mimetype entry", async () => {
     const archive = zipSync({
       "content.xml": strToU8(
         '<office:document-content xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"/>',
@@ -72,10 +72,31 @@ describe("OCF runtime", () => {
         '<?xml version="1.0"?><manifest:manifest xmlns:manifest="urn:oasis:names:tc:opendocument:xmlns:manifest:1.0"><manifest:file-entry manifest:full-path="/" manifest:media-type="application/vnd.oasis.opendocument.text"/><manifest:file-entry manifest:full-path="content.xml" manifest:media-type="text/xml"/></manifest:manifest>',
       ),
     });
-    expect(() => readOcf(archive, "application/vnd.oasis.opendocument.text")).not.toThrow();
+    await expect(
+      readOcf(archive, "application/vnd.oasis.opendocument.text"),
+    ).resolves.toBeDefined();
   });
 
-  it("round-trips explicit empty ZIP directories", () => {
+  it("accepts any expected family mimetype, including templates", async () => {
+    const mimeType = "application/vnd.oasis.opendocument.text";
+    const templateMimeType = "application/vnd.oasis.opendocument.text-template";
+    const archive = generateOcf(templateMimeType, {
+      "content.xml":
+        '<office:document-content xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"/>',
+    });
+    await expect(readOcf(archive, [mimeType, templateMimeType])).resolves.toBeDefined();
+  });
+
+  it("normalizes browser binary inputs before reading an OCF package", async () => {
+    const mimeType = "application/vnd.oasis.opendocument.text";
+    const archive = generateOcf(mimeType, { "content.xml": "<office:document-content/>" });
+    const buffer = new ArrayBuffer(archive.byteLength);
+    new Uint8Array(buffer).set(archive);
+    const parsed = await readOcf(new Blob([buffer]), mimeType);
+    expect(parsed.files["content.xml"]).toContain("<office:document-content/>");
+  });
+
+  it("round-trips explicit empty ZIP directories", async () => {
     const mimeType = "application/vnd.oasis.opendocument.text";
     const packageManifest = {
       version: "1.3",
@@ -95,14 +116,14 @@ describe("OCF runtime", () => {
       packageManifest,
     );
     expect(Object.keys(unzipSync(source))).toContain("Configurations2/");
-    const parsed = readOcf(source, mimeType);
+    const parsed = await readOcf(source, mimeType);
     expect(parsed.manifest.entries.map((entry) => entry.fullPath)).toContain("Configurations2/");
     expect(
       Object.keys(unzipSync(generateOcf(mimeType, parsed.files, {}, parsed.manifest))),
     ).toContain("Configurations2/");
   });
 
-  it("ignores stale manifest declarations for absent package paths", () => {
+  it("ignores stale manifest declarations for absent package paths", async () => {
     const archive = zipSync({
       mimetype: strToU8("application/vnd.oasis.opendocument.text"),
       "content.xml": strToU8(
@@ -112,13 +133,13 @@ describe("OCF runtime", () => {
         '<?xml version="1.0"?><manifest:manifest xmlns:manifest="urn:oasis:names:tc:opendocument:xmlns:manifest:1.0"><manifest:file-entry manifest:full-path="/" manifest:media-type="application/vnd.oasis.opendocument.text"/><manifest:file-entry manifest:full-path="content.xml" manifest:media-type="text/xml"/><manifest:file-entry manifest:full-path="META-INF/manifest.xml" manifest:media-type="text/xml"/><manifest:file-entry manifest:full-path="Thumbnails/thumbnail.png" manifest:media-type="image/png"/></manifest:manifest>',
       ),
     });
-    const parsed = readOcf(archive, "application/vnd.oasis.opendocument.text");
+    const parsed = await readOcf(archive, "application/vnd.oasis.opendocument.text");
     expect(parsed.manifest.entries.map((entry) => entry.fullPath)).not.toContain(
       "Thumbnails/thumbnail.png",
     );
   });
 
-  it("retains undeclared auxiliary package members", () => {
+  it("retains undeclared auxiliary package members", async () => {
     const archive = zipSync({
       mimetype: strToU8("application/vnd.oasis.opendocument.text"),
       "content.xml": strToU8(
@@ -129,7 +150,7 @@ describe("OCF runtime", () => {
         '<?xml version="1.0"?><manifest:manifest xmlns:manifest="urn:oasis-names:tc:opendocument:xmlns:manifest:1.0"><manifest:file-entry manifest:full-path="/" manifest:media-type="application/vnd.oasis.opendocument.text"/><manifest:file-entry manifest:full-path="content.xml" manifest:media-type="text/xml"/></manifest:manifest>',
       ),
     });
-    const parsed = readOcf(archive, "application/vnd.oasis.opendocument.text");
+    const parsed = await readOcf(archive, "application/vnd.oasis.opendocument.text");
     expect(parsed.manifest.entries).toContainEqual({
       fullPath: "ObjectReplacements/Object 1",
       mediaType: "application/binary",
@@ -161,7 +182,7 @@ describe("OCF runtime", () => {
     expect(manifestOptionsXml(parsed)).toContain('manifest:iteration-count="1024"');
   });
 
-  it("round-trips encrypted keys and file-entry encryption through one typed model", () => {
+  it("round-trips encrypted keys and file-entry encryption through one typed model", async () => {
     const xml = `<?xml version="1.0"?><manifest:manifest xmlns:manifest="urn:oasis:names:tc:opendocument:xmlns:manifest:1.0" manifest:version="1.3"><manifest:encrypted-key><manifest:encryption-method manifest:PGPAlgorithm="RSA"/><manifest:keyinfo><manifest:PGPData><manifest:PGPKeyID>MQ==</manifest:PGPKeyID><manifest:PGPKeyPacket>Ag==</manifest:PGPKeyPacket></manifest:PGPData></manifest:keyinfo><manifest:CipherData><manifest:CipherValue>Aw==</manifest:CipherValue></manifest:CipherData></manifest:encrypted-key><manifest:file-entry manifest:full-path="/" manifest:media-type="application/vnd.oasis.opendocument.chart"/><manifest:file-entry manifest:full-path="content.xml" manifest:media-type="text/xml"><manifest:encryption-data manifest:checksum-type="SHA1/1K" manifest:checksum="aa=="><manifest:algorithm manifest:algorithm-name="Blowfish CFB" manifest:initialisation-vector="bb=="/><manifest:key-derivation manifest:key-derivation-name="PBKDF2" manifest:salt="cc==" manifest:iteration-count="1024" manifest:key-size="16"/></manifest:encryption-data></manifest:file-entry></manifest:manifest>`;
     const parsed = parseManifestOptions(xml);
     expect(parsed.encryptedKeys).toEqual([
@@ -175,7 +196,7 @@ describe("OCF runtime", () => {
       {},
       parsed,
     );
-    const reread = readOcf(archive, "application/vnd.oasis.opendocument.chart").manifest;
+    const reread = (await readOcf(archive, "application/vnd.oasis.opendocument.chart")).manifest;
     const packaged = {
       ...parsed,
       entries: [
@@ -184,17 +205,16 @@ describe("OCF runtime", () => {
       ],
     };
     expect(reread).toEqual(packaged);
-    expect(
-      readOcf(
-        generateOcf(
-          "application/vnd.oasis.opendocument.chart",
-          { "content.xml": "<a/>" },
-          {},
-          reread,
-        ),
+    const reparsed = await readOcf(
+      generateOcf(
         "application/vnd.oasis.opendocument.chart",
-      ).manifest,
-    ).toEqual(packaged);
+        { "content.xml": "<a/>" },
+        {},
+        reread,
+      ),
+      "application/vnd.oasis.opendocument.chart",
+    );
+    expect(reparsed.manifest).toEqual(packaged);
   });
 
   it("keeps supplied manifest entries and reports duplicate paths structurally", () => {

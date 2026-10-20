@@ -1,4 +1,4 @@
-import { OOXML_PACKAGE_FORMATS, type OoxmlPackageFormat, unzipSync } from "@office-open/core";
+import { OOXML_PACKAGE_FORMATS, type OoxmlPackageFormat, unzipSync } from "@office-open/core/opc";
 import { describe, expect, it } from "vite-plus/test";
 
 import { generateOffice, type OfficeGenerateFormat, type OfficeOptionsFor } from "./generate";

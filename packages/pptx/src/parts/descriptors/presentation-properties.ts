@@ -70,6 +70,22 @@ function parsePresentationProperties(
     } else if (findChild(showPr, "p:present")) {
       showOpts.type = "present";
     }
+    if (
+      findChild(showPr, "p:kiosk") === undefined &&
+      findChild(showPr, "p:browse") === undefined &&
+      findChild(showPr, "p:present") === undefined
+    ) {
+      showOpts.type = null;
+    }
+    if (findChild(showPr, "p:sldAll") === undefined && !findChild(showPr, "p:sldRg")) {
+      showOpts.slideSelection = null;
+    }
+    const showCustShow = findChild(showPr, "p:custShow");
+    if (showCustShow) {
+      const csId = attrNum(showCustShow, "id");
+      if (csId === undefined) throw new TypeError("p:showPr/p:custShow requires id");
+      showOpts.customShowId = csId;
+    }
     const sldRg = findChild(showPr, "p:sldRg");
     if (sldRg) {
       const start = attrNum(sldRg, "st");
@@ -124,17 +140,43 @@ function parsePresentationProperties(
   // htmlPublish (p:htmlPubPr)
   const htmlPubPr = findChild(el, "p:htmlPubPr");
   if (htmlPubPr) {
-    const htmlPublish: NonNullable<PresentationPropertiesOptions["htmlPublish"]> = {};
-    if (String(htmlPubPr.attributes?.["showSpeakerNotes"]) === "0") {
-      htmlPublish.showSpeakerNotes = false;
-    }
+    const showSpeakerNotes =
+      String(htmlPubPr.attributes?.["showSpeakerNotes"]) === "0" ? false : undefined;
     const target = attr(htmlPubPr, "target");
-    if (target) htmlPublish.target = target;
     const title = attr(htmlPubPr, "title");
-    if (title) htmlPublish.title = title;
     const rId = attr(htmlPubPr, "r:id");
-    if (rId) htmlPublish.rId = rId;
-    if (Object.keys(htmlPublish).length > 0) result.htmlPublish = htmlPublish;
+    if (!rId) throw new TypeError("p:htmlPubPr requires r:id");
+    let slideScope:
+      | NonNullable<NonNullable<PresentationPropertiesOptions["htmlPublish"]>["slideScope"]>
+      | undefined;
+    if (findChild(htmlPubPr, "p:sldAll")) slideScope = { kind: "all" };
+    const slideRange = findChild(htmlPubPr, "p:sldRg");
+    if (slideRange) {
+      const start = attrNum(slideRange, "st");
+      const end = attrNum(slideRange, "end");
+      if (start === undefined || end === undefined) {
+        throw new TypeError("p:htmlPubPr/p:sldRg requires st and end");
+      }
+      slideScope = { kind: "range", start, end };
+    }
+    const customShow = findChild(htmlPubPr, "p:custShow");
+    if (customShow) {
+      const id = attrNum(customShow, "id");
+      if (id === undefined) throw new TypeError("p:htmlPubPr/p:custShow requires id");
+      slideScope = { kind: "customShow", id };
+    }
+    if (!slideScope) {
+      throw new TypeError("p:htmlPubPr requires a slide scope child");
+    }
+    const extension = findChild(htmlPubPr, "p:extLst");
+    result.htmlPublish = {
+      ...(showSpeakerNotes === undefined ? {} : { showSpeakerNotes }),
+      ...(target === undefined ? {} : { target }),
+      ...(title === undefined ? {} : { title }),
+      rId,
+      slideScope,
+      ...(extension === undefined ? {} : { ext: stringifyXml(extension) }),
+    };
   }
 
   // colorMru (p:clrMru)

@@ -12,6 +12,7 @@
 
 import { element } from "@office-open/xml";
 
+import type { NumberingChangeOptions } from "../properties";
 import type { FormFieldOptions } from "./form-field";
 import { createFormFieldData } from "./form-field";
 
@@ -50,6 +51,7 @@ const createFieldChar = (
   ffData?: string,
   fldData?: string,
   fieldLock?: boolean,
+  numberingChange?: NumberingChangeOptions,
 ): string => {
   const children: string[] = [];
   if (fldData !== undefined) {
@@ -57,6 +59,16 @@ const createFieldChar = (
   }
   if (ffData) {
     children.push(ffData);
+  }
+  if (numberingChange) {
+    children.push(
+      element("w:numberingChange", {
+        "w:original": numberingChange.original,
+        "w:id": numberingChange.id,
+        "w:author": numberingChange.author,
+        "w:date": numberingChange.date,
+      }),
+    );
   }
   return element(
     "w:fldChar",
@@ -96,13 +108,16 @@ export const createBegin = (
   dirty?: boolean,
   formField?: FormFieldOptions,
   fieldLock?: boolean,
+  fieldData?: string,
+  numberingChange?: NumberingChangeOptions,
 ): string =>
   createFieldChar(
     FieldCharacterType.BEGIN,
     dirty,
     formField ? createFormFieldData(formField) : undefined,
-    undefined,
+    fieldData,
     fieldLock,
+    numberingChange,
   );
 
 /**

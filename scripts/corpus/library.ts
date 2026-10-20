@@ -3,10 +3,11 @@ import * as path from "node:path";
 
 import {
   isEncryptedContainer,
+  parseArchive,
   OOXML_PACKAGE_FORMATS,
   opaquePassthroughPolicy,
-  parseArchive,
-} from "../../packages/core/dist/index.mjs";
+} from "@office-open/core/opc";
+
 import { parseDocument } from "../../packages/docx/dist/index.mjs";
 import { parsePresentation } from "../../packages/pptx/dist/index.mjs";
 import { parseWorkbook } from "../../packages/xlsx/dist/index.mjs";
@@ -16,18 +17,29 @@ import {
   archiveTagDiffs,
   classifyPackageFailure,
   type CorpusFailureKind,
-  orphanedPackageMembers,
+  orphanedPackageParts,
   primaryPackagePart,
   type SemanticPartDiff,
+  validatePrimaryPackagePart,
 } from "./semantics";
 
 const OS_JUNK_PART_PATTERNS: readonly RegExp[] = [
   /^(?:.*\/)?\.DS_Store$/i,
   /^(?:.*\/)?Thumbs\.db$/i,
   /^(?:.*\/)?desktop\.ini$/i,
+  /^(?:.*\/)?.+~$/i,
+  /^(?:.*\/)?.+\.tmp$/i,
+  /^(?:.*\/)?.+\.swp$/i,
   // Producer-created junk folders inside the package (ZIP inspection debris).
   /^\[trash\]\//i,
 ];
+
+const STRUCTURED_MALFORMED_PARSE_REASONS = new Set([
+  "invalid-value",
+  "missing-package-part",
+  "missing-required-element",
+  "unknown-chartex-child",
+]);
 
 export const EXTERNAL_OPAQUE_PARTS: Record<Format, readonly RegExp[]> = {
   docx: [...opaquePassthroughPolicy("docx").opaquePatterns, ...OS_JUNK_PART_PATTERNS],
@@ -36,6 +48,12 @@ export const EXTERNAL_OPAQUE_PARTS: Record<Format, readonly RegExp[]> = {
 };
 
 export type Format = "docx" | "xlsx" | "pptx";
+
+export type CorpusFile = {
+  path: string;
+  format: Format;
+  type: PackageFormat;
+};
 
 /**
  * Model-absorbed opaque content parts: altChunk payloads keep their source
@@ -178,9 +196,12 @@ export interface FileDiagnostic {
   file: string;
   format: Format;
   outcome: CorpusFailureKind;
+  stage: "compare" | "generate" | "parse";
+  malformed?: boolean;
   package?: string;
   diffCategories?: Record<string, number>;
   sampleParts?: SemanticPartDiff[];
+  diffs?: SemanticPartDiff[];
   error?: string;
 }
 
@@ -209,20 +230,19 @@ export function encryptedPassthroughMatches(source: Uint8Array, output: Uint8Arr
   return source.length === output.length && source.every((byte, index) => byte === output[index]);
 }
 
-function walk(
-  dir: string,
-  out: { path: string; format: Format; type: PackageFormat }[] = [],
-): typeof out {
+export function walkLibraryFiles(libraryRoot: string, out: CorpusFile[] = []): CorpusFile[] {
   let entries: fs.Dirent[];
   try {
-    entries = fs.readdirSync(dir, { withFileTypes: true });
+    entries = fs.readdirSync(libraryRoot, { withFileTypes: true });
   } catch {
     return out;
   }
   for (const entry of entries) {
-    const item = path.join(dir, entry.name);
-    if (entry.isDirectory()) walk(item, out);
-    else {
+    const item = path.join(libraryRoot, entry.name);
+    if (entry.isDirectory()) {
+      if (entry.name === ".git" || entry.name === "node_modules") continue;
+      walkLibraryFiles(item, out);
+    } else {
       const config = BY_EXT[entry.name.split(".").pop()!.toLowerCase()];
       if (config) out.push({ path: item, format: config.format, type: config.type });
     }
@@ -233,6 +253,7 @@ function walk(
 export async function runLibrary(
   libraryId: string,
   { destination, root, strictSemantic }: LibraryRunInput,
+  files: readonly CorpusFile[] = walkLibraryFiles(path.resolve(root, destination)),
 ): Promise<LibraryRunResult> {
   const counts = {
     docx: { total: 0, clean: 0, diff: 0, parseFail: 0, genFail: 0, malformed: 0 },
@@ -256,7 +277,7 @@ export async function runLibrary(
     pptx: new Map(),
   };
 
-  for (const { path: file, format, type } of walk(path.resolve(root, destination))) {
+  for (const { path: file, format, type } of files) {
     const current = counts[format];
     current.total++;
     let options: unknown;
@@ -269,13 +290,14 @@ export async function runLibrary(
         pptx: "ppt/presentation.xml",
       } as const;
       try {
-        primaryPackagePart(parseArchive(source), fallbacks[format]);
+        validatePrimaryPackagePart(parseArchive(source), format, fallbacks[format]);
       } catch (error) {
         current.malformed++;
         diagnostics.push({
           file: path.relative(root, file),
           format,
           outcome: classifyPackageFailure(error),
+          stage: "compare",
           package: libraryId,
           error: String(error).slice(0, 240),
         });
@@ -286,14 +308,18 @@ export async function runLibrary(
       options = await BY_EXT[path.extname(file).slice(1).toLowerCase()]!.parse(source);
     } catch (error) {
       const structured = error instanceof Error && error.name.endsWith("ParseError");
+      const structuredReason = structured ? (error as { reason?: string }).reason : undefined;
       const classifiedMalformed =
-        structured && (error as { reason?: string }).reason === "unknown-chartex-child";
-      if (structured && !classifiedMalformed) current.parseFail++;
+        structured && STRUCTURED_MALFORMED_PARSE_REASONS.has(structuredReason);
+      const parseFailed = structured && !classifiedMalformed;
+      if (parseFailed) current.parseFail++;
       else current.malformed++;
       diagnostics.push({
         file: path.relative(root, file),
         format,
         outcome: classifyPackageFailure(error),
+        stage: "parse",
+        malformed: !parseFailed,
         package: libraryId,
         error: String(error).slice(0, 240),
       });
@@ -322,6 +348,7 @@ export async function runLibrary(
         file: path.relative(root, file),
         format,
         outcome: "invalid-package",
+        stage: "generate",
         package: libraryId,
         error: String(error).slice(0, 240),
       });
@@ -362,14 +389,11 @@ export async function runLibrary(
     }
     const { auditCanonicalOptions } = await import("./synthetic/raw-audit");
     const rawPartsForAudit = (options as { rawParts?: { path: string }[] }).rawParts;
-    const orphanedXmlParts =
-      (rawPartsForAudit?.some((part) => /\.xml$|\.rels$|\.vml$/i.test(part.path)) ?? false)
-        ? orphanedPackageMembers(source)
-        : undefined;
+    const orphanedParts = rawPartsForAudit?.length ? orphanedPackageParts(source) : undefined;
     for (const blocker of auditCanonicalOptions(
       options,
       EXTERNAL_OPAQUE_PARTS[format],
-      orphanedXmlParts,
+      orphanedParts,
       allowedOpaquePaths(options, format),
       rebuiltXmlPaths(options, format),
     )) {
@@ -389,11 +413,13 @@ export async function runLibrary(
         parts = archiveTagDiffs(source, output);
       }
     } catch (error) {
-      current.parseFail++;
+      const classification = classifyPackageFailure(error);
+      current.malformed++;
       diagnostics.push({
         file: path.relative(root, file),
         format,
-        outcome: "invalid-zip",
+        outcome: classification,
+        stage: "compare",
         package: libraryId,
         error: String(error).slice(0, 240),
       });
@@ -417,6 +443,7 @@ export async function runLibrary(
           countsByCategory[category] = (countsByCategory[category] ?? 0) + 1;
           return countsByCategory;
         }, {}),
+        diffs: semanticDiffs,
         sampleParts: semanticDiffs.slice(0, 20),
       });
     }

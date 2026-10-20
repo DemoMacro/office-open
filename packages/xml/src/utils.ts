@@ -59,10 +59,12 @@ export function childText(parent: Element | undefined, name: string): string {
 export function textOf(element: Element | undefined): string {
   if (!element) return "";
   if (element.text !== undefined && typeof element.text === "string") return element.text;
+  if (element.cdata !== undefined && typeof element.cdata === "string") return element.cdata;
   if (element.elements && element.elements.length > 0) {
     let text = "";
     for (const e of element.elements) {
       if (typeof e.text === "string") text += e.text;
+      else if (typeof e.cdata === "string") text += e.cdata;
     }
     return text;
   }

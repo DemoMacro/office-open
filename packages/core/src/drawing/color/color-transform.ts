@@ -25,6 +25,27 @@ type TransformPercent = number | Percentage;
  * 40%) or a verbatim percent literal; angle fields take degrees. Booleans emit
  * value-less switch elements.
  */
+export type ValueTransformKey = Exclude<
+  keyof Omit<ColorTransformOptions, "sequence">,
+  BooleanTransformKey
+>;
+
+export type BooleanTransformKey = "comp" | "inv" | "gray" | "gamma" | "invGamma";
+
+/** Value-less ordered EG_ColorTransform child; presence is the semantics. */
+export interface ColorBooleanTransformItem {
+  type: BooleanTransformKey;
+}
+
+/** Valued ordered EG_ColorTransform child; percent fields use integer percent. */
+export interface ColorValueTransformItem {
+  type: ValueTransformKey;
+  value: TransformPercent;
+}
+
+/** One ordered EG_ColorTransform child; the list preserves repeated keys. */
+export type ColorTransformItem = ColorBooleanTransformItem | ColorValueTransformItem;
+
 export interface ColorTransformOptions {
   /** Tint: moves color toward white (0-100, where 100 = full white) */
   tint?: TransformPercent;
@@ -82,9 +103,14 @@ export interface ColorTransformOptions {
   gamma?: boolean;
   /** Inverse gamma correction (no value) */
   invGamma?: boolean;
+  /**
+   * Ordered transform children; `parse` always fills it, and it takes
+   * precedence over the sugar fields above when both are present.
+   */
+  sequence?: readonly ColorTransformItem[];
 }
 
-type TransformKey = keyof ColorTransformOptions & string;
+type TransformKey = keyof Omit<ColorTransformOptions, "sequence"> & string;
 
 /**
  * Transform keys classified by XSD unit — the single source of truth shared by
@@ -153,6 +179,17 @@ function emitTransformValue(key: TransformKey, value: number | Percentage): numb
  */
 export const createColorTransforms = (options: ColorTransformOptions): readonly string[] => {
   const t: string[] = [];
+
+  if (options.sequence) {
+    for (const item of options.sequence) {
+      if ("value" in item) {
+        t.push(`<a:${item.type} val="${emitTransformValue(item.type, item.value)}"/>`);
+      } else {
+        t.push(`<a:${item.type}/>`);
+      }
+    }
+    return t;
+  }
 
   for (const [name, value] of Object.entries(options)) {
     const key = name as TransformKey;

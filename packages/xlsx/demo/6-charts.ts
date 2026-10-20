@@ -150,11 +150,7 @@ const buffer = await generateWorkbook({
               name: "Sales",
               values: [120, 145, 160, 135, 180, 210],
               trendlines: [{ type: "linear", dispRSqr: true, dispEq: true }],
-              errorBars: {
-                direction: "y",
-                barType: "both",
-                valueType: "standardError",
-              },
+              errorBars: [{ direction: "y", barType: "both", valueType: "standardError" }],
               dataLabels: {
                 showVal: true,
                 position: "top",
@@ -202,12 +198,7 @@ const buffer = await generateWorkbook({
               name: "Sales",
               values: [120, 145, 160, 135, 180, 210],
               trendlines: [{ type: "linear", forward: 2 }],
-              errorBars: {
-                direction: "y",
-                barType: "both",
-                valueType: "fixedValue",
-                value: 10,
-              },
+              errorBars: [{ direction: "y", barType: "both", valueType: "fixedValue", value: 10 }],
             },
           ],
           col: 5,

@@ -33,6 +33,15 @@ describe("presentationPropertiesDesc round-trip", () => {
     expect(result.show?.loop).toBe(true);
   });
 
+  it("round-trips show with loop disabled", () => {
+    const xml = presentationPropertiesDesc.stringify(
+      { show: { loop: false } } as PresentationPropertiesOptions,
+      writeCtx,
+    )!;
+    expect(xml).toContain('loop="0"');
+    expect(roundTrip({ show: { loop: false } }).show?.loop).toBe(false);
+  });
+
   it("round-trips show with type kiosk", () => {
     const opts: PresentationPropertiesOptions = {
       show: { type: "kiosk" },
@@ -47,6 +56,14 @@ describe("presentationPropertiesDesc round-trip", () => {
     };
     const result = roundTrip(opts);
     expect(result.show?.useTimings).toBe(true);
+  });
+
+  it("round-trips show with useTimings false", () => {
+    const opts: PresentationPropertiesOptions = {
+      show: { useTimings: false },
+    };
+    const result = roundTrip(opts);
+    expect(result.show?.useTimings).toBe(false);
   });
 
   it("round-trips show with showNarration false", () => {
@@ -80,5 +97,35 @@ describe("presentationPropertiesDesc round-trip", () => {
   it("preserves an empty print properties element", () => {
     const result = roundTrip({ print: {} });
     expect(result.print).toEqual({});
+  });
+
+  it("round-trips every html publishing slide scope", () => {
+    expect(
+      roundTrip({
+        htmlPublish: {
+          rId: "rId1",
+          slideScope: { kind: "all" },
+        },
+      }).htmlPublish,
+    ).toEqual({ rId: "rId1", slideScope: { kind: "all" } });
+    expect(
+      roundTrip({
+        htmlPublish: {
+          rId: "rId2",
+          slideScope: { kind: "range", start: 2, end: 5 },
+        },
+      }).htmlPublish,
+    ).toEqual({
+      rId: "rId2",
+      slideScope: { kind: "range", start: 2, end: 5 },
+    });
+    expect(
+      roundTrip({
+        htmlPublish: {
+          rId: "rId3",
+          slideScope: { kind: "customShow", id: 7 },
+        },
+      }).htmlPublish,
+    ).toEqual({ rId: "rId3", slideScope: { kind: "customShow", id: 7 } });
   });
 });

@@ -7,7 +7,7 @@
  * @module
  */
 
-import { attr, escapeXml, textOf } from "@office-open/xml";
+import { attr, attrNum, escapeXml, textOf } from "@office-open/xml";
 
 import type { CustomDescriptor } from "../descriptor";
 import {
@@ -27,6 +27,12 @@ import {
 export interface CustomPropertyOptions {
   /** The property name */
   name: string;
+  /** Source property format identity (`@fmtid`); round-trip only. */
+  fmtid?: string;
+  /** Source property id (`@pid`); round-trip only. */
+  pid?: number;
+  /** Linked-content target (`@linkTarget`); round-trip only. */
+  linkTarget?: string;
   /** The property value (as string) */
   value: VariantValue;
   /**
@@ -54,8 +60,9 @@ export const customPropertiesDesc: CustomDescriptor<CustomPropertiesInput> = {
     ];
     let pid = 2;
     for (const prop of opts.properties) {
+      const sourcePid = prop.pid ?? pid;
       p.push(
-        `<property fmtid="{D5CDD505-2E9C-101B-9397-08002B2CF9AE}" pid="${pid}" name="${escapeXml(prop.name)}">` +
+        `<property fmtid="${escapeXml(prop.fmtid ?? "{D5CDD505-2E9C-101B-9397-08002B2CF9AE}")}" pid="${sourcePid}" name="${escapeXml(prop.name)}"${prop.linkTarget === undefined ? "" : ` linkTarget="${escapeXml(prop.linkTarget)}"`}>` +
           stringifyVariantValue(prop.value, prop.valueType, prop.valueLexeme) +
           `</property>`,
       );
@@ -71,6 +78,8 @@ export const customPropertiesDesc: CustomDescriptor<CustomPropertiesInput> = {
       if (child.name !== "property") continue;
       const name = attr(child, "name");
       if (!name) continue;
+      const fmtid = attr(child, "fmtid");
+      const pid = attrNum(child, "pid");
 
       // The value element is a single vt:* scalar (lpwstr, i4, bool, …)
       const valueEl = child.elements?.find((e) => e.name?.startsWith("vt:"));
@@ -78,6 +87,10 @@ export const customPropertiesDesc: CustomDescriptor<CustomPropertiesInput> = {
         const value = parseVariantValue(valueEl);
         if (value !== undefined) {
           const prop: CustomPropertyOptions = { name, value };
+          if (fmtid !== undefined) prop.fmtid = fmtid;
+          if (pid !== undefined) prop.pid = pid;
+          const linkTarget = attr(child, "linkTarget");
+          if (linkTarget !== undefined) prop.linkTarget = linkTarget;
           if (valueEl.name && valueEl.name !== defaultVariantTag(value))
             prop.valueType = valueEl.name;
           prop.valueLexeme = textOf(valueEl);

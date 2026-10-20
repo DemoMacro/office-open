@@ -1,5 +1,7 @@
 import type {
   BaseTableOptions,
+  EffectListOptions,
+  FillOptions,
   GraphicFrameLockingOptions,
   NonVisualDrawingPropertiesOptions,
   TableStyleOptions,
@@ -32,6 +34,8 @@ export interface TableOptions
   width?: number | UniversalMeasure;
   height?: number | UniversalMeasure;
   tableStyleId?: Guid;
+  /** `@rtl` — table cell order is right-to-left. */
+  rightToLeft?: boolean;
   /** Inline table style (a:tableStyle in a:tblPr) — alternative to tableStyleId. */
   tableStyle?: TableStyleOptions;
   /**
@@ -45,4 +49,8 @@ export interface TableOptions
     left?: CellBorderOptions;
     right?: CellBorderOptions;
   };
+  /** Table-level fill (a:tblPr/a:solidFill etc.) — round-trip. */
+  fill?: FillOptions | null;
+  /** Table-level effect list (a:tblPr/a:effectLst) — round-trip. */
+  effects?: EffectListOptions;
 }

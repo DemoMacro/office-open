@@ -1,4 +1,5 @@
 import {
+  attributeNumber,
   attributeString,
   childNamed,
   childrenNamed,
@@ -24,6 +25,9 @@ export interface DimensionStyle {
   width?: number;
   height?: number;
   hidden?: boolean;
+  showFormulas?: boolean;
+  showRowHeaders?: boolean;
+  showColumnHeaders?: boolean;
 }
 
 /** Registers a table-cell style (numFmt data style + font/fill); returns its name. */
@@ -104,8 +108,16 @@ export function cellStyleChildren(style: StyleOptions): string[] {
   };
   const paragraphAttributes = { "fo:text-align": odfHorizontal(alignment?.horizontal) };
   const children: string[] = [];
+  const gnumericFill = gnumericFillAttributes(fill);
   if (Object.values(cellAttributes).some((value) => value !== undefined))
-    children.push(xmlElement("style:table-cell-properties", cellAttributes));
+    children.push(
+      xmlElement("style:table-cell-properties", {
+        ...gnumericFill,
+        ...cellAttributes,
+        "fo:background-color":
+          gnumericFill["fo:background-color"] ?? cellAttributes["fo:background-color"],
+      }),
+    );
   if (Object.values(paragraphAttributes).some((value) => value !== undefined))
     children.push(xmlElement("style:paragraph-properties", paragraphAttributes));
   if (Object.values(textAttributes).some((value) => value !== undefined))
@@ -200,6 +212,63 @@ export function solidFillColor(fill: CellFillOptions | undefined): string | unde
   return fill?.type === undefined || fill.type === "solid" ? fill?.foregroundColor?.rgb : undefined;
 }
 
+export function parseGnumericFill(properties: Element): CellFillOptions | undefined {
+  const background = attributeString(properties, "gnm:background-colour");
+  const foreground = attributeString(properties, "gnm:pattern-colour");
+  const pattern = attributeNumber(properties, "gnm:pattern");
+  if (background === undefined && foreground === undefined && pattern === undefined)
+    return undefined;
+  if (pattern === undefined || !Number.isInteger(pattern) || pattern < 0 || pattern > 24) {
+    throw new OdsParseError(
+      "Invalid Gnumeric cell fill pattern",
+      "content.xml",
+      "/office:document-content/office:automatic-styles/style:style/style:table-cell-properties",
+      "gnm:pattern",
+      "invalid-fill-pattern",
+    );
+  }
+  const kind = GNUMERIC_PATTERN_FILL[pattern]!;
+  const foregroundColor = gnumericColor(foreground, "gnm:pattern-colour") ?? { rgb: "FF000000" };
+  const backgroundColor = gnumericColor(background, "gnm:background-colour");
+  return {
+    type: kind.patternType === "solid" ? "solid" : "pattern",
+    patternType: kind.patternType,
+    legacyPatternType: kind.legacyPatternType,
+    foregroundColor,
+    ...(backgroundColor ? { backgroundColor } : {}),
+  };
+}
+
+function gnumericColor(value: string | undefined, name: string): { rgb: string } | undefined {
+  if (value === undefined) return undefined;
+  if (!/^#[0-9a-f]{6}$/iu.test(value)) {
+    throw new OdsParseError(
+      "Invalid Gnumeric cell fill color",
+      "content.xml",
+      "/office:document-content/office:automatic-styles/style:style/style:table-cell-properties",
+      name,
+      "invalid-fill-color",
+    );
+  }
+  return { rgb: `FF${value.slice(1).toUpperCase()}` };
+}
+
+export function gnumericFillAttributes(fill: CellFillOptions | undefined): XmlAttributes {
+  const index = GNUMERIC_PATTERN_INDEX.get(
+    fill?.legacyPatternType ?? fill?.patternType ?? (fill?.type === "solid" ? "solid" : undefined),
+  );
+  if (index === undefined) return {};
+  const foreground = fill?.foregroundColor;
+  const background = fill?.backgroundColor;
+  return {
+    "gnm:pattern": index,
+    "gnm:pattern-colour": foreground?.rgb ? odfHex(foreground.rgb) : "#000000",
+    "gnm:background-colour": background?.rgb ? odfHex(background.rgb) : undefined,
+    "fo:background-color":
+      index === 0 ? "transparent" : background?.rgb ? odfHex(background.rgb) : undefined,
+  };
+}
+
 /** xlsx hex (RRGGBB or AARRGGBB) → ODF #RRGGBB. */
 export function odfHex(hex: string | undefined): string | undefined {
   return hex ? `#${hex.slice(-6)}` : undefined;
@@ -228,6 +297,21 @@ export function addDimensionStyle(
   return name;
 }
 
+export function addTableStyle(style: DimensionStyle, styles: string[]): string {
+  const name = `ta${styles.length + 1}`;
+  styles.push(
+    xmlElement("style:style", { "style:name": name, "style:family": "table" }, [
+      xmlElement("style:table-properties", {
+        "table:display": style.hidden ? false : undefined,
+        "gnm:display-formulas": style.showFormulas,
+        "gnm:display-col-header": style.showColumnHeaders,
+        "gnm:display-row-header": style.showRowHeaders,
+      }),
+    ]),
+  );
+  return name;
+}
+
 export function parseDimensionStyles(container: Element | undefined): Map<string, DimensionStyle> {
   const result = new Map<string, DimensionStyle>();
   for (const style of childrenNamed(container, "style:style")) {
@@ -236,13 +320,37 @@ export function parseDimensionStyles(container: Element | undefined): Map<string
     const row = childNamed(style, "style:table-row-properties");
     const width = attributeString(column, "style:column-width");
     const height = attributeString(row, "style:row-height");
+    const table = childNamed(style, "style:table-properties");
+    const showColumnHeaders = attributeString(table, "gnm:display-col-header");
+    const showRowHeaders = attributeString(table, "gnm:display-row-header");
+    if (
+      showColumnHeaders !== undefined &&
+      showRowHeaders !== undefined &&
+      showColumnHeaders !== showRowHeaders
+    ) {
+      const reason = "Gnumeric header visibility differs";
+      throw new OdsParseError(
+        `content.xml: /office:document-content/office:automatic-styles/style:style[@style:name="${name}"]: ${reason}`,
+        "content.xml",
+        `/office:document-content/office:automatic-styles/style:style[@style:name="${name}"]`,
+        "gnm:display-col-header",
+        "unsupported-header-visibility",
+      );
+    }
     result.set(name, {
       width: width?.endsWith("px") ? Number(width.slice(0, -2)) : undefined,
       height: height?.endsWith("pt") ? Number(height.slice(0, -2)) : undefined,
       hidden:
         attributeString(column, "style:column-hidden") === "true" ||
         attributeString(row, "style:row-hidden") === "true" ||
+        attributeString(table, "table:display") === "false" ||
         undefined,
+      showFormulas:
+        attributeString(table, "gnm:display-formulas") === undefined
+          ? undefined
+          : attributeString(table, "gnm:display-formulas") === "true",
+      showColumnHeaders: showColumnHeaders === undefined ? undefined : showColumnHeaders === "true",
+      showRowHeaders: showRowHeaders === undefined ? undefined : showRowHeaders === "true",
     });
   }
   return result;
@@ -267,7 +375,49 @@ const ODS_STYLE_PROPERTIES: Record<string, string[]> = {
   ],
   section: ["style:section-properties"],
   "drawing-page": ["style:drawing-page-properties"],
+  ruby: ["style:ruby-properties"],
 };
+
+const GNUMERIC_PATTERN_FILL: Record<
+  number,
+  {
+    patternType?: CellFillOptions["patternType"];
+    legacyPatternType?: string;
+  }
+> = {
+  0: { patternType: "none" },
+  1: { patternType: "solid" },
+  2: { patternType: "mediumGray" },
+  3: { patternType: "darkGray" },
+  4: { patternType: "lightGray" },
+  5: { patternType: "gray125" },
+  6: { patternType: "gray0625" },
+  7: { patternType: "darkHorizontal" },
+  8: { patternType: "darkVertical" },
+  9: { patternType: "darkDown" },
+  10: { patternType: "darkUp" },
+  11: { patternType: "darkTrellis" },
+  12: { legacyPatternType: "gnumericThickDiagonalCross" },
+  13: { patternType: "lightHorizontal" },
+  14: { patternType: "lightVertical" },
+  15: { patternType: "lightUp" },
+  16: { patternType: "lightDown" },
+  17: { patternType: "lightGrid" },
+  18: { patternType: "lightTrellis" },
+  19: { legacyPatternType: "gnumericSmallCircles" },
+  20: { legacyPatternType: "gnumericSemiCircles" },
+  21: { legacyPatternType: "gnumericThatch" },
+  22: { legacyPatternType: "gnumericLargeCircles" },
+  23: { legacyPatternType: "gnumericBricks" },
+  24: { legacyPatternType: "gnumericForegroundSolid" },
+};
+
+const GNUMERIC_PATTERN_INDEX = new Map(
+  Object.entries(GNUMERIC_PATTERN_FILL).map(([index, kind]) => [
+    kind.legacyPatternType ?? kind.patternType,
+    Number(index),
+  ]),
+);
 
 export function parseStyleOverlays(container: Element | undefined): OdfStyleOverlayOptions[] {
   const result: OdfStyleOverlayOptions[] = [];
@@ -286,7 +436,8 @@ export function parseStyleOverlays(container: Element | undefined): OdfStyleOver
       );
     }
     const propertyElements = (style.elements ?? []).filter(
-      (child) => child.type === "element" && child.name !== "style:tab-stops",
+      (child) =>
+        child.type === "element" && child.name !== "style:tab-stops" && child.name !== "style:map",
     );
     const properties: OdfStyleOverlayOptions["properties"] = [];
     for (const property of propertyElements) {
@@ -303,8 +454,11 @@ export function parseStyleOverlays(container: Element | undefined): OdfStyleOver
       }
       const attributes: Record<string, string | number | boolean> = {};
       for (const [attribute, value] of Object.entries(property.attributes ?? {})) {
+        if (isMappedDimensionAttribute(property.name ?? "", attribute)) continue;
         if (
-          !/^(fo|style|text|draw|table|svg|dr3d|presentation|smil|officeooo|loext):/.test(attribute)
+          !/^(fo|style|text|draw|table|svg|dr3d|presentation|smil|officeooo|loext|css3t|tableooo):/.test(
+            attribute,
+          )
         ) {
           const reason = "attribute has no ODF RNG mapping";
           throw new OdsParseError(
@@ -315,7 +469,6 @@ export function parseStyleOverlays(container: Element | undefined): OdfStyleOver
             reason,
           );
         }
-        if (isMappedDimensionAttribute(property.name ?? "", attribute)) continue;
         attributes[attribute] = overlayValue(attribute, String(value));
       }
       if (Object.keys(attributes).length > 0)
@@ -336,7 +489,15 @@ function isMappedDimensionAttribute(element: string, attribute: string): boolean
         "style:use-optimal-row-height",
         "style:column-hidden",
         "style:row-hidden",
-      ].includes(attribute))
+      ].includes(attribute)) ||
+    (element === "style:table-properties" &&
+      [
+        "table:display",
+        "gnm:display-formulas",
+        "gnm:display-col-header",
+        "gnm:display-row-header",
+      ].includes(attribute)) ||
+    (element === "style:table-cell-properties" && attribute.startsWith("gnm:"))
   );
 }
 

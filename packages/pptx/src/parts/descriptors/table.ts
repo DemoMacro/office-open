@@ -14,10 +14,12 @@ import {
 } from "@office-open/core";
 import type { UniversalMeasure } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
-import { parse, stringify } from "@office-open/core/descriptor";
+import { NOOP_WRITE_CONTEXT, parse, stringify } from "@office-open/core/descriptor";
 import type { ReadContext } from "@office-open/core/descriptor";
+import { effectListDesc } from "@office-open/core/drawing";
 import {
   cell3DDesc,
+  bodyPropertiesDesc,
   createBodyProperties,
   createTableStyle,
   fillDesc,
@@ -190,12 +192,14 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
       const firstCol = attrBool(tblPr, "firstCol");
       const lastCol = attrBool(tblPr, "lastCol");
       const bandCol = attrBool(tblPr, "bandCol");
+      const rightToLeft = attrBool(tblPr, "rtl");
       if (firstRow !== undefined) result.firstRow = firstRow;
       if (lastRow !== undefined) result.lastRow = lastRow;
       if (bandRow !== undefined) result.bandRow = bandRow;
       if (firstCol !== undefined) result.firstCol = firstCol;
       if (lastCol !== undefined) result.lastCol = lastCol;
       if (bandCol !== undefined) result.bandCol = bandCol;
+      if (rightToLeft !== undefined) result.rightToLeft = rightToLeft;
 
       const tableStyleIdEl = findChild(tblPr, "a:tableStyleId");
       if (tableStyleIdEl) {
@@ -207,6 +211,16 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
           const style = parseTableStyle(tableStyleEl);
           if (style) result.tableStyle = style;
         }
+      }
+
+      // Table-level fill (a:tblPr/a:solidFill etc.) and effects
+      const tblFillEl = findFillChild(tblPr);
+      if (tblFillEl) {
+        result.fill = fillDesc.parse(tblFillEl, ctx);
+      }
+      const tblEffectLst = findChild(tblPr, "a:effectLst");
+      if (tblEffectLst) {
+        result.effects = effectListDesc.parse(tblEffectLst, ctx);
       }
 
       // Table-level borders
@@ -282,13 +296,20 @@ function stringifyTblPr(opts: TableOptions): string {
   if (opts.firstCol !== undefined) attrs.push(`firstCol="${opts.firstCol ? 1 : 0}"`);
   if (opts.lastCol !== undefined) attrs.push(`lastCol="${opts.lastCol ? 1 : 0}"`);
   if (opts.bandCol !== undefined) attrs.push(`bandCol="${opts.bandCol ? 1 : 0}"`);
+  if (opts.rightToLeft !== undefined) attrs.push(`rtl="${opts.rightToLeft ? 1 : 0}"`);
   const styleId = opts.tableStyleId
     ? `<a:tableStyleId>${escapeXml(opts.tableStyleId)}</a:tableStyleId>`
     : "";
   // Inline CT_TableStyle — alternative to referencing a tableStyles part entry.
   const style = opts.tableStyle ? createTableStyle(opts.tableStyle, "a:tableStyle") : "";
-  if (attrs.length === 0 && !styleId && !style) return "<a:tblPr/>";
-  return `<a:tblPr ${attrs.join(" ")}>${styleId}${style}</a:tblPr>`;
+  // Table-level fill (a:tblPr fill variant) and effect list.
+  const fillXml = opts.fill ? (stringify(fillDesc, opts.fill, NOOP_WRITE_CONTEXT) ?? "") : "";
+  const effectsXml = opts.effects
+    ? (stringify(effectListDesc, opts.effects, NOOP_WRITE_CONTEXT) ?? "")
+    : "";
+  const inner = `${fillXml}${effectsXml}${styleId}${style}`;
+  if (attrs.length === 0 && !inner) return "<a:tblPr/>";
+  return `<a:tblPr ${attrs.join(" ")}>${inner}</a:tblPr>`;
 }
 
 function stringifyRow(row: TableRowOptions, ctx: PptxWriteContext): string {
@@ -314,8 +335,7 @@ function stringifyCell(cell: TableCellOptions, ctx: PptxWriteContext): string {
   if (cell.verticalMerge) tcAttrs.push(`vMerge="${cell.verticalMerge === "restart" ? 1 : 0}"`);
   const tcAttrStr = tcAttrs.length > 0 ? ` ${tcAttrs.join(" ")}` : "";
 
-  // a:txBody
-  parts.push(stringifyTxBody(cell, ctx));
+  if (cell.textBodyPresent !== false) parts.push(stringifyTxBody(cell, ctx));
 
   // a:tcPr
   parts.push(stringifyTcPr(cell, ctx));
@@ -326,12 +346,13 @@ function stringifyCell(cell: TableCellOptions, ctx: PptxWriteContext): string {
 function stringifyTxBody(cell: TableCellOptions, ctx: PptxWriteContext): string {
   const txParts: string[] = [];
 
-  txParts.push(createBodyProperties({}));
   txParts.push(
-    cell.listStyle
-      ? `<a:lstStyle>${textListStyleDesc.stringify(cell.listStyle, ctx) ?? ""}</a:lstStyle>`
-      : "<a:lstStyle/>",
+    bodyPropertiesDesc.stringify(cell.bodyProperties ?? {}, ctx) ?? createBodyProperties({}),
   );
+  if (cell.listStyle) {
+    const styleXml = textListStyleDesc.stringify(cell.listStyle, ctx);
+    txParts.push(styleXml ? `<a:lstStyle>${styleXml}</a:lstStyle>` : "<a:lstStyle/>");
+  }
 
   // Paragraphs — a:txBody requires at least one a:p, so an empty children
   // array (or paragraphs that stringify to nothing) falls back to a bare one
@@ -464,17 +485,13 @@ function parseTableCell(tc: Element, readCtx?: ReadContext): TableCellOptions {
 
   // a:txBody → paragraph children
   const txBody = findChild(tc, "a:txBody");
-  if (txBody) {
+  if (!txBody) {
+    result.textBodyPresent = false;
+  } else {
     const paragraphs: ParagraphDescriptorOptions[] = [];
     const listStyleEl = findChild(txBody, "a:lstStyle");
     if (listStyleEl) {
-      const listStyle = textListStyleDesc.parse(listStyleEl, ctx);
-      if (
-        listStyle.defaultParagraph ||
-        listStyle.ext !== undefined ||
-        (listStyle.levels?.length ?? 0) > 0
-      )
-        result.listStyle = listStyle;
+      result.listStyle = textListStyleDesc.parse(listStyleEl, ctx);
     }
     for (const pEl of txBody.elements ?? []) {
       if (pEl.name !== "a:p") continue;
@@ -485,7 +502,7 @@ function parseTableCell(tc: Element, readCtx?: ReadContext): TableCellOptions {
     if (paragraphs.length === 1) {
       const [p] = paragraphs;
       if (p) {
-        if (p.text && !p.children) {
+        if (p.text && !p.children && p.endParagraphProperties === undefined) {
           result.text = p.text;
         } else {
           result.children = [p];
@@ -498,16 +515,8 @@ function parseTableCell(tc: Element, readCtx?: ReadContext): TableCellOptions {
     // Extract margins from a:bodyPr
     const bodyPr = findChild(txBody, "a:bodyPr");
     if (bodyPr) {
-      const margins: CellMargins = {};
-      const tIns = attrMeasure(bodyPr, "tIns");
-      if (tIns !== undefined) margins.top = tIns as number | UniversalMeasure;
-      const bIns = attrMeasure(bodyPr, "bIns");
-      if (bIns !== undefined) margins.bottom = bIns as number | UniversalMeasure;
-      const lIns = attrMeasure(bodyPr, "lIns");
-      if (lIns !== undefined) margins.left = lIns as number | UniversalMeasure;
-      const rIns = attrMeasure(bodyPr, "rIns");
-      if (rIns !== undefined) margins.right = rIns as number | UniversalMeasure;
-      if (Object.keys(margins).length > 0) result.margins = margins;
+      result.bodyProperties = bodyPropertiesDesc.parse(bodyPr, ctx);
+      if (result.bodyProperties.margins) result.margins = result.bodyProperties.margins;
     }
   }
 

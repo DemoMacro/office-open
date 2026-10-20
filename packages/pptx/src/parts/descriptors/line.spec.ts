@@ -105,6 +105,18 @@ describe("lineShapeDesc round-trip", () => {
     expect(result.blackWhiteMode).toBe("auto");
     expect(result.textBox).toBe(true);
   });
+
+  it("preserves a line without an optional text body", () => {
+    const xml = lineShapeDesc.stringify(
+      { id: 8, x1: 0, y1: 0, x2: 100, y2: 0, textBodyPresent: false },
+      writeCtx,
+    )!;
+    expect(xml).not.toContain("<p:txBody>");
+
+    const element = parseXml(xml)?.elements?.[0];
+    if (!element) throw new Error("parsed document has no root element");
+    expect(lineShapeDesc.parse(element, readCtx)).toMatchObject({ textBodyPresent: false });
+  });
 });
 
 describe("connectorShapeDesc round-trip", () => {

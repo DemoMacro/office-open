@@ -2,7 +2,7 @@ import {
   CompoundFileReader,
   parseDocumentSummaryInformation,
   parseSummaryInformation,
-} from "@office-open/core";
+} from "@office-open/core/cfb";
 import type { WorkbookOptions } from "@office-open/xlsx";
 
 export function readSummaryInformation(data: Uint8Array): WorkbookOptions {

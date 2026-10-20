@@ -11,6 +11,8 @@ export default defineConfig({
       "src/drawing/index.ts",
       "src/vector/index.ts",
       "src/descriptor/index.ts",
+      "src/opc/index.ts",
+      "src/cfb/index.ts",
       "src/patch/index.ts",
       "src/util/index.ts",
     ],

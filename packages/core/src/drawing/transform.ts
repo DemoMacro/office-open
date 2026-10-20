@@ -50,10 +50,14 @@ export interface GroupTransform2DOptions extends Transform2DOptions {
   childOffsetX?: number | UniversalMeasure;
   /** Child coordinate system offset Y (a:chOff @y). */
   childOffsetY?: number | UniversalMeasure;
+  /** Source carried `a:chOff`; preserves an element whose attributes are omitted. */
+  childOffsetPresent?: boolean;
   /** Child coordinate system extent width (a:chExt @cx). */
   childExtentWidth?: number | UniversalMeasure;
   /** Child coordinate system extent height (a:chExt @cy). */
   childExtentHeight?: number | UniversalMeasure;
+  /** Source carried `a:chExt`; preserves an element whose attributes are omitted. */
+  childExtentPresent?: boolean;
 }
 
 function buildXfrmAttrs(

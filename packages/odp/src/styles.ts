@@ -108,7 +108,12 @@ const ODP_STYLE_PROPERTIES: Record<string, string[]> = {
     "style:paragraph-properties",
     "style:text-properties",
   ],
-  presentation: ["style:graphic-properties", "style:paragraph-properties", "style:text-properties"],
+  presentation: [
+    "style:graphic-properties",
+    "loext:graphic-properties",
+    "style:paragraph-properties",
+    "style:text-properties",
+  ],
   table: ["style:table-properties"],
   "table-column": ["style:table-column-properties"],
   "table-row": ["style:table-row-properties"],
@@ -119,6 +124,7 @@ const ODP_STYLE_PROPERTIES: Record<string, string[]> = {
   ],
   section: ["style:section-properties"],
   "drawing-page": ["style:drawing-page-properties"],
+  ruby: ["style:ruby-properties"],
 };
 
 export function parseStyleOverlays(container: Element | undefined): OdfStyleOverlayOptions[] {

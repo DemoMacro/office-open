@@ -11,6 +11,7 @@ import type { LongHexNumber } from "@office-open/core";
 import type { CustomXmlCellOptions } from "@parts/custom-xml";
 import type { BookmarkStartOptions, MarkupRangeOptions } from "@parts/paragraph/links/bookmark";
 import type { RunPropertiesOptions } from "@parts/paragraph/run/properties";
+import type { PermStartOptions } from "@parts/perm-start";
 import type { SdtPropertiesOptions } from "@parts/table-of-contents";
 
 import type { SdtCellOptions, TableCellOptions } from "../table-cell";
@@ -26,7 +27,9 @@ export type TableRowMarkerChild =
   | { commentRangeStart: MarkupRangeOptions }
   | { commentRangeEnd: MarkupRangeOptions }
   | { bookmarkStart: BookmarkStartOptions }
-  | { bookmarkEnd: MarkupRangeOptions };
+  | { bookmarkEnd: MarkupRangeOptions }
+  | { permStart: PermStartOptions }
+  | { permEnd: number | string };
 
 /**
  * Options for creating a TableRow element.
@@ -36,8 +39,8 @@ export type TableRowMarkerChild =
 /** Options for a row-level structured document tag (CT_SdtRow). */
 export interface SdtRowOptions {
   properties: SdtPropertiesOptions;
-  /** Rows wrapped by the SDT (sdtContent holds <w:tr>). */
-  rows?: TableRowOptions[];
+  /** Row-level content in source order: rows and nested row SDTs. */
+  content?: (TableRowOptions | { sdt: SdtRowOptions })[];
   /** Run properties for the SDT end mark (w:sdtEndPr). */
   endProperties?: RunPropertiesOptions;
 }
@@ -51,8 +54,6 @@ export interface TableRowOptions
       | TableRowMarkerChild
     >,
     TableRowPropertiesOptions {
-  /** Marks a source `<w:trPr/>` so an empty element round-trips. */
-  rowProperties?: boolean;
   /** Table property exceptions for this row (override table-level properties) */
   propertyExceptions?: TablePropertyExOptions;
   /** Revision save ID for row properties (w:rsidRPr, hex string). */

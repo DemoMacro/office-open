@@ -18,7 +18,7 @@ import {
 import type { Element as XmlElement } from "@office-open/xml";
 
 import type { CustomDescriptor, ReadContext, WriteContext } from "../../descriptor";
-import { emitPercent, parsePercent } from "../../util/converters";
+import { emitPercent, parsePercentAttr } from "../../util/converters";
 import { xsdFontAlignment, xsdTextAlign, xsdTextTabAlignment } from "../../util/mappings";
 import { parseOnOff, stripColorHashPrefix } from "../../util/values";
 import { emitColorChoice, isPlainRgbColor, parseColorChoice } from "../color/color-descriptors";
@@ -189,7 +189,7 @@ function stringifyBullet(
   } else if (options.sizePoints !== undefined) {
     parts.push(`<a:buSzPts val="${Math.round(options.sizePoints * 100)}"/>`);
   } else if (options.size !== undefined) {
-    parts.push(`<a:buSzPct val="${Math.round(options.size)}%"/>`);
+    parts.push(`<a:buSzPct val="${options.size}%"/>`);
   }
 
   // Font: buFontTx | buFont. No fresh default — Office files omit buFont when
@@ -271,7 +271,7 @@ export function readParagraphProperties(
   if (lnSpc) {
     const spcPct = findChild(lnSpc, "a:spcPct");
     if (spcPct?.attributes?.["val"] !== undefined) {
-      result.lineSpacingPercent = parsePercent(Number(spcPct.attributes["val"]));
+      result.lineSpacingPercent = parsePercentAttr(spcPct.attributes["val"]);
     }
     const spcPts = findChild(lnSpc, "a:spcPts");
     if (spcPts?.attributes?.["val"] !== undefined) {
@@ -284,7 +284,7 @@ export function readParagraphProperties(
   if (spcAft) {
     const pct = findChild(spcAft, "a:spcPct");
     if (pct?.attributes?.["val"] !== undefined) {
-      result.spaceAfterPercent = parsePercent(Number(pct.attributes["val"]));
+      result.spaceAfterPercent = parsePercentAttr(pct.attributes["val"]);
     } else {
       const pts = findChild(spcAft, "a:spcPts");
       if (pts?.attributes?.["val"] !== undefined)
@@ -296,7 +296,7 @@ export function readParagraphProperties(
   if (spcBef) {
     const pct = findChild(spcBef, "a:spcPct");
     if (pct?.attributes?.["val"] !== undefined) {
-      result.spaceBeforePercent = parsePercent(Number(pct.attributes["val"]));
+      result.spaceBeforePercent = parsePercentAttr(pct.attributes["val"]);
     } else {
       const pts = findChild(spcBef, "a:spcPts");
       if (pts?.attributes?.["val"] !== undefined)
@@ -445,7 +445,7 @@ export const paragraphDesc: CustomDescriptor<ParagraphDescriptorOptions> = {
     // Paragraph properties
     if (opts.properties) {
       const pPrXml = stringifyParagraphProperties(opts.properties, ctx);
-      if (pPrXml) parts.push(pPrXml);
+      parts.push(pPrXml || "<a:pPr/>");
     }
 
     // Simple text shorthand
@@ -512,6 +512,14 @@ export const paragraphDesc: CustomDescriptor<ParagraphDescriptorOptions> = {
       } else if (child.name === "a14:m") {
         children.push({
           content: (child.elements ?? []).map((element) => stringifyElement(element)).join(""),
+        });
+      } else if (
+        child.name === "mc:AlternateContent" &&
+        findChild(child, "mc:Choice")?.elements?.some((choice) => choice.name === "a14:m")
+      ) {
+        const math = findChild(findChild(child, "mc:Choice")!, "a14:m")!;
+        children.push({
+          content: (math.elements ?? []).map((element) => stringifyElement(element)).join(""),
         });
       }
     }
@@ -606,6 +614,7 @@ function stringifyTextField(opts: TextFieldOptions, ctx: WriteContext): string {
     opts.id ??
     (ctx.reproducible ? `{${ctx.reproducible.nextUuid().toUpperCase()}}` : fallbackFieldGuid());
   const rPr = opts.properties ? (runPropertiesDesc.stringify(opts.properties, ctx) ?? "") : "";
+  const fieldRunProperties = rPr || (opts.emptyProperties ? "<a:rPr/>" : "");
   // CT_TextField sequence: rPr?, pPr?, t? — a bare <a:pPr/> placeholder (empty
   // options object) still round-trips, so fall back to the empty element.
   const pPrInner = opts.paragraphProperties
@@ -613,7 +622,7 @@ function stringifyTextField(opts: TextFieldOptions, ctx: WriteContext): string {
     : "";
   const pPr = pPrInner || (opts.paragraphProperties ? "<a:pPr/>" : "");
   const t = opts.text !== undefined ? `<a:t>${escapeXml(opts.text)}</a:t>` : "";
-  return `<a:fld id="${id}" type="${opts.type}">${rPr}${pPr}${t}</a:fld>`;
+  return `<a:fld id="${id}" type="${opts.type}">${fieldRunProperties}${pPr}${t}</a:fld>`;
 }
 
 function readTextField(el: XmlElement, ctx: ReadContext): TextFieldOptions {
@@ -621,7 +630,13 @@ function readTextField(el: XmlElement, ctx: ReadContext): TextFieldOptions {
   const id = el.attributes?.["id"];
   if (id !== undefined) result.id = String(id);
   const rPr = findChild(el, "a:rPr");
-  if (rPr) result.properties = runPropertiesDesc.parse(rPr, ctx) as TextCharacterPropertiesOptions;
+  if (rPr) {
+    result.properties = runPropertiesDesc.parse(rPr, ctx) as TextCharacterPropertiesOptions;
+    if (Object.keys(result.properties).length === 0) {
+      delete result.properties;
+      result.emptyProperties = true;
+    }
+  }
   const pPr = findChild(el, "a:pPr");
   if (pPr) result.paragraphProperties = readParagraphProperties(pPr, ctx);
   const t = findChild(el, "a:t");

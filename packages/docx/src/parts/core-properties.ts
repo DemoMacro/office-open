@@ -1,3 +1,10 @@
+import type {
+  DataType,
+  EncryptedContainerOptions,
+  OfficeFormsOptions,
+  SequenceDeclarationOptions,
+  VariableDeclarationOptions,
+} from "@office-open/core";
 /**
  * Core Properties module for WordprocessingML documents.
  *
@@ -8,14 +15,7 @@
  *
  * @module
  */
-import type {
-  ContentTypesInput,
-  DataType,
-  EncryptedContainerOptions,
-  FormContainerOptions,
-  SequenceDeclarationOptions,
-  VariableDeclarationOptions,
-} from "@office-open/core";
+import type { ContentTypesInput, PassthroughRelationship } from "@office-open/core/opc";
 import type { ThemeOptions } from "@office-open/core/theme";
 import type { BibliographyOptions } from "@parts/bibliography";
 import type { CommentExtendedOptions } from "@parts/comments-extended";
@@ -72,12 +72,17 @@ export interface DocumentOptions extends CorePropertiesOptions {
    * documents use `word/document.xml`.
    */
   primaryPartPath?: string;
+  /**
+   * Selected core-properties part path from `_rels/.rels`. Round-trip only;
+   * fresh documents use `docProps/core.xml`.
+   */
+  corePropertiesPath?: string;
   /** Declared sequence names and numbering semantics used by sequence fields. */
   sequenceDeclarations?: SequenceDeclarationOptions[];
   /** Declared variable names and value types used by variable fields. */
   variableDeclarations?: VariableDeclarationOptions[];
-  /** Document-level form containers independent of inline form fields. */
-  forms?: FormContainerOptions[];
+  /** Document-level ODF forms, including root focus and design-mode settings. */
+  forms?: OfficeFormsOptions;
   /**
    * Encrypted source (OLE2/CFB container). Round-trip only: the original
    * bytes are re-emitted unchanged, every other field stays empty (`sections:
@@ -162,13 +167,7 @@ export interface DocumentOptions extends CorePropertiesOptions {
    * document.xml → theme/customXml); re-emitted verbatim with a fresh rId.
    * Round-trip only — do not hand-author.
    */
-  passthroughRelationships?: {
-    source: string;
-    relationshipType: string;
-    target: string;
-    rId: string;
-    targetMode?: "External";
-  }[];
+  passthroughRelationships?: PassthroughRelationship[];
   /** Extended properties (docProps/app.xml) */
   appProperties?: AppPropertiesOptions;
 }
@@ -176,8 +175,8 @@ export interface DocumentOptions extends CorePropertiesOptions {
 // ── Descriptor ──
 
 import type { CorePropertiesOptions } from "@office-open/core";
-import { buildCorePropertiesXmlString, parseCorePropsElement } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
+import { buildCorePropertiesXmlString, parseCorePropsElement } from "@office-open/core/opc";
 
 export const corePropertiesDesc: CustomDescriptor<CorePropertiesOptions> = {
   kind: "custom",

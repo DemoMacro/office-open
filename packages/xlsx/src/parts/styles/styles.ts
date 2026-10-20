@@ -23,6 +23,8 @@ import type {
   CellGradientStopOptions,
   DxfOptions,
   CellFillOptions,
+  ForeignAttributeOptions,
+  ForeignChildOptions,
   FontOptions,
   IndexedXfEntry,
   NumFmtEntry,
@@ -30,6 +32,7 @@ import type {
   StyleExtensionOptions,
   StyleOptions,
   StylesState,
+  XfAlternateContentOptions,
 } from "./types";
 
 // ── Style key helpers for deduplication ──
@@ -117,6 +120,7 @@ interface CellStyleXfEntry {
   fillId?: number;
   borderId?: number;
   numFmtId?: number;
+  xfId?: number;
   alignment?: AlignmentOptions;
   protection?: CellProtectionOptions;
   quotePrefix?: boolean;
@@ -127,6 +131,8 @@ interface CellStyleXfEntry {
   applyBorder?: boolean;
   applyAlignment?: boolean;
   applyProtection?: boolean;
+  foreignAttributes?: ForeignAttributeOptions[];
+  foreignChildren?: ForeignChildOptions[];
 }
 
 interface FontsContainerState {
@@ -177,6 +183,9 @@ export class Styles {
     applyBorder?: boolean;
     applyNumberFormat?: boolean;
     applyAlignment?: boolean;
+    foreignAttributes?: ForeignAttributeOptions[];
+    foreignChildren?: ForeignChildOptions[];
+    alternateContent?: XfAlternateContentOptions;
   }> = [
     { fontId: 0, fillId: 0, borderId: 0, numFmtId: 0 }, // default xf (index 0)
   ];
@@ -325,6 +334,7 @@ export class Styles {
               entry.numFmt !== undefined ? this.registerNumFmt(entry.numFmt) : entry.numFmtId,
           }
         : {}),
+      ...(entry.xfId !== undefined ? { xfId: entry.xfId } : {}),
       alignment: entry.alignment,
       protection: entry.protection,
       quotePrefix: entry.quotePrefix,
@@ -335,7 +345,51 @@ export class Styles {
       applyBorder: entry.applyBorder,
       applyAlignment: entry.applyAlignment,
       applyProtection: entry.applyProtection,
+      foreignAttributes: entry.foreignAttributes,
+      foreignChildren: entry.foreignChildren,
     }));
+  }
+
+  /** Full `<fill>` element for a fills-table entry (gradient or pattern). */
+  private fillXml(f: CellFillOptions): string {
+    if (f.type === "gradient" && f.stops && f.stops.length > 0) {
+      const gfAttrs: Record<string, string | number | boolean | undefined> = {};
+      if (f.gradientType && f.gradientType !== "linear") gfAttrs.type = f.gradientType;
+      if (f.gradientDegree !== undefined) gfAttrs.degree = f.gradientDegree;
+      if (f.gradientLeft !== undefined) gfAttrs.left = f.gradientLeft;
+      if (f.gradientRight !== undefined) gfAttrs.right = f.gradientRight;
+      if (f.gradientTop !== undefined) gfAttrs.top = f.gradientTop;
+      if (f.gradientBottom !== undefined) gfAttrs.bottom = f.gradientBottom;
+      const stopParts = f.stops
+        .map((s) => {
+          const stopAttrs = s.color ? colorAttributes(s.color) : "";
+          return `<stop position="${s.position}"><color${stopAttrs ? ` ${stopAttrs}` : ""}/></stop>`;
+        })
+        .join("");
+      return `<fill><gradientFill${attrs(gfAttrs)}>${stopParts}</gradientFill></fill>`;
+    }
+    const defaultPatternType = f.patternType ?? (f.type === "solid" ? "solid" : undefined);
+    const patternAttrs =
+      f.legacyPatternElement && f.legacyPatternType !== undefined
+        ? ` patternType="${f.legacyPatternType}"`
+        : attrs({ patternType: defaultPatternType });
+    const fgAttrs = f.foregroundColor ? colorAttributes(f.foregroundColor) : "";
+    const bgAttrs = f.backgroundColor ? colorAttributes(f.backgroundColor) : "";
+    const fgColor = fgAttrs ? `<fgColor ${fgAttrs}/>` : "";
+    const bgColor = bgAttrs ? `<bgColor ${bgAttrs}/>` : "";
+    const colorContent = fgColor + bgColor;
+    const tagName = f.legacyPatternElement ? "pattern" : "patternFill";
+    const declaredPattern =
+      f.patternType !== undefined ||
+      f.patternTypeDeclared === false ||
+      colorContent !== "" ||
+      f.type === "solid" ||
+      f.legacyPatternElement === true;
+    return !declaredPattern
+      ? "<fill/>"
+      : colorContent === ""
+        ? `<fill><${tagName}${patternAttrs}/></fill>`
+        : `<fill><${tagName}${patternAttrs}>${colorContent}</${tagName}></fill>`;
   }
 
   private adoptedDefinitionIndex<T>(value: T | undefined, table: T[]): number | undefined {
@@ -491,6 +545,9 @@ export class Styles {
         applyBorder: e.applyBorder,
         applyNumberFormat: e.applyNumberFormat,
         applyAlignment: e.applyAlignment,
+        foreignAttributes: e.foreignAttributes,
+        foreignChildren: e.foreignChildren,
+        alternateContent: e.alternateContent,
       }),
     );
     this.cellXfKeys = new Map();
@@ -516,10 +573,13 @@ export class Styles {
    * Bypasses the intermediate object tree entirely.
    */
   /** Serialize to xl/styles.xml content (without XML declaration). */
-  public serialize(): string {
+  public serialize(rootXmlSpace?: "default" | "preserve"): string {
     const knownFonts = this.fontsContainer?.knownFonts;
+    const rootSpaceAttr = rootXmlSpace ? ` xml:space="${rootXmlSpace}"` : "";
     const p: string[] = [
-      '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">',
+      '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"' +
+        rootSpaceAttr +
+        ">",
     ];
 
     // numFmts
@@ -545,7 +605,7 @@ export class Styles {
             ` x14ac:knownFonts="${knownFonts ? 1 : 0}"`;
       p.push(`<fonts count="${this.fonts.length}"${fontAttrs}>`);
       for (const f of this.fonts) {
-        p.push(`<font>${this.fontXmlStr(f)}</font>`);
+        p.push(this.fontXmlStr(f));
       }
       p.push("</fonts>");
     }
@@ -554,47 +614,7 @@ export class Styles {
     if (this.fills.length > 0) {
       p.push(`<fills count="${this.fills.length}">`);
       for (const f of this.fills) {
-        if (f.type === "gradient" && f.stops && f.stops.length > 0) {
-          const gfAttrs: Record<string, string | number | boolean | undefined> = {};
-          if (f.gradientType && f.gradientType !== "linear") gfAttrs.type = f.gradientType;
-          if (f.gradientDegree !== undefined) gfAttrs.degree = f.gradientDegree;
-          if (f.gradientLeft !== undefined) gfAttrs.left = f.gradientLeft;
-          if (f.gradientRight !== undefined) gfAttrs.right = f.gradientRight;
-          if (f.gradientTop !== undefined) gfAttrs.top = f.gradientTop;
-          if (f.gradientBottom !== undefined) gfAttrs.bottom = f.gradientBottom;
-          const stopParts = f.stops
-            .map((s) => {
-              const stopAttrs = s.color ? colorAttributes(s.color) : "";
-              return `<stop position="${s.position}"><color${stopAttrs ? ` ${stopAttrs}` : ""}/></stop>`;
-            })
-            .join("");
-          p.push(`<fill><gradientFill${attrs(gfAttrs)}>${stopParts}</gradientFill></fill>`);
-        } else {
-          const defaultPatternType = f.patternType ?? (f.type === "solid" ? "solid" : undefined);
-          const patternAttrs =
-            f.legacyPatternElement && f.legacyPatternType !== undefined
-              ? ` patternType="${f.legacyPatternType}"`
-              : attrs({ patternType: defaultPatternType });
-          const fgAttrs = f.foregroundColor ? colorAttributes(f.foregroundColor) : "";
-          const bgAttrs = f.backgroundColor ? colorAttributes(f.backgroundColor) : "";
-          const fgColor = fgAttrs ? `<fgColor ${fgAttrs}/>` : "";
-          const bgColor = bgAttrs ? `<bgColor ${bgAttrs}/>` : "";
-          const colorContent = fgColor + bgColor;
-          const tagName = f.legacyPatternElement ? "pattern" : "patternFill";
-          const declaredPattern =
-            f.patternType !== undefined ||
-            f.patternTypeDeclared === false ||
-            colorContent !== "" ||
-            f.type === "solid" ||
-            f.legacyPatternElement === true;
-          p.push(
-            !declaredPattern
-              ? "<fill/>"
-              : colorContent === ""
-                ? `<fill><${tagName}${patternAttrs}/></fill>`
-                : `<fill><${tagName}${patternAttrs}>${colorContent}</${tagName}></fill>`,
-          );
-        }
+        p.push(this.fillXml(f));
       }
       p.push("</fills>");
     }
@@ -623,6 +643,7 @@ export class Styles {
           fontId: xf.fontId,
           ...(xf.fillId !== undefined ? { fillId: xf.fillId } : {}),
           ...(xf.borderId !== undefined ? { borderId: xf.borderId } : {}),
+          ...(xf.xfId !== undefined ? { xfId: xf.xfId } : {}),
         };
         if (xf.applyNumberFormat !== undefined)
           xAttrs.applyNumberFormat = xf.applyNumberFormat ? 1 : 0;
@@ -633,9 +654,10 @@ export class Styles {
         if (xf.applyProtection !== undefined) xAttrs.applyProtection = xf.applyProtection ? 1 : 0;
         if (xf.quotePrefix !== undefined) xAttrs.quotePrefix = xf.quotePrefix ? 1 : 0;
         if (xf.pivotButton !== undefined) xAttrs.pivotButton = xf.pivotButton ? 1 : 0;
+        for (const fa of xf.foreignAttributes ?? []) xAttrs[fa.name] = fa.value;
         const alignStr = xf.alignment ? this.alignmentXmlStr(xf.alignment) : "";
         const protStr = xf.protection ? this.protectionXmlStr(xf.protection) : "";
-        const inner = alignStr + protStr;
+        const inner = alignStr + protStr + (xf.foreignChildren ?? []).map((fc) => fc.xml).join("");
         p.push(inner ? `<xf${attrs(xAttrs)}>${inner}</xf>` : `<xf${attrs(xAttrs)}/>`);
       }
       p.push("</cellStyleXfs>");
@@ -644,37 +666,59 @@ export class Styles {
     // cellXfs
     if (this.cellXfs.length > 0) {
       p.push(`<cellXfs count="${this.cellXfs.length}">`);
-      for (const xf of this.cellXfs) {
+      const renderXf = (entry: IndexedXfEntry, derive: boolean): string => {
         const xAttrs: Record<string, string | number | boolean | undefined> = {
-          numFmtId: xf.numFmtIdDeclared === false ? undefined : xf.numFmtId,
-          fontId: xf.fontIdDeclared === false ? undefined : xf.fontId,
-          fillId: xf.fillIdDeclared === false ? undefined : xf.fillId,
-          borderId: xf.borderIdDeclared === false ? undefined : xf.borderId,
-          xfId: xf.xfIdDeclared === false ? undefined : (xf.xfId ?? 0),
+          numFmtId: entry.numFmtIdDeclared === false ? undefined : entry.numFmtId,
+          fontId: entry.fontIdDeclared === false ? undefined : entry.fontId,
+          fillId: entry.fillIdDeclared === false ? undefined : entry.fillId,
+          borderId: entry.borderIdDeclared === false ? undefined : entry.borderId,
+          xfId: entry.xfIdDeclared === false ? undefined : (entry.xfId ?? 0),
         };
         // Adopted xfs carry their source apply* flags verbatim; freshly
         // registered ones derive them from non-zero component ids.
-        const derive = !this.roundTrip;
-        const applyFont = xf.applyFont ?? (derive && xf.fontId > 0 ? true : undefined);
-        const applyFill = xf.applyFill ?? (derive && xf.fillId > 0 ? true : undefined);
-        const applyBorder = xf.applyBorder ?? (derive && xf.borderId > 0 ? true : undefined);
+        const applyFont = entry.applyFont ?? (derive && (entry.fontId ?? 0) > 0 ? true : undefined);
+        const applyFill = entry.applyFill ?? (derive && (entry.fillId ?? 0) > 0 ? true : undefined);
+        const applyBorder =
+          entry.applyBorder ?? (derive && (entry.borderId ?? 0) > 0 ? true : undefined);
         const applyNumberFormat =
-          xf.applyNumberFormat ?? (derive && xf.numFmtId > 0 ? true : undefined);
-        const applyAlignment = xf.applyAlignment ?? (derive && xf.alignment ? true : undefined);
-        const applyProtection = xf.applyProtection ?? (derive && xf.protection ? true : undefined);
+          entry.applyNumberFormat ?? (derive && (entry.numFmtId ?? 0) > 0 ? true : undefined);
+        const applyAlignment =
+          entry.applyAlignment ?? (derive && entry.alignment ? true : undefined);
+        const applyProtection =
+          entry.applyProtection ?? (derive && entry.protection ? true : undefined);
         if (applyFont !== undefined) xAttrs.applyFont = applyFont ? 1 : 0;
         if (applyFill !== undefined) xAttrs.applyFill = applyFill ? 1 : 0;
         if (applyBorder !== undefined) xAttrs.applyBorder = applyBorder ? 1 : 0;
         if (applyNumberFormat !== undefined) xAttrs.applyNumberFormat = applyNumberFormat ? 1 : 0;
         if (applyAlignment !== undefined) xAttrs.applyAlignment = applyAlignment ? 1 : 0;
-        if (xf.quotePrefix !== undefined) xAttrs.quotePrefix = xf.quotePrefix ? 1 : 0;
-        if (xf.pivotButton !== undefined) xAttrs.pivotButton = xf.pivotButton ? 1 : 0;
+        if (entry.quotePrefix !== undefined) xAttrs.quotePrefix = entry.quotePrefix ? 1 : 0;
+        if (entry.pivotButton !== undefined) xAttrs.pivotButton = entry.pivotButton ? 1 : 0;
         if (applyProtection !== undefined) xAttrs.applyProtection = applyProtection ? 1 : 0;
+        for (const fa of entry.foreignAttributes ?? []) xAttrs[fa.name] = fa.value;
 
-        const alignStr = xf.alignment ? this.alignmentXmlStr(xf.alignment) : "";
-        const protStr = xf.protection ? this.protectionXmlStr(xf.protection) : "";
-        const inner = alignStr + protStr;
-        p.push(inner ? `<xf${attrs(xAttrs)}>${inner}</xf>` : `<xf${attrs(xAttrs)}/>`);
+        const alignStr = entry.alignment ? this.alignmentXmlStr(entry.alignment) : "";
+        const protStr = entry.protection ? this.protectionXmlStr(entry.protection) : "";
+        const inner =
+          alignStr + protStr + (entry.foreignChildren ?? []).map((fc) => fc.xml).join("");
+        return inner ? `<xf${attrs(xAttrs)}>${inner}</xf>` : `<xf${attrs(xAttrs)}/>`;
+      };
+      for (const xf of this.cellXfs) {
+        if (xf.alternateContent) {
+          const ac = xf.alternateContent;
+          const namespaces: Record<string, string> = ac.namespaces ?? {};
+          const namespaceAttrs = Object.entries(namespaces)
+            .map(([prefix, uri]) => ` xmlns:${prefix}="${escapeXml(uri)}"`)
+            .join("");
+          const fallbackXml = ac.fallback ? renderXf(ac.fallback, false) : "";
+          p.push(
+            '<mc:AlternateContent xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006">' +
+              `<mc:Choice${namespaceAttrs} Requires="${escapeXml(ac.requires ?? "")}">${renderXf(xf, !this.roundTrip)}</mc:Choice>` +
+              `<mc:Fallback>${fallbackXml}</mc:Fallback>` +
+              "</mc:AlternateContent>",
+          );
+          continue;
+        }
+        p.push(renderXf(xf, !this.roundTrip));
       }
       p.push("</cellXfs>");
     }
@@ -692,11 +736,16 @@ export class Styles {
         const hasNormal = this.customCellStyles.some(
           (cs) => cs.builtinId === 0 || cs.name === "Normal",
         );
-        const csAttrs: string[] = [`count="${this.customCellStyles.length + (hasNormal ? 0 : 1)}"`];
+        const addDefaultNormal = !hasNormal && !this.roundTrip;
+        const csAttrs: string[] = [
+          `count="${this.customCellStyles.length + (addDefaultNormal ? 1 : 0)}"`,
+        ];
         const csParts: string[] = [`<cellStyles ${csAttrs.join(" ")}>`];
-        if (!hasNormal) csParts.push('<cellStyle name="Normal" xfId="0" builtinId="0"/>');
+        if (addDefaultNormal) csParts.push('<cellStyle name="Normal" xfId="0" builtinId="0"/>');
         for (const cs of this.customCellStyles) {
-          const attrs: string[] = [`name="${escapeXml(cs.name)}"`, `xfId="${cs.xfId}"`];
+          const attrs: string[] = [];
+          if (cs.name !== undefined) attrs.push(`name="${escapeXml(cs.name)}"`);
+          attrs.push(`xfId="${cs.xfId}"`);
           if (cs.builtinId !== undefined) attrs.push(`builtinId="${cs.builtinId}"`);
           if (cs.customBuiltin !== undefined)
             attrs.push(`customBuiltin="${cs.customBuiltin ? 1 : 0}"`);
@@ -717,10 +766,10 @@ export class Styles {
     // dxfs
     if (this.dxfs.length > 0) {
       p.push(`<dxfs count="${this.dxfs.length}">`);
-      for (const dxf of this.dxfs) {
+      const renderDxf = (dxf: DxfOptions): string => {
         const dParts: string[] = [];
         // CT_Dxf sequence: font, numFmt, fill, alignment, border, protection.
-        if (dxf.font) dParts.push(`<font>${this.fontXmlStr(dxf.font)}</font>`);
+        if (dxf.font) dParts.push(this.fontXmlStr(dxf.font));
         if (dxf.numFmt) {
           const nf = typeof dxf.numFmt === "string" ? { formatCode: dxf.numFmt } : dxf.numFmt;
           // CT_NumFmt requires numFmtId; resolve from the built-in table and
@@ -730,20 +779,7 @@ export class Styles {
         }
         if (dxf.fill) {
           const f = dxf.fill;
-          // Excel's dxf fill convention: the visible tint color carries on
-          // bgColor (often with no patternType). Author `backgroundColor` for
-          // dxf fills; round-trips keep both color elements as written.
-          const patAttrs = f.patternType !== undefined ? attrs({ patternType: f.patternType }) : "";
-          const fgAttrs = f.foregroundColor ? colorAttributes(f.foregroundColor) : "";
-          const bgAttrs = f.backgroundColor ? colorAttributes(f.backgroundColor) : "";
-          const fgContent = fgAttrs ? `<fgColor ${fgAttrs}/>` : "";
-          const bgContent = bgAttrs ? `<bgColor ${bgAttrs}/>` : "";
-          const fillContent = fgContent + bgContent;
-          dParts.push(
-            fillContent
-              ? `<fill><patternFill${patAttrs}>${fillContent}</patternFill></fill>`
-              : `<fill><patternFill${patAttrs}/></fill>`,
-          );
+          dParts.push(this.fillXml(f));
         }
         if (dxf.alignment) dParts.push(this.alignmentXmlStr(dxf.alignment));
         // dxf borders carry only the sides the source wrote — no padding
@@ -775,11 +811,28 @@ export class Styles {
           });
           dParts.push(`<extLst>${extParts.join("")}</extLst>`);
         }
-        if (dParts.length > 0) {
-          p.push(`<dxf>${dParts.join("")}</dxf>`);
-        } else {
-          p.push("<dxf/>");
+        const dxfAttrs = (dxf.foreignAttributes ?? [])
+          .map((fa) => ` ${fa.name}="${escapeXml(fa.value)}"`)
+          .join("");
+        return dParts.length > 0 ? `<dxf${dxfAttrs}>${dParts.join("")}</dxf>` : "<dxf/>";
+      };
+      for (const dxf of this.dxfs) {
+        if (dxf.alternateContent) {
+          const ac = dxf.alternateContent;
+          const namespaces: Record<string, string> = ac.namespaces ?? {};
+          const namespaceAttrs = Object.entries(namespaces)
+            .map(([prefix, uri]) => ` xmlns:${prefix}="${escapeXml(uri)}"`)
+            .join("");
+          const fallbackXml = ac.fallback ? renderDxf(ac.fallback) : "";
+          p.push(
+            '<mc:AlternateContent xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006">' +
+              `<mc:Choice${namespaceAttrs} Requires="${escapeXml(ac.requires ?? "")}">${renderDxf(dxf)}</mc:Choice>` +
+              `<mc:Fallback>${fallbackXml}</mc:Fallback>` +
+              "</mc:AlternateContent>",
+          );
+          continue;
         }
+        p.push(renderDxf(dxf));
       }
       p.push("</dxfs>");
     } else if (this.dxfsDeclared || !this.roundTrip) {
@@ -830,7 +883,13 @@ export class Styles {
       const colorParts: string[] = ["<colors>"];
       if (c.themeColors && c.themeColors.length > 0) {
         colorParts.push("<themeColors>");
-        for (const value of c.themeColors) colorParts.push(`<rgbColor val="${value}"/>`);
+        for (const value of c.themeColors) {
+          colorParts.push(
+            "value" in value
+              ? `<rgbColor val="${value.value}"/>`
+              : `<rgbColor rgb="${value.rgb}"/>`,
+          );
+        }
         colorParts.push("</themeColors>");
       }
       if (c.indexedColors && c.indexedColors.length > 0) {
@@ -849,7 +908,7 @@ export class Styles {
       } else if (c.mruColors && c.mruColors.length > 0) {
         colorParts.push("<mruColors>");
         for (const mc of c.mruColors) {
-          colorParts.push(`<color rgb="FF${mc}"/>`);
+          colorParts.push(`<color rgb="${mc.length === 8 ? mc : `FF${mc}`}"/>`);
         }
         colorParts.push("</mruColors>");
       }
@@ -879,6 +938,28 @@ export class Styles {
   }
 
   private fontXmlStr(f: FontOptions): string {
+    if (f.alternateContent) {
+      const ac = f.alternateContent;
+      const namespaces: Record<string, string> = ac.namespaces ?? {};
+      const namespaceAttrs = Object.entries(namespaces)
+        .map(([prefix, uri]) => ` xmlns:${prefix}="${escapeXml(uri)}"`)
+        .join("");
+      const choiceXml = this.fontElementXml(ac.choice);
+      const fallbackXml = ac.fallback ? this.fontElementXml(ac.fallback) : "";
+      return (
+        '<mc:AlternateContent xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006">' +
+        `<mc:Choice${namespaceAttrs} Requires="${escapeXml(ac.requires ?? "")}">${choiceXml}</mc:Choice>` +
+        `<mc:Fallback>${fallbackXml}</mc:Fallback>` +
+        "</mc:AlternateContent>"
+      );
+    }
+    return this.fontElementXml(f);
+  }
+
+  private fontElementXml(f: FontOptions): string {
+    const foreignAttrs = (f.foreignAttributes ?? [])
+      .map((fa) => ` ${fa.name}="${escapeXml(fa.value)}"`)
+      .join("");
     const parts: { name: string; xml: string }[] = [];
     const push = (name: string, xml: string): void => {
       parts.push({ name, xml });
@@ -920,6 +1001,7 @@ export class Styles {
     if (f.family !== undefined) push("family", `<family val="${f.family}"/>`);
     if (f.charset !== undefined) push("charset", `<charset val="${f.charset}"/>`);
     if (f.scheme) push("scheme", `<scheme val="${f.scheme}"/>`);
+    for (const fc of f.foreignChildren ?? []) push(fc.name, fc.xml);
     const order = f.childOrder;
     if (order !== undefined) {
       const rank = new Map(order.map((name, index) => [name, index] as const));
@@ -928,7 +1010,7 @@ export class Styles {
           (rank.get(left.name) ?? order.length) - (rank.get(right.name) ?? order.length),
       );
     }
-    return parts.map((part) => part.xml).join("");
+    return `<font${foreignAttrs}>${parts.map((part) => part.xml).join("")}</font>`;
   }
 
   /**

@@ -5,17 +5,13 @@
  */
 
 import { createPacker, ooxmlMimeType } from "@office-open/core";
+import type { OoxmlPackageVariant, OutputByType, OutputType } from "@office-open/core";
 import {
   assertEncryptedExclusive,
   encryptedContainerOutput,
   encryptedContainerStream,
-} from "@office-open/core";
-import type {
-  OoxmlPackageVariant,
-  OutputByType,
-  OutputType,
-  PackerOptions,
-} from "@office-open/core";
+  type PackerOptions,
+} from "@office-open/core/opc";
 import type { PresentationOptions } from "@shared/file";
 
 import { compilePresentation } from "./compiler";

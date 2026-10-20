@@ -33,6 +33,21 @@ describe("math run text", () => {
     expect(stringifyMathInput(children[0]!)).toContain('<m:t xml:space="preserve"> x </m:t>');
   });
 
+  it("round-trips a Word comment reference as mixed math-run content", () => {
+    const root = parseElement(
+      `<m:oMath ${NAMESPACES}><m:r><w:rPr><w:rStyle w:val="CommentReference"/></w:rPr>` +
+        '<w:commentReference w:id="1"/></m:r></m:oMath>',
+    );
+    const children = parseMathChildren(root);
+    expect(children).toEqual([
+      {
+        children: [{ commentReference: 1 }],
+        runProperties: { style: "CommentReference" },
+      },
+    ]);
+    expect(stringifyMathInput(children[0]!)).toContain('<w:commentReference w:id="1"/>');
+  });
+
   it("preserves custom n-ary operators", () => {
     const root = parseElement(
       `<m:oMath ${NAMESPACES}><m:nary><m:naryPr><m:chr m:val="∏"/>` +
@@ -49,7 +64,7 @@ describe("math run text", () => {
           children: ["x"],
           subScript: ["i"],
           superScript: ["n"],
-          properties: { limitLocation: "undOvr", grow: false },
+          properties: { limitLocation: "undOvr", grow: false, growRaw: "off" },
         },
       },
     ]);
@@ -58,6 +73,28 @@ describe("math run text", () => {
     expect(parseMathChildren(parseElement(`<m:oMath ${NAMESPACES}>${xml}</m:oMath>`))).toEqual(
       parsed,
     );
+  });
+
+  it("preserves n-ary toggle absence and source spelling", () => {
+    const root = parseElement(
+      `<m:oMath ${NAMESPACES}><m:nary><m:naryPr><m:chr m:val="∑"/>` +
+        '<m:grow m:val="1"/></m:naryPr><m:sub/><m:sup>' +
+        "<m:r><m:t>n</m:t></m:r></m:sup><m:e><m:r><m:t>x</m:t></m:r></m:e></m:nary></m:oMath>",
+    );
+    const parsed = parseMathChildren(root);
+    expect(parsed).toEqual([
+      {
+        sum: {
+          children: ["x"],
+          superScript: ["n"],
+          properties: { grow: true, growRaw: "1" },
+        },
+      },
+    ]);
+    const xml = stringifyMathInput(parsed[0]!);
+    expect(xml).toContain('<m:grow m:val="1"/>');
+    expect(xml).not.toContain("m:subHide");
+    expect(xml).not.toContain("m:supHide");
   });
 
   it("round-trips multiple display equations", () => {

@@ -1,6 +1,6 @@
 {
   "name": "office-open",
-  "version": "0.14.6",
+  "version": "0.15.0",
   "description": "AI-native Office documents in one install — generate, parse, and patch Word, Excel, PowerPoint, RTF, and OpenDocument where supported, with a CLI, AI SDK tools, and JSON schemas for LLM tool-calling",
   "keywords": [
     "ai",

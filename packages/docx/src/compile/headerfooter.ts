@@ -11,11 +11,8 @@
  * @module
  */
 
-import {
-  type XmlifyedFile,
-  optionalRelsPart,
-  replaceNumberingPlaceholders,
-} from "@office-open/core";
+import { replaceNumberingPlaceholders } from "@office-open/core";
+import { optionalRelsPart, type XmlifyedFile } from "@office-open/core/opc";
 import {
   FOOTER_NAMESPACES,
   HEADER_NAMESPACES,
@@ -39,6 +36,12 @@ export function compileHeaderFooterPart(
   mkCtx: PartCtxFactory,
 ): { part: XmlifyedFile; rels?: XmlifyedFile } {
   const partName = entry.partName ?? `${kind}${index + 1}.xml`;
+  const sourcePartName = `word/${partName}`;
+  for (const relationship of ctx._options.passthroughRelationships ?? []) {
+    if (relationship.source !== sourcePartName) continue;
+    entry.relationships.reserveSourceRids(sourcePartName, [relationship]);
+    entry.relationships.claimSourceRel(relationship);
+  }
   const partCtx = mkCtx({
     relationships: entry.relationships,
     partName: `word/${partName}`,

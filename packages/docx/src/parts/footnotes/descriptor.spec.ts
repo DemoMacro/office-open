@@ -91,4 +91,33 @@ describe("footnotesDesc round-trip", () => {
     expect(xml).toContain("<w:t>cell</w:t>");
     expect(xml).not.toContain("<w:footnoteRef/>");
   });
+
+  it("preserves absent and custom footnote reference marks", () => {
+    const absent =
+      '<w:footnotes xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+      '<w:footnote w:id="1"><w:p><w:r><w:t>custom note</w:t></w:r></w:p></w:footnote>' +
+      "</w:footnotes>";
+    const absentRoot = parseXml(absent).elements?.[0];
+    if (!absentRoot) throw new Error("parsed document has no root element");
+    const parsedAbsent = footnotesDesc.parse(absentRoot, readCtx);
+    const absentXml = footnotesDesc.stringify(parsedAbsent, writeCtx as never)!;
+    expect(absentXml).not.toContain("<w:footnoteRef/>");
+
+    const freshXml = footnotesDesc.stringify(
+      { notes: new Map([[1, ["fresh note"]]]) },
+      writeCtx as never,
+    )!;
+    expect(freshXml).toContain("<w:footnoteRef/>");
+
+    const custom =
+      '<w:footnotes xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+      '<w:footnote w:id="2"><w:p><w:r><w:rPr><w:b/></w:rPr><w:footnoteRef/></w:r>' +
+      "<w:r><w:t>†</w:t></w:r></w:p></w:footnote></w:footnotes>";
+    const customRoot = parseXml(custom).elements?.[0];
+    if (!customRoot) throw new Error("parsed document has no root element");
+    const parsedCustom = footnotesDesc.parse(customRoot, readCtx);
+    const customXml = footnotesDesc.stringify(parsedCustom, writeCtx as never)!;
+    expect(customXml.match(/<w:footnoteRef\/>/g)).toHaveLength(1);
+    expect(customXml).toContain("<w:b/>");
+  });
 });

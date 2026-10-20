@@ -18,17 +18,19 @@ const INTERFACE_SOURCE: Record<string, { interfaceName: string; file: string }> 
 };
 
 describe("extractInterfaceFields", () => {
-  it("reads a flat interface (CorePropertiesOptions, 28 fields, sorted)", () => {
+  it("reads a flat interface (CorePropertiesOptions, 34 fields, sorted)", () => {
     expect(
       extractInterfaceFields("CorePropertiesOptions", "packages/core/src/opc/core.ts"),
     ).toEqual([
       "application",
+      "autoFillers",
       "autoReload",
       "category",
       "childOrder",
       "contentStatus",
       "contentType",
       "created",
+      "createdType",
       "creator",
       "defaultNamespace",
       "description",
@@ -41,10 +43,14 @@ describe("extractInterfaceFields", () => {
       "lastPrinted",
       "legacyMicrosoft",
       "modified",
+      "modifiedType",
       "printedBy",
+      "publishers",
       "revision",
+      "sources",
       "statistics",
       "subject",
+      "subjectLanguage",
       "template",
       "title",
       "userDefinedProperties",
@@ -56,13 +62,13 @@ describe("extractInterfaceFields", () => {
     // ParagraphPropertiesOptions = {...} & ParagraphStylePropertiesOptions
     // & LevelParagraphStylePropertiesOptions. getInterface().getProperties()
     // would return only the direct members; the Type-level read must return
-    // the union: 4 (Base) + 3 (Style) + 32 (Level) + 3 (Options) = 42, before
-    // sugar exclusion (Options gained `collapsed` with w15).
+    // the full intersection, including vendor round-trip and section-marker
+    // fields.
     const fields = extractInterfaceFields(
       "ParagraphPropertiesOptions",
       `${DOCX}/paragraph/properties.ts`,
     );
-    expect(fields).toHaveLength(42);
+    expect(fields).toHaveLength(47);
     // Sugar that the exclude list removes later:
     expect(fields).toContain("thematicBreak");
     expect(fields).toContain("rightTabStop");

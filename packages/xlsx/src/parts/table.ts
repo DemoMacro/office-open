@@ -169,6 +169,9 @@ export interface TableOptions {
   insertRow?: boolean;
   /** Number of totals rows (default: 0) */
   totalsRowCount?: number;
+  /** True when the source declared `@totalsRowCount`. Round-trip only: keeps
+   * an explicit default from being dropped. */
+  totalsRowCountDeclared?: boolean;
   /** Whether to show totals row (default: true when totalsRowCount > 0) */
   totalsRowShown?: boolean;
   /** Table type (default: "worksheet") */
@@ -242,9 +245,8 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
       rootAttrs.headerRowCount = o.headerRowCount;
     }
     if (o.insertRow) rootAttrs.insertRow = 1;
-    if (o.totalsRowCount !== undefined && o.totalsRowCount > 0) {
+    if (o.totalsRowCount !== undefined && (o.totalsRowCount > 0 || o.totalsRowCountDeclared))
       rootAttrs.totalsRowCount = o.totalsRowCount;
-    }
     if (o.totalsRowShown === false) {
       rootAttrs.totalsRowShown = 0;
     }
@@ -407,6 +409,7 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
     if (parseOnOff(attr(el, "insertRow"))) result.insertRow = true;
     const totalsRowCount = attrNum(el, "totalsRowCount");
     if (totalsRowCount !== undefined) result.totalsRowCount = totalsRowCount;
+    result.totalsRowCountDeclared = attr(el, "totalsRowCount") !== undefined;
     if (String(attr(el, "totalsRowShown")) === "0") result.totalsRowShown = false;
     if (attr(el, "tableType")) result.tableType = attr(el, "tableType") as TableType;
     if (parseOnOff(attr(el, "insertRowShift"))) result.insertRowShift = true;

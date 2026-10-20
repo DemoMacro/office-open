@@ -311,24 +311,26 @@ export class Relationships {
     },
     options?: { force?: boolean },
   ): void {
-    if (!options?.force && this.hasRelationship(rel.relationshipType, rel.target)) return;
-    if (!options?.force && this.hasRelationshipKind(rel.relationshipType.split("/").pop() ?? "")) {
+    if (!options?.force) {
       const semanticKind = rel.relationshipType.split("/").pop();
-      const semantic = this.entries.find(
-        (entry) =>
-          entry.type.split("/").pop() === semanticKind &&
-          this.semanticTarget(entry) === this.semanticTarget(rel),
-      );
+      const semantic = this.entries.find((entry) => {
+        const entryKind = entry.type.split("/").pop();
+        return (
+          entryKind?.toLowerCase().replaceAll("-", "") ===
+            semanticKind?.toLowerCase().replaceAll("-", "") &&
+          this.semanticTarget(entry) === this.semanticTarget(rel)
+        );
+      });
       if (semantic) {
+        semantic.type = rel.relationshipType;
         semantic.target = rel.target;
         semantic.targetMode = rel.targetMode;
         return;
       }
     }
-    const numeric = /^rId(\d+)$/.exec(rel.rId);
-    if (numeric && !this.hasId(rel.rId)) {
+    if (!this.hasId(rel.rId)) {
       this.addRelationship(
-        Number(numeric[1]),
+        rel.rId,
         rel.relationshipType as RelationshipType,
         rel.target,
         rel.targetMode,
@@ -336,6 +338,16 @@ export class Relationships {
     } else {
       this.add(rel.relationshipType as RelationshipType, rel.target, rel.targetMode);
     }
+  }
+
+  /** Stable ordering for captured relationship ids without exposing entries. */
+  public sortByIds(ids: readonly string[]): void {
+    const rank = new Map(ids.map((id, index) => [id, index]));
+    this.entries.sort(
+      (left, right) =>
+        (rank.get(left.id) ?? Number.MAX_SAFE_INTEGER) -
+        (rank.get(right.id) ?? Number.MAX_SAFE_INTEGER),
+    );
   }
 
   /**
@@ -462,6 +474,7 @@ export function buildRootRelationships(
   options?: {
     includeCoreProperties?: boolean;
     includeAppProperties?: boolean;
+    mainRelationshipType?: string;
     corePropertiesPath?: string;
     corePropertiesType?: string;
     appPropertiesPath?: string;
@@ -481,7 +494,8 @@ export function buildRootRelationships(
     1,
     legacy
       ? LEGACY_OFFICE_DOCUMENT_TYPE
-      : "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument",
+      : (options?.mainRelationshipType ??
+          "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument"),
     mainPartTarget,
   );
   if (options?.includeCoreProperties !== false) {

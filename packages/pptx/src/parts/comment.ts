@@ -25,5 +25,7 @@ export interface CommentEntry {
   ext?: string;
   x: number | UniversalMeasure;
   y: number | UniversalMeasure;
+  width?: number | UniversalMeasure;
+  height?: number | UniversalMeasure;
   text: string;
 }

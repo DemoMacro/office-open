@@ -21,6 +21,7 @@ import {
   shapeLockingDesc,
   shapePropertiesDesc,
   sourceRectangleDesc,
+  stretchDesc,
   textBodyDesc,
 } from "@office-open/core/drawing";
 import type {
@@ -33,9 +34,11 @@ import { parseShapeStyle } from "@office-open/core/theme";
 import { attrNum, attrBool, findChild, stringifyElement } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 
+import { CHART_EX_URI } from "./stringify";
 import type {
   DrawingAnchorOptions,
   DrawingChartOptions,
+  DrawingChartExOptions,
   DrawingContentPartOptions,
   DrawingWebExtensionOptions,
   DrawingWebExtensionFallbackOptions,
@@ -44,6 +47,7 @@ import type {
   GroupOptions,
   DrawingPictureOptions,
   ShapeOptions,
+  GroupChildGroupOptions,
   GroupConnectorChildOptions,
   GroupPictureChildOptions,
   GroupShapeChildOptions,
@@ -83,6 +87,53 @@ function readMarker(el: XmlElement): Marker {
     colOffset: readNumChild(el, "colOff") || undefined,
     row: readNumChild(el, "row") + 1,
     rowOffset: readNumChild(el, "rowOff") || undefined,
+  };
+}
+
+/** Find an anchored object inside either branch of an object-level AlternateContent. */
+function findAlternateObject(
+  anchor: XmlElement,
+  local: string,
+): { object?: XmlElement; branch: "choice" | "fallback" } | undefined {
+  for (const alternate of anchor.elements ?? []) {
+    if (alternate.name !== "mc:AlternateContent") continue;
+    const branches = alternate.elements?.filter(
+      (branchElement) => branchElement.name === "mc:Choice" || branchElement.name === "mc:Fallback",
+    );
+    const choice = branches?.find((branchElement) => branchElement.name === "mc:Choice");
+    const fallback = branches?.find((branchElement) => branchElement.name === "mc:Fallback");
+    const orderedBranches = choice && fallback ? [choice, fallback] : (branches ?? []);
+    for (const branchElement of orderedBranches) {
+      const object = findXdr(branchElement, local);
+      if (object)
+        return {
+          object,
+          branch: branchElement.name === "mc:Choice" ? "choice" : "fallback",
+        };
+    }
+  }
+  return undefined;
+}
+
+/** Strip anchor fields from a parsed shape, keeping its object content only. */
+function shapeFallbackContent(shape: ShapeOptions): GroupShapeChildOptions {
+  return {
+    ...(shape.name !== undefined ? { name: shape.name } : {}),
+    ...(shape.description !== undefined ? { description: shape.description } : {}),
+    ...(shape.title !== undefined ? { title: shape.title } : {}),
+    ...(shape.hidden !== undefined ? { hidden: shape.hidden } : {}),
+    ...(shape.ext !== undefined ? { ext: shape.ext } : {}),
+    hyperlink: shape.hyperlink,
+    properties: shape.properties,
+    ...(shape.textBody ? { textBody: shape.textBody } : {}),
+    ...(shape.style ? { style: shape.style } : {}),
+    ...(shape.macro !== undefined ? { macro: shape.macro } : {}),
+    ...(shape.textlink !== undefined ? { textlink: shape.textlink } : {}),
+    ...(shape.locking ? { locking: shape.locking } : {}),
+    ...(shape.textBox !== undefined ? { textBox: shape.textBox } : {}),
+    ...(shape.blackWhiteMode ? { blackWhiteMode: shape.blackWhiteMode } : {}),
+    ...(shape.shapeId !== undefined ? { shapeId: shape.shapeId } : {}),
+    ...(shape.fPublished !== undefined ? { fPublished: shape.fPublished } : {}),
   };
 }
 
@@ -201,6 +252,71 @@ export function parseImageAnchor(
   return result;
 }
 
+/** Read an anchored ChartEx graphicFrame (graphicData > cx:chart). */
+export function parseChartExAnchor(
+  anchor: XmlElement,
+  graphicFrame: XmlElement,
+  name: string,
+  ctx: ReadContext,
+): DrawingChartExOptions | undefined {
+  const graphicData = findChild(
+    findChild(graphicFrame, "a:graphic") ?? graphicFrame,
+    "a:graphicData",
+  );
+  const chartElement = graphicData?.elements?.find((child) => child.name?.endsWith(":chart"));
+  const rId = (chartElement?.attributes?.["r:id"] ?? chartElement?.attributes?.relId) as
+    | string
+    | undefined;
+  const uri = graphicData?.attributes?.uri;
+  if (!chartElement || !rId || uri !== CHART_EX_URI) return undefined;
+
+  const result = { col: 1, row: 1, rId } as DrawingChartExOptions;
+  const frameXfrm = findChild(graphicFrame, "xdr:xfrm") ?? findChild(graphicFrame, "a:xfrm");
+  const frameOffset = frameXfrm ? findChild(frameXfrm, "a:off") : undefined;
+  const frameExt = frameXfrm ? findChild(frameXfrm, "a:ext") : undefined;
+  if (frameOffset?.attributes) {
+    const x = Number(frameOffset.attributes["x"]);
+    const y = Number(frameOffset.attributes["y"]);
+    if (!Number.isNaN(x)) result.frameOffsetX = x;
+    if (!Number.isNaN(y)) result.frameOffsetY = y;
+  }
+  if (frameExt?.attributes) {
+    const cx = Number(frameExt.attributes["cx"]);
+    const cy = Number(frameExt.attributes["cy"]);
+    if (!Number.isNaN(cx)) result.frameExtentCx = cx;
+    if (!Number.isNaN(cy)) result.frameExtentCy = cy;
+  }
+  const frameRotation = attrNum(frameXfrm, "rot");
+  if (frameRotation !== undefined) result.frameRotation = frameRotation / 60000;
+  const frameFlipHorizontal = attrBool(frameXfrm, "flipH");
+  if (frameFlipHorizontal !== undefined) result.frameFlipHorizontal = frameFlipHorizontal;
+  const frameFlipVertical = attrBool(frameXfrm, "flipV");
+  if (frameFlipVertical !== undefined) result.frameFlipVertical = frameFlipVertical;
+  Object.assign(result, readCNvPr(graphicFrame, "nvGraphicFramePr", ctx));
+  const nvGraphicFramePr = findXdr(graphicFrame, "nvGraphicFramePr");
+  const cNvGraphicFramePr = nvGraphicFramePr
+    ? findXdr(nvGraphicFramePr, "cNvGraphicFramePr")
+    : undefined;
+  if (cNvGraphicFramePr) {
+    const locks = findChild(cNvGraphicFramePr, "a:graphicFrameLocks");
+    if (locks) result.frameLocks = graphicFrameLockingDesc.parse(locks, ctx);
+  }
+  if (graphicFrame.attributes?.["macro"] !== undefined)
+    result.macro = String(graphicFrame.attributes["macro"]);
+  result.fPublished = readPublishedFlag(graphicFrame);
+
+  readAnchorFields(anchor, name, result);
+
+  const fallbackShapeElement = findAlternateObject(anchor, "sp")?.object;
+  if (fallbackShapeElement) {
+    result.fallbackShape = shapeFallbackContent(
+      parseShapeAnchor(anchor, fallbackShapeElement, name, ctx),
+    );
+  }
+
+  return result;
+}
+
 /** Parse xdr:pic content without its worksheet anchor. */
 function parsePictureContent(pic: XmlElement, ctx: ReadContext): GroupPictureChildOptions {
   const refs = readPicRefs(pic);
@@ -208,6 +324,8 @@ function parsePictureContent(pic: XmlElement, ctx: ReadContext): GroupPictureChi
     rId: refs.embed ?? "",
     ...(refs.link ? { linkRId: refs.link } : {}),
   };
+  if (!findXdr(pic, "blipFill")) result.blipFillPresent = false;
+  if (pic.attributes?.["macro"] !== undefined) result.macro = String(pic.attributes["macro"]);
   Object.assign(result, readCNvPr(pic, "nvPicPr", ctx));
   result.fPublished = readPublishedFlag(pic);
 
@@ -237,6 +355,12 @@ function parsePictureContent(pic: XmlElement, ctx: ReadContext): GroupPictureChi
   }
   const srcRect = blipFill ? findChild(blipFill, "a:srcRect") : undefined;
   if (srcRect) result.sourceRectangle = sourceRectangleDesc.parse(srcRect, ctx);
+  const stretch = blipFill ? findChild(blipFill, "a:stretch") : undefined;
+  result.fillRectangle = stretch
+    ? findChild(stretch, "a:fillRect")
+      ? stretchDesc.parse(stretch, ctx)
+      : true
+    : false;
   const dpi = attrNum(blipFill, "dpi");
   if (dpi !== undefined) result.dpi = dpi;
   const rotWithShape = attrBool(blipFill, "rotWithShape");
@@ -300,7 +424,15 @@ export function parseChartAnchor(
 
   const result = { col: 1, row: 1, rId } as DrawingChartOptions;
   const frameXfrm = findChild(graphicFrame, "xdr:xfrm") ?? findChild(graphicFrame, "a:xfrm");
+  result.frameTransform = frameXfrm !== undefined;
+  const frameOffset = frameXfrm ? findChild(frameXfrm, "a:off") : undefined;
   const frameExt = frameXfrm ? findChild(frameXfrm, "a:ext") : undefined;
+  if (frameOffset?.attributes) {
+    const x = Number(frameOffset.attributes["x"]);
+    const y = Number(frameOffset.attributes["y"]);
+    if (!Number.isNaN(x)) result.frameOffsetX = x;
+    if (!Number.isNaN(y)) result.frameOffsetY = y;
+  }
   if (frameExt?.attributes) {
     const cx = Number(frameExt.attributes["cx"]);
     const cy = Number(frameExt.attributes["cy"]);
@@ -314,6 +446,10 @@ export function parseChartAnchor(
   const frameFlipVertical = attrBool(frameXfrm, "flipV");
   if (frameFlipVertical !== undefined) result.frameFlipVertical = frameFlipVertical;
   Object.assign(result, readCNvPr(graphicFrame, "nvGraphicFramePr", ctx));
+  if (result.title !== undefined) {
+    result.frameTitle = result.title;
+    delete result.title;
+  }
   const nvGraphicFramePr = findXdr(graphicFrame, "nvGraphicFramePr");
   const cNvGraphicFramePr = nvGraphicFramePr
     ? findXdr(nvGraphicFramePr, "cNvGraphicFramePr")
@@ -574,6 +710,8 @@ export function parseGroupAnchor(
   const shapes: GroupShapeChildOptions[] = [];
   const childImages: GroupPictureChildOptions[] = [];
   const childConnectors: GroupConnectorChildOptions[] = [];
+  const childGroups: GroupChildGroupOptions[] = [];
+  const childOrder: number[] = [];
   for (const child of grpSp.elements ?? []) {
     // Group children appear in the default namespace (our own output) or with
     // the xdr: prefix (external files) — match by local name.
@@ -606,12 +744,16 @@ export function parseGroupAnchor(
       const childBwMode = spPr?.attributes?.["bwMode"];
       if (childBwMode !== undefined) childShape.blackWhiteMode = childBwMode as BlackWhiteMode;
       childShape.fPublished = readPublishedFlag(child);
+      const childShapeOrderId = childShape.shapeId;
+      if (childShapeOrderId !== undefined) childOrder.push(childShapeOrderId);
       shapes.push(childShape);
     } else if (local === "pic") {
       const childImage = parsePictureContent(child, ctx);
       Object.assign(childImage, readCNvPr(child, "nvPicPr", ctx));
       const childImageId = readShapeId(child);
       if (childImageId !== undefined) childImage.shapeId = childImageId;
+      const childImageOrderId = childImage.shapeId;
+      if (childImageOrderId !== undefined) childOrder.push(childImageOrderId);
       childImages.push(childImage);
     } else if (local === "cxnSp") {
       const spPr = findXdr(child, "spPr");
@@ -627,6 +769,8 @@ export function parseGroupAnchor(
       if (childConnectorBwMode !== undefined)
         childConn.blackWhiteMode = childConnectorBwMode as BlackWhiteMode;
       childConn.fPublished = readPublishedFlag(child);
+      const childConnectorOrderId = childConn.shapeId;
+      if (childConnectorOrderId !== undefined) childOrder.push(childConnectorOrderId);
       readConnectorNonVisual(childConn, child, ctx);
       const connStyle = findXdr(child, "style");
       if (connStyle) {
@@ -634,11 +778,26 @@ export function parseGroupAnchor(
         if (style) childConn.style = style;
       }
       childConnectors.push(childConn);
+    } else if (local === "grpSp") {
+      const nestedGroup = parseGroupAnchor(
+        { name: "xdr:twoCellAnchor" } as XmlElement,
+        child,
+        "twoCellAnchor",
+        ctx,
+      );
+      const { col: _col, row: _row, ...groupContent } = nestedGroup;
+      const childGroupId = readShapeId(child);
+      if (childGroupId !== undefined) groupContent.shapeId = childGroupId;
+      const childGroupOrderId = groupContent.shapeId;
+      if (childGroupOrderId !== undefined) childOrder.push(childGroupOrderId);
+      childGroups.push(groupContent);
     }
   }
   if (shapes.length > 0) result.shapes = shapes;
   if (childImages.length > 0) result.images = childImages;
   if (childConnectors.length > 0) result.connectors = childConnectors;
+  if (childGroups.length > 0) result.groups = childGroups;
+  if (childOrder.length > 1) result.childOrder = childOrder;
   return result;
 }
 

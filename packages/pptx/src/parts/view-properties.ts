@@ -69,6 +69,8 @@ export interface ViewPropertiesOptions {
     | "slideSorterView"
     | "slideThumbnailView";
   showComments?: boolean;
+  /** Source p:viewPr had @showComments (round-trip — preserves explicit "1"). */
+  showCommentsPresent?: boolean;
   gridSpacing?: { cx: number; cy: number };
   normalView?: NormalViewOptions;
   slideView?: SlideViewOptions;
@@ -184,20 +186,20 @@ export function buildViewPropsXml(opts?: ViewPropertiesOptions): string {
     'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" ' +
     'xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"';
 
-  const gridCx = opts?.gridSpacing?.cx ?? 72008;
-  const gridCy = opts?.gridSpacing?.cy ?? 72008;
-
   const parts: string[] = [];
 
   let rootAttrs = "";
   if (opts?.lastView) rootAttrs += ` lastView="${LAST_VIEW_XSD[opts.lastView]}"`;
-  if (opts?.showComments === false) rootAttrs += ' showComments="0"';
+  if (opts?.showCommentsPresent || opts?.showComments === false)
+    rootAttrs += ` showComments="${opts?.showComments === false ? 0 : 1}"`;
 
   parts.push(`<p:viewPr ${ns}${rootAttrs}>`);
-  parts.push(buildNormalViewPrXml(opts?.normalView));
-  parts.push("<p:slideViewPr>");
-  parts.push(buildCSldViewPrXml(opts?.slideView, opts?.guides));
-  parts.push("</p:slideViewPr>");
+  if (opts?.normalView) parts.push(buildNormalViewPrXml(opts.normalView));
+  if (opts?.slideView || opts?.guides) {
+    parts.push("<p:slideViewPr>");
+    parts.push(buildCSldViewPrXml(opts?.slideView, opts?.guides));
+    parts.push("</p:slideViewPr>");
+  }
 
   // outlineViewPr — sequence: cViewPr (required), sldLst
   if (opts?.outlineView) {
@@ -241,7 +243,9 @@ export function buildViewPropsXml(opts?: ViewPropertiesOptions): string {
     parts.push("</p:notesViewPr>");
   }
 
-  parts.push(`<p:gridSpacing cx="${gridCx}" cy="${gridCy}"/>`);
+  if (opts?.gridSpacing) {
+    parts.push(`<p:gridSpacing cx="${opts.gridSpacing.cx}" cy="${opts.gridSpacing.cy}"/>`);
+  }
   parts.push("</p:viewPr>");
   return parts.join("");
 }

@@ -15,4 +15,28 @@ describe("graphic frame nvPr customer data", () => {
     readNvPrPlaceholder(element, result);
     expect(result.customerData).toEqual(options.customerData);
   });
+
+  it("round-trips empty and foreign p:nvPr extension lists", () => {
+    const options = { nvPrExtensions: [] };
+    const xml = stringifyNvPr(options);
+    expect(xml).toBe("<p:nvPr><p:extLst></p:extLst></p:nvPr>");
+
+    const element = parseXml(`<p:nvGraphicFramePr>${xml}</p:nvGraphicFramePr>`).elements?.[0];
+    if (!element) throw new Error("fixture has no root element");
+    const result: Record<string, unknown> = {};
+    readNvPrPlaceholder(element, result);
+    expect(result.nvPrExtensions).toEqual([]);
+
+    const foreign = {
+      nvPrExtensions: [{ uri: "{TEST}", content: '<test:x xmlns:test="urn:test"/>' }],
+    };
+    const foreignXml = stringifyNvPr(foreign);
+    expect(foreignXml).toContain('uri="{TEST}"');
+    const foreignElement = parseXml(`<p:nvGraphicFramePr>${foreignXml}</p:nvGraphicFramePr>`)
+      .elements?.[0];
+    if (!foreignElement) throw new Error("fixture has no root element");
+    const foreignResult: Record<string, unknown> = {};
+    readNvPrPlaceholder(foreignElement, foreignResult);
+    expect(foreignResult.nvPrExtensions).toEqual(foreign.nvPrExtensions);
+  });
 });

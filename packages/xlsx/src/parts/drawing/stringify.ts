@@ -46,6 +46,7 @@ import type {
   GroupPictureChildOptions,
   DrawingPictureOptions,
   DrawingChartOptions,
+  DrawingChartExOptions,
   DrawingWebExtensionOptions,
   DrawingSmartArtOptions,
   ShapeOptions,
@@ -58,6 +59,10 @@ export const XDR_NS = "http://schemas.openxmlformats.org/drawingml/2006/spreadsh
 export const A_NS = "http://schemas.openxmlformats.org/drawingml/2006/main";
 export const R_NS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
 export const C_URI = "http://schemas.openxmlformats.org/drawingml/2006/chart";
+/** graphicData uri for the modern ChartEx payload. */
+export const CHART_EX_URI = "http://schemas.microsoft.com/office/drawing/2014/chartex";
+/** Root namespace of a modern ChartEx part. */
+export const CHART_EX_NS = "http://schemas.microsoft.com/office/drawing/2014/chartex";
 /** graphicData uri for the diagram (SmartArt) payload. */
 export const DGM_URI = "http://schemas.openxmlformats.org/drawingml/2006/diagram";
 export const WE_URI = "http://schemas.microsoft.com/office/webextensions/webextension/2010/11";
@@ -157,7 +162,9 @@ function picXml(
   const extLst = img.blipExt
     ? `<a:extLst>${img.blipExt}</a:extLst>`
     : img.useLocalDpi !== undefined
-      ? `<a:extLst><a:ext uri="{28A0092B-C50C-407E-A947-70E740481C1C}"><a14:useLocalDpi xmlns:a14="http://schemas.microsoft.com/office/drawing/2010/main" val="${img.useLocalDpi ? 1 : 0}"/></a:ext></a:extLst>`
+      ? `<a:extLst><a:ext uri="{28A0092B-C50C-407E-A947-70E740481C1C}"><a14:useLocalDpi xmlns:a14="http://schemas.microsoft.com/office/drawing/2010/main"${
+          img.useLocalDpi === "default" ? "" : ` val="${img.useLocalDpi ? 1 : 0}"`
+        }/></a:ext></a:extLst>`
       : "";
   // r:embed carries the embedded copy, r:link the external source — a
   // linked-only picture has no rId, a purely embedded one no linkRId.
@@ -170,14 +177,26 @@ function picXml(
   const blipContent = effects + extLst;
   const blip = blipContent ? `${open}>${blipContent}</a:blip>` : `${open}/>`;
   const srcRect = img.sourceRectangle ? createSourceRectangle(img.sourceRectangle) : "";
+  const stretch =
+    img.fillRectangle === false
+      ? ""
+      : img.fillRectangle === true
+        ? "<a:stretch/>"
+        : `<a:stretch>${createSourceRectangle(img.fillRectangle ?? {}, "a:fillRect")}</a:stretch>`;
+  const bwModeAttr = img.blackWhiteMode ? ` bwMode="${img.blackWhiteMode}"` : "";
+  if (img.blipFillPresent === false) {
+    return (
+      `<xdr:pic${macroTextlinkAttrs(img)}${publishedObjectAttrs(img)}><xdr:nvPicPr>${stringifyNonVisualDrawingProperties("xdr:cNvPr", id, img, `Picture ${id}`, hlinkClickXml(img.hyperlink, ctx))}${cNvPicPr}</xdr:nvPicPr>` +
+      `<xdr:spPr${bwModeAttr}>${spPr}</xdr:spPr></xdr:pic>`
+    );
+  }
   const blipFillAttrs =
     (img.dpi !== undefined ? ` dpi="${img.dpi}"` : "") +
     (img.rotWithShape !== undefined ? ` rotWithShape="${img.rotWithShape ? 1 : 0}"` : "");
-  const bwModeAttr = img.blackWhiteMode ? ` bwMode="${img.blackWhiteMode}"` : "";
   const publishedAttr = publishedObjectAttrs(img);
   return (
-    `<xdr:pic${publishedAttr}><xdr:nvPicPr>${stringifyNonVisualDrawingProperties("xdr:cNvPr", id, img, `Picture ${id}`, hlinkClickXml(img.hyperlink, ctx))}${cNvPicPr}</xdr:nvPicPr>` +
-    `<xdr:blipFill${blipFillAttrs}>${blip}${srcRect}<a:stretch><a:fillRect/></a:stretch></xdr:blipFill>` +
+    `<xdr:pic${macroTextlinkAttrs(img)}${publishedAttr}><xdr:nvPicPr>${stringifyNonVisualDrawingProperties("xdr:cNvPr", id, img, `Picture ${id}`, hlinkClickXml(img.hyperlink, ctx))}${cNvPicPr}</xdr:nvPicPr>` +
+    `<xdr:blipFill${blipFillAttrs}>${blip}${srcRect}${stretch}</xdr:blipFill>` +
     `<xdr:spPr${bwModeAttr}>${spPr}</xdr:spPr></xdr:pic>`
   );
 }
@@ -200,7 +219,14 @@ function hlinkClickXml(
   ctx: WriteContext | undefined,
 ): string | undefined {
   if (!hyperlink || !ctx) return undefined;
-  return buildHyperlinkElement("a:hlinkClick", hyperlink, registerHyperlink(hyperlink, ctx));
+  const key = registerHyperlink(
+    {
+      ...hyperlink,
+      referenceId: undefined,
+    },
+    ctx,
+  );
+  return buildHyperlinkElement("a:hlinkClick", hyperlink, key);
 }
 
 export function graphicFrameXml(
@@ -219,7 +245,12 @@ export function graphicFrameXml(
     frameRotation?: number;
     frameFlipHorizontal?: boolean;
     frameFlipVertical?: boolean;
+    frameOffsetX?: number;
+    frameOffsetY?: number;
+    frameTransform?: boolean;
+    frameTransformChildren?: boolean;
   } = {},
+  graphic = { uri: C_URI, child: "chart", prefix: "c" },
 ): string {
   // Locks are optional in CT_NonVisualGraphicFrameProperties — emit them only
   // when the source carried them (a bare <xdr:cNvGraphicFramePr/> round-trips).
@@ -233,18 +264,31 @@ export function graphicFrameXml(
     ? `<xdr:cNvGraphicFramePr>${locks}</xdr:cNvGraphicFramePr>`
     : "<xdr:cNvGraphicFramePr/>";
   const objectAttrs = `${macroAttr(extras.macro)}${publishedObjectAttrs(extras)}`;
+  const xfrmAttrs = attrsRaw({
+    rot: extras.frameRotation !== undefined ? emitAngle(extras.frameRotation) : undefined,
+    flipH:
+      extras.frameFlipHorizontal !== undefined ? (extras.frameFlipHorizontal ? 1 : 0) : undefined,
+    flipV: extras.frameFlipVertical !== undefined ? (extras.frameFlipVertical ? 1 : 0) : undefined,
+  });
+  // CT_Transform2D children are optional: sources may carry a bare <xfrm/>
+  // (LibreOffice one-cell frames), so children are emitted only when the
+  // model carries offsets/extents or the frame is absolutely positioned.
+  const xfrmChildren =
+    extras.frameTransformChildren === false
+      ? ""
+      : `<a:off x="${extras.frameOffsetX ?? 0}" y="${extras.frameOffsetY ?? 0}"/><a:ext cx="${cx}" cy="${cy}"/>`;
+  const xfrm =
+    extras.frameTransform === false ? "" : `<xdr:xfrm${xfrmAttrs}>${xfrmChildren}</xdr:xfrm>`;
   return (
     `<xdr:graphicFrame${objectAttrs}><xdr:nvGraphicFramePr>${stringifyNonVisualDrawingProperties("xdr:cNvPr", id, cNvPr, name, hlinkClickXml(extras.hyperlink, ctx))}` +
     `${cNvGraphicFramePr}</xdr:nvGraphicFramePr>` +
-    `<xdr:xfrm${attrsRaw({
-      rot: extras.frameRotation !== undefined ? emitAngle(extras.frameRotation) : undefined,
-      flipH:
-        extras.frameFlipHorizontal !== undefined ? (extras.frameFlipHorizontal ? 1 : 0) : undefined,
-      flipV:
-        extras.frameFlipVertical !== undefined ? (extras.frameFlipVertical ? 1 : 0) : undefined,
-    })}><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></xdr:xfrm>` +
-    `<a:graphic><a:graphicData uri="${C_URI}">` +
-    `<c:chart xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" xmlns:r="${R_NS}" r:id="${rId}"/>` +
+    xfrm +
+    `<a:graphic><a:graphicData uri="${graphic.uri}">` +
+    `<${graphic.prefix}:${graphic.child} xmlns:${graphic.prefix}="${
+      graphic.uri === CHART_EX_URI
+        ? CHART_EX_NS
+        : "http://schemas.openxmlformats.org/drawingml/2006/chart"
+    }" xmlns:r="${R_NS}" r:id="${rId}"/>` +
     `</a:graphicData></a:graphic></xdr:graphicFrame>`
   );
 }
@@ -257,6 +301,12 @@ export function stringifyChart(chart: DrawingChartOptions, id: number, ctx?: Wri
   const clientData = clientDataXml(chart);
   const anchorType = anchor.anchorType ?? ANCHOR_TYPES.twoCell;
   const cellAnchored = anchorType === ANCHOR_TYPES.twoCell || anchorType === ANCHOR_TYPES.oneCell;
+  const frameHasChildren =
+    !cellAnchored ||
+    anchor.frameOffsetX !== undefined ||
+    anchor.frameOffsetY !== undefined ||
+    anchor.frameExtentCx !== undefined ||
+    anchor.frameExtentCy !== undefined;
   const cx =
     anchor.frameExtentCx !== undefined
       ? anchor.frameExtentCx
@@ -269,7 +319,14 @@ export function stringifyChart(chart: DrawingChartOptions, id: number, ctx?: Wri
       : cellAnchored
         ? 0
         : convertToEmu(anchor.extentCy ?? DEFAULT_EXTENT_CY);
-  const frame = graphicFrameXml(id, chart, `Chart ${id}`, chart.rId, cx, cy, ctx, {
+  // The compiler bridges WorksheetChartOptions.frameTitle → title; direct
+  // DrawingChartOptions callers may use either field.
+  const frameCnvPr = {
+    ...chart,
+    title: chart.frameTitle ?? chart.title,
+    hidden: chart.frameHidden ?? chart.hidden,
+  };
+  const frame = graphicFrameXml(id, frameCnvPr, `Chart ${id}`, chart.rId, cx, cy, ctx, {
     frameLocks: chart.frameLocks,
     macro: chart.macro,
     hyperlink: chart.hyperlink,
@@ -277,8 +334,79 @@ export function stringifyChart(chart: DrawingChartOptions, id: number, ctx?: Wri
     frameRotation: chart.frameRotation,
     frameFlipHorizontal: chart.frameFlipHorizontal,
     frameFlipVertical: chart.frameFlipVertical,
+    frameOffsetX: chart.frameOffsetX,
+    frameOffsetY: chart.frameOffsetY,
+    frameTransform: chart.frameTransform !== false,
+    frameTransformChildren: frameHasChildren,
   });
   return wrapAnchor(anchor, `${frame}${clientData}`);
+}
+
+/** Build an xdr:graphicFrame hosting a ChartEx reference. */
+export function stringifyChartEx(
+  chartEx: DrawingChartExOptions,
+  id: number,
+  ctx?: WriteContext,
+): string {
+  const anchor = { toCol: chartEx.col + 9, toRow: chartEx.row + 16, ...chartEx };
+  const anchorType = anchor.anchorType ?? ANCHOR_TYPES.twoCell;
+  const cellAnchored = anchorType === ANCHOR_TYPES.twoCell || anchorType === ANCHOR_TYPES.oneCell;
+  const frameHasChildren =
+    !cellAnchored ||
+    chartEx.frameOffsetX !== undefined ||
+    chartEx.frameOffsetY !== undefined ||
+    chartEx.frameExtentCx !== undefined ||
+    chartEx.frameExtentCy !== undefined;
+  const cx =
+    chartEx.frameExtentCx !== undefined
+      ? chartEx.frameExtentCx
+      : cellAnchored
+        ? 0
+        : convertToEmu(chartEx.extentCx ?? DEFAULT_EXTENT_CX);
+  const cy =
+    chartEx.frameExtentCy !== undefined
+      ? chartEx.frameExtentCy
+      : cellAnchored
+        ? 0
+        : convertToEmu(chartEx.extentCy ?? DEFAULT_EXTENT_CY);
+  const frame = graphicFrameXml(
+    id,
+    chartEx,
+    `Chart ${id}`,
+    chartEx.rId,
+    cx,
+    cy,
+    ctx,
+    {
+      frameLocks: chartEx.frameLocks,
+      macro: chartEx.macro,
+      hyperlink: chartEx.hyperlink,
+      fPublished: chartEx.fPublished,
+      frameRotation: chartEx.frameRotation,
+      frameFlipHorizontal: chartEx.frameFlipHorizontal,
+      frameFlipVertical: chartEx.frameFlipVertical,
+      frameOffsetX: chartEx.frameOffsetX,
+      frameOffsetY: chartEx.frameOffsetY,
+      frameTransformChildren: frameHasChildren,
+    },
+    { uri: CHART_EX_URI, child: "chart", prefix: "cx" },
+  );
+  const fallback = chartEx.fallbackShape
+    ? `<mc:Fallback>${buildShapeContent(
+        chartEx.fallbackShape,
+        chartEx.fallbackShape.shapeId ?? id + 10000,
+        chartEx.fallbackShape.name ?? "",
+        chartEx.fallbackShape.properties,
+        chartEx.fallbackShape.textBody,
+        ctx as WriteContext,
+        chartEx.fallbackShape.macro !== undefined ? ` macro="${chartEx.fallbackShape.macro}"` : "",
+        chartEx.fallbackShape.style,
+      )}</mc:Fallback>`
+    : "";
+  const content = fallback
+    ? `<mc:AlternateContent xmlns:mc="${MC_NS}"><mc:Choice xmlns:cx1="http://schemas.microsoft.com/office/drawing/2015/9/8/chartex" Requires="cx1">${frame}</mc:Choice>${fallback}</mc:AlternateContent>`
+    : frame;
+  return wrapAnchor(anchor, `${content}${clientDataXml(chartEx)}`);
 }
 
 export function stringifyWebExtension(
@@ -348,7 +476,7 @@ export function stringifySmartArt(
 }
 
 /** Build the inner xdr:sp content (nvSpPr + spPr + optional style/txBody). */
-function buildShapeContent(
+export function buildShapeContent(
   shape: NonVisualDrawingPropertiesOptions & {
     blackWhiteMode?: BlackWhiteMode;
     textBox?: boolean;
@@ -460,25 +588,27 @@ export function buildGroup(
 ): { xml: string; nextId: number } {
   const grpSpPrXml = groupShapePropertiesDesc.stringify(grp.properties, ctx) ?? "";
   let nextChildId = id + 1;
-  const children: string[] = [];
+  const entries: { id?: number; xml: string }[] = [];
   for (const childImage of grp.images ?? []) {
     const childId = childImage.shapeId ?? nextChildId;
     nextChildId = childId + 1;
-    children.push(
-      picXml(
+    entries.push({
+      id: childId,
+      xml: picXml(
         childImage,
         childId,
         convertToEmu(childImage.extentCx ?? DEFAULT_EXTENT_CX),
         convertToEmu(childImage.extentCy ?? DEFAULT_EXTENT_CY),
         ctx,
       ),
-    );
+    });
   }
   for (const childShape of grp.shapes ?? []) {
     const childId = childShape.shapeId ?? nextChildId;
     nextChildId = childId + 1;
-    children.push(
-      buildShapeContent(
+    entries.push({
+      id: childId,
+      xml: buildShapeContent(
         childShape,
         childId,
         `Shape ${childId}`,
@@ -488,13 +618,14 @@ export function buildGroup(
         macroTextlinkAttrs(childShape),
         childShape.style,
       ),
-    );
+    });
   }
   for (const childConn of grp.connectors ?? []) {
     const childId = childConn.shapeId ?? nextChildId;
     nextChildId = childId + 1;
-    children.push(
-      buildConnectorContent(
+    entries.push({
+      id: childId,
+      xml: buildConnectorContent(
         childConn,
         childId,
         `Connector ${childId}`,
@@ -503,8 +634,24 @@ export function buildGroup(
         macroTextlinkAttrs(childConn),
         childConn,
       ),
-    );
+    });
   }
+  for (const childGroup of grp.groups ?? []) {
+    const childId = childGroup.shapeId ?? nextChildId;
+    nextChildId = childId + 1;
+    const nested = buildGroup(childGroup as GroupOptions, childId, ctx);
+    nextChildId = nested.nextId - 1;
+    entries.push({ id: childId, xml: nested.xml });
+  }
+  const orderById = new Map((grp.childOrder ?? []).map((childId, index) => [childId, index]));
+  const children = entries
+    .sort((left, right) => {
+      const leftOrder = left.id === undefined ? undefined : orderById.get(left.id);
+      const rightOrder = right.id === undefined ? undefined : orderById.get(right.id);
+      if (leftOrder !== undefined && rightOrder !== undefined) return leftOrder - rightOrder;
+      return 0;
+    })
+    .map((entry) => entry.xml);
   const xml =
     `<xdr:grpSp><xdr:nvGrpSpPr>${stringifyNonVisualDrawingProperties("xdr:cNvPr", id, grp, `Group ${id}`, hlinkClickXml(grp.hyperlink, ctx))}` +
     (grp.locking === null

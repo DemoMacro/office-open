@@ -1,4 +1,4 @@
-import { unzipSync, zipSync } from "@office-open/core";
+import { unzipSync, zipSync } from "@office-open/core/opc";
 import type { WorkbookOptions } from "@parts/file";
 import { describe, expect, it } from "vite-plus/test";
 
@@ -14,6 +14,54 @@ async function roundTrip(opts: WorkbookOptions): Promise<WorkbookOptions> {
 }
 
 describe("parseWorkbook round-trip", () => {
+  it("preserves a sharedStrings part after its workbook relationship is removed", async () => {
+    const source = await roundTrip({
+      worksheets: [{ name: "Sheet", rows: [{ cells: [{ value: "shared" }] }] }],
+    });
+    expect(source.sharedStringsRelationshipPresent).toBe(true);
+
+    const generated = unzipSync((await generateWorkbook(source)) as Uint8Array);
+    const relsPath = "xl/_rels/workbook.xml.rels";
+    const rels = new TextDecoder().decode(generated[relsPath]!);
+    generated[relsPath] = new TextEncoder().encode(
+      rels.replace(/<Relationship\b[^>]+sharedStrings"[^>]*\/>/, ""),
+    );
+
+    const orphaned = await roundTrip(parseWorkbookSync(zipSync(generated)));
+    expect(orphaned.sharedStringsRelationshipPresent).toBe(false);
+    const output = unzipSync((await generateWorkbook(orphaned)) as Uint8Array);
+    expect(output["xl/sharedStrings.xml"]).toBeDefined();
+    expect(new TextDecoder().decode(output[relsPath]!)).not.toContain("sharedStrings");
+  });
+
+  it("preserves a drawing part without inventing a worksheet body reference", async () => {
+    const source = await roundTrip({
+      worksheets: [
+        {
+          name: "Sheet",
+          images: [{ type: "png", data: "AAAA", col: 1, row: 1 }],
+        },
+      ],
+    });
+    expect(source.worksheets?.[0]?.drawingReferencePresent).toBe(true);
+
+    const generated = unzipSync((await generateWorkbook(source)) as Uint8Array);
+    const sheetPath = "xl/worksheets/sheet1.xml";
+    generated[sheetPath] = new TextEncoder().encode(
+      new TextDecoder().decode(generated[sheetPath]!).replace(/<drawing\b[^>]*\/>/, ""),
+    );
+
+    const orphaned = parseWorkbookSync(zipSync(generated));
+    expect(orphaned.worksheets?.[0]?.drawingPresent).toBe(true);
+    expect(orphaned.worksheets?.[0]?.drawingReferencePresent).toBe(false);
+    const output = unzipSync((await generateWorkbook(orphaned)) as Uint8Array);
+    expect(new TextDecoder().decode(output[sheetPath]!)).not.toContain("<drawing");
+    expect(output["xl/drawings/drawing1.xml"]).toBeDefined();
+    expect(new TextDecoder().decode(output["xl/worksheets/_rels/sheet1.xml.rels"]!)).toContain(
+      "drawing1.xml",
+    );
+  });
+
   it("parses and regenerates rich, numeric-lexical, and data-table cells", async () => {
     const source = (await generateWorkbook(
       { worksheets: [{ name: "Sheet" }] },
@@ -912,5 +960,61 @@ describe("theme round-trip", () => {
     const regenerated = (await generateWorkbook(parsed, { type: "uint8array" })) as Uint8Array;
     const regTheme = new TextDecoder().decode(unzipSync(regenerated)["xl/theme/theme1.xml"]!);
     expect(regTheme.toLowerCase()).to.contain('val="ff00ff"');
+  });
+});
+
+describe("function groups round-trip", () => {
+  it("preserves an explicit builtInGroupCount through the public API", async () => {
+    const parsed = await roundTrip({
+      functionGroups: ["UDF1"],
+      builtInGroupCount: 16,
+      builtInGroupCountPresent: true,
+      worksheets: [{ name: "Sheet" }],
+    });
+
+    expect(parsed.functionGroups).toEqual(["UDF1"]);
+    expect(parsed.builtInGroupCount).toBe(16);
+    expect(parsed.builtInGroupCountPresent).toBe(true);
+  });
+});
+
+describe("root xml:space round-trip", () => {
+  it("preserves root xml:space declarations on workbook parts", async () => {
+    const buffer = (await generateWorkbook(
+      {
+        worksheets: [
+          { name: "S", rows: [{ cells: [{ reference: "A1", formula: "1+1", value: 2 }] }] },
+        ],
+      },
+      { type: "uint8array" },
+    )) as Uint8Array;
+    const archive = unzipSync(buffer);
+    const inject = (path: string, from: string, to: string): void => {
+      const xml = new TextDecoder().decode(archive[path]!);
+      if (!xml.includes(from)) throw new Error(`missing ${from} in ${path}`);
+      archive[path] = new TextEncoder().encode(xml.replace(from, to));
+    };
+    inject("xl/workbook.xml", "<workbook xmlns", '<workbook xml:space="preserve" xmlns');
+    inject("xl/styles.xml", "<styleSheet xmlns", '<styleSheet xml:space="preserve" xmlns');
+    inject("xl/calcChain.xml", "<calcChain xmlns", '<calcChain xml:space="preserve" xmlns');
+    inject("xl/worksheets/sheet1.xml", "<worksheet xmlns", '<worksheet xml:space="preserve" xmlns');
+
+    const parsed = parseWorkbookSync(zipSync(archive));
+    expect(parsed.workbookXmlSpace).toBe("preserve");
+    expect(parsed.stylesXmlSpace).toBe("preserve");
+    expect(parsed.calcChainXmlSpace).toBe("preserve");
+    expect(parsed.worksheets?.[0]?.rootXmlSpace).toBe("preserve");
+
+    const regenerated = unzipSync(
+      (await generateWorkbook(parsed, { type: "uint8array" })) as Uint8Array,
+    );
+    const rootTag = (path: string, pattern: RegExp): string =>
+      new TextDecoder().decode(regenerated[path]!).match(pattern)?.[0] ?? "";
+    expect(rootTag("xl/workbook.xml", /<workbook[^>]*>/)).toContain('xml:space="preserve"');
+    expect(rootTag("xl/styles.xml", /<styleSheet[^>]*>/)).toContain('xml:space="preserve"');
+    expect(rootTag("xl/calcChain.xml", /<calcChain[^>]*>/)).toContain('xml:space="preserve"');
+    expect(rootTag("xl/worksheets/sheet1.xml", /<worksheet[^>]*>/)).toContain(
+      'xml:space="preserve"',
+    );
   });
 });

@@ -6,8 +6,13 @@
  * @module
  */
 
-import type { BaseTableOptions } from "@office-open/core";
+import type { BaseTableOptions, PositiveUniversalMeasure } from "@office-open/core";
 import type { CustomXmlRowOptions } from "@parts/custom-xml";
+import type {
+  BookmarkStartOptions,
+  MarkupRangeOptions,
+  MoveRangeStartOptions,
+} from "@parts/paragraph/links/bookmark";
 import type { ShadingProperties } from "@shared/shading";
 
 import type { TableGridChangeOptions } from "./grid";
@@ -20,7 +25,7 @@ import type {
 import type { TableCellMarginOptions } from "./table-properties/table-cell-margin";
 import type { TableLayoutType } from "./table-properties/table-layout";
 import type { TableLookOptions } from "./table-properties/table-look";
-import type { TableJustification } from "./table-properties/table-properties";
+import type { TableJustification, TablePropertyOrder } from "./table-properties/table-properties";
 import type { SdtRowOptions, TableRowOptions } from "./table-row";
 import type { TableWidthProperties } from "./table-width";
 
@@ -31,15 +36,21 @@ import type { TableWidthProperties } from "./table-width";
  * expands columns to fit content even in 'auto' layout.
  */
 export interface TableOptions extends BaseTableOptions<
-  TableRowOptions | { sdt: SdtRowOptions } | { customXml: CustomXmlRowOptions }
+  TableRowOptions | { sdt: SdtRowOptions } | { customXml: CustomXmlRowOptions } | TableMarkerChild
 > {
   width?: TableWidthProperties;
+  /** Count of legacy empty w:tblCol children when a producer omitted w:gridCol. */
+  legacyColumnCount?: number;
+  /** Source w:gridCol widths, including null for an omitted optional w:w; round-trip only. */
+  columnWidthsRaw?: (number | PositiveUniversalMeasure | null)[];
   columnWidthsRevision?: TableGridChangeOptions;
   margins?: TableCellMarginOptions;
   indent?: TableWidthProperties;
   float?: TableFloatOptions;
   /** Column sizing: "autofit" let content resize columns, "fixed" honor column widths. */
   layout?: (typeof TableLayoutType)[keyof typeof TableLayoutType];
+  /** Source child order for w:tblPr; round-trip only for non-XSD sequences. */
+  propertyOrder?: TablePropertyOrder[];
   style?: string;
   borders?: TableBordersOptions;
   /** Justification (ST_JcTable): where the table sits — "start"/"center"/"end" or the legacy "left"/"right". */
@@ -60,3 +71,17 @@ export interface TableOptions extends BaseTableOptions<
   /** Table-level shading (w:shd). */
   shading?: ShadingProperties;
 }
+
+/**
+ * Run-level markers anchored directly under `w:tbl`, between rows — bookmark
+ * and revision ranges can span row boundaries and cannot live inside `w:tr`.
+ */
+export type TableMarkerChild =
+  | { commentRangeStart: MarkupRangeOptions }
+  | { commentRangeEnd: MarkupRangeOptions }
+  | { bookmarkStart: BookmarkStartOptions }
+  | { bookmarkEnd: MarkupRangeOptions }
+  | { moveFromRangeStart: MoveRangeStartOptions }
+  | { moveFromRangeEnd: MarkupRangeOptions }
+  | { moveToRangeStart: MoveRangeStartOptions }
+  | { moveToRangeEnd: MarkupRangeOptions };

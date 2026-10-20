@@ -51,6 +51,15 @@ describe("paragraph properties measure round-trip", () => {
     expect(indent.hanging).toBe("1mm");
   });
 
+  it("reads a tolerated unprefixed indent left attribute", () => {
+    const doc = parseXml(`<w:pPr ${W_NS}><w:ind left="2880"/></w:pPr>`);
+    const result = parseParagraphProperties(doc.elements![0]!, readCtx) as {
+      indent?: Record<string, unknown>;
+    };
+    expect(result.indent?.left).toBe(2880);
+    expect(stringifyParagraphProperties(result).xml).toContain('w:left="2880"');
+  });
+
   // hanging/firstLine are ST_TwipsMeasure (non-negative). Negative inputs
   // flip to the twin — the normalization Word itself applies when reading and
   // re-saving such (schema-invalid) markup — and lose to a legal twin value.
@@ -80,8 +89,9 @@ describe("paragraph properties measure round-trip", () => {
     const result = parseParagraphProperties(doc.elements![0]!, readCtx) as {
       indent?: Record<string, unknown>;
     };
-    expect(result.indent?.hanging).toBe(720);
-    expect(result.indent?.firstLine).toBeUndefined();
+    expect(result.indent?.firstLineRaw).toBe("-720");
+    expect(result.indent?.hanging).toBeUndefined();
+    expect(stringifyParagraphProperties(result).xml).toContain('w:firstLine="-720"');
   });
 
   it("parses a negative w:hanging as firstLine", () => {
@@ -89,7 +99,8 @@ describe("paragraph properties measure round-trip", () => {
     const result = parseParagraphProperties(doc.elements![0]!, readCtx) as {
       indent?: Record<string, unknown>;
     };
-    expect(result.indent?.firstLine).toBe(720);
-    expect(result.indent?.hanging).toBeUndefined();
+    expect(result.indent?.hangingRaw).toBe("-720");
+    expect(result.indent?.firstLine).toBeUndefined();
+    expect(stringifyParagraphProperties(result).xml).toContain('w:hanging="-720"');
   });
 });

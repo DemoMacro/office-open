@@ -135,6 +135,17 @@ describe("customGeometryDesc", () => {
     expect(result.pathList).toEqual([]);
   });
 
+  it("round-trips an empty sized path", () => {
+    const opts: CustomGeometryOptions = {
+      pathList: [{ w: 21600, h: 21600, commands: [] }],
+    };
+    const xml = stringify(customGeometryDesc, opts, {} as WriteContext)!;
+    expect(xml).toContain('<a:path w="21600" h="21600">');
+
+    const result = roundTrip(customGeometryDesc, opts);
+    expect(result.pathList).toEqual([{ w: 21600, h: 21600, commands: [] }]);
+  });
+
   it("round-trips custom geometry with arc and bezier commands", () => {
     const opts: CustomGeometryOptions = {
       pathList: [

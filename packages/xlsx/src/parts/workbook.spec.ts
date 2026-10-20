@@ -384,6 +384,28 @@ describe("workbookDesc round-trip", () => {
     expect(result.functionGroups).toEqual(["UDF1", "UDF2"]);
   });
 
+  it("round-trips an explicit default builtInGroupCount", () => {
+    const result = roundTrip({
+      sheets: [{ name: "Sheet1", sheetId: 1, rId: "rId1" }],
+      functionGroups: ["UDF1"],
+      builtInGroupCount: 16,
+      builtInGroupCountPresent: true,
+    });
+
+    expect(result.builtInGroupCount).toBe(16);
+    expect(result.builtInGroupCountPresent).toBe(true);
+  });
+
+  it("omits an undeclared builtInGroupCount default", () => {
+    const result = roundTrip({
+      sheets: [{ name: "Sheet1", sheetId: 1, rId: "rId1" }],
+      functionGroups: ["UDF1"],
+    });
+
+    expect(result.builtInGroupCount).toBeUndefined();
+    expect(result.builtInGroupCountPresent).toBeUndefined();
+  });
+
   it("preserves empty functionGroups and webPublishing containers", () => {
     const result = roundTrip({
       sheets: [{ name: "Sheet1", sheetId: 1, rId: "rId1" }],
@@ -435,7 +457,9 @@ describe("workbookDesc round-trip", () => {
           customMenu: "Run Total",
           description: "Sum of sales",
           shortcutKey: "t",
+          xmlSpace: "preserve",
           publishToServer: true,
+          workbookParameter: false,
         },
       ],
     };
@@ -452,6 +476,8 @@ describe("workbookDesc round-trip", () => {
     expect(dns[1]?.value).toBe("SUM(Sheet1!A1:A10)");
     expect(dns[1]?.customMenu).toBe("Run Total");
     expect(dns[1]?.publishToServer).toBe(true);
+    expect(dns[1]?.xmlSpace).toBe("preserve");
+    expect(dns[1]?.workbookParameter).toBe(false);
   });
 
   it("emits definedNames after externalReferences and before calcPr (XSD sequence)", () => {

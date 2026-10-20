@@ -1,4 +1,4 @@
-import { unzipSync } from "@office-open/core";
+import { unzipSync } from "@office-open/core/opc";
 import { describe, expect, it } from "vite-plus/test";
 
 import { generateWorkbook } from "./generate";

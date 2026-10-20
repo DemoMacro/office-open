@@ -13,7 +13,7 @@ import { AlignmentType } from "@parts/paragraph";
  * @module
  */
 import type { ParagraphStylePropertiesOptions } from "@parts/paragraph/properties";
-import type { RunStylePropertiesOptions } from "@parts/paragraph/run/properties";
+import type { OnOffLexicalValue, RunStylePropertiesOptions } from "@parts/paragraph/run/properties";
 import {
   stringifyTableCellProperties,
   stringifyTableProperties,
@@ -82,6 +82,8 @@ export interface StyleOptions {
   semiHidden?: boolean;
   unhideWhenUsed?: boolean;
   quickFormat?: boolean;
+  /** Source qFormat on/off lexical value; round-trip only. */
+  quickFormatRaw?: OnOffLexicalValue;
   locked?: boolean;
   personal?: boolean;
   personalCompose?: boolean;
@@ -92,8 +94,12 @@ export interface StyleOptions {
   rsid?: LongHexNumber;
   /** CT_Style `@w:default` — the default style for its type (CT_OnOff). */
   default?: boolean;
+  /** Source `@w:default` spelling; round-trip only. */
+  defaultRaw?: OnOffLexicalValue;
   /** CT_Style `@w:customStyle` — a user-defined custom style (CT_OnOff). */
   customStyle?: boolean;
+  /** Source `@w:customStyle` spelling; round-trip only. */
+  customStyleRaw?: OnOffLexicalValue;
   /** Source order of typed `<w:style>` children; round-trip only. */
   childOrder?: StyleChildOrder[];
 }
@@ -184,7 +190,12 @@ function styleChildFragments(
   add("uiPriority", opts.uiPriority !== undefined && `<w:uiPriority w:val="${opts.uiPriority}"/>`);
   add("semiHidden", opts.semiHidden && "<w:semiHidden/>");
   add("unhideWhenUsed", opts.unhideWhenUsed && "<w:unhideWhenUsed/>");
-  add("quickFormat", opts.quickFormat && "<w:qFormat/>");
+  add(
+    "quickFormat",
+    opts.quickFormatRaw !== undefined
+      ? `<w:qFormat w:val="${opts.quickFormatRaw}"/>`
+      : opts.quickFormat && "<w:qFormat/>",
+  );
   add("locked", opts.locked && "<w:locked/>");
   add("personal", opts.personal && "<w:personal/>");
   add("personalCompose", opts.personalCompose && "<w:personalCompose/>");
@@ -219,11 +230,19 @@ function orderedStyleChildren(
  */
 function styleOpenTag(
   type: string,
-  opts: { id?: string; default?: boolean; customStyle?: boolean },
+  opts: {
+    id?: string;
+    default?: boolean;
+    defaultRaw?: OnOffLexicalValue;
+    customStyle?: boolean;
+    customStyleRaw?: OnOffLexicalValue;
+  },
 ): string {
   let attrs = ` w:type="${type}" w:styleId="${escapeXml(opts.id ?? "")}"`;
-  if (opts.default) attrs += ' w:default="1"';
-  if (opts.customStyle) attrs += ' w:customStyle="1"';
+  if (opts.defaultRaw !== undefined) attrs += ` w:default="${opts.defaultRaw}"`;
+  else if (opts.default) attrs += ' w:default="1"';
+  if (opts.customStyleRaw !== undefined) attrs += ` w:customStyle="${opts.customStyleRaw}"`;
+  else if (opts.customStyle) attrs += ' w:customStyle="1"';
   return `<w:style${attrs}>`;
 }
 

@@ -64,15 +64,17 @@ describe("parseChartDrawing alt text", () => {
   it("carries docPr hyperlink tooltips", () => {
     const result = parseDrawing(
       'id="1" name="Chart 1"',
-      '<a:hlinkClick r:id="rId2" tooltip="Open chart"/>' +
-        '<a:hlinkHover r:id="rId3" tooltip="Preview chart"/>',
+      '<a:hlinkClick r:id="rId2" tgtFrame="_blank" tooltip="Open chart"/>' +
+        '<a:hlinkHover r:id="rId3" tgtFrame="_parent" tooltip="Preview chart"/>',
     );
     expect(result).toMatchObject({
       chart: {
         altText: {
           hyperlink: {
             clickTooltip: "Open chart",
+            clickTargetFrame: "_blank",
             hoverTooltip: "Preview chart",
+            hoverTargetFrame: "_parent",
           },
         },
       },
@@ -165,5 +167,68 @@ describe("parsePictureRun blip extensions", () => {
         useLocalDpiUri: "28A0092B-C50C-407e-A947-70E740481C1C",
       },
     });
+  });
+});
+
+describe("group and canvas DrawingML extensions", () => {
+  const mediaContext = {
+    docx: { doc: { getRaw: () => new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]) } },
+    resolveRelationship: () => "word/media/image.png",
+  } as unknown as DocxReadContext;
+
+  it("preserves useLocalDpi on canvas picture children", () => {
+    const xml =
+      `<w:drawing ${NS} xmlns:wpc="http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas" ` +
+      'xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture" ' +
+      'xmlns:a14="http://schemas.microsoft.com/office/drawing/2010/main">' +
+      '<wp:inline><wp:extent cx="9525" cy="9525"/><a:graphic>' +
+      '<a:graphicData uri="http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas">' +
+      '<wpc:wpc><pic:pic><pic:nvPicPr><pic:cNvPr id="0" name="Picture"/>' +
+      '<pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="rId1" cstate="print"><a:extLst>' +
+      '<a:ext uri="28A0092B-C50C-407e-A947-70E740481C1C"><a14:useLocalDpi val="0"/>' +
+      "</a:ext></a:extLst></a:blip></pic:blipFill></pic:pic></wpc:wpc>" +
+      "</a:graphicData></a:graphic></wp:inline></w:drawing>";
+    const result = parseDrawingRun(parseXml(xml).elements![0]!, mediaContext);
+    expect(result).toMatchObject({
+      wordprocessingCanvas: {
+        children: [
+          {
+            compression: "print",
+            useLocalDpi: false,
+            useLocalDpiUri: "28A0092B-C50C-407e-A947-70E740481C1C",
+          },
+        ],
+      },
+    });
+  });
+
+  it("preserves group property extensions", () => {
+    const xml =
+      `<w:drawing ${NS} xmlns:wpg="http://schemas.microsoft.com/office/word/2010/wordprocessingGroup" ` +
+      'xmlns:ma14="http://schemas.microsoft.com/office/mac/drawingml/2011/main">' +
+      '<wp:inline><wp:extent cx="9525" cy="9525"/><a:graphic>' +
+      '<a:graphicData uri="http://schemas.microsoft.com/office/word/2010/wordprocessingGroup">' +
+      '<wpg:wgp><wpg:cNvGrpSpPr/><wpg:grpSpPr><a:xfrm><a:off x="0" y="0"/>' +
+      '<a:ext cx="9525" cy="9525"/></a:xfrm><a:extLst><a:ext uri="{group-flag}">' +
+      '<ma14:wrappingTextBoxFlag val="1"/></a:ext></a:extLst></wpg:grpSpPr></wpg:wgp>' +
+      "</a:graphicData></a:graphic></wp:inline></w:drawing>";
+    const result = parseDrawingRun(parseXml(xml).elements![0]!, mediaContext);
+    expect(result).toMatchObject({
+      wpgGroup: { extensions: [{ uri: "{group-flag}" }] },
+    });
+  });
+
+  it("preserves inline wps text box ids", () => {
+    const xml =
+      `<w:drawing ${NS} xmlns:wps="http://schemas.microsoft.com/office/word/2010/wordprocessingShape">` +
+      '<wp:inline><wp:extent cx="9525" cy="9525"/><a:graphic>' +
+      '<a:graphicData uri="http://schemas.microsoft.com/office/word/2010/wordprocessingShape">' +
+      '<wps:wsp><wps:cNvSpPr txBox="1"/><wps:spPr><a:xfrm><a:off x="0" y="0"/>' +
+      '<a:ext cx="9525" cy="9525"/></a:xfrm></wps:spPr>' +
+      '<wps:txbx id="7"><w:txbxContent><w:p><w:r><w:t>Box</w:t></w:r></w:p>' +
+      "</w:txbxContent></wps:txbx><wps:bodyPr/></wps:wsp>" +
+      "</a:graphicData></a:graphic></wp:inline></w:drawing>";
+    const result = parseDrawingRun(parseXml(xml).elements![0]!, mediaContext);
+    expect(result).toMatchObject({ wpsShape: { textBoxId: 7 } });
   });
 });

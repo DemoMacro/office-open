@@ -35,7 +35,7 @@ const FORMAT_PACKAGES = new Set([
 const ARCHITECTURE: Record<string, ArchitectureRule> = {
   core: { denied: FORMAT_PACKAGES },
   odf: {
-    runtime: new Set(["xml"]),
+    runtime: new Set(["core", "xml"]),
     type: new Set(["core"]),
     denied: new Set(["docx", "xlsx", "pptx", "odt", "ods", "odp"]),
   },

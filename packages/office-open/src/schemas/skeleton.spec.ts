@@ -25,6 +25,17 @@ const demos: Record<DocumentType, unknown> = {
 const MAX_SKELETON_BYTES = 28 * 1024;
 
 describe("getSkeletonSchema", () => {
+  it("hides optional round-trip-only fields from authoring input", () => {
+    const skeleton = getSkeletonSchema("xlsx");
+    const properties = skeleton.properties as Record<string, unknown> | undefined;
+    const worksheet = (
+      properties?.worksheets as { items?: { properties?: Record<string, unknown> } } | undefined
+    )?.items?.properties;
+    expect(worksheet).not.toHaveProperty("sharedStrings");
+    expect(worksheet).not.toHaveProperty("rawParts");
+    expect(worksheet).not.toHaveProperty("passthroughRelationships");
+  });
+
   it("compiles under ajv for all three formats", () => {
     const ajv = new Ajv({ allErrors: true, allowUnionTypes: true });
     addFormats(ajv);

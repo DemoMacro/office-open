@@ -1,14 +1,16 @@
 import {
-  convertOutput,
-  OOXML_PACKAGE_FORMATS,
+  toUint8ArrayAsync,
+  type DataType,
   type OutputByType,
   type OutputType,
   type PackerOptions,
   type ReproducibleGenerationOptions,
 } from "@office-open/core";
+import { OOXML_PACKAGE_FORMATS } from "@office-open/core/opc";
 import {
   generateWorkbook as generateOdsWorkbook,
   parseWorkbook as parseOdsWorkbook,
+  type OdsWorkbookOptions,
 } from "@office-open/ods";
 import { parseWorkbook as parseXlsWorkbook } from "@office-open/xls";
 import {
@@ -43,14 +45,12 @@ export type WorkbookPatchRequest<T extends OutputType = OutputType> = Omit<
   outputType?: T;
 };
 
-const ODS_MIME_TYPE = "application/vnd.oasis.opendocument.spreadsheet";
-
 export async function parseWorkbook(
-  input: Uint8Array | string,
+  input: DataType,
   options?: WorkbookParseOptions,
-): Promise<WorkbookOptions> {
-  const info = detectOffice(input);
-  const data = typeof input === "string" ? new TextEncoder().encode(input) : input;
+): Promise<WorkbookOptions | OdsWorkbookOptions> {
+  const data = await toUint8ArrayAsync(input);
+  const info = detectOffice(data);
 
   switch (info.format) {
     case "ods":
@@ -72,7 +72,7 @@ export async function generateWorkbook<
   T extends OutputType = "nodebuffer",
 >(
   format: F,
-  options: WorkbookOptions,
+  options: WorkbookOptions | OdsWorkbookOptions,
   output?: T,
   reproducible?: F extends "ods" ? never : ReproducibleGenerationOptions,
 ): Promise<OutputByType[T]> {
@@ -80,7 +80,7 @@ export async function generateWorkbook<
 
   if (format === "ods") {
     if (reproducible) throw new Error("Reproducible generation is not supported for ODS");
-    return convertOutput(generateOdsWorkbook(options), outputType, ODS_MIME_TYPE);
+    return generateOdsWorkbook(options, outputType);
   }
 
   return generateXlsxWorkbook(

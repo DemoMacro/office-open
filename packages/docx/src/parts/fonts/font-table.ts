@@ -37,6 +37,8 @@ export interface EmbeddedFontPartOptions {
   rawOdttf?: boolean;
   /** Round-trip only: original .odttf part path; preserves the source name. */
   odttfPath?: string;
+  /** Round-trip only: source fontTable relationship id. */
+  embedRid?: string;
   /**
    * Round-trip only: obfuscation GUID (`w:fontKey`) preserved verbatim.
    * Undefined on authoring — a fresh key is generated for embedded fonts.
@@ -54,8 +56,12 @@ export interface EmbeddedFontPartOptions {
 export interface EmbeddedFontOptions {
   /** Font family name */
   name: string;
+  /** Source `w:font/@w:name` when absent or an empty string; round-trip only. */
+  nameRaw?: string;
   /** Character set/encoding for the font */
   characterSet?: UcharHexNumber;
+  /** Source `w:charset/@w:val` when it is not 2-char hex; round-trip only. */
+  characterSetRaw?: string;
   /** IANA character set name (w:charset/`@w:characterSet`, e.g. "ISO-8859-1"). */
   characterSetName?: string;
   /** Font family classification (e.g. "auto", "roman", "swiss") */
@@ -71,8 +77,11 @@ export interface EmbeddedFontOptions {
   panose1?: string;
   /** Alternative font name */
   altName?: string;
-  /** Font signature (Unicode/code-page bitfields) */
-  sig?: FontSignature;
+  /**
+   * Font signature (Unicode/code-page bitfields); null preserves a source
+   * declaration that omitted w:sig.
+   */
+  sig?: FontSignature | null;
   /** Embedded regular face (w:embedRegular). */
   embedRegular?: EmbeddedFontPartOptions;
   /** Embedded bold face (w:embedBold). */

@@ -62,9 +62,27 @@ function collapseInline(node: Node, format: DocumentType, context: string): Node
   return {
     type: "object",
     description:
-      `${description}Collapsed inline object (${context}) — call the office-open-schema-lookup tool ` +
-      `with { type: "${format}" } for details.`,
+      `${description}Collapsed inline object (${context}) — use office-open-schema-lookup ` +
+      `{ type: "${format}" }.`,
   };
+}
+
+function isPlainTypeBranch(branch: Node): boolean {
+  return (
+    JSON.stringify(Object.keys(branch)) === JSON.stringify(["type"]) &&
+    typeof branch.type === "string"
+  );
+}
+
+function isFormatOnlyBranch(branch: Node): boolean {
+  return (
+    JSON.stringify(Object.keys(branch).sort()) === JSON.stringify(["format", "type"]) &&
+    typeof branch.type === "string"
+  );
+}
+
+function anyOfOf(prop: Node): Node[] | undefined {
+  return Array.isArray(prop.anyOf) ? (prop.anyOf as Node[]) : undefined;
 }
 
 function convertProperty(
@@ -100,6 +118,29 @@ function convertProperty(
   }
 
   if (Array.isArray(prop.anyOf) || Array.isArray(prop.oneOf)) {
+    const plainTypes = new Set<string>();
+    const complexBranches: Node[] = [];
+    anyOfOf(prop)?.forEach((branch) => {
+      if (isPlainTypeBranch(branch)) plainTypes.add(branch.type as string);
+      else if (!isFormatOnlyBranch(branch) || !plainTypes.has(branch.type as string)) {
+        complexBranches.push(branch);
+      }
+    });
+    if (plainTypes.size > 0) {
+      const types = [...plainTypes];
+      const typeNode: Node = { type: types.length === 1 ? types[0] : types };
+      const out: Node =
+        complexBranches.length === 0
+          ? typeNode
+          : {
+              anyOf: [
+                typeNode,
+                ...complexBranches.map((branch) => convertProperty(branch, format, spine, visited)),
+              ],
+            };
+      if (typeof prop.description === "string") out.description = prop.description;
+      return out;
+    }
     const key = Array.isArray(prop.anyOf) ? "anyOf" : "oneOf";
     const branches = (prop[key] as Node[]).map((branch) =>
       convertProperty(branch, format, spine, visited),
@@ -117,7 +158,6 @@ function convertProperty(
 
   if (prop.type === "array" && prop.items && typeof prop.items === "object") {
     return {
-      type: "array",
       ...(typeof prop.description === "string" ? { description: prop.description } : {}),
       items: convertProperty(prop.items as Node, format, spine, visited),
     };
@@ -166,6 +206,11 @@ function convertWrapperUnion(def: Node, format: DocumentType, visited: ReadonlyS
   return out;
 }
 
+function isRoundTripOnly(prop: Node): boolean {
+  const description = prop.description;
+  return typeof description === "string" && /round-trip only/i.test(description);
+}
+
 function convertDefinition(
   name: string,
   def: Node,
@@ -180,6 +225,8 @@ function convertDefinition(
   if (properties) {
     const converted: Record<string, Node> = {};
     for (const [key, value] of Object.entries(properties)) {
+      const required = def.required as readonly string[] | undefined;
+      if (isRoundTripOnly(value) && !required?.includes(key)) continue;
       converted[key] = convertProperty(value, format, spine, visited);
     }
     out.properties = converted;

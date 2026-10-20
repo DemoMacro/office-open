@@ -15,7 +15,15 @@ export type ChartExSide = "left" | "top" | "right" | "bottom";
 export type ChartExAlignment = "minimum" | "center" | "maximum";
 export type ChartExFormulaDirection = "column" | "row";
 export type ChartExStringDimensionType = "category" | "colorString" | "entityId";
-export type ChartExNumericDimensionType = "val" | "xVal" | "yVal" | "size" | "degree";
+export type ChartExNumericDimensionType =
+  | "val"
+  | "x"
+  | "xVal"
+  | "y"
+  | "yVal"
+  | "size"
+  | "degree"
+  | "colorVal";
 export type ChartExAxisUnit =
   | "hundreds"
   | "thousands"
@@ -159,7 +167,7 @@ export interface ChartExChartData {
   extensions?: ChartExExtension[];
 }
 
-export type ChartExText = { formula: ChartExFormula; value?: string } | { rich: TextBodyOptions };
+export type ChartExText = { formula?: ChartExFormula; value?: string } | { rich: TextBodyOptions };
 
 export interface ChartExOffset {
   top: number;

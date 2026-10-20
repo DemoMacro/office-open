@@ -9,7 +9,7 @@ vi.mock("fflate", async (importOriginal) => {
     unzipSync: vi.fn(),
   };
 });
-import { unzipSync } from "@office-open/core";
+import { unzipSync } from "@office-open/core/opc";
 
 import { patchDetector } from "./patch-detector";
 

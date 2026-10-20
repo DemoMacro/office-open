@@ -191,7 +191,7 @@ describe("finalizeContentTypes", () => {
     expect(input).not.toContain("<Override");
   });
 
-  it("keeps a generic source XML default instead of retyping the part", () => {
+  it("retains a generic source XML default and adds the typed part override", () => {
     const input = finalizeContentTypes(
       { "ppt/diagrams/drawing1.xml": new TextEncoder().encode("<drawing/>") },
       {
@@ -205,11 +205,38 @@ describe("finalizeContentTypes", () => {
       },
       {} as never,
     );
-    expect(input).not.toContain("<Override");
+    expect(input).toContain(
+      '<Override PartName="/ppt/diagrams/drawing1.xml" ' +
+        'ContentType="application/vnd.ms-office.drawingml.diagramDrawing+xml"/>',
+    );
     expect(input).toContain('Extension="xml" ContentType="application/xml"');
   });
 
-  it("keeps a covering source binary default instead of adding a media override", () => {
+  it("restores a source default for a passthrough part instead of adding an override", () => {
+    const input = finalizeContentTypes(
+      {},
+      {
+        resolve: () => undefined,
+        mediaContentTypes: {},
+        source: {
+          defaults: [{ extension: "png", contentType: "image/png" }],
+          overrides: [],
+        },
+        rawParts: [
+          {
+            path: "word/media/image1.png",
+            data: new Uint8Array([1]),
+            contentType: "image/png",
+          },
+        ],
+      },
+      {} as never,
+    );
+    expect(input).not.toContain("<Override");
+    expect(input).toContain('Extension="png" ContentType="image/png"');
+  });
+
+  it("retains a covering binary default and adds the explicit media override", () => {
     const input = finalizeContentTypes(
       { "word/media/image1.bin": new Uint8Array([1]) },
       {
@@ -225,7 +252,10 @@ describe("finalizeContentTypes", () => {
       },
       {} as never,
     );
-    expect(input).not.toContain("<Override");
+    expect(input).toContain(
+      '<Override PartName="/word/media/image1.bin" ' +
+        'ContentType="application/vnd.openxmlformats-officedocument.oleObject"/>',
+    );
     expect(input).toContain('Extension="bin" ContentType="image/x-wmf"');
   });
 });

@@ -1,10 +1,12 @@
 import { execSync } from "node:child_process";
 import * as fs from "node:fs";
+import os from "node:os";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 import { Worker } from "node:worker_threads";
 
-import type { FileDiagnostic, Format, FormatCounts, LibraryRunResult } from "./library";
+import type { CorpusFile, FileDiagnostic, Format, FormatCounts, LibraryRunResult } from "./library";
+import { walkLibraryFiles } from "./library";
 import corpusSources from "./sources.json";
 import { runSyntheticCorpus } from "./synthetic";
 
@@ -93,14 +95,19 @@ function loadBaseline(): Baseline {
   }
 }
 
-function runLibraryWorker(libraryId: string, destination: string): Promise<LibraryRunResult> {
+function runLibraryWorker(
+  libraryId: string,
+  destination: string,
+  files: CorpusFile[],
+): Promise<LibraryRunResult> {
   return new Promise((resolve, reject) => {
     const worker = new Worker(path.join(__dirname, "library-worker.ts"), {
       workerData: {
         libraryId,
         input: { destination, root: ROOT_DIR, strictSemantic: STRICT_SEMANTIC_GATE },
+        files,
       },
-      resourceLimits: { maxOldGenerationSizeMb: 16384, maxYoungGenerationSizeMb: 512 },
+      resourceLimits: { maxOldGenerationSizeMb: 4096, maxYoungGenerationSizeMb: 256 },
     });
     worker.once("message", resolve);
     worker.once("error", reject);
@@ -116,6 +123,68 @@ function splitRawBlocker(
 ): { reason: string; part: string; count: number } {
   const separator = key.indexOf(":");
   return { reason: key.slice(0, separator), part: key.slice(separator + 1), count };
+}
+
+function mergeCountMaps(left: [string, number][], right: [string, number][]): [string, number][] {
+  const counts = new Map(left);
+  for (const [key, count] of right) counts.set(key, (counts.get(key) ?? 0) + count);
+  return [...counts];
+}
+
+function mergeLibraryResults(results: LibraryRunResult[]): LibraryRunResult {
+  const empty: FormatCounts = {
+    total: 0,
+    clean: 0,
+    diff: 0,
+    parseFail: 0,
+    genFail: 0,
+    malformed: 0,
+  };
+  const formats: Format[] = ["docx", "xlsx", "pptx"];
+  return {
+    counts: Object.fromEntries(
+      formats.map((format) => {
+        const merged = { ...empty };
+        for (const result of results) {
+          for (const [key, count] of Object.entries(result.counts[format]))
+            merged[key as keyof FormatCounts] += count;
+        }
+        return [format, merged];
+      }),
+    ) as Record<Format, FormatCounts>,
+    blockers: Object.fromEntries(
+      formats.map((format) => [
+        format,
+        results.reduce<[string, number][]>(
+          (merged, result) => mergeCountMaps(merged, result.blockers[format]),
+          [],
+        ),
+      ]),
+    ) as Record<Format, [string, number][]>,
+    diagnostics: results.flatMap((result) => result.diagnostics),
+    rawAudit: Object.fromEntries(
+      formats.map((format) => [
+        format,
+        results.reduce(
+          (merged, result) => ({
+            files: merged.files + result.rawAudit[format].files,
+            xmlParts: merged.xmlParts + result.rawAudit[format].xmlParts,
+            binaryParts: merged.binaryParts + result.rawAudit[format].binaryParts,
+          }),
+          { files: 0, xmlParts: 0, binaryParts: 0 },
+        ),
+      ]),
+    ) as Record<Format, { files: number; xmlParts: number; binaryParts: number }>,
+    rawBlockers: Object.fromEntries(
+      formats.map((format) => [
+        format,
+        results.reduce<[string, number][]>(
+          (merged, result) => mergeCountMaps(merged, result.rawBlockers[format]),
+          [],
+        ),
+      ]),
+    ) as Record<Format, [string, number][]>,
+  };
 }
 
 const args = process.argv.slice(2);
@@ -154,6 +223,11 @@ const rawBlockerReport: Record<
   Partial<Record<Format, { reason: string; part: string; count: number }[]>>
 > = {};
 
+const configuredWorkers = Number.parseInt(process.env.CORPUS_WORKERS ?? "", 10);
+const maxWorkers = Number.isFinite(configuredWorkers)
+  ? Math.max(1, Math.min(configuredWorkers, 32))
+  : Math.max(1, Math.min(os.availableParallelism() - 1, 8));
+
 console.log("\n[synthetic]");
 const synthetic = await runSyntheticCorpus();
 if (synthetic.diagnostics.length > 0) failed = true;
@@ -167,10 +241,51 @@ if (missingLibraries.length > 0) {
   );
 }
 
-for (const library of LIBRARIES.filter((library) => !missingLibraries.includes(library))) {
-  if (only && library.id !== only) continue;
+const availableLibraries = LIBRARIES.filter(
+  (library) => !missingLibraries.includes(library) && (!only || library.id === only),
+);
+const resultsByLibrary = new Map<string, LibraryRunResult[]>();
+const tasks: { libraryId: string; destination: string; files: CorpusFile[] }[] = [];
+let totalFiles = 0;
+for (const library of availableLibraries) {
+  const files = walkLibraryFiles(path.resolve(ROOT_DIR, library.dest));
+  totalFiles += files.length;
+  resultsByLibrary.set(library.id, []);
+  const workerCount = Math.max(1, Math.min(maxWorkers, Math.ceil(files.length / 32)));
+  const chunks = Array.from({ length: workerCount }, (): CorpusFile[] => []);
+  files.forEach((file, index) => chunks[index % workerCount]!.push(file));
+  for (const files of chunks) {
+    if (files.length > 0) tasks.push({ libraryId: library.id, destination: library.dest, files });
+  }
+}
+
+console.log(
+  `\n[external] ${totalFiles} files across ${availableLibraries.length} repos using ${Math.min(maxWorkers, tasks.length)} workers`,
+);
+let completedTasks = 0;
+const nextTask = { index: 0 };
+await Promise.all(
+  Array.from({ length: Math.min(maxWorkers, tasks.length) }, async () => {
+    while (nextTask.index < tasks.length) {
+      const task = tasks[nextTask.index++]!;
+      try {
+        const result = await runLibraryWorker(task.libraryId, task.destination, task.files);
+        resultsByLibrary.get(task.libraryId)!.push(result);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        throw new Error(`corpus worker failed for ${task.libraryId}: ${message}`, { cause: error });
+      }
+      completedTasks += 1;
+      if (completedTasks === tasks.length || completedTasks % 10 === 0) {
+        console.log(`[external] completed ${completedTasks}/${tasks.length} batches`);
+      }
+    }
+  }),
+);
+
+for (const library of availableLibraries) {
   console.log(`\n[${library.id}] ${library.dest}`);
-  const result = await runLibraryWorker(library.id, library.dest);
+  const result = mergeLibraryResults(resultsByLibrary.get(library.id) ?? []);
   allDiagnostics.push(...result.diagnostics);
   rawBlockerReport[library.id] = {
     ...Object.fromEntries(

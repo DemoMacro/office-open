@@ -129,8 +129,12 @@ export const OOXML_PACKAGE_FORMATS: Record<OoxmlPackageFormat, OoxmlPackageForma
  * instead of the current `openxmlformats` one; preserving it keeps the source
  * declaration table semantically intact.
  */
-const LEGACY_MAIN_CONTENT_TYPES: Partial<Record<OoxmlPackageFamily, ReadonlySet<string>>> = {
+const ADDITIONAL_MAIN_CONTENT_TYPES: Partial<Record<OoxmlPackageFamily, ReadonlySet<string>>> = {
   spreadsheet: new Set(["application/vnd.ms-excel.template.main+xml"]),
+  presentation: new Set([
+    "application/vnd.openxmlformats-officedocument.presentationml.slideshow.main+xml",
+    "application/vnd.ms-powerpoint.slideshow.macroEnabled.main+xml",
+  ]),
 };
 
 export function ooxmlPackageFormatInfo(
@@ -165,6 +169,6 @@ export function resolveMainPartContentType(
   const isFamilyMain =
     Object.values(OOXML_PACKAGE_FORMATS).some(
       (format) => format.family === family && format.mainContentType === declared,
-    ) || LEGACY_MAIN_CONTENT_TYPES[family]?.has(declared) === true;
+    ) || ADDITIONAL_MAIN_CONTENT_TYPES[family]?.has(declared) === true;
   return isFamilyMain ? declared : fallback;
 }

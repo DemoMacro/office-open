@@ -21,6 +21,8 @@ export interface SmartArtRawParts {
    * Falls back to an empty spTree shell when absent.
    */
   drawing?: DataType;
+  /** Source drawing part's own rels; retained only with the drawing bytes. */
+  drawingRels?: DataType;
   /** Source drawing part file name (for sparse packages such as drawing10.xml). */
   drawingFileName?: string;
   /**
@@ -30,7 +32,21 @@ export interface SmartArtRawParts {
    */
   drawingRelationship?: boolean;
   /** Images referenced by the data part's own rels (dgm:pt blipFill art). */
-  media?: { fileName: string; data: DataType }[];
+  media?: SmartArtRawMediaPart[];
+}
+
+export interface SmartArtRawMediaPart {
+  fileName: string;
+  data: DataType;
+  /** Physical package path from the source; round-trip only. */
+  partPath?: string;
+}
+
+export interface SmartArtSourceRelationship {
+  relationshipType: string;
+  target: string;
+  rId: string;
+  targetMode?: "External";
 }
 
 /** Source package paths preserved by round-trip; compiler-only. */
@@ -60,6 +76,10 @@ export interface SmartArtData {
   raw?: SmartArtRawParts;
   /** Source part locations for sparse paths; round-trip only. */
   sourcePaths?: SmartArtSourcePaths;
+  /** Source dgm:relIds relationship Ids (r:dm/r:lo/r:qs/r:cs). Round-trip only. */
+  sourceRelIds?: { dm?: string; lo?: string; qs?: string; cs?: string };
+  /** Source data-part relationships preserved with their original rIds. */
+  sourceRelationships?: SmartArtSourceRelationship[];
 }
 
 /**

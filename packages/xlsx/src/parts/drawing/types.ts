@@ -133,6 +133,10 @@ export function pickAnchorOptions<T extends DrawingAnchorOptions>(source: T): Dr
 export interface DrawingPictureOptions
   extends DrawingAnchorOptions, NonVisualDrawingPropertiesOptions {
   /**
+   * Macro reference (xdr:pic/@macro); empty string round-trips.
+   */
+  macro?: string;
+  /**
    * Relationship ID for the embedded image (a:blip @r:embed). Empty on a
    * linked-only picture, which carries {@link linkRId} alone.
    */
@@ -156,6 +160,14 @@ export interface DrawingPictureOptions
   hyperlink?: TextHyperlinkOptions;
   /** Blip crop (a:srcRect); an empty object round-trips the bare marker. */
   sourceRectangle?: SourceRectangleOptions;
+  /**
+   * Stretch fill rectangle (a:stretch/a:fillRect). `false` preserves a source
+   * that omitted stretch, `true` a bare stretch marker; an object round-trips
+   * attributes.
+   */
+  fillRectangle?: SourceRectangleOptions | true | false;
+  /** Source pic omitted xdr:blipFill; `false` preserves that invalid-reader-compatible shape. */
+  blipFillPresent?: false;
   /** Display resolution hint (blipFill/@dpi), e.g. 300 = 300 DPI. */
   dpi?: number;
   /** Whether the fill rotates with the shape (blipFill/@rotWithShape). */
@@ -175,8 +187,11 @@ export interface DrawingPictureOptions
   blipEffects?: BlipEffectsOptions;
   /** Compression state (a:blip/@cstate); absent = attribute omitted. */
   compression?: BlipCompression;
-  /** Local-DPI display hint (a14:useLocalDpi in the a:blip extension list). */
-  useLocalDpi?: boolean;
+  /**
+   * Local-DPI display hint (a14:useLocalDpi in the a:blip extension list);
+   * `"default"` preserves a source element with no val attribute.
+   */
+  useLocalDpi?: boolean | "default";
   /**
    * Verbatim a:blip `a:extLst` inner XML for extensions beyond useLocalDpi
    * (a14 imgProps artistic effects, …). Round-trip only; subsumes
@@ -195,6 +210,15 @@ export interface DrawingChartOptions
   extends DrawingAnchorOptions, NonVisualDrawingPropertiesOptions {
   /** Relationship ID for the chart */
   rId: string;
+  /**
+   * Whether the graphic frame carries a placement transform. `false`
+   * preserves a source frame that omitted `xdr:xfrm` (round-trip only).
+   */
+  frameTransform?: boolean;
+  /** Graphic-frame transform offset from left (a:xfrm/a:off/@x, EMU). */
+  frameOffsetX?: number;
+  /** Graphic-frame transform offset from top (a:xfrm/a:off/@y, EMU). */
+  frameOffsetY?: number;
   /** Graphic-frame transform width (a:xfrm/a:ext/@cx, EMU). */
   frameExtentCx?: number;
   /** Graphic-frame transform height (a:xfrm/a:ext/@cy, EMU). */
@@ -205,6 +229,10 @@ export interface DrawingChartOptions
   frameFlipHorizontal?: boolean;
   /** Vertical flip (xdr:xfrm/@flipV). */
   frameFlipVertical?: boolean;
+  /** Graphic-frame accessibility title; separate from the chart title. */
+  frameTitle?: string;
+  /** Graphic-frame hidden flag. */
+  frameHidden?: boolean;
   /**
    * Click hyperlink on the object itself (a:hlinkClick inside xdr:cNvPr) —
    * jump to a URL when the object is clicked.
@@ -231,8 +259,11 @@ export interface DrawingWebExtensionFallbackOptions {
   sourceRectangle?: SourceRectangleOptions;
   /** Image adjustment effects carried inside a:blip. */
   blipEffects?: BlipEffectsOptions;
-  /** Local-DPI display hint (a14:useLocalDpi in the a:blip extension list). */
-  useLocalDpi?: boolean;
+  /**
+   * Local-DPI display hint (a14:useLocalDpi in the a:blip extension list);
+   * `"default"` preserves a source element with no val attribute.
+   */
+  useLocalDpi?: boolean | "default";
   /** Verbatim a:blip a:extLst inner XML for unmodeled extensions. */
   blipExt?: string;
   /**
@@ -289,6 +320,8 @@ export interface DrawingSmartArtOptions
 
 /** Anchored shape (xdr:sp): geometry + optional text body. */
 export interface ShapeOptions extends DrawingAnchorOptions, NonVisualDrawingPropertiesOptions {
+  /** ODF-only `draw:control` reference; absent for ordinary spreadsheet shapes. */
+  odfControlId?: string;
   /**
    * Click hyperlink on the object itself (a:hlinkClick inside xdr:cNvPr) —
    * jump to a URL when the object is clicked.
@@ -396,7 +429,16 @@ export interface GroupOptions extends DrawingAnchorOptions, BaseGroupOptions {
   images?: GroupPictureChildOptions[];
   /** Nested connectors. */
   connectors?: GroupConnectorChildOptions[];
+
+  /** Nested anchored-group content (xdr:grpSp without a worksheet anchor). */
+  groups?: GroupChildGroupOptions[];
+  /** Source child order by `cNvPr` id; absent uses the category order above. */
+  childOrder?: readonly number[];
 }
+
+/** Group nested inside another group (no worksheet anchor). */
+export type GroupChildGroupOptions = Omit<GroupOptions, keyof DrawingAnchorOptions> &
+  Pick<GroupOptions, "shapeId">;
 
 /** Picture nested inside a group (no worksheet anchor, but size/id survive). */
 export type GroupPictureChildOptions = Omit<DrawingPictureOptions, keyof DrawingAnchorOptions> &
@@ -411,6 +453,8 @@ export interface DrawingContentPartOptions extends DrawingAnchorOptions {
 export interface DrawingOptions {
   images?: DrawingPictureOptions[];
   charts?: DrawingChartOptions[];
+  /** Anchored ChartEx frames (cx:chart inside xdr:graphicFrame). */
+  chartExs?: DrawingChartExOptions[];
   /** Anchored WebExtension frames (we:webextensionref inside mc:AlternateContent). */
   webExtensions?: DrawingWebExtensionOptions[];
   smartArts?: DrawingSmartArtOptions[];
@@ -418,4 +462,42 @@ export interface DrawingOptions {
   connectors?: ConnectorOptions[];
   groups?: GroupOptions[];
   contentParts?: DrawingContentPartOptions[];
+}
+
+/** Anchored ChartEx graphic frame (xdr:graphicFrame > cx:chart). */
+export interface DrawingChartExOptions
+  extends DrawingAnchorOptions, NonVisualDrawingPropertiesOptions {
+  /** Relationship ID for the ChartEx part (cx:chart @r:id). */
+  rId: string;
+  /** Graphic-frame transform width (a:xfrm/a:ext/@cx, EMU). */
+  frameExtentCx?: number;
+  /** Graphic-frame transform height (a:xfrm/a:ext/@cy, EMU). */
+  frameExtentCy?: number;
+  /** Graphic-frame transform offset from left (a:xfrm/a:off/@x, EMU). */
+  frameOffsetX?: number;
+  /** Graphic-frame transform offset from top (a:xfrm/a:off/@y, EMU). */
+  frameOffsetY?: number;
+  /** Graphic-frame rotation in degrees (xdr:xfrm/@rot). */
+  frameRotation?: number;
+  /** Horizontal flip (xdr:xfrm/@flipH). */
+  frameFlipHorizontal?: boolean;
+  /** Vertical flip (xdr:xfrm/@flipV). */
+  frameFlipVertical?: boolean;
+  /** Frame locks (cNvGraphicFramePr/a:graphicFrameLocks); absent = empty. */
+  frameLocks?: GraphicFrameLockingOptions;
+  /** Click hyperlink on the frame (a:hlinkClick inside xdr:cNvPr). */
+  hyperlink?: TextHyperlinkOptions;
+  /** Document-order position inside the drawing part (round-trip only). */
+  zOrder?: number;
+  /** Original cNvPr id (round-trip only). */
+  shapeId?: number;
+  /** Macro reference (CT_GraphicFrame/@macro); empty string round-trips. */
+  macro?: string;
+  /** Published-object flag (graphicFrame/@fPublished); explicit true/false round-trips. */
+  fPublished?: boolean;
+  /**
+   * Legacy fallback shape inside `mc:AlternateContent` (the “chart isn’t
+   * available” placeholder). Preserved verbatim in canonical shape options.
+   */
+  fallbackShape?: GroupShapeChildOptions;
 }

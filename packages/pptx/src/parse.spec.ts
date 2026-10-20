@@ -1,4 +1,4 @@
-import { unzipSync, zipSync } from "@office-open/core";
+import { unzipSync, zipSync } from "@office-open/core/opc";
 import { describe, expect, it } from "vite-plus/test";
 
 import { generatePresentation } from "./generate";
@@ -159,6 +159,21 @@ describe("parsePresentation", () => {
     expect(masterIds).toEqual([2147483660, 2147483661]);
   });
 
+  it("preserves an omitted source master id", async () => {
+    const buffer = await generatePresentation({ slides: [] });
+    const archive = unzipSync(buffer);
+    archive["ppt/presentation.xml"] = new TextEncoder().encode(
+      decodeEntry(buffer, "ppt/presentation.xml").replace(' id="2147483648"', ""),
+    );
+    const parsed = parsePresentationSync(zipSync(archive));
+
+    expect(parsed.masters?.map((master) => master.masterId)).toEqual([null]);
+    const regenerated = await generatePresentation(parsed);
+    expect(decodeEntry(regenerated, "ppt/presentation.xml")).toContain(
+      '<p:sldMasterId r:id="rId1"/>',
+    );
+  });
+
   it("parses multi-master file", async () => {
     const masters: MasterDefinition[] = [
       {
@@ -220,7 +235,7 @@ describe("parsePresentation", () => {
     expect(master1?.theme?.name).to.equal("Dark");
   });
 
-  it("parses table styles (default id always present)", async () => {
+  it("omits absent table styles", async () => {
     const options: PresentationOptions = {
       slides: [
         { children: [{ shape: { x: 0, y: 0, width: 200, height: 100, textBody: { text: "A" } } }] },
@@ -229,8 +244,7 @@ describe("parsePresentation", () => {
     const buffer = await generatePresentation(options);
     const result = parsePresentationSync(buffer);
 
-    expect(result.tableStyles).to.exist;
-    expect(result.tableStyles!.defaultStyleId).toBe("{5C22544A-7EE6-4342-B048-85BDC9FD1C3A}");
+    expect(result.tableStyles).toBeUndefined();
   });
 
   it("round-trips custom table styles end-to-end", async () => {
@@ -299,6 +313,11 @@ describe("parsePresentation", () => {
 
   it("round-trips slide sections (p14:sectionLst)", async () => {
     const options: PresentationOptions = {
+      sections: [
+        { name: "Empty", id: "11111111-2222-3333-4444-555555555555", slideIndices: [] },
+        { name: "Intro", id: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee", slideIndices: [0, 1] },
+        { name: "Content", id: "99999999-8888-7777-6666-555555555555", slideIndices: [2] },
+      ],
       slides: [
         {
           section: "Intro",
@@ -325,6 +344,7 @@ describe("parsePresentation", () => {
       "Content",
       undefined,
     ]);
+    expect(result.sections).toEqual(options.sections);
   });
 
   it("registers internal slide-jump hyperlinks as slide relationships", async () => {

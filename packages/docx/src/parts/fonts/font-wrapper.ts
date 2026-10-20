@@ -1,12 +1,12 @@
 import {
-  type DataType,
   encodeUriPath,
-  RELATIONSHIP_TYPES,
-  type ReproducibleScope,
   Relationships,
   toUint8Array,
+  type DataType,
+  type ReproducibleScope,
   uniqueUuid,
 } from "@office-open/core";
+import { RELATIONSHIP_TYPES } from "@office-open/core/opc";
 
 /**
  * Font Wrapper module for WordprocessingML documents.
@@ -65,8 +65,7 @@ export function embeddedFontElementName(partName: EmbeddedFontPartName): string 
 
 /** Drops compile-only relationship wiring from a parse result. */
 export function toPublicEmbeddedFont(part: EmbeddedFontPartWithKey): EmbeddedFontPartOptions {
-  const { embedRid: _embedRid, ...options } = part;
-  return options;
+  return { ...part };
 }
 
 /** Converts a resolved font-table parse result to the public canonical model. */
@@ -156,18 +155,28 @@ export class FontWrapper implements ViewWrapper {
     });
     this.relationships = new Relationships();
 
-    let relIdx = 0;
+    const usedRelationshipIds = new Set<string>();
     for (const font of this.fontOptionsWithKey) {
       for (const [partName, part] of embeddedFontParts(font)) {
-        if (part.data === undefined) continue;
-        relIdx += 1;
-        part.embedRid = `rId${relIdx}`;
+        const sourceId = part.embedRid === undefined ? undefined : /^rId(\d+)$/.exec(part.embedRid);
+        const sourceRelationshipId = sourceId ? `rId${sourceId[1]}` : undefined;
+        const reuseSourceId =
+          sourceRelationshipId !== undefined && !usedRelationshipIds.has(sourceRelationshipId);
+        const relationshipId = reuseSourceId
+          ? Number(sourceId?.[1])
+          : this.relationships.nextRelationshipId;
+        part.embedRid = `rId${relationshipId}`;
+        usedRelationshipIds.add(part.embedRid);
         const resolved =
           part.odttfPath ?? defaultEmbeddedFontPath(font.name, partName, ownerDirectory);
         const target = relativeFontTarget(resolved, ownerDirectory);
         // A Target is a URI: escape the font part name per segment (spaces,
         // non-ASCII) so it matches the ZIP entry packed by compileDocument.
-        this.relationships.addRelationship(relIdx, RELATIONSHIP_TYPES.font, encodeUriPath(target));
+        this.relationships.addRelationship(
+          relationshipId,
+          RELATIONSHIP_TYPES.font,
+          encodeUriPath(target),
+        );
       }
     }
   }

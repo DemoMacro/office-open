@@ -1,4 +1,4 @@
-import { CompoundFileReader } from "@office-open/core";
+import { CompoundFileReader } from "@office-open/core/cfb";
 import type { DocumentOptions, SectionChild } from "@office-open/docx";
 
 import { readSummaryInformation } from "../cfb/container";

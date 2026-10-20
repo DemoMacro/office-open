@@ -35,6 +35,9 @@ describe("table cell list styles", () => {
     if (!element) throw new Error("fixture has no root element");
     const parsed = tableDesc.parse(element, readContext);
     const cell = parsed.rows?.[0]?.cells?.[0];
-    expect(cell).toMatchObject({ text: "Cell", listStyle: { ext: "" } });
+    expect(cell).toMatchObject({
+      children: [{ text: "Cell" }],
+      listStyle: { ext: "" },
+    });
   });
 });

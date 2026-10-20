@@ -13,6 +13,7 @@ import type { Element as XmlElement } from "@office-open/xml";
 
 import {
   parseChartAnchor,
+  parseChartExAnchor,
   parseConnectorAnchor,
   parseContentPartAnchor,
   parseGroupAnchor,
@@ -26,6 +27,7 @@ import {
   buildGroup,
   clientDataXml,
   stringifyChart,
+  stringifyChartEx,
   stringifyConnector,
   stringifyContentPart,
   stringifyImage,
@@ -40,6 +42,7 @@ import {
 import type {
   DrawingAnchorOptions,
   DrawingChartOptions,
+  DrawingChartExOptions,
   DrawingContentPartOptions,
   DrawingWebExtensionOptions,
   DrawingSmartArtOptions,
@@ -150,6 +153,7 @@ export const drawingDesc: CustomDescriptor<DrawingOptions> = {
   stringify(opts, ctx) {
     const images = opts.images ?? [];
     const charts = opts.charts ?? [];
+    const chartExs = opts.chartExs ?? [];
     const webExtensions = opts.webExtensions ?? [];
     const smartArts = opts.smartArts ?? [];
     const shapes = opts.shapes ?? [];
@@ -179,6 +183,13 @@ export const drawingDesc: CustomDescriptor<DrawingOptions> = {
         shapeId: chart.shapeId,
         emit: (id) => stringifyChart(chart, id, ctx),
         alternateContent: chart.alternateContent,
+      });
+    for (const chartEx of chartExs)
+      emissions.push({
+        order: chartEx.zOrder,
+        shapeId: chartEx.shapeId,
+        emit: (id) => stringifyChartEx(chartEx, id, ctx),
+        alternateContent: chartEx.alternateContent,
       });
     for (const webExtension of webExtensions)
       emissions.push({
@@ -257,6 +268,7 @@ export const drawingDesc: CustomDescriptor<DrawingOptions> = {
     const result: Partial<DrawingOptions> = {};
     const images: DrawingPictureOptions[] = [];
     const charts: DrawingChartOptions[] = [];
+    const chartExs: DrawingChartExOptions[] = [];
     const webExtensions: DrawingWebExtensionOptions[] = [];
     const smartArts: DrawingSmartArtOptions[] = [];
     const shapes: ShapeOptions[] = [];
@@ -295,7 +307,11 @@ export const drawingDesc: CustomDescriptor<DrawingOptions> = {
         continue;
       }
 
-      const graphicFrame = findXdr(anchor, "graphicFrame");
+      const directGraphicFrame = findXdr(anchor, "graphicFrame");
+      const alternateGraphicFrame = directGraphicFrame
+        ? undefined
+        : findXdrObjectInChoice(anchor, "graphicFrame");
+      const graphicFrame = directGraphicFrame ?? alternateGraphicFrame;
       const alternateContent = (anchor.elements ?? []).find(
         (child) => child.name === "mc:AlternateContent",
       );
@@ -312,6 +328,13 @@ export const drawingDesc: CustomDescriptor<DrawingOptions> = {
         );
         if (webExtension) {
           webExtensions.push(stamp(webExtension, anchor, wrapped));
+          continue;
+        }
+      }
+      if (graphicFrame) {
+        const chartEx = parseChartExAnchor(anchor, graphicFrame, name, ctx);
+        if (chartEx) {
+          chartExs.push(stamp(chartEx, anchor, wrapped));
           continue;
         }
       }
@@ -376,6 +399,7 @@ export const drawingDesc: CustomDescriptor<DrawingOptions> = {
 
     if (images.length > 0) result.images = images;
     if (charts.length > 0) result.charts = charts;
+    if (chartExs.length > 0) result.chartExs = chartExs;
     if (webExtensions.length > 0) result.webExtensions = webExtensions;
     if (smartArts.length > 0) result.smartArts = smartArts;
     if (shapes.length > 0) result.shapes = shapes;

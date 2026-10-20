@@ -15,14 +15,15 @@
  * @module
  */
 import { toUint8Array, parseOnOff } from "@office-open/core";
-import { RELATIONSHIP_TYPES } from "@office-open/core";
 import type { UniversalMeasure } from "@office-open/core";
 import { parseVmlStyle } from "@office-open/core";
 import {
   stringifyVmlShape,
   stringifyVmlShapetype,
+  stringifyVmlRect,
   parseVmlShapetype,
   parseVmlShape,
+  parseVmlRect,
 } from "@office-open/core";
 import type {
   VmlShapetypeOptions,
@@ -32,6 +33,7 @@ import type {
 } from "@office-open/core";
 import { parseVmlImageData, type VmlImageDataOptions } from "@office-open/core";
 import type { CustomDescriptor, ReadContext } from "@office-open/core/descriptor";
+import { RELATIONSHIP_TYPES } from "@office-open/core/opc";
 import { attr, attrMeasure, escapeXml, findChild, textOf, type Element } from "@office-open/xml";
 import type { MediaData } from "@shared/media/data";
 
@@ -139,6 +141,8 @@ export interface ObjectElementOptions {
   shapetype?: VmlShapetypeOptions;
   /** Complete parsed preview shape; preserves VML attributes outside the convenience fields. */
   previewShape?: VmlShapeOptions;
+  /** Preview VML element kind; `v:rect` is a valid OLE preview beside `v:shape`. */
+  previewShapeKind?: "shape" | "rect";
   /** Preview icon image (v:imagedata). */
   iconImage?: ObjectIconImageOptions;
   /** Embedded OLE object (o:OLEObject Type="Embed"). */
@@ -215,7 +219,11 @@ export const objectDesc: CustomDescriptor<ObjectElementOptions, BodyContext> = {
       } else {
         previewShape.imagedata = imagedataOptions;
       }
-      inner.push(stringifyVmlShape(previewShape));
+      inner.push(
+        opts.previewShapeKind === "rect"
+          ? stringifyVmlRect(previewShape)
+          : stringifyVmlShape(previewShape),
+      );
     } else {
       inner.push(
         stringifyVmlShape({
@@ -240,7 +248,7 @@ export const objectDesc: CustomDescriptor<ObjectElementOptions, BodyContext> = {
       const externalLink = link?.sourceUrl !== undefined;
       const fileName = externalLink ? undefined : registerEmbedding(payload, ctx);
       const attrs: string[] = [` Type="${link ? "Link" : "Embed"}"`];
-      if (payload.progId) attrs.push(` ProgID="${payload.progId}"`);
+      if (payload.progId !== undefined) attrs.push(` ProgID="${payload.progId}"`);
       // Word ties the OLE object to its preview shape via ShapeID.
       attrs.push(` ShapeID="${payload.shapeId ?? shapeId}"`);
       if (payload.drawAspect) {
@@ -340,10 +348,12 @@ export const objectDesc: CustomDescriptor<ObjectElementOptions, BodyContext> = {
 
     // VML shape — structural capture; binary media is fetched through the
     // part's rels (r:id → media path → raw bytes) so round-trips keep the data.
-    const shape = findChild(el, "v:shape");
+    const shape = findChild(el, "v:shape") ?? findChild(el, "v:rect");
     if (shape) {
-      const parsedShape = parseVmlShape(shape);
+      const isRect = shape.name === "v:rect";
+      const parsedShape = isRect ? parseVmlRect(shape) : parseVmlShape(shape);
       result.previewShape = parsedShape;
+      if (isRect) result.previewShapeKind = "rect";
       const id = attr(shape, "id");
       if (id) result.shapeId = id;
       if (parsedShape.fillcolor !== undefined) result.fillcolor = parsedShape.fillcolor;
@@ -504,7 +514,7 @@ function parseOleObject(el: Element): ObjectEmbedOptions {
   if (drawAspect === "Icon") opts.drawAspect = "icon";
   else if (drawAspect === "Content") opts.drawAspect = "content";
   const progId = attr(el, "ProgID");
-  if (progId) opts.progId = progId;
+  if (progId !== undefined) opts.progId = progId;
   const shapeId = attr(el, "ShapeID");
   if (shapeId) opts.shapeId = shapeId;
   const objectId = attr(el, "ObjectID");

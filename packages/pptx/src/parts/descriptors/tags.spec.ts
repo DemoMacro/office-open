@@ -19,6 +19,14 @@ describe("tagListDesc", () => {
     expect(tagListDesc.parse(parseXml(xml).elements![0]!, readCtx)).toEqual(tags);
   });
 
+  it("ignores whitespace nodes between tag elements", () => {
+    const xml =
+      '<p:tagLst>\n  <p:tag name="category" val="demo"/>\n  <!-- producer comment -->\n</p:tagLst>';
+    expect(tagListDesc.parse(parseXml(xml).elements![0]!, readCtx)).toEqual([
+      { name: "category", val: "demo" },
+    ]);
+  });
+
   it("rejects malformed tags structurally", () => {
     const missing = parseXml('<p:tagLst><p:tag name="category"/></p:tagLst>');
     expect(() => tagListDesc.parse(missing.elements![0]!, readCtx)).toThrowError(

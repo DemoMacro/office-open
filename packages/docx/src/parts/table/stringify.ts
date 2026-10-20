@@ -24,13 +24,17 @@ import type {
   TableCellPropertiesChangeOptions,
   TableCellPropertiesOptions,
 } from "@parts/table/table-cell/table-cell-properties";
-import type { TableBordersOptions } from "@parts/table/table-properties/table-borders";
+import type {
+  TableBorderSide,
+  TableBordersOptions,
+} from "@parts/table/table-properties/table-borders";
 import type { TableCellMarginOptions } from "@parts/table/table-properties/table-cell-margin";
 import type { TableFloatOptions } from "@parts/table/table-properties/table-float-properties";
 import type { TableLookOptions } from "@parts/table/table-properties/table-look";
 import type {
   TablePropertiesChangeOptions,
   TablePropertiesOptions,
+  TablePropertyOrder,
 } from "@parts/table/table-properties/table-properties";
 import type { TablePropertyExOptions } from "@parts/table/table-properties/table-property-exceptions";
 import type {
@@ -40,6 +44,7 @@ import type {
 } from "@parts/table/table-row/table-row-properties";
 import type { TableWidthProperties } from "@parts/table/table-width";
 import { WidthType, widthPctToFiftieths } from "@parts/table/table-width";
+import type { BorderOptions } from "@shared/border";
 import type { CellMergeAttributes } from "@shared/track-revision";
 import { autoRevisionId } from "@shared/track-revision/track-revision";
 import type { ChangedProperties } from "@shared/track-revision/track-revision";
@@ -60,7 +65,8 @@ function tableWidthValue(
 }
 
 function tableWidthStr(name: string, opts: TableWidthProperties): string {
-  const type = opts.type ?? WidthType.AUTO;
+  if (opts.type === undefined) return `<${name} w:w="${tableWidthValue(opts.size, undefined)}"/>`;
+  const type = opts.type;
   const a = attrsRaw({
     "w:w": tableWidthValue(opts.size, type),
     "w:type": xsdTableWidthType.to(type),
@@ -97,16 +103,40 @@ function cellMarginStr(tag: string, opts: TableCellMarginOptions): string | unde
 // CT_TblBorders — all 8 sides are optional (minOccurs=0); emit only those set.
 // Sequence order: top, start, left, bottom, end, right, insideH, insideV.
 function tableBordersStr(opts: TableBordersOptions): string | undefined {
-  const parts: string[] = [];
-  if (opts.top) parts.push(borderStr("w:top", opts.top));
-  if (opts.start) parts.push(borderStr("w:start", opts.start));
-  if (opts.left) parts.push(borderStr("w:left", opts.left));
-  if (opts.bottom) parts.push(borderStr("w:bottom", opts.bottom));
-  if (opts.end) parts.push(borderStr("w:end", opts.end));
-  if (opts.right) parts.push(borderStr("w:right", opts.right));
-  if (opts.insideHorizontal) parts.push(borderStr("w:insideH", opts.insideHorizontal));
-  if (opts.insideVertical) parts.push(borderStr("w:insideV", opts.insideVertical));
-  return parts.length > 0 ? `<w:tblBorders>${parts.join("")}</w:tblBorders>` : undefined;
+  const sides: readonly TableBorderSide[] = opts.order ?? [
+    "top",
+    "start",
+    "left",
+    "bottom",
+    "end",
+    "right",
+    "insideHorizontal",
+    "insideVertical",
+  ];
+  const sideTags: Record<TableBorderSide, string> = {
+    top: "w:top",
+    start: "w:start",
+    left: "w:left",
+    bottom: "w:bottom",
+    end: "w:end",
+    right: "w:right",
+    insideHorizontal: "w:insideH",
+    insideVertical: "w:insideV",
+  };
+  const sideOptions: Record<TableBorderSide, BorderOptions | undefined> = {
+    top: opts.top,
+    start: opts.start,
+    left: opts.left,
+    bottom: opts.bottom,
+    end: opts.end,
+    right: opts.right,
+    insideHorizontal: opts.insideHorizontal,
+    insideVertical: opts.insideVertical,
+  };
+  const parts = sides
+    .filter((side) => sideOptions[side] !== undefined)
+    .map((side) => borderStr(sideTags[side], sideOptions[side]!));
+  return `<w:tblBorders>${parts.join("")}</w:tblBorders>`;
 }
 
 // ── Cell borders string ──
@@ -255,82 +285,106 @@ function stringifyTablePropertiesInner(
   options: TablePropertiesOptions & { includeIfEmpty?: boolean },
   scope?: ReproducibleScope,
 ): string {
-  const parts: string[] = [];
+  const canonicalOrder = tablePropertiesOrder(options);
+  const customOrder = options.propertyOrder?.filter(
+    (property, index) => options.propertyOrder?.indexOf(property) === index,
+  );
+  const order = customOrder
+    ? [...customOrder, ...canonicalOrder.filter((property) => !customOrder.includes(property))]
+    : canonicalOrder;
 
-  if (options.style) {
-    parts.push(`<w:tblStyle w:val="${options.style}"/>`);
-  }
+  return order.flatMap((property) => tablePropertyPart(options, property, scope)).join("");
+}
 
-  if (options.float) {
-    parts.push(floatPropertiesStr(options.float));
-    if (options.float.overlap) {
-      parts.push(`<w:tblOverlap w:val="${options.float.overlap}"/>`);
+export function tablePropertiesOrder(options: TablePropertiesOptions): TablePropertyOrder[] {
+  return [
+    ...(options.style ? (["style"] as const) : []),
+    ...(options.float ? (["float", "overlap"] as const) : []),
+    ...(options.visuallyRightToLeft !== undefined ? (["visuallyRightToLeft"] as const) : []),
+    ...(options.styleRowBandSize !== undefined ? (["styleRowBandSize"] as const) : []),
+    ...(options.styleColBandSize !== undefined ? (["styleColBandSize"] as const) : []),
+    ...(options.width ? (["width"] as const) : []),
+    ...(options.alignment ? (["alignment"] as const) : []),
+    ...(options.cellSpacing ? (["cellSpacing"] as const) : []),
+    ...(options.indent ? (["indent"] as const) : []),
+    ...(options.borders ? (["borders"] as const) : []),
+    ...(options.shading ? (["shading"] as const) : []),
+    ...(options.layout ? (["layout"] as const) : []),
+    ...(options.margins ? (["margins"] as const) : []),
+    ...(options.tableLook ? (["tableLook"] as const) : []),
+    ...(options.caption !== undefined ? (["caption"] as const) : []),
+    ...(options.description !== undefined ? (["description"] as const) : []),
+    ...(options.revision ? (["revision"] as const) : []),
+  ];
+}
+
+function tablePropertyPart(
+  options: TablePropertiesOptions,
+  property: TablePropertyOrder,
+  scope?: ReproducibleScope,
+): string[] {
+  switch (property) {
+    case "style":
+      return options.style ? [`<w:tblStyle w:val="${options.style}"/>`] : [];
+    case "float": {
+      if (!options.float) return [];
+      const { overlap: _overlap, ...positioning } = options.float;
+      if (
+        !Object.keys(positioning).some(
+          (key) => positioning[key as keyof typeof positioning] !== undefined,
+        )
+      ) {
+        return [];
+      }
+      return [floatPropertiesStr(options.float)];
     }
+    case "overlap":
+      return options.float?.overlap ? [`<w:tblOverlap w:val="${options.float.overlap}"/>`] : [];
+    case "visuallyRightToLeft":
+      return options.visuallyRightToLeft !== undefined
+        ? [onOff("w:bidiVisual", options.visuallyRightToLeft)]
+        : [];
+    case "styleRowBandSize":
+      return options.styleRowBandSize !== undefined
+        ? [`<w:tblStyleRowBandSize w:val="${options.styleRowBandSize}"/>`]
+        : [];
+    case "styleColBandSize":
+      return options.styleColBandSize !== undefined
+        ? [`<w:tblStyleColBandSize w:val="${options.styleColBandSize}"/>`]
+        : [];
+    case "width":
+      return options.width ? [tableWidthStr("w:tblW", options.width)] : [];
+    case "alignment":
+      return options.alignment ? [`<w:jc w:val="${xsdJcAlignment.to(options.alignment)}"/>`] : [];
+    case "cellSpacing":
+      return options.cellSpacing ? [cellSpacingStr(options.cellSpacing)] : [];
+    case "indent":
+      return options.indent ? [tableWidthStr("w:tblInd", options.indent)] : [];
+    case "borders": {
+      if (!options.borders) return [];
+      const borders = tableBordersStr(options.borders);
+      return borders ? [borders] : [];
+    }
+    case "shading":
+      return options.shading ? [shadingStr(options.shading)] : [];
+    case "layout":
+      return options.layout ? [`<w:tblLayout w:type="${options.layout}"/>`] : [];
+    case "margins": {
+      if (!options.margins) return [];
+      const margins = cellMarginStr("w:tblCellMar", options.margins);
+      return margins ? [margins] : [];
+    }
+    case "tableLook":
+      return options.tableLook ? [tableLookStr(options.tableLook)] : [];
+    case "caption":
+      return options.caption !== undefined ? [`<w:tblCaption w:val="${options.caption}"/>`] : [];
+    case "description":
+      return options.description !== undefined
+        ? [`<w:tblDescription w:val="${options.description}"/>`]
+        : [];
+    case "revision":
+      return options.revision ? [stringifyTablePropertiesChangeInner(options.revision, scope)] : [];
   }
-
-  if (options.visuallyRightToLeft !== undefined) {
-    parts.push(onOff("w:bidiVisual", options.visuallyRightToLeft));
-  }
-
-  if (options.styleRowBandSize !== undefined) {
-    parts.push(`<w:tblStyleRowBandSize w:val="${options.styleRowBandSize}"/>`);
-  }
-
-  if (options.styleColBandSize !== undefined) {
-    parts.push(`<w:tblStyleColBandSize w:val="${options.styleColBandSize}"/>`);
-  }
-
-  if (options.width) {
-    parts.push(tableWidthStr("w:tblW", options.width));
-  }
-
-  if (options.alignment) {
-    parts.push(`<w:jc w:val="${xsdJcAlignment.to(options.alignment)}"/>`);
-  }
-
-  if (options.cellSpacing) {
-    parts.push(cellSpacingStr(options.cellSpacing));
-  }
-
-  if (options.indent) {
-    parts.push(tableWidthStr("w:tblInd", options.indent));
-  }
-
-  if (options.borders) {
-    const bs = tableBordersStr(options.borders);
-    if (bs) parts.push(bs);
-  }
-
-  if (options.shading) {
-    parts.push(shadingStr(options.shading));
-  }
-
-  if (options.layout) {
-    parts.push(`<w:tblLayout w:type="${options.layout}"/>`);
-  }
-
-  if (options.margins) {
-    const cm = cellMarginStr("w:tblCellMar", options.margins);
-    if (cm) parts.push(cm);
-  }
-
-  if (options.tableLook) {
-    parts.push(tableLookStr(options.tableLook));
-  }
-
-  if (options.caption !== undefined) {
-    parts.push(`<w:tblCaption w:val="${options.caption}"/>`);
-  }
-
-  if (options.description !== undefined) {
-    parts.push(`<w:tblDescription w:val="${options.description}"/>`);
-  }
-
-  if (options.revision) {
-    parts.push(stringifyTablePropertiesChangeInner(options.revision, scope));
-  }
-
-  return parts.join("");
 }
 
 export function stringifyTableProperties(
@@ -510,7 +564,7 @@ function stringifyTableCellPropertiesInner(
   if (options.borders) {
     const bs = cellBordersStr(options.borders);
     if (bs) parts.push(bs);
-  }
+  } else if (options.emptyBorders) parts.push("<w:tcBorders/>");
 
   if (options.shading) {
     parts.push(shadingStr(options.shading));

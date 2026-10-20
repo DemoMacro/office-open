@@ -37,8 +37,8 @@ export function parseAltChunk(el: Element, ctx: DocxReadContext): AltChunkOption
 
   // Determine content type from extension
   const ext = sourcePath.split(".").pop() ?? "txt";
-  let contentType: "text/html" | "application/rtf" | "text/plain";
-  let extension: "html" | "rtf" | "txt";
+  let contentType: AltChunkOptions["contentType"];
+  let extension: AltChunkOptions["extension"];
 
   switch (ext) {
     case "html":
@@ -48,6 +48,10 @@ export function parseAltChunk(el: Element, ctx: DocxReadContext): AltChunkOption
     case "rtf":
       contentType = "application/rtf";
       extension = "rtf";
+      break;
+    case "docx":
+      contentType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+      extension = "docx";
       break;
     default:
       contentType = "text/plain";

@@ -12,7 +12,7 @@
  */
 
 import type { HexColorOrAuto, ThemeColor, UcharHexNumber } from "@office-open/core";
-import type { RunPropertiesOptions } from "@parts/paragraph/run/properties";
+import type { OnOffLexicalValue, RunPropertiesOptions } from "@parts/paragraph/run/properties";
 
 // ─── Lock ───────────────────────────────────────────────────────────────────
 
@@ -93,6 +93,8 @@ export interface SdtDateOptions {
 export interface SdtTextOptions {
   /** Whether the text control supports multiple lines */
   multiLine?: boolean;
+  /** Source `@w:multiLine` spelling; round-trip only. */
+  multiLineRaw?: OnOffLexicalValue;
 }
 
 /**
@@ -104,8 +106,8 @@ export interface SdtTextOptions {
 export interface SdtCheckboxSymbol {
   /** Hex Unicode code point of the symbol (e.g., "2612") */
   val: string;
-  /** Font face; defaults to "MS Gothic" */
-  font?: string;
+  /** Font face; defaults to "MS Gothic". null preserves a source-omitted attribute. */
+  font?: string | null;
 }
 
 /**
@@ -121,6 +123,10 @@ export interface SdtCheckboxOptions {
   checkedState?: SdtCheckboxSymbol;
   /** Symbol for the unchecked state (default: ☐ 0x2610, MS Gothic) */
   uncheckedState?: SdtCheckboxSymbol;
+  /** Whether source checked-state settings are present; false preserves absence. */
+  checkedStatePresent?: boolean;
+  /** Whether source unchecked-state settings are present; false preserves absence. */
+  uncheckedStatePresent?: boolean;
 }
 
 /**
@@ -165,6 +171,11 @@ export interface SdtColorOptions {
  * Options for CT_SdtPr — structured document tag properties.
  */
 export interface SdtPropertiesOptions {
+  /**
+   * Whether the source carried `<w:sdtPr>`. `false` preserves its absence;
+   * omitted means the normal authoring default of emitting an empty element.
+   */
+  propertiesPresent?: boolean;
   /** Run properties for the SDT's start mark (sdtPr's leading w:rPr) */
   runProperties?: RunPropertiesOptions;
   /** Display name */
@@ -208,12 +219,16 @@ export interface SdtPropertiesOptions {
     gallery?: string;
     category?: string;
     unique?: boolean;
+    /** Source `@w:val` spelling for `w:docPartUnique` (round-trip only). */
+    uniqueRaw?: OnOffLexicalValue;
   };
   /** Document part list SDT */
   docPartList?: {
     gallery?: string;
     category?: string;
     unique?: boolean;
+    /** Source `@w:val` spelling for `w:docPartUnique` (round-trip only). */
+    uniqueRaw?: OnOffLexicalValue;
   };
   /** DropDownList SDT (selection only) */
   dropDownList?: SdtDropDownListOptions;

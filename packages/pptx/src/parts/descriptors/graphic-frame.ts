@@ -16,11 +16,16 @@ import {
 } from "@office-open/core/drawing";
 import type { TextHyperlinkOptions } from "@office-open/core/drawing";
 import type { NonVisualDrawingPropertiesOptions } from "@office-open/core/drawing";
-import { attr, findChild } from "@office-open/xml";
+import { attr, findChild, stringifyElement } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 import { parseCustDataLst, stringifyCustDataLst } from "@parts/slide/c-sld";
 import type { SlideCustomerDataReferenceOptions } from "@shared/customer-data";
-import type { PlaceholderOrientation, PlaceholderSize, PlaceholderType } from "@shared/shape/shape";
+import type {
+  NvPrExtensionOptions,
+  PlaceholderOrientation,
+  PlaceholderSize,
+  PlaceholderType,
+} from "@shared/shape/shape";
 
 /**
  * Serialize p:cNvGraphicFramePr. Locking is tri-state:
@@ -59,7 +64,7 @@ export function readGraphicFrameLocking(
  */
 export interface NvPrPlaceholderOptions {
   /** CT_Placeholder `@type` — ST_PlaceholderType. */
-  placeholder?: PlaceholderType;
+  placeholder?: PlaceholderType | true;
   /** CT_Placeholder `@idx`. */
   placeholderIndex?: number;
   /** CT_Placeholder `@sz` — sizing hint (default "full"). */
@@ -73,9 +78,11 @@ export interface NvPrPlaceholderOptions {
   userDrawn?: boolean;
   /**
    * p14:modId `@val` from the nvPr extension list — Office's collaboration
-   * modification stamp, the sole known p:nvPr ext content.
+   * modification stamp.
    */
   modId?: string;
+  /** Unknown application extensions (`p:nvPr/p:extLst`); `[]` preserves an empty list. */
+  nvPrExtensions?: NvPrExtensionOptions[];
   /** Click hyperlink (a:hlinkClick inside p:cNvPr). */
   hyperlink?: TextHyperlinkOptions;
 }
@@ -114,9 +121,22 @@ const MODID_EXT_URI = "{D42A27DB-BD31-4B8C-83A1-F6EECF244321}";
 /** Serialize the p:nvPr content (placeholder reference, or photo/user-drawn attrs). */
 export function stringifyNvPr(opts: GraphicFrameNvPrOptions): string {
   const customerDataXml = stringifyCustDataLst(opts.customerData);
-  const modIdExt = opts.modId
-    ? `<p:extLst><p:ext uri="${MODID_EXT_URI}"><p14:modId xmlns:p14="http://schemas.microsoft.com/office/powerpoint/2010/main" val="${opts.modId}"/></p:ext></p:extLst>`
-    : "";
+  const extensions: NvPrExtensionOptions[] = [];
+  if (opts.modId) {
+    extensions.push({
+      uri: MODID_EXT_URI,
+      content:
+        '<p14:modId xmlns:p14="http://schemas.microsoft.com/office/powerpoint/2010/main" ' +
+        `val="${opts.modId}"/>`,
+    });
+  }
+  extensions.push(...(opts.nvPrExtensions ?? []));
+  const nvPrExtXml =
+    opts.nvPrExtensions !== undefined || extensions.length > 0
+      ? `<p:extLst>${extensions
+          .map((extension) => `<p:ext uri="${extension.uri}">${extension.content ?? ""}</p:ext>`)
+          .join("")}</p:extLst>`
+      : "";
   // isPhoto/userDrawn live on p:nvPr itself, orthogonal to the p:ph child
   // (CT_ApplicationNonVisualDrawingProps) — a placeholder can carry both.
   const nvPrAttrs: string[] = [];
@@ -127,32 +147,25 @@ export function stringifyNvPr(opts: GraphicFrameNvPrOptions): string {
   // by idx must still emit <p:ph/> without a type attribute.
   if (opts.placeholder || opts.placeholderIndex !== undefined) {
     const phAttrs: string[] = [];
-    if (opts.placeholder) phAttrs.push(`type="${xsdPlaceholderType.to(opts.placeholder)}"`);
+    if (typeof opts.placeholder === "string")
+      phAttrs.push(`type="${xsdPlaceholderType.to(opts.placeholder)}"`);
     if (opts.placeholderIndex !== undefined) phAttrs.push(`idx="${opts.placeholderIndex}"`);
     if (opts.placeholderSize !== undefined) phAttrs.push(`sz="${opts.placeholderSize}"`);
     if (opts.placeholderOrientation !== undefined)
       phAttrs.push(`orient="${opts.placeholderOrientation}"`);
     if (opts.hasCustomPrompt) phAttrs.push('hasCustomPrompt="1"');
-    return `<p:nvPr${nvPrAttrsXml}><p:ph ${phAttrs.join(" ")}/>${customerDataXml}${modIdExt}</p:nvPr>`;
+    const phAttrsXml = phAttrs.length > 0 ? ` ${phAttrs.join(" ")}` : "";
+    return `<p:nvPr${nvPrAttrsXml}><p:ph${phAttrsXml}/>${customerDataXml}${nvPrExtXml}</p:nvPr>`;
   }
-  if (customerDataXml || modIdExt)
-    return `<p:nvPr${nvPrAttrsXml}>${customerDataXml}${modIdExt}</p:nvPr>`;
+  if (customerDataXml || nvPrExtXml)
+    return `<p:nvPr${nvPrAttrsXml}>${customerDataXml}${nvPrExtXml}</p:nvPr>`;
   return nvPrAttrsXml ? `<p:nvPr${nvPrAttrsXml}/>` : "<p:nvPr/>";
 }
 
 /** Read the p:nvPr placeholder reference into a result object. */
 export function readNvPrPlaceholder(
   nvParent: XmlElement,
-  result: GraphicFrameNvPrOptions & {
-    placeholder?: PlaceholderType;
-    placeholderIndex?: number;
-    placeholderSize?: PlaceholderSize;
-    placeholderOrientation?: PlaceholderOrientation;
-    hasCustomPrompt?: boolean;
-    isPhoto?: boolean;
-    userDrawn?: boolean;
-    modId?: string;
-  },
+  result: Partial<GraphicFrameNvPrOptions>,
 ): void {
   const nvPr = findChild(nvParent, "p:nvPr");
   if (!nvPr) return;
@@ -164,7 +177,7 @@ export function readNvPrPlaceholder(
   }
   result.customerData = parseCustDataLst(findChild(nvPr, "p:custDataLst"));
   const ph = findChild(nvPr, "p:ph");
-  if (ph?.attributes) {
+  if (ph?.attributes && Object.keys(ph.attributes).length > 0) {
     if (ph.attributes["type"] !== undefined)
       result.placeholder = xsdPlaceholderType.from(
         String(ph.attributes["type"]),
@@ -176,9 +189,20 @@ export function readNvPrPlaceholder(
       result.placeholderOrientation = ph.attributes["orient"] as PlaceholderOrientation;
     if (ph.attributes["hasCustomPrompt"] !== undefined)
       result.hasCustomPrompt = parseOnOff(ph.attributes["hasCustomPrompt"]) ?? false;
+  } else if (ph) {
+    result.placeholder = true;
   }
   const extLst = findChild(nvPr, "p:extLst");
   if (extLst) {
+    const unknownExtensions = (extLst.elements ?? [])
+      .filter((ext) => ext.name === "p:ext" && !extUriMatches(attr(ext, "uri"), MODID_EXT_URI))
+      .map((ext) => ({
+        uri: attr(ext, "uri") ?? "",
+        ...(ext.elements?.length
+          ? { content: ext.elements.map((child) => stringifyElement(child)).join("") }
+          : {}),
+      }));
+    result.nvPrExtensions = unknownExtensions;
     for (const ext of extLst.elements ?? []) {
       if (ext.name !== "p:ext" || !extUriMatches(attr(ext, "uri"), MODID_EXT_URI)) continue;
       const modId = findChild(ext, "p14:modId");

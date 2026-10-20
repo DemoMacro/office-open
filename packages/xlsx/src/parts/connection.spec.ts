@@ -209,4 +209,12 @@ describe("queryTableDesc", () => {
     expect(r.queryTableFields![1]).toMatchObject({ id: 2, dataBound: false });
     expect(r.deletedFields).toEqual([{ name: "gone" }]);
   });
+
+  it("round-trips an explicit adjustColumnWidth=false", () => {
+    const opts = { name: "QT", connectionId: 1, adjustColumnWidth: false };
+    const xml = queryTableDesc.stringify(opts, writeCtx);
+    expect(xml).toContain('adjustColumnWidth="0"');
+    const parsed = queryTableDesc.parse(parseRoot(xml), readCtx);
+    expect(parsed.adjustColumnWidth).toBe(false);
+  });
 });

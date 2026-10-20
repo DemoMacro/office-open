@@ -74,12 +74,12 @@ export async function verify(format: LegacyFormat, data: Uint8Array): Promise<vo
     return;
   }
   if (format === "odt") {
-    parseOdtDocument(generateOdtDocument(parseOdtDocument(data)));
+    await parseOdtDocument(await generateOdtDocument(await parseOdtDocument(data)));
     return;
   }
   if (format === "ods") {
-    parseOdsWorkbook(generateOdsWorkbook(parseOdsWorkbook(data)));
+    await parseOdsWorkbook(await generateOdsWorkbook(await parseOdsWorkbook(data)));
     return;
   }
-  parseOdpPresentation(generateOdpPresentation(parseOdpPresentation(data)));
+  await parseOdpPresentation(await generateOdpPresentation(await parseOdpPresentation(data)));
 }

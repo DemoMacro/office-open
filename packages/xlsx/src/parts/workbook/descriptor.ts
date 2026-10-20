@@ -8,6 +8,7 @@ import { parseOnOff, xsdComments } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attr, attrNum, findChild, stringifyElement } from "@office-open/xml";
 
+import { XlsxParseError } from "../pivot/pivot-xml";
 import { stringifyWorkbook } from "./stringify";
 import type {
   CalculationPropertiesOptions,
@@ -16,6 +17,7 @@ import type {
   FileRecoveryPropertiesOptions,
   FileSharingOptions,
   FileVersionOptions,
+  ForeignAttributeOptions,
   PivotCacheReference,
   RevisionPtrOptions,
   SheetDefinition,
@@ -221,6 +223,13 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
       if (fullPrecision !== undefined) calc.fullPrecision = fullPrecision;
       if (attr(calcPrEl, "calcCompleted") !== undefined)
         calc.calcCompleted = parseOnOff(attr(calcPrEl, "calcCompleted")) ?? false;
+      const foreignAttributes: ForeignAttributeOptions[] = [];
+      for (const [name, value] of Object.entries(calcPrEl.attributes ?? {})) {
+        if (value === undefined || typeof value === "boolean") continue;
+        if (name === "mc:Ignorable" || !name.includes(":")) continue;
+        foreignAttributes.push({ name, value: String(value) });
+      }
+      if (foreignAttributes.length > 0) calc.foreignAttributes = foreignAttributes;
       result.calculation = calc;
     }
 
@@ -282,7 +291,7 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
       if (parseOnOff(attr(fileSharingEl, "readOnlyRecommended"))) fs.readOnlyRecommended = true;
       if (attr(fileSharingEl, "userName")) fs.userName = attr(fileSharingEl, "userName");
       if (attr(fileSharingEl, "reservationPassword"))
-        fs.reservationPassword = attr(fileSharingEl, "reservationPassword");
+        fs.reservationPasswordHashRaw = attr(fileSharingEl, "reservationPassword");
       if (attr(fileSharingEl, "algorithmName"))
         fs.algorithmName = attr(fileSharingEl, "algorithmName");
       if (attr(fileSharingEl, "hashValue")) fs.hashValue = attr(fileSharingEl, "hashValue");
@@ -434,7 +443,10 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
       }
       result.functionGroups = names;
       const builtInGroupCount = attrNum(fgEl, "builtInGroupCount");
-      if (builtInGroupCount !== undefined) result.builtInGroupCount = builtInGroupCount;
+      if (builtInGroupCount !== undefined) {
+        result.builtInGroupCount = builtInGroupCount;
+        result.builtInGroupCountPresent = true;
+      }
     }
 
     // Web publish objects
@@ -464,6 +476,8 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
         if (d.name !== "definedName") continue;
         const value = (d.elements ?? []).map((e) => e.text ?? "").join("");
         const dn: DefinedNameOptions = { name: attr(d, "name") ?? "", value };
+        const xmlSpace = attr(d, "xml:space");
+        if (xmlSpace === "preserve" || xmlSpace === "default") dn.xmlSpace = xmlSpace;
         if (attr(d, "comment") !== undefined) dn.comment = attr(d, "comment");
         if (attr(d, "customMenu") !== undefined) dn.customMenu = attr(d, "customMenu");
         if (attr(d, "description") !== undefined) dn.description = attr(d, "description");
@@ -471,15 +485,19 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
         if (attr(d, "statusBar") !== undefined) dn.statusBar = attr(d, "statusBar");
         const localSheetId = attrNum(d, "localSheetId");
         if (localSheetId !== undefined) dn.localSheetId = localSheetId;
-        if (parseOnOff(attr(d, "hidden"))) dn.hidden = true;
-        if (parseOnOff(attr(d, "function"))) dn.function = true;
-        if (parseOnOff(attr(d, "vbProcedure"))) dn.vbProcedure = true;
-        if (parseOnOff(attr(d, "xlm"))) dn.xlm = true;
+        if (attr(d, "hidden") !== undefined) dn.hidden = parseOnOff(attr(d, "hidden")) ?? false;
+        if (attr(d, "function") !== undefined)
+          dn.function = parseOnOff(attr(d, "function")) ?? false;
+        if (attr(d, "vbProcedure") !== undefined)
+          dn.vbProcedure = parseOnOff(attr(d, "vbProcedure")) ?? false;
+        if (attr(d, "xlm") !== undefined) dn.xlm = parseOnOff(attr(d, "xlm")) ?? false;
         const functionGroupId = attrNum(d, "functionGroupId");
         if (functionGroupId !== undefined) dn.functionGroupId = functionGroupId;
         if (attr(d, "shortcutKey") !== undefined) dn.shortcutKey = attr(d, "shortcutKey");
-        if (parseOnOff(attr(d, "publishToServer"))) dn.publishToServer = true;
-        if (parseOnOff(attr(d, "workbookParameter"))) dn.workbookParameter = true;
+        if (attr(d, "publishToServer") !== undefined)
+          dn.publishToServer = parseOnOff(attr(d, "publishToServer")) ?? false;
+        if (attr(d, "workbookParameter") !== undefined)
+          dn.workbookParameter = parseOnOff(attr(d, "workbookParameter")) ?? false;
         names.push(dn);
       }
       result.definedNames = names;
@@ -516,6 +534,20 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
     // Conformance
     if (el.attributes?.["conformance"]) {
       result.conformance = attr(el, "conformance") as WorkbookConformance;
+    }
+
+    // Root xml:space lexical form (rare but legal on <workbook>)
+    const rootXmlSpace = attr(el, "xml:space");
+    if (rootXmlSpace !== undefined) {
+      if (rootXmlSpace !== "default" && rootXmlSpace !== "preserve") {
+        throw new XlsxParseError(
+          "xl/workbook.xml",
+          "",
+          "workbook",
+          `invalid xml:space "${rootXmlSpace}"; expected "default" or "preserve"`,
+        );
+      }
+      result.rootXmlSpace = rootXmlSpace;
     }
 
     return result as WorkbookDescriptorOptions;

@@ -163,7 +163,7 @@ export function parseFormatScheme(
     backgroundFillStyles: [],
   };
   const name = el.attributes?.["name"];
-  if (name) result.name = String(name);
+  if (name !== undefined) result.name = String(name);
   result.namePresent = name !== undefined;
 
   const fillStyleLst = findChild(el, "a:fillStyleLst");

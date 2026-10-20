@@ -59,9 +59,20 @@ export interface CorePictureOptions {
   shape3d?: Shape3DOptions;
   blipEffects?: BlipEffectsOptions;
   sourceRectangle?: SourceRectangleOptions;
+  /**
+   * Fill rectangle inside `a:stretch`; `false` preserves a source bare
+   * `<a:stretch/>`, while omitted uses the fresh-authoring default fill rect.
+   */
+  fillRectangle?: SourceRectangleOptions | false;
+  /** Whether pic:blipFill carries a:stretch; false preserves an omitted element. */
+  stretch?: boolean;
   tile?: TileOptions;
   /** Picture non-visual properties (pic:cNvPr) — populated by parse */
   nonVisualProperties?: NonVisualPropertiesOptions;
+  /** Whether pic:pic carried pic:nvPicPr; round-trip only. */
+  nonVisualPropertiesPresent?: boolean;
+  /** Whether pic:pic carried pic:spPr; round-trip only. */
+  shapePropertiesPresent?: boolean;
   /** Structured run properties of the wrapping w:r (round-trip) — emitted before the drawing. */
   runProperties?: RunPropertiesOptions;
   /** Revision save ID of the wrapping w:r (w:rsidR, round-trip). */
@@ -90,6 +101,10 @@ export interface CorePictureOptions {
   compression?: BlipCompression;
   /** Black-and-white rendering mode (pic:spPr `@bwMode`); absent = omitted. */
   blackWhiteMode?: BlackWhiteMode;
+  /** Raw inner XML of a:blip/a:extLst for non-SVG/non-useLocalDpi extensions (round-trip). */
+  blipExt?: string;
+  /** Typed a:extLst/a:ext children of pic:spPr (round-trip). */
+  shapeExtensions?: { uri: string; content?: string }[];
 }
 
 export interface RegularPictureOptions {

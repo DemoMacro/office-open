@@ -4,7 +4,7 @@
  * @module
  */
 import { parseOnOff } from "@office-open/core";
-import { attr, attrNum, findChild } from "@office-open/xml";
+import { attr, attrNum, findChild, stringifyElement } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 
 import { parseColorOptions } from "../../shared/color";
@@ -16,11 +16,53 @@ import type {
   CellFillOptions,
   FontOptions,
   CellGradientStopOptions,
+  ForeignAttributeOptions,
+  ForeignChildOptions,
 } from "./types";
+
+/** Collect foreign-namespace attributes (any prefixed name) from an element. */
+export function foreignAttributesOf(el: XmlElement): ForeignAttributeOptions[] {
+  const collected: ForeignAttributeOptions[] = [];
+  for (const [name, value] of Object.entries(el.attributes ?? {})) {
+    if (value === undefined || typeof value === "boolean" || !name.includes(":")) continue;
+    collected.push({ name, value: String(value) });
+  }
+  return collected;
+}
+
+/**
+ * Parse an mc:AlternateContent font branch: the vendor mc:Choice font keeps
+ * its foreign attributes/children verbatim; mc:Fallback parses as a plain font.
+ */
+export function parseFontAlternateContent(el: XmlElement): FontOptions | undefined {
+  const choice = findChild(el, "mc:Choice");
+  const choiceFont = choice?.elements?.find((child) => child.name === "font");
+  if (!choice || !choiceFont) return undefined;
+  const namespaces: Record<string, string> = {};
+  for (const [name, value] of Object.entries(choice.attributes ?? {})) {
+    if (name.startsWith("xmlns:") && typeof value === "string") {
+      namespaces[name.slice("xmlns:".length)] = value;
+    }
+  }
+  const font = parseFont(choiceFont);
+  const fallbackFont = findChild(el, "mc:Fallback")?.elements?.find(
+    (child) => child.name === "font",
+  );
+  return {
+    alternateContent: {
+      requires: attr(choice, "Requires"),
+      ...(Object.keys(namespaces).length > 0 ? { namespaces } : {}),
+      choice: font,
+      ...(fallbackFont ? { fallback: parseFont(fallbackFont) } : {}),
+    },
+  };
+}
 
 export function parseFont(el: XmlElement): FontOptions {
   const result: Partial<FontOptions> = {};
   const childOrder: string[] = [];
+  const foreignAttributes = foreignAttributesOf(el);
+  const foreignChildren: ForeignChildOptions[] = [];
   // CT_BooleanProperty children (b/i/strike/…) default val to true, so an
   // explicit val="0" is a real "off" statement — keep it as false rather than
   // collapsing to the attribute-absent default.
@@ -97,8 +139,15 @@ export function parseFont(el: XmlElement): FontOptions {
       case "scheme":
         result.scheme = (attr(child, "val") as FontOptions["scheme"]) ?? undefined;
         break;
+      default:
+        if (child.name?.includes(":")) {
+          foreignChildren.push({ name: child.name, xml: stringifyElement(child) });
+        }
+        break;
     }
   }
+  if (foreignAttributes.length > 0) result.foreignAttributes = foreignAttributes;
+  if (foreignChildren.length > 0) result.foreignChildren = foreignChildren;
   if (childOrder.length > 1) result.childOrder = childOrder;
   return result as FontOptions;
 }

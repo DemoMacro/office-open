@@ -159,7 +159,11 @@ describe("parseNumberingDefinitions (round-trip)", () => {
     const xml = numbering.serialize(writeCtx);
     const el = parseXml(xml).elements?.[0];
     if (!el) throw new Error("parsed document has no root element");
-    const opts = parseNumberingDefinitions(el, parseParagraphProperties, ctx);
+    const opts = parseNumberingDefinitions(
+      el,
+      parseParagraphProperties,
+      {} as unknown as DocxReadContext,
+    );
 
     expect(opts).toBeDefined();
     // serialize() always emits the built-in default-bullet-numbering (bullet
@@ -190,6 +194,21 @@ describe("parseNumberingDefinitions (round-trip)", () => {
     expect(lvl.paragraph?.indent).toEqual({ left: 720, hanging: 360 });
   });
 
+  it("unwraps a redundant nested level run-properties container", () => {
+    const xml =
+      '<w:numbering xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+      '<w:abstractNum w:abstractNumId="0"><w:lvl w:ilvl="0">' +
+      '<w:start w:val="1"/><w:numFmt w:val="decimal"/><w:lvlText w:val="%1"/>' +
+      '<w:rPr><w:rPr><w:b/><w:sz w:val="28"/></w:rPr></w:rPr>' +
+      "</w:lvl></w:abstractNum>" +
+      '<w:num w:numId="1"><w:abstractNumId w:val="0"/></w:num></w:numbering>';
+    const root = parseXml(xml).elements?.[0];
+    if (!root) throw new Error("parsed document has no root element");
+    const level = parseNumberingDefinitions(root, parseParagraphProperties, ctx)
+      ?.abstractNumberings[0]?.levels[0];
+    expect(level?.run).toMatchObject({ bold: true, size: 14 });
+  });
+
   it("round-trips numPicBullets (pict) and numIdMacAtCleanup", () => {
     const numbering = new Numbering({
       abstractNumberings: [],
@@ -201,7 +220,11 @@ describe("parseNumberingDefinitions (round-trip)", () => {
     const xml = numbering.serialize(writeCtx);
     const el = parseXml(xml).elements?.[0];
     if (!el) throw new Error("parsed document has no root element");
-    const opts = parseNumberingDefinitions(el, parseParagraphProperties, ctx);
+    const opts = parseNumberingDefinitions(
+      el,
+      parseParagraphProperties,
+      {} as unknown as DocxReadContext,
+    );
 
     expect(opts?.numPicBullets).toHaveLength(1);
     expect(opts?.numPicBullets?.[0]?.numPicBulletId).toBe(3);
@@ -505,6 +528,25 @@ describe("parseNumberingDefinitions (round-trip)", () => {
     );
   });
 
+  it("preserves an omitted numbering level alignment", () => {
+    const xml =
+      '<w:numbering xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+      '<w:abstractNum w:abstractNumId="0">' +
+      '<w:lvl w:ilvl="0"><w:start w:val="1"/><w:numFmt w:val="decimal"/><w:lvlText w:val="%1."/></w:lvl>' +
+      "</w:abstractNum>" +
+      '<w:num w:numId="1"><w:abstractNumId w:val="0"/></w:num>' +
+      "</w:numbering>";
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const opts = parseNumberingDefinitions(el, parseParagraphProperties, ctx);
+    expect(opts?.abstractNumberings[0]?.levels[0]?.alignment).toBeNull();
+
+    const generated = new Numbering({ abstractNumberings: opts!.abstractNumberings }).serialize(
+      writeCtx,
+    );
+    expect(generated).not.toContain("<w:lvlJc");
+  });
+
   it("keeps per-instance lvlOverride/startOverride separate from the abstract level", () => {
     // abstract level 0 starts at 1; the concrete num re-pins it to 3 via
     // lvlOverride. The override stays on the instance config so the w:num
@@ -588,5 +630,28 @@ describe("numbering instance fidelity", () => {
       {} as unknown as DocxReadContext,
     );
     expect(opts!.abstractNumberings[0]!.levels[0]!.text).toBe("");
+  });
+});
+
+describe("parseNumberingDefinitions empty definitions", () => {
+  it("keeps an empty abstractNum that explicitly disables restart", () => {
+    const xml =
+      '<w:numbering xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" ' +
+      'xmlns:w15="http://schemas.microsoft.com/office/word/2012/wordml">' +
+      '<w:abstractNum w:abstractNumId="0" w15:restartNumberingAfterBreak="0"/>' +
+      '<w:num w:numId="4"><w:abstractNumId w:val="0"/></w:num></w:numbering>';
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const opts = parseNumberingDefinitions(
+      el,
+      parseParagraphProperties,
+      {} as unknown as DocxReadContext,
+    );
+    const config = opts?.abstractNumberings[0];
+    expect(config).toMatchObject({ abstractId: 0, instanceCount: 1, levels: [] });
+    expect(config?.properties?.restartNumberingAfterBreak).toBe(false);
+    expect(
+      new Numbering({ abstractNumberings: opts!.abstractNumberings }).serialize(writeCtx),
+    ).toContain('w15:restartNumberingAfterBreak="0"');
   });
 });

@@ -13,7 +13,7 @@ vi.mock("fflate", () => ({
   ZipPassThrough: class {},
 }));
 
-import { unzipSync } from "@office-open/core";
+import { unzipSync } from "@office-open/core/opc";
 
 import { patchDocument } from "./from-docx";
 

@@ -131,7 +131,8 @@ export const queryTableDesc: CustomDescriptor<QueryTableOptions> = {
     if (opts.removeDataOnSave) attrs.push('removeDataOnSave="1"');
     if (opts.disableEdit) attrs.push('disableEdit="1"');
     if (opts.preserveFormatting === false) attrs.push('preserveFormatting="0"');
-    if (opts.adjustColumnWidth) attrs.push('adjustColumnWidth="1"');
+    if (opts.adjustColumnWidth !== undefined)
+      attrs.push(`adjustColumnWidth="${opts.adjustColumnWidth ? 1 : 0}"`);
     if (opts.autoFormat) attrs.push('autoFormat="1"');
     if (opts.autoFormatId !== undefined) attrs.push(`autoFormatId="${opts.autoFormatId}"`);
     if (opts.applyNumberFormats !== undefined)
@@ -212,7 +213,8 @@ export const queryTableDesc: CustomDescriptor<QueryTableOptions> = {
     if (parseOnOff(attr(el, "removeDataOnSave"))) result.removeDataOnSave = true;
     if (parseOnOff(attr(el, "disableEdit"))) result.disableEdit = true;
     if (String(attr(el, "preserveFormatting")) === "0") result.preserveFormatting = false;
-    if (parseOnOff(attr(el, "adjustColumnWidth"))) result.adjustColumnWidth = true;
+    const adjustColumnWidth = parseOnOff(attr(el, "adjustColumnWidth"));
+    if (adjustColumnWidth !== undefined) result.adjustColumnWidth = adjustColumnWidth;
     if (parseOnOff(attr(el, "autoFormat"))) result.autoFormat = true;
     const afi = attrNum(el, "autoFormatId");
     if (afi !== undefined) result.autoFormatId = afi;

@@ -4,6 +4,7 @@ import { describe, expect, it } from "vite-plus/test";
 import { parseParagraph, stringifyParagraph } from "../../body";
 import type { DocxReadContext } from "../../context";
 import type { ParagraphOptions } from "../paragraph";
+import type { SimpleFieldOptions } from "./run/simple-field";
 
 // Complex fields never touch the read context, so an empty mock suffices.
 const readCtx = {} as unknown as DocxReadContext;
@@ -74,6 +75,160 @@ describe("complex field parse", () => {
     expect(cf).toBeDefined();
     expect(cf!.complexField).toMatchObject({ instruction: " DATE " });
     expect((cf!.complexField as Record<string, unknown>).result).toBeUndefined();
+  });
+
+  it("does not inherit xml:space from the preceding field", () => {
+    const opts = parseParagraphXml(
+      '<w:r><w:fldChar w:fldCharType="begin"/></w:r>' +
+        '<w:r><w:instrText xml:space="preserve"> FIELD1 </w:instrText></w:r>' +
+        '<w:r><w:fldChar w:fldCharType="separate"/></w:r>' +
+        '<w:r><w:t xml:space="preserve">1 </w:t></w:r>' +
+        '<w:r><w:fldChar w:fldCharType="end"/></w:r>' +
+        '<w:r><w:fldChar w:fldCharType="begin"/></w:r>' +
+        '<w:r><w:instrText xml:space="preserve"> FIELD2 </w:instrText></w:r>' +
+        '<w:r><w:fldChar w:fldCharType="separate"/></w:r>' +
+        "<w:r><w:t>text</w:t></w:r>" +
+        '<w:r><w:fldChar w:fldCharType="end"/></w:r>',
+    );
+    const fields = opts.children?.filter(
+      (child) => typeof child === "object" && child !== null && "complexField" in child,
+    );
+    expect(fields).toHaveLength(2);
+    expect(fields?.[1]).toMatchObject({
+      complexField: {
+        instructionPreserveSpace: true,
+        result: "text",
+        resultPreserveSpace: false,
+      },
+    });
+  });
+
+  it("preserves an empty cached-result stage after a separate marker", () => {
+    const source =
+      '<w:r><w:fldChar w:fldCharType="begin"/></w:r>' +
+      '<w:r><w:instrText xml:space="preserve"> DOCPROPERTY Unsupported </w:instrText></w:r>' +
+      '<w:r><w:fldChar w:fldCharType="separate"/></w:r>' +
+      '<w:r><w:fldChar w:fldCharType="end"/></w:r>';
+    const opts = parseParagraphXml(source);
+    const field = findComplexField(opts)!.complexField as Record<string, unknown>;
+
+    expect(field).toMatchObject({ instruction: " DOCPROPERTY Unsupported ", hasResult: true });
+    expect(field.result).toBeUndefined();
+    expect(stringifyParagraph(opts, writeCtx)).toBe(`<w:p>${source}</w:p>`);
+  });
+
+  it("preserves an unterminated non-TOC field instead of dropping its control runs", () => {
+    const opts = parseParagraphXml(
+      '<w:r><w:rPr><w:noProof/></w:rPr><w:fldChar w:fldCharType="begin"/></w:r>' +
+        "<w:r><w:instrText> PAGE </w:instrText></w:r>",
+    );
+    expect(opts.children).toHaveLength(1);
+    const raw = opts.children?.[0] as { rawXml?: string };
+    expect(raw.rawXml).toContain('w:fldCharType="begin"');
+    expect(raw.rawXml).toContain("<w:noProof/>");
+    expect(raw.rawXml).toContain("<w:instrText> PAGE </w:instrText>");
+    expect(stringifyParagraph(opts, writeCtx)).toContain('w:fldCharType="begin"');
+  });
+
+  it("preserves an orphan field separator outside a TOC aggregator", () => {
+    const opts = parseParagraphXml(
+      '<w:r><w:rPr><w:b/></w:rPr><w:fldChar w:fldCharType="separate"/></w:r>',
+    );
+    const marker = opts.children?.[0] as { fieldMarker?: { type: string; rPrXml?: string } };
+    expect(marker.fieldMarker).toEqual({
+      type: "separate",
+      rPrXml: "<w:rPr><w:b/></w:rPr>",
+    });
+    expect(stringifyParagraph(opts, writeCtx)).toContain('w:fldCharType="separate"');
+  });
+
+  it("preserves rsids on a plain simple-field cached run", () => {
+    const xml =
+      '<w:fldSimple w:instr=" PAGE "><w:r w:rsidR="00112233"><w:t>1</w:t></w:r></w:fldSimple>';
+    const opts = parseParagraphXml(xml);
+    const field = opts.children?.find(
+      (child) => typeof child === "object" && "simpleField" in child,
+    ) as { simpleField: SimpleFieldOptions } | undefined;
+    expect(field?.simpleField.cachedRuns).toHaveLength(1);
+    expect(stringifyParagraph(opts, writeCtx)).toContain('w:rsidR="00112233"');
+  });
+
+  it("round-trips field data on the begin marker", () => {
+    const opts = parseParagraphXml(
+      '<w:r><w:fldChar w:fldCharType="begin">' +
+        '<w:fldData xml:space="preserve">AQID</w:fldData></w:fldChar></w:r>' +
+        "<w:r><w:instrText> ADDIN Example </w:instrText></w:r>" +
+        '<w:r><w:fldChar w:fldCharType="end"/></w:r>',
+    );
+    expect(findComplexField(opts)!.complexField).toMatchObject({ fieldData: "AQID" });
+    expect(stringifyParagraph(opts, writeCtx)).toContain(
+      '<w:fldData xml:space="preserve">AQID</w:fldData>',
+    );
+  });
+
+  it("round-trips numbering revision metadata on field markers", () => {
+    const xml =
+      '<w:r><w:fldChar w:fldCharType="begin">' +
+      '<w:numberingChange w:original="1" w:id="7" w:author="Ada" w:date="2026-01-02T03:04:00Z"/>' +
+      "</w:fldChar></w:r>" +
+      "<w:r><w:instrText> NUMPAGES </w:instrText></w:r>" +
+      '<w:r><w:fldChar w:fldCharType="end"/></w:r>';
+    const opts = parseParagraphXml(xml);
+    expect(findComplexField(opts)!.complexField).toMatchObject({
+      beginNumberingChange: {
+        original: "1",
+        id: "7",
+        author: "Ada",
+        date: "2026-01-02T03:04:00Z",
+      },
+    });
+    expect(stringifyParagraph(opts, writeCtx)).toBe(`<w:p>${xml}</w:p>`);
+  });
+
+  it("round-trips numbering revision metadata on an orphan marker", () => {
+    const xml =
+      '<w:r><w:fldChar w:fldCharType="end">' +
+      '<w:numberingChange w:original="2" w:id="8" w:author="Grace"/></w:fldChar></w:r>';
+    const opts = parseParagraphXml(xml);
+    expect(opts.children?.[0]).toMatchObject({
+      fieldMarker: {
+        type: "end",
+        numberingChange: { original: "2", id: "8", author: "Grace" },
+      },
+    });
+    expect(stringifyParagraph(opts, writeCtx)).toBe(`<w:p>${xml}</w:p>`);
+  });
+
+  it("round-trips numbering revision metadata from a closing field marker", () => {
+    const xml =
+      '<w:r><w:fldChar w:fldCharType="begin"/></w:r>' +
+      "<w:r><w:instrText> NUMPAGES </w:instrText></w:r>" +
+      '<w:r><w:fldChar w:fldCharType="end">' +
+      '<w:numberingChange w:original="1" w:id="7" w:author="Ada"/></w:fldChar></w:r>';
+    const opts = parseParagraphXml(xml);
+    expect(findComplexField(opts)!.complexField).toMatchObject({
+      endNumberingChange: { original: "1", id: "7", author: "Ada" },
+    });
+  });
+
+  it("emits a cached footnote reference from a complex field result", () => {
+    const opts = parseParagraphXml(
+      '<w:r><w:fldChar w:fldCharType="begin"/></w:r>' +
+        "<w:r><w:instrText> REF note </w:instrText></w:r>" +
+        '<w:r><w:fldChar w:fldCharType="separate"/></w:r>' +
+        '<w:r><w:footnoteReference w:id="7"/></w:r>' +
+        '<w:r><w:fldChar w:fldCharType="end"/></w:r>',
+    );
+    expect(stringifyParagraph(opts, writeCtx)).toContain('<w:footnoteReference w:id="7"/>');
+  });
+
+  it("emits a cached footnote reference from a simple field result", () => {
+    const opts = parseParagraphXml(
+      '<w:fldSimple w:instr=" REF note "><w:r><w:rPr/><w:footnoteReference w:id="8"/></w:r></w:fldSimple>',
+    );
+    expect(stringifyParagraph(opts, writeCtx)).toContain(
+      '<w:fldSimple w:instr=" REF note "><w:r><w:rPr/><w:footnoteReference w:id="8"/></w:r></w:fldSimple>',
+    );
   });
 
   it("preserves an empty control rPr only on its source stage", () => {
@@ -154,6 +309,17 @@ describe("complex field parse", () => {
     expect(field.instrRunsXml).toContain("<w:br/>");
   });
 
+  it("keeps the deletion context inside an inline SDT", () => {
+    const opts = parseParagraphXml(
+      '<w:del w:id="1" w:author="Alice">' +
+        '<w:sdt><w:sdtPr><w:tag w:val="deleted"/></w:sdtPr>' +
+        "<w:sdtContent><w:r><w:t>1</w:t></w:r></w:sdtContent></w:sdt>" +
+        "</w:del>",
+    );
+    expect(stringifyParagraph(opts, writeCtx)).toContain("<w:delText>1</w:delText>");
+    expect(stringifyParagraph(opts, writeCtx)).not.toContain("<w:t>1</w:t>");
+  });
+
   it("does not set the verbatim channel for plain instruction runs", () => {
     const opts = parseParagraphXml(
       '<w:r><w:fldChar w:fldCharType="begin"/></w:r>' +
@@ -201,6 +367,153 @@ describe("complex field parse", () => {
       { run: { children: [{ instructionText: '"' }] } },
     ]);
     expect(stringifyParagraph(opts, writeCtx)).toContain("<w:instrText>tc &quot;</w:instrText>");
+  });
+
+  it("preserves nested complex fields in a simple field", () => {
+    const opts = parseParagraphXml(
+      '<w:fldSimple w:instr=" REF note ">' +
+        '<w:r><w:fldChar w:fldCharType="begin"/></w:r>' +
+        "<w:r><w:instrText> PAGE </w:instrText></w:r>" +
+        '<w:r><w:fldChar w:fldCharType="end"/></w:r>' +
+        "</w:fldSimple>",
+    );
+    const field = opts.children?.find(
+      (child) => typeof child === "object" && "simpleField" in child,
+    ) as { simpleField: SimpleFieldOptions } | undefined;
+    if (!field) throw new Error("simple field not parsed");
+    expect(field.simpleField.cachedRuns).toHaveLength(1);
+    expect(field.simpleField.cachedRuns).toMatchObject([
+      { complexField: { instruction: " PAGE " } },
+    ]);
+    const xml = stringifyParagraph(opts, writeCtx);
+    expect(xml.match(/w:fldCharType="begin"/g)).toHaveLength(1);
+    expect(xml.match(/w:fldCharType="end"/g)).toHaveLength(1);
+  });
+
+  it("round-trips mixed deleted field stages with deleted text tags", () => {
+    const xml =
+      '<w:del w:id="1" w:author="Alice">' +
+      '<w:r><w:fldChar w:fldCharType="begin"/></w:r>' +
+      '<w:r><w:delInstrText xml:space="preserve"> PAGE </w:delInstrText></w:r>' +
+      '<w:r><w:fldChar w:fldCharType="separate"/></w:r>' +
+      '<w:r><w:delText xml:space="preserve">1</w:delText></w:r>' +
+      '<w:r><w:fldChar w:fldCharType="end"/></w:r>' +
+      "</w:del>";
+    const opts = parseParagraphXml(xml);
+    const output = stringifyParagraph(opts, writeCtx);
+    expect(output).toContain('<w:delInstrText xml:space="preserve"> PAGE </w:delInstrText>');
+    expect(output).toContain('<w:delText xml:space="preserve">1</w:delText>');
+  });
+
+  it("preserves deleted text in a nested result field", () => {
+    const xml =
+      '<w:del w:id="1" w:author="Alice">' +
+      '<w:r><w:fldChar w:fldCharType="begin"/></w:r>' +
+      "<w:r><w:instrText> OUTER </w:instrText></w:r>" +
+      '<w:r><w:fldChar w:fldCharType="separate"/></w:r>' +
+      '<w:r><w:fldChar w:fldCharType="begin"/></w:r>' +
+      "<w:r><w:instrText> INNER </w:instrText></w:r>" +
+      '<w:r><w:fldChar w:fldCharType="separate"/></w:r>' +
+      '<w:r><w:delText xml:space="preserve">1</w:delText></w:r>' +
+      '<w:r><w:fldChar w:fldCharType="end"/></w:r>' +
+      '<w:r><w:fldChar w:fldCharType="end"/></w:r>' +
+      "</w:del>";
+    const output = stringifyParagraph(parseParagraphXml(xml), writeCtx);
+    expect(output).toContain(
+      '<w:fldChar w:fldCharType="separate"/></w:r><w:r><w:delText xml:space="preserve">1</w:delText>',
+    );
+    expect(output).not.toContain('<w:t xml:space="preserve">1</w:t>');
+  });
+
+  it("preserves proof error markers on each complex field stage", () => {
+    const xml =
+      '<w:r><w:fldChar w:fldCharType="begin"/></w:r>' +
+      '<w:proofErr w:type="spellStart"/>' +
+      '<w:r><w:instrText xml:space="preserve"> PAGE </w:instrText></w:r>' +
+      '<w:r><w:fldChar w:fldCharType="separate"/></w:r>' +
+      "<w:r><w:t>1</w:t></w:r>" +
+      '<w:proofErr w:type="spellEnd"/>' +
+      '<w:r><w:fldChar w:fldCharType="end"/></w:r>';
+    const opts = parseParagraphXml(xml);
+    const field = findComplexField(opts)!.complexField as Record<string, unknown>;
+    expect(field.instructionMembers).toEqual([
+      { proofErr: "spellStart" },
+      { run: { children: [{ instructionText: " PAGE ", preserveSpace: true }] } },
+    ]);
+    expect(field.resultMembers).toEqual([{ run: { text: "1" } }, { proofErr: "spellEnd" }]);
+    expect(stringifyParagraph(opts, writeCtx)).toContain(
+      '<w:fldChar w:fldCharType="begin"/></w:r><w:proofErr w:type="spellStart"/>' +
+        '<w:r><w:instrText xml:space="preserve"> PAGE </w:instrText></w:r>' +
+        '<w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>1</w:t></w:r>' +
+        '<w:proofErr w:type="spellEnd"/><w:r><w:fldChar w:fldCharType="end"/></w:r>',
+    );
+  });
+
+  it("keeps proof markers inside tracked complex-field results", () => {
+    const xml =
+      '<w:ins w:id="1" w:author="Alice">' +
+      '<w:r><w:fldChar w:fldCharType="begin"/></w:r>' +
+      '<w:r><w:instrText xml:space="preserve"> PAGE </w:instrText></w:r>' +
+      '<w:r><w:fldChar w:fldCharType="separate"/></w:r>' +
+      '<w:proofErr w:type="spellStart"/>' +
+      "<w:r><w:t>1</w:t></w:r>" +
+      '<w:proofErr w:type="spellEnd"/>' +
+      '<w:r><w:fldChar w:fldCharType="end"/></w:r>' +
+      "</w:ins>";
+    const opts = parseParagraphXml(xml);
+    const insertion = opts.children?.find(
+      (child) => child !== null && typeof child === "object" && "insertion" in child,
+    ) as { insertion: { children: { complexField?: Record<string, unknown> }[] } };
+    const field = insertion.insertion.children[0]!.complexField!;
+    expect(field.resultMembers).toEqual([
+      { proofErr: "spellStart" },
+      { run: { text: "1" } },
+      { proofErr: "spellEnd" },
+    ]);
+    expect(stringifyParagraph(opts, writeCtx)).toContain(
+      '<w:fldChar w:fldCharType="separate"/></w:r><w:proofErr w:type="spellStart"/>' +
+        "<w:r><w:t>1</w:t></w:r>" +
+        '<w:proofErr w:type="spellEnd"/><w:r><w:fldChar w:fldCharType="end"/></w:r>',
+    );
+  });
+
+  it("feeds every stage packed into one compound run", () => {
+    const opts = parseParagraphXml(
+      "<w:r>" +
+        "<w:rPr><w:noProof/></w:rPr>" +
+        '<w:fldChar w:fldCharType="begin"/>' +
+        '<w:instrText xml:space="preserve"> IF </w:instrText>' +
+        '<w:fldChar w:fldCharType="begin"/>' +
+        "<w:instrText>inner</w:instrText>" +
+        '<w:fldChar w:fldCharType="separate"/>' +
+        "<w:instrText>1</w:instrText>" +
+        '<w:fldChar w:fldCharType="end"/>' +
+        "<w:instrText> = 1 </w:instrText>" +
+        '<w:fldChar w:fldCharType="separate"/>' +
+        "<w:t>one</w:t>" +
+        '<w:fldChar w:fldCharType="end"/>' +
+        "</w:r>",
+    );
+    const field = findComplexField(opts)!.complexField as Record<string, unknown>;
+    const nestedField = (field.instructionMembers as unknown[]).find(
+      (member) =>
+        member !== null &&
+        typeof member === "object" &&
+        "complexField" in (member as Record<string, unknown>),
+    ) as { complexField: Record<string, unknown> } | undefined;
+    expect(nestedField?.complexField.instruction).toContain("inner");
+    expect(field.instruction).toContain(" = 1 ");
+    expect(field.result).toBe("one");
+    expect(field.compoundRunXml).toContain(">inner<");
+    expect(field.instructionMembers).toBeDefined();
+    expect(field.compoundRunXml).toContain("> = 1 <");
+    expect(field.result).toBe("one");
+
+    const xml = stringifyParagraph(opts, writeCtx);
+    expect(xml.match(/w:fldCharType="begin"/g)).toHaveLength(2);
+    expect(xml.match(/w:fldCharType="separate"/g)).toHaveLength(2);
+    expect(xml.match(/w:fldCharType="end"/g)).toHaveLength(2);
+    expect(xml).toContain(">one<");
   });
 
   it("preserves typed instruction runs around bookmarks", () => {
@@ -261,5 +574,28 @@ describe("complex field parse", () => {
     expect(xml.indexOf("<w:bookmarkStart")).toBeLessThan(xml.indexOf("<w:t>B</w:t>"));
     expect(xml.indexOf("<w:t>B</w:t>")).toBeLessThan(xml.indexOf("<w:bookmarkEnd"));
     expect(xml.indexOf("<w:bookmarkEnd")).toBeLessThan(xml.indexOf('w:fldCharType="end"'));
+  });
+
+  it("keeps hyperlinks inside the complex-field result", () => {
+    const opts = parseParagraphXml(
+      '<w:r><w:fldChar w:fldCharType="begin"/></w:r>' +
+        '<w:r><w:instrText xml:space="preserve"> TOC </w:instrText></w:r>' +
+        '<w:r><w:fldChar w:fldCharType="separate"/></w:r>' +
+        '<w:hyperlink w:anchor="section"><w:r><w:t>Section</w:t></w:r></w:hyperlink>' +
+        '<w:r><w:fldChar w:fldCharType="end"/></w:r>',
+    );
+    const field = findComplexField(opts)!.complexField as Record<string, unknown>;
+    expect(field.resultMembers).toEqual([
+      {
+        hyperlink: {
+          anchor: "section",
+          children: [{ text: "Section" }],
+        },
+      },
+    ]);
+
+    const xml = stringifyParagraph(opts, writeCtx);
+    expect(xml.indexOf('w:fldCharType="separate"')).toBeLessThan(xml.indexOf("<w:hyperlink"));
+    expect(xml.indexOf("<w:hyperlink")).toBeLessThan(xml.indexOf('w:fldCharType="end"'));
   });
 });

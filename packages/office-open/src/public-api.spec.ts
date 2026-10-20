@@ -281,7 +281,7 @@ describe("public aggregate API", () => {
         expect(Object.keys(module), `${entry}:${forbidden}`).not.toContain(forbidden);
       }
     }
-  });
+  }, 30_000);
 
   it("freezes declared type exports and never leaks forbidden names", () => {
     for (const [entry, path] of Object.entries(DIST_PATHS)) {

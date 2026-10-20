@@ -11,4 +11,4 @@ export {
   customPropertiesDesc,
   type CustomPropertyOptions,
   type CustomPropertiesInput,
-} from "@office-open/core";
+} from "@office-open/core/opc";

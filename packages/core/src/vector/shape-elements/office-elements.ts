@@ -305,6 +305,8 @@ export interface VmlSignatureLineOptions extends VmlExtAttribute {
   id?: Guid;
   provid?: Guid;
   signinginstructionsset?: VmlTrueFalse;
+  /** Source lexical spelling for the signing instruction attribute; round-trip only. */
+  signinginstructionsAttrRaw?: "signinginstructions" | "o:signinginstructions";
   allowcomments?: VmlTrueFalse;
   showsigndate?: VmlTrueFalse;
   suggestedsigner?: string;
@@ -333,13 +335,30 @@ const SIGNATURE_ATTRS: readonly VmlAttrSpec[] = [
 
 /** Serialize o:signatureline. */
 export function stringifyVmlSignatureLine(opts: VmlSignatureLineOptions): string {
-  return `<o:signatureline${stringifyVmlAttributes(opts as Record<string, unknown>, [...EXT_ATTR, ...SIGNATURE_ATTRS])}/>`;
+  const signingInstructionsSpec = SIGNATURE_ATTRS.find(
+    (spec) => spec.field === "signinginstructions",
+  );
+  const signatureAttrs = signingInstructionsSpec
+    ? SIGNATURE_ATTRS.map((spec) =>
+        spec === signingInstructionsSpec
+          ? { ...spec, attr: opts.signinginstructionsAttrRaw ?? spec.attr }
+          : spec,
+      )
+    : SIGNATURE_ATTRS;
+  return `<o:signatureline${stringifyVmlAttributes(opts as Record<string, unknown>, [...EXT_ATTR, ...signatureAttrs])}/>`;
 }
 
 /** Parse an o:signatureline element. */
 export function parseVmlSignatureLine(el: XmlElement): VmlSignatureLineOptions {
   const out: Record<string, unknown> = {};
   parseVmlAttributes(el, [...EXT_ATTR, ...SIGNATURE_ATTRS], out);
+  if (
+    out.signinginstructions === undefined &&
+    el.attributes?.["o:signinginstructions"] !== undefined
+  ) {
+    out.signinginstructions = el.attributes["o:signinginstructions"];
+    out.signinginstructionsAttrRaw = "o:signinginstructions";
+  }
   return out as VmlSignatureLineOptions;
 }
 

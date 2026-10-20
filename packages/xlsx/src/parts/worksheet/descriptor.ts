@@ -148,6 +148,20 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
       }
     }
 
+    // Root xml:space lexical form (rare but legal on <worksheet>)
+    const rootXmlSpace = attr(el, "xml:space");
+    if (rootXmlSpace !== undefined) {
+      if (rootXmlSpace !== "default" && rootXmlSpace !== "preserve") {
+        throw new XlsxParseError(
+          (ctx as XlsxReadContext | undefined)?.currentPart ?? "xl/worksheets",
+          "",
+          "worksheet",
+          `invalid xml:space "${rootXmlSpace}"; expected "default" or "preserve"`,
+        );
+      }
+      result.rootXmlSpace = rootXmlSpace;
+    }
+
     // Resolve shared strings from context (XlsxReadContext). Rich-text
     // entries arrive as RichTextOptions objects and flow into cell.value.
     const strings: (string | RichTextOptions)[] =
@@ -268,6 +282,8 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
           if (paneTopLeft) fp.topLeftCell = paneTopLeft;
           const activePane = attr(paneEl, "activePane");
           if (activePane) fp.activePane = activePane as FreezePaneOptions["activePane"];
+          fp.activePanePresent = activePane !== undefined;
+          fp.statePresent = paneState !== undefined;
           if (Object.keys(fp).length > 0) result.freezePanes = fp;
         }
 
@@ -486,6 +502,10 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
         if (ref) merges.push({ ref });
       }
       if (merges.length > 0) result.mergeCells = merges;
+      const declaredMergeCount = attrNum(mcEl, "count");
+      if (merges.length > 0 || declaredMergeCount !== undefined) {
+        result.mergeCellsCount = declaredMergeCount ?? false;
+      }
     }
 
     // Conditional formatting
@@ -518,9 +538,11 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
           if (percentAttr !== undefined) rule.percentRaw = percentAttr;
           if (parseOnOff(attr(ruleEl, "percent"))) rule.percent = true;
           const textVal = attr(ruleEl, "text");
-          if (textVal) rule.text = textVal;
-          if (parseOnOff(attr(ruleEl, "equalAverage"))) rule.equalAverage = true;
-          if (String(attr(ruleEl, "aboveAverage")) === "0") rule.aboveAverage = false;
+          if (textVal !== undefined) rule.text = textVal;
+          const equalAverageFlag = parseOnOff(attr(ruleEl, "equalAverage"));
+          if (equalAverageFlag !== undefined) rule.equalAverage = equalAverageFlag;
+          const aboveAverageFlag = parseOnOff(attr(ruleEl, "aboveAverage"));
+          if (aboveAverageFlag !== undefined) rule.aboveAverage = aboveAverageFlag;
           const stdDev = attrNum(ruleEl, "stdDev");
           if (stdDev !== undefined) rule.stdDev = stdDev;
           const cfExtLst = findChild(ruleEl, "extLst");
@@ -597,6 +619,14 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
     // Data validations
     const dvEl = findChild(el, "dataValidations");
     if (dvEl) {
+      const declaredCount = attrNum(dvEl, "count");
+      result.dataValidationsCount = declaredCount ?? false;
+      const disablePrompts = parseOnOff(attr(dvEl, "disablePrompts"));
+      if (disablePrompts !== undefined) result.dataValidationsDisablePrompts = disablePrompts;
+      const xWindow = attrNum(dvEl, "xWindow");
+      if (xWindow !== undefined) result.dataValidationsXWindow = xWindow;
+      const yWindow = attrNum(dvEl, "yWindow");
+      if (yWindow !== undefined) result.dataValidationsYWindow = yWindow;
       const dvs: DataValidationOptions[] = [];
       for (const dEl of dvEl.elements ?? []) {
         if (dEl.name !== "dataValidation") continue;
@@ -965,6 +995,8 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
           if (paneTopLeft) pane.topLeftCell = paneTopLeft;
           const activePane = attr(paneEl, "activePane");
           if (activePane) pane.activePane = activePane as FreezePaneOptions["activePane"];
+          pane.activePanePresent = activePane !== undefined;
+          pane.statePresent = paneState !== undefined;
           if (Object.keys(pane).length > 0) view.pane = pane;
         }
         const selections: SelectionOptions[] = [];
@@ -1068,11 +1100,13 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
       const from = marker(fromEl);
       const to = marker(toEl);
       if (!from || !to) return undefined;
+      const moveWithCells = parseOnOff(attr(anchorEl, "moveWithCells"));
+      const sizeWithCells = parseOnOff(attr(anchorEl, "sizeWithCells"));
       return {
         from,
         to,
-        ...(parseOnOff(attr(anchorEl, "moveWithCells")) ? { moveWithCells: true } : {}),
-        ...(parseOnOff(attr(anchorEl, "sizeWithCells")) ? { sizeWithCells: true } : {}),
+        ...(moveWithCells !== undefined ? { moveWithCells } : {}),
+        ...(sizeWithCells !== undefined ? { sizeWithCells } : {}),
       };
     }
 
@@ -1150,6 +1184,7 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
       const controls: WorksheetControlOptions[] = [];
       for (const rawEl of controlsEl.elements ?? []) {
         // Excel 2010+ wraps each control when the container itself is direct.
+        if (rawEl.name === undefined) continue;
         const unwrapped = unwrapAlternateContent(rawEl, "control");
         const cEl = unwrapped.element;
         if (!cEl) {
@@ -1224,15 +1259,27 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
         const prEl = findChild(cEl, "controlPr");
         if (prEl) {
           const properties: Partial<ControlPrOptions> = {
-            ...(String(attr(prEl, "locked")) === "0" ? { locked: false } : {}),
+            ...(parseOnOff(attr(prEl, "locked")) !== undefined
+              ? { locked: parseOnOff(attr(prEl, "locked")) }
+              : {}),
             ...(parseOnOff(attr(prEl, "uiObject")) ? { uiObject: true } : {}),
             ...(parseOnOff(attr(prEl, "recalcAlways")) ? { recalcAlways: true } : {}),
-            ...(String(attr(prEl, "defaultSize")) === "0" ? { defaultSize: false } : {}),
-            ...(String(attr(prEl, "print")) === "0" ? { print: false } : {}),
+            ...(parseOnOff(attr(prEl, "defaultSize")) !== undefined
+              ? { defaultSize: parseOnOff(attr(prEl, "defaultSize")) }
+              : {}),
+            ...(parseOnOff(attr(prEl, "print")) !== undefined
+              ? { print: parseOnOff(attr(prEl, "print")) }
+              : {}),
             ...(parseOnOff(attr(prEl, "disabled")) ? { disabled: true } : {}),
-            ...(String(attr(prEl, "autoFill")) === "0" ? { autoFill: false } : {}),
-            ...(String(attr(prEl, "autoLine")) === "0" ? { autoLine: false } : {}),
-            ...(String(attr(prEl, "autoPict")) === "0" ? { autoPict: false } : {}),
+            ...(parseOnOff(attr(prEl, "autoFill")) !== undefined
+              ? { autoFill: parseOnOff(attr(prEl, "autoFill")) }
+              : {}),
+            ...(parseOnOff(attr(prEl, "autoLine")) !== undefined
+              ? { autoLine: parseOnOff(attr(prEl, "autoLine")) }
+              : {}),
+            ...(parseOnOff(attr(prEl, "autoPict")) !== undefined
+              ? { autoPict: parseOnOff(attr(prEl, "autoPict")) }
+              : {}),
           };
           const macro = attr(prEl, "macro");
           if (macro !== undefined) properties.macro = macro;
@@ -1269,7 +1316,7 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
         }
         controls.push(c);
       }
-      if (controls.length > 0) {
+      if (controls.length > 0 || controlsEl !== undefined) {
         result.controls = controls;
         if (controlsWrapped) result.controlsAlternateContent = true;
       }
@@ -1460,25 +1507,33 @@ export function parseSheetProtectionEl(el: Element): SheetProtectionOptions {
   if (attr(el, "saltValue")) prot.saltValue = attr(el, "saltValue");
   const spin = attrNum(el, "spinCount");
   if (spin !== undefined) prot.spinCount = spin;
-  if (parseOnOff(attr(el, "sheet"))) prot.sheet = true;
-  if (parseOnOff(attr(el, "objects"))) prot.objects = true;
+  const sheetFlag = parseOnOff(attr(el, "sheet"));
+  if (sheetFlag !== undefined) prot.sheet = sheetFlag;
+  const objectsFlag = parseOnOff(attr(el, "objects"));
+  if (objectsFlag !== undefined) prot.objects = objectsFlag;
   const scenariosAttr = attr(el, "scenarios");
   if (scenariosAttr !== undefined) prot.scenariosRaw = scenariosAttr;
-  if (parseOnOff(attr(el, "scenarios"))) prot.scenarios = true;
+  const scenariosFlag = parseOnOff(attr(el, "scenarios"));
+  if (scenariosFlag !== undefined) prot.scenarios = scenariosFlag;
   const passwordHash = attr(el, "password");
   if (passwordHash !== undefined) prot.passwordHashRaw = passwordHash;
-  if (String(attr(el, "formatCells")) === "0") prot.formatCells = false;
-  if (String(attr(el, "formatColumns")) === "0") prot.formatColumns = false;
-  if (String(attr(el, "formatRows")) === "0") prot.formatRows = false;
-  if (String(attr(el, "insertColumns")) === "0") prot.insertColumns = false;
-  if (String(attr(el, "insertRows")) === "0") prot.insertRows = false;
-  if (String(attr(el, "insertHyperlinks")) === "0") prot.insertHyperlinks = false;
-  if (String(attr(el, "deleteColumns")) === "0") prot.deleteColumns = false;
-  if (String(attr(el, "deleteRows")) === "0") prot.deleteRows = false;
-  if (parseOnOff(attr(el, "selectLockedCells"))) prot.selectLockedCells = true;
-  if (String(attr(el, "sort")) === "0") prot.sort = false;
-  if (String(attr(el, "autoFilter")) === "0") prot.autoFilter = false;
-  if (String(attr(el, "pivotTables")) === "0") prot.pivotTables = false;
-  if (parseOnOff(attr(el, "selectUnlockedCells"))) prot.selectUnlockedCells = true;
+  for (const flag of [
+    "formatCells",
+    "formatColumns",
+    "formatRows",
+    "insertColumns",
+    "insertRows",
+    "insertHyperlinks",
+    "deleteColumns",
+    "deleteRows",
+    "selectLockedCells",
+    "sort",
+    "autoFilter",
+    "pivotTables",
+    "selectUnlockedCells",
+  ] as const) {
+    const value = parseOnOff(attr(el, flag));
+    if (value !== undefined) prot[flag] = value;
+  }
   return prot;
 }

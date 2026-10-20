@@ -45,7 +45,8 @@ function classify(error: unknown): Exclude<Outcome, "pass"> {
   if (
     reason === "out-of-range" ||
     reason === "invalid-repeat-count" ||
-    reason === "invalid-style-coverage-total"
+    reason === "invalid-style-coverage-total" ||
+    reason === "malformed-formula"
   ) {
     return "invalid";
   }

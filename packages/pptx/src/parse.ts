@@ -1,21 +1,20 @@
-import type { EmbeddingData, PassthroughRelationship } from "@office-open/core";
+import { parseArchive, ParsedArchive } from "@office-open/core";
+import type { DataType } from "@office-open/core";
+import { extUriMatches, toUint8Array, toUint8ArrayAsync } from "@office-open/core";
+import type { ReadContext } from "@office-open/core/descriptor";
+import type { EmbeddingData, PassthroughRelationship } from "@office-open/core/opc";
 import {
-  RELATIONSHIP_TYPES,
   appPropertiesDesc,
   collectPassthroughParts,
   contentTypesDesc,
   customPropertiesDesc,
   isEncryptedContainer,
   opaquePassthroughPolicy,
-  parseArchive,
   parseCorePropsElement,
   partPathToRelsPath,
-  ParsedArchive,
+  RELATIONSHIP_TYPES,
   resolveRelationshipTarget,
-} from "@office-open/core";
-import type { DataType } from "@office-open/core";
-import { extUriMatches, toUint8Array, toUint8ArrayAsync } from "@office-open/core";
-import type { ReadContext } from "@office-open/core/descriptor";
+} from "@office-open/core/opc";
 import { themeDesc, themeOverrideDesc } from "@office-open/core/theme";
 import type { Element } from "@office-open/xml";
 import { attr, attrNum, findChild } from "@office-open/xml";
@@ -36,7 +35,7 @@ import { viewPropsDesc } from "./parts/descriptors/view-properties";
 
 export { parseArchive };
 
-import type { CustomerDataOptions } from "./parts/presentation";
+import type { CustomerDataOptions, PresentationSectionGroup } from "./parts/presentation";
 import type {
   LayoutDefinition,
   MasterDefinition,
@@ -44,6 +43,27 @@ import type {
   SlideCommentOptions,
   PresentationOptions,
 } from "./shared/file";
+
+/** Preserve image rels owned by rebuilt master/layout parts (bullet blips, etc.). */
+function captureMasterImageRelationships(
+  pptx: PptxDocument,
+  paths: readonly string[],
+  output: PassthroughRelationship[],
+): void {
+  for (const source of paths) {
+    const relsEl = pptx.doc.get(partPathToRelsPath(source));
+    for (const child of relsEl?.elements ?? []) {
+      if (child.name !== "Relationship") continue;
+      const relationshipType = attr(child, "Type");
+      if (!relationshipType?.endsWith("/image")) continue;
+      const rId = attr(child, "Id");
+      const target = attr(child, "Target");
+      if (!rId || !target) continue;
+      if (output.some((rel) => rel.source === source && rel.rId === rId)) continue;
+      output.push({ source, relationshipType, target, rId });
+    }
+  }
+}
 
 /**
  * All part paths extracted from the PPTX package.
@@ -78,10 +98,16 @@ export interface PptxDocument {
   doc: ParsedArchive;
   /** ppt/presentation.xml root element (p:presentation) */
   presentation?: Element;
+  /** Root relationship Type used for the primary presentation part. */
+  presentationType?: string;
+  /** Root relationship Type used for docProps/core.xml. */
+  corePropsType?: string;
   /** ppt/slides/slideN.xml */
   slides: string[];
   /** ppt/slideMasters/slideMasterN.xml */
   slideMasters: string[];
+  /** Masters listed by ppt/presentation.xml, distinct from orphan package masters. */
+  attachedSlideMasters: string[];
   /** ppt/slideLayouts/slideLayoutN.xml */
   slideLayouts: string[];
   /** ppt/notesSlides/notesSlideN.xml */
@@ -121,6 +147,8 @@ function xmlBody(data: Uint8Array | undefined): string {
 }
 
 function parseRootRels(doc: ParsedArchive): {
+  presentationType?: string;
+  corePropsType?: string;
   coreProps?: string;
   appProps?: string;
   appPropsType?: string;
@@ -140,6 +168,8 @@ function parseRootRels(doc: ParsedArchive): {
   let appProps: string | undefined;
   let appPropsType: string | undefined;
   let customProps: string | undefined;
+  let presentationType: string | undefined;
+  let corePropsType: string | undefined;
 
   for (const child of relsEl.elements ?? []) {
     if (child.name !== "Relationship") continue;
@@ -153,7 +183,10 @@ function parseRootRels(doc: ParsedArchive): {
     // (…/extendedProperties); normalize case and hyphens so both resolve.
     const relType = type.toLowerCase().replaceAll("-", "");
     if (relType.includes("/coreproperties")) {
-      if (type === canonicalCore || coreProps === undefined) coreProps = path;
+      if (type === canonicalCore || coreProps === undefined) {
+        coreProps = path;
+        corePropsType = type;
+      }
     } else if (relType.includes("/extendedproperties") || relType.endsWith("/docpropsapp")) {
       if (type === canonicalApp || appProps === undefined) {
         appProps = path;
@@ -161,10 +194,12 @@ function parseRootRels(doc: ParsedArchive): {
       }
     } else if (relType.includes("/customproperties")) {
       if (type === canonicalCustom || customProps === undefined) customProps = path;
+    } else if (path === "ppt/presentation.xml") {
+      presentationType = type;
     }
   }
 
-  return { coreProps, appProps, appPropsType, customProps };
+  return { presentationType, corePropsType, coreProps, appProps, appPropsType, customProps };
 }
 
 function parseSlideRels(doc: ParsedArchive, slidePaths: string[], refs: PptxPartRefs): void {
@@ -303,8 +338,11 @@ function parsePptxArchive(doc: ParsedArchive): PptxDocument {
     ];
   }
 
-  sortByNumber(slides);
-  sortByNumber(slideMasters);
+  const attachedSlideMasters =
+    presentationSlideMasterPaths.length > 0 ? [...presentationSlideMasterPaths] : [...slideMasters];
+  for (const masterPath of sortByNumber(xmlKeys(doc.keys("ppt/slideMasters/")))) {
+    if (!slideMasters.includes(masterPath)) slideMasters.push(masterPath);
+  }
   sortByNumber(themes);
   sortByNumber(notesMasters);
   sortByNumber(handoutMasters);
@@ -332,13 +370,15 @@ function parsePptxArchive(doc: ParsedArchive): PptxDocument {
   sortByNumber(partRefs.charts);
   sortByNumber(partRefs.diagramData);
 
-  const { coreProps, appProps, appPropsType, customProps } = parseRootRels(doc);
+  const { presentationType, corePropsType, coreProps, appProps, appPropsType, customProps } =
+    parseRootRels(doc);
 
   return {
     doc,
     presentation,
     slides,
     slideMasters,
+    attachedSlideMasters,
     slideLayouts,
     notesSlides,
     partRefs,
@@ -346,8 +386,10 @@ function parsePptxArchive(doc: ParsedArchive): PptxDocument {
     viewProps,
     tableStyles,
     coreProps,
+    corePropsType,
     appProps,
     appPropsType,
+    presentationType,
     customProps,
   };
 }
@@ -390,6 +432,21 @@ function parseSlideRelMap(
   }
 
   return rels;
+}
+
+function readRelationshipTarget(
+  doc: ParsedArchive,
+  partPath: string,
+  relationshipTypeSuffix: string,
+): string | undefined {
+  const relsEl = doc.get(partPathToRelsPath(partPath));
+  for (const relationship of relsEl?.elements ?? []) {
+    if (relationship.name !== "Relationship") continue;
+    const relationshipType = attr(relationship, "Type") ?? "";
+    const target = attr(relationship, "Target");
+    if (relationshipType.endsWith(relationshipTypeSuffix) && target) return target;
+  }
+  return undefined;
 }
 
 /**
@@ -438,19 +495,24 @@ function resolveRelTargets(
 }
 
 /**
- * Parse p14:sectionLst from presentation.xml and map each slide path to its
- * section name. Bridges p14:sldId (by slide id) -> p:sldIdLst (slide id ->
- * rId) -> presentation rels (rId -> path).
+ * Parse p14:sectionLst into explicit groups and a per-slide-path lookup.
+ * Bridges p14:sldId (by slide id) -> p:sldIdLst (slide id -> rId) ->
+ * presentation rels (rId -> path).
  */
+interface ParsedSlideSections {
+  bySlidePath: Map<string, string>;
+  groups: PresentationSectionGroup[];
+}
+
 function parseSlideSections(
   presentation: Element | undefined,
   doc: ParsedArchive,
-): Map<string, string> {
-  const pathToSection = new Map<string, string>();
-  if (!presentation) return pathToSection;
+): ParsedSlideSections {
+  const empty: ParsedSlideSections = { bySlidePath: new Map(), groups: [] };
+  if (!presentation) return empty;
 
   const extLst = findChild(presentation, "p:extLst");
-  if (!extLst) return pathToSection;
+  if (!extLst) return empty;
 
   let sectionLst: Element | undefined;
   for (const ext of extLst.elements ?? []) {
@@ -459,22 +521,35 @@ function parseSlideSections(
     sectionLst = findChild(ext, "p14:sectionLst");
     if (sectionLst) break;
   }
-  if (!sectionLst) return pathToSection;
+  if (!sectionLst) return empty;
 
   // slideId -> sectionName
   const sectionBySlideId = new Map<number, string>();
+  const groups: PresentationSectionGroup[] = [];
+  const slideIdOrder: number[] = [];
   for (const section of sectionLst.elements ?? []) {
     if (section.name !== "p14:section") continue;
     const name = attr(section, "name");
     if (!name) continue;
     const sldIdLst = findChild(section, "p14:sldIdLst");
+    const sectionSlideIds: number[] = [];
     for (const sldId of sldIdLst?.elements ?? []) {
       if (sldId.name !== "p14:sldId") continue;
       const id = attrNum(sldId, "id");
-      if (id !== undefined) sectionBySlideId.set(id, name);
+      if (id === undefined) continue;
+      sectionBySlideId.set(id, name);
+      sectionSlideIds.push(id);
     }
+    const sectionId = attr(section, "id");
+    groups.push({
+      name,
+      ...(sectionId ? { id: sectionId.replace(/[{}]/g, "") } : {}),
+      slideIndices: sectionSlideIds,
+    });
   }
-  if (sectionBySlideId.size === 0) return pathToSection;
+  if (sectionBySlideId.size === 0 && groups.every((group) => group.slideIndices.length === 0)) {
+    return { bySlidePath: new Map(), groups };
+  }
 
   // slideId -> rId (from p:sldIdLst)
   const sldIdLst = findChild(presentation, "p:sldIdLst");
@@ -482,6 +557,7 @@ function parseSlideSections(
   for (const sldId of sldIdLst?.elements ?? []) {
     if (sldId.name !== "p:sldId") continue;
     const id = attrNum(sldId, "id");
+    if (id !== undefined) slideIdOrder.push(id);
     const rId = attr(sldId, "r:id");
     if (id !== undefined && rId) rIdBySlideId.set(id, rId);
   }
@@ -496,6 +572,7 @@ function parseSlideSections(
     if (id && target) pathByRId.set(id, resolveRelationshipTarget("ppt/presentation.xml", target));
   }
 
+  const pathToSection = new Map<string, string>();
   for (const [slideId, name] of sectionBySlideId) {
     const rId = rIdBySlideId.get(slideId);
     if (!rId) continue;
@@ -503,7 +580,13 @@ function parseSlideSections(
     if (path) pathToSection.set(path, name);
   }
 
-  return pathToSection;
+  const indexBySlideId = new Map(slideIdOrder.map((id, index) => [id, index]));
+  for (const group of groups) {
+    group.slideIndices = group.slideIndices
+      .map((id) => indexBySlideId.get(id))
+      .filter((index): index is number => index !== undefined);
+  }
+  return { bySlidePath: pathToSection, groups };
 }
 
 /**
@@ -553,22 +636,25 @@ function parsePresentationFromBytes(uint8: Uint8Array): PresentationOptions {
 
 function parsePresentationFromPptx(pptx: PptxDocument): PresentationOptions {
   const opts: Partial<PresentationOptions> = {};
+  opts.includeAppProperties = false;
+  opts.includePresentationProperties = false;
   const absorbedChartParts = new Set<string>();
 
-  const collectChartSourcePaths = (value: unknown): void => {
-    if (Array.isArray(value)) {
-      for (const item of value) collectChartSourcePaths(item);
-      return;
-    }
-    if (typeof value !== "object" || value === null) return;
-    for (const [key, child] of Object.entries(value)) {
-      if (key === "sourcePath" && typeof child === "string") absorbedChartParts.add(child);
-      else collectChartSourcePaths(child);
-    }
+  type ChartSourceHost = {
+    chart?: { sourcePath?: string };
+    group?: { children?: unknown[] };
+  };
+  const collectChartSourcePaths = (child: unknown): void => {
+    if (typeof child !== "object" || child === null) return;
+    if (!("chart" in child || "group" in child)) return;
+    const host = child as ChartSourceHost;
+    if (typeof host.chart?.sourcePath === "string") absorbedChartParts.add(host.chart.sourcePath);
+    for (const groupChild of host.group?.children ?? []) collectChartSourcePaths(groupChild);
   };
 
   if (pptx.partRefs.handoutMaster) opts.includeHandoutMaster = true;
-  const sectionBySlidePath = parseSlideSections(pptx.presentation, pptx.doc);
+  const parsedSections = parseSlideSections(pptx.presentation, pptx.doc);
+  const sectionBySlidePath = parsedSections.bySlidePath;
   // Package-level fallback context — parts parsed with it carry no rel wiring
   // (their relationship layer is resolved separately around the descriptor).
   const bareReadCtx = new PptxReadContext(new ParseContext(pptx, new Map()));
@@ -612,7 +698,7 @@ function parsePresentationFromPptx(pptx: PptxDocument): PresentationOptions {
   // 1b. Presentation-level data fields — via the descriptor's own parse (the
   // same contract stringify uses); id/count/rId wiring stays compiler-owned.
   let sourceSlideIds: number[] | undefined;
-  let sourceMasterIds: number[] | undefined;
+  let sourceMasterIds: (number | null)[] | undefined;
   if (pptx.presentation) {
     const presPart = presentationDesc.parse(pptx.presentation, bareReadCtx);
     sourceSlideIds = presPart.slideIds;
@@ -703,16 +789,21 @@ function parsePresentationFromPptx(pptx: PptxDocument): PresentationOptions {
       // the whole shape so they survive round-trip.
       Object.assign(opts, cp);
     }
+    if (pptx.corePropsType && pptx.corePropsType !== RELATIONSHIP_TYPES.metadataCoreProperties) {
+      opts.corePropertiesRelationshipType = pptx.corePropsType;
+    }
   }
 
   // 2b. Parse extended (app) properties
   if (pptx.appProps) {
     const appPropsEl = pptx.doc.get(pptx.appProps);
     if (appPropsEl) {
+      opts.includeAppProperties = true;
       const ap = appPropertiesDesc.parse(appPropsEl, {} as ReadContext);
       if (ap && Object.keys(ap).length > 0) opts.appProperties = ap;
       if (pptx.appPropsType && pptx.appPropsType !== RELATIONSHIP_TYPES.extendedProperties) {
         opts.appPropertiesRelationshipType = pptx.appPropsType;
+        opts.presentationRelationshipType = pptx.presentationType;
       }
     }
   }
@@ -731,6 +822,7 @@ function parsePresentationFromPptx(pptx: PptxDocument): PresentationOptions {
   if (pptx.presProps) {
     const presPropsEl = pptx.doc.get(pptx.presProps);
     if (presPropsEl) {
+      opts.includePresentationProperties = true;
       const presPropsOpts = presentationPropertiesDesc.parse(presPropsEl, {} as ReadContext);
       if (presPropsOpts.show) opts.show = presPropsOpts.show;
       if (presPropsOpts.web) opts.web = presPropsOpts.web;
@@ -780,6 +872,9 @@ function parsePresentationFromPptx(pptx: PptxDocument): PresentationOptions {
   const masterDefs: MasterDefinition[] = [];
   const layoutIdsByPath = new Map<string, number>();
   const layoutKeysByPath = new Map<string, string>();
+  const attachedMasterOrder = new Map(
+    pptx.attachedSlideMasters.map((path, index) => [path, index]),
+  );
 
   for (const [mi, masterPath] of pptx.slideMasters.entries()) {
     const masterEl = pptx.doc.get(masterPath);
@@ -795,18 +890,23 @@ function parsePresentationFromPptx(pptx: PptxDocument): PresentationOptions {
     // Placeholders are derived from spTree, so their positions survive round-trip.
     // The master's own rels back r:embed resolution (a blip-filled master
     // background references its image here).
-    const masterReadCtx = new PptxReadContext(
-      new ParseContext(pptx, parseSlideRelMap(pptx.doc, masterPath)),
-    );
+    const masterRelTargets = parseSlideRelMap(pptx.doc, masterPath);
+    const masterReadCtx = new PptxReadContext(new ParseContext(pptx, masterRelTargets));
     const masterOpts = slideMasterDesc.parse(masterEl, masterReadCtx);
-    const sourceMasterId = sourceMasterIds?.[mi];
+    const masterThemePath = themePath;
+    const masterThemeRelationshipId =
+      masterThemePath === undefined
+        ? undefined
+        : [...masterRelTargets].find(([, target]) => target === masterThemePath)?.[0];
+    const attachedMasterIndex = attachedMasterOrder.get(masterPath);
+    const sourceMasterId =
+      attachedMasterIndex === undefined ? null : (sourceMasterIds?.[attachedMasterIndex] ?? null);
 
     // Layouts belonging to this master (resolved separately — relationship layer).
     // A layout with no .rels (sources ship such packages) still belongs when
     // the master's sldLayoutIdLst names it — fall back to that membership.
     const masterListedLayouts = new Set<string>();
     const sldLayoutIdLst = findChild(masterEl, "p:sldLayoutIdLst");
-    const masterRelTargets = parseSlideRelMap(pptx.doc, masterPath);
     const layoutRelationshipIdsByPath = new Map(
       [...masterRelTargets].map(([relationshipId, path]) => [path, relationshipId]),
     );
@@ -841,6 +941,8 @@ function parsePresentationFromPptx(pptx: PptxDocument): PresentationOptions {
         const layoutDef = slideLayoutDesc.parse(layoutEl, layoutReadCtx);
         layoutDef.orphaned = !masterListedLayouts.has(layoutPath);
         layoutDef.sourceRelationshipId = layoutRelationshipIdsByPath.get(layoutPath);
+        layoutDef.sourceMasterTarget = readRelationshipTarget(pptx.doc, layoutPath, "/slideMaster");
+        layoutDef.sourcePath = layoutPath;
         const sourceLayoutId = layoutIdsByPath.get(layoutPath);
         if (sourceLayoutId !== undefined) layoutDef.layoutId = sourceLayoutId;
         layoutDef.sourceOwnRels = pptx.doc.has(partPathToRelsPath(layoutPath));
@@ -849,6 +951,7 @@ function parsePresentationFromPptx(pptx: PptxDocument): PresentationOptions {
         const themeOverridePath = layoutThemeOverridePaths.get(layoutPath);
         const themeOverrideEl = themeOverridePath ? pptx.doc.get(themeOverridePath) : undefined;
         if (themeOverrideEl) {
+          layoutDef.themeOverridePath = themeOverridePath;
           layoutDef.themeOverride = themeOverrideDesc.parse(
             themeOverrideEl,
             readContextForPart(themeOverridePath!),
@@ -860,23 +963,19 @@ function parsePresentationFromPptx(pptx: PptxDocument): PresentationOptions {
 
     const masterName = themeOptions?.name ?? `master${mi + 1}`;
     const masterDef: Partial<MasterDefinition> = {
+      ...masterOpts,
       name: masterName,
-      background: masterOpts.background,
-      children: masterOpts.children,
-      placeholders: masterOpts.placeholders,
-      colorMapping: masterOpts.colorMapping,
-      headerFooter: masterOpts.headerFooter,
-      textStyles: masterOpts.textStyles,
-      preserve: masterOpts.preserve,
-      transition: masterOpts.transition,
-      animations: masterOpts.animations,
-      slideLayoutIds: masterOpts.slideLayoutIds,
-      customerData: masterOpts.customerData,
-      controls: masterOpts.controls,
-      cSldExt: masterOpts.cSldExt,
-      ext: masterOpts.ext,
+      sourcePath: masterPath,
+      themeSourcePath: masterThemePath,
+      themeRelationshipId: masterThemeRelationshipId,
     };
     if (sourceMasterId !== undefined) masterDef.masterId = sourceMasterId;
+    if (attachedMasterIndex !== undefined) {
+      masterDef.attachedToPresentation = true;
+      masterDef.presentationMasterOrder = attachedMasterIndex;
+    } else {
+      masterDef.attachedToPresentation = false;
+    }
     if (themeOptions) masterDef.theme = themeOptions;
     if (masterLayouts.length > 0) masterDef.layouts = masterLayouts;
     masterDefs.push(masterDef as MasterDefinition);
@@ -945,6 +1044,7 @@ function parsePresentationFromPptx(pptx: PptxDocument): PresentationOptions {
 
   // 7. Parse slides with layout and master references
   const result: SlideOptions[] = [];
+  const connectedNotesSlides = new Set<string>();
   for (const [slideIndex, slidePath] of pptx.slides.entries()) {
     const slideEl = pptx.doc.get(slidePath);
     if (!slideEl) continue;
@@ -959,6 +1059,7 @@ function parsePresentationFromPptx(pptx: PptxDocument): PresentationOptions {
     // background/transition/animations/…). The public-API-only fields (layout,
     // master, comments, notes, section) are enriched below before the push.
     const slideOpts: SlideOptions = slideDesc.parse(slideEl, readCtx);
+    slideOpts.sourcePath = slidePath;
     collectChartSourcePaths(slideOpts);
     const slideId = sourceSlideIds?.[slideIndex];
     if (slideId !== undefined) slideOpts.slideId = slideId;
@@ -980,6 +1081,7 @@ function parsePresentationFromPptx(pptx: PptxDocument): PresentationOptions {
 
       const resolvedMasterPath = layoutMasterPaths.get(layoutPath);
       if (resolvedMasterPath) {
+        slideOpts.masterSourcePath = resolvedMasterPath;
         const masterIdx = pptx.slideMasters.indexOf(resolvedMasterPath);
         if (masterIdx >= 0 && masterDefs[masterIdx]) {
           slideOpts.master = masterDefs[masterIdx].name;
@@ -1040,6 +1142,7 @@ function parsePresentationFromPptx(pptx: PptxDocument): PresentationOptions {
       ) {
         slideOpts.notes = notesData;
         slideOpts.notesSourcePath = relPath;
+        connectedNotesSlides.add(relPath);
       }
       break;
     }
@@ -1053,6 +1156,8 @@ function parsePresentationFromPptx(pptx: PptxDocument): PresentationOptions {
 
   opts.slides = result;
   if (canonicalCommentAuthors) opts.commentAuthors = canonicalCommentAuthors;
+  if (pptx.partRefs.commentAuthors) opts.commentAuthorsPresent = true;
+  if (parsedSections.groups.length > 0) opts.sections = parsedSections.groups;
 
   // Package-wide passthrough (SDK ExtendedPart analogue): every part the model
   // did NOT absorb is carried verbatim instead of dropped. Listed below are
@@ -1108,6 +1213,7 @@ function parsePresentationFromPptx(pptx: PptxDocument): PresentationOptions {
     rebuilt.push(partPathToRelsPath(handoutMasterPath));
   }
   for (const notesSlidePath of pptx.notesSlides) {
+    if (!connectedNotesSlides.has(notesSlidePath)) continue;
     rebuilt.push(notesSlidePath);
     rebuilt.push(partPathToRelsPath(notesSlidePath));
   }
@@ -1119,13 +1225,7 @@ function parsePresentationFromPptx(pptx: PptxDocument): PresentationOptions {
       rebuilt.push(partPathToRelsPath(item.propertiesPath));
     }
   }
-  if (pptx.partRefs.diagramData.length > 0) {
-    for (const diagramPath of xmlKeys(pptx.doc.keys("ppt/diagrams/"))) {
-      if (diagramPath.includes("/drawing")) continue;
-      rebuilt.push(diagramPath);
-      rebuilt.push(partPathToRelsPath(diagramPath));
-    }
-  }
+
   if (pptx.presProps) rebuilt.push(pptx.presProps);
   if (pptx.viewProps) rebuilt.push(pptx.viewProps);
   if (pptx.tableStyles) rebuilt.push(pptx.tableStyles);
@@ -1138,6 +1238,8 @@ function parsePresentationFromPptx(pptx: PptxDocument): PresentationOptions {
     opaquePassthroughPolicy("pptx"),
   );
   passthroughRels.push(...collectExternalPartRelationships(pptx.doc, pptx.slides));
+  captureMasterImageRelationships(pptx, pptx.slideMasters, passthroughRels);
+  captureMasterImageRelationships(pptx, pptx.slideLayouts, passthroughRels);
   if (passthroughParts.length > 0) opts.rawParts = passthroughParts;
   if (passthroughRels.length > 0) opts.passthroughRelationships = passthroughRels;
 

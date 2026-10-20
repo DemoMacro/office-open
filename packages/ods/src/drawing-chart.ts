@@ -6,12 +6,12 @@ import {
   emuToLength,
   escapeText,
   lengthToEmu,
+  resolveEmbeddedChart,
   xmlElement,
 } from "@office-open/odf";
 import type { CellOptions, WorksheetChartOptions } from "@office-open/xlsx";
 import type { Element } from "@office-open/xml";
 
-import { unknownOdsElement } from "./workbook";
 import { columnNumber } from "./worksheet";
 
 /** A worksheet chart frame collected while serializing an ODS body. */
@@ -43,16 +43,9 @@ export function parseWorksheetCharts(
       const href = attributeString(childNamed(frame, "draw:object"), "xlink:href")
         ?.replace(/^\.\//, "")
         .replace(/\/$/, "");
-      const chart = href ? pool.get(href) : undefined;
+      const chart = href ? resolveEmbeddedChart(pool, href) : undefined;
       if (!href) continue;
-      if (!chart) {
-        throw unknownOdsElement(
-          frame,
-          `/office:spreadsheet/table:table[@table:name="${worksheet ?? ""}"]`,
-          href,
-          "referenced chart subdocument is missing",
-        );
-      }
+      if (!chart) continue;
       charts.push({
         name: href,
         worksheet: worksheet ?? "",
@@ -108,6 +101,13 @@ export function cellGraphicXml(graphic: NonNullable<CellOptions["graphics"]>[num
     "xlink:actuate": "onLoad",
   };
   return xmlElement("draw:frame", common, [
+    ...(graphic.notifyOnUpdateOfRanges === undefined
+      ? []
+      : [
+          xmlElement("loext:p", {
+            "draw:notify-on-update-of-ranges": graphic.notifyOnUpdateOfRanges,
+          }),
+        ]),
     xmlElement(graphic.type === "image" ? "draw:image" : "draw:object", link),
     ...(graphic.description
       ? [xmlElement("svg:desc", undefined, [escapeText(graphic.description)])]

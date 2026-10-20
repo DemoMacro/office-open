@@ -20,9 +20,14 @@
  */
 
 import {
-  RELATIONSHIP_TYPES,
   Relationships,
+  type CompressionOptions,
+  type OoxmlPackageVariant,
+  type RelationshipType,
+  type ReproducibleScope,
   ZipStreamWriter,
+} from "@office-open/core";
+import {
   appPropertiesDesc,
   buildCorePropertiesXmlString,
   buildRootRelationships,
@@ -31,13 +36,10 @@ import {
   deriveContentTypes,
   ooxmlPackageFormatInfo,
   partContentTypeResolver,
+  RELATIONSHIP_TYPES,
   XLSX_PARTS,
   ZIP_DEFLATE_LEVEL,
-  type CompressionOptions,
-  type ReproducibleScope,
-  type OoxmlPackageVariant,
-  type RelationshipType,
-} from "@office-open/core";
+} from "@office-open/core/opc";
 import { OOXML_XML_DECLARATION } from "@office-open/xml";
 import type { WorkbookOptions } from "@parts/file";
 import { stylesDesc } from "@parts/styles";

@@ -111,6 +111,38 @@ describe("oleDesc round-trip", () => {
     expect(parsed.iconImage!.compression).toBe("print");
   });
 
+  it("preserves an OLE icon without shape properties", () => {
+    const { parsed, xml } = roundTrip(
+      {
+        embed: { data: OLE_BYTES },
+        iconImage: { data: PNG_BYTES, type: "png", shapePropertiesPresent: false },
+      },
+      readCtxWithEmbedding,
+    );
+
+    expect(xml).not.toContain("<p:spPr>");
+    expect(parsed.iconImage).toMatchObject({ shapePropertiesPresent: false });
+  });
+
+  it("preserves an empty OLE program identifier", () => {
+    const { parsed, xml } = roundTrip(
+      {
+        id: 101,
+        name: "Empty Program",
+        x: 0,
+        y: 0,
+        width: 100,
+        height: 100,
+        progId: "",
+        embed: { data: OLE_BYTES },
+      },
+      readCtxWithEmbedding,
+    );
+
+    expect(xml).toContain('progId=""');
+    expect(parsed.progId).toBe("");
+  });
+
   it("reads the canonical embedded branch without its fallback picture", () => {
     const xml =
       `<p:graphicFrame xmlns:a="urn:a" xmlns:r="urn:r" xmlns:p="urn:p" xmlns:mc="urn:mc">` +
@@ -212,6 +244,16 @@ describe("oleDesc round-trip", () => {
     const { parsed } = roundTrip(opts);
 
     expect(parsed.shapeId).toBe("_x0000_s1025");
+  });
+
+  it("round-trips an empty OLE shape identifier", () => {
+    const { parsed, xml } = roundTrip({
+      shapeId: "",
+      embed: { data: OLE_BYTES },
+    });
+
+    expect(xml).toContain('spid=""');
+    expect(parsed.shapeId).toBe("");
   });
 
   it("round-trips object name separately from frame name", () => {

@@ -8,33 +8,35 @@
  */
 
 import {
-  RELATIONSHIP_TYPES,
-  Relationships,
-  TargetModeType,
-  appPropertiesDesc,
-  buildCorePropertiesXmlString,
-  buildRootRelationships,
   compileMapping,
-  dropDanglingPassthroughRels,
-  finalizeContentTypes,
-  type OoxmlPackageVariant,
-  type PassthroughRelationship,
-  type RelationshipType,
-  type ReproducibleScope,
-  partPathToRelsPath,
-  resolveRelationshipTarget,
-  ooxmlPackageFormatInfo,
-  resolveMainPartContentType,
-  partContentTypeResolver,
-  XLSX_PARTS,
-  customPropertiesDesc,
+  Relationships,
   toUint8Array,
-  IMAGE_MEDIA_CONTENT_TYPES,
-  type XmlifyedFile,
-  type Zippable,
+  type OoxmlPackageVariant,
+  type ReproducibleScope,
 } from "@office-open/core";
 import { buildUserShapesData, chartSpaceDesc } from "@office-open/core/chart";
 import type { WriteContext } from "@office-open/core/descriptor";
+import {
+  appPropertiesDesc,
+  buildCorePropertiesXmlString,
+  buildRootRelationships,
+  customPropertiesDesc,
+  dropDanglingPassthroughRels,
+  finalizeContentTypes,
+  IMAGE_MEDIA_CONTENT_TYPES,
+  ooxmlPackageFormatInfo,
+  partContentTypeResolver,
+  type PassthroughRelationship,
+  partPathToRelsPath,
+  type RelationshipType,
+  RELATIONSHIP_TYPES,
+  resolveMainPartContentType,
+  resolveRelationshipTarget,
+  type XmlifyedFile,
+  TargetModeType,
+  type Zippable,
+  XLSX_PARTS,
+} from "@office-open/core/opc";
 import { buildThemeXml, themeOverrideDesc } from "@office-open/core/theme";
 import { escapeXml, OOXML_XML_DECLARATION } from "@office-open/xml";
 import { activeXControlDesc, type ActiveXControlOptions } from "@parts/active-x-control";
@@ -211,6 +213,8 @@ export function compileWorkbook(
     ctx.sharedStrings.setSourceCount(options.sharedStringsCount);
   if (options.sharedStringsUniqueCount !== undefined)
     ctx.sharedStrings.setSourceUniqueCount(options.sharedStringsUniqueCount);
+  if (options.sharedStringsXmlSpace !== undefined)
+    ctx.sharedStrings.setSourceXmlSpace(options.sharedStringsXmlSpace);
 
   const chartsheetConfigs = options.chartsheets ?? [];
   const dialogsheetConfigs = options.dialogsheets ?? [];
@@ -523,6 +527,7 @@ export function compileWorkbook(
   const state: WorksheetCompileState = {
     globalMediaIdx: 0,
     globalChartIdx: 0,
+    globalChartExIdx: 0,
     globalSmartArtIdx: 1,
     globalPivotIdx: 0,
     globalPivotCacheIdx: 0,
@@ -593,6 +598,10 @@ export function compileWorkbook(
         customViews: options.customWorkbookViews,
         fileRecovery: options.fileRecovery,
         functionGroups: options.functionGroups,
+        ...(options.builtInGroupCount !== undefined
+          ? { builtInGroupCount: options.builtInGroupCount }
+          : {}),
+        ...(options.builtInGroupCountPresent ? { builtInGroupCountPresent: true } : {}),
         webPublishing: options.webPublishing,
         fileSharing: options.fileSharing,
         webPublishObjects: options.webPublishObjects,
@@ -603,6 +612,7 @@ export function compileWorkbook(
         ...(options.absPathLegacyPrefix ? { absPathLegacyPrefix: true } : {}),
         ...(options.revisionPtr ? { revisionPtr: options.revisionPtr } : {}),
         ...(options.extensions ? { extensions: options.extensions } : {}),
+        ...(options.workbookXmlSpace ? { rootXmlSpace: options.workbookXmlSpace } : {}),
       },
       ctx,
     ) ?? "";
@@ -686,6 +696,20 @@ export function compileWorkbook(
           TargetModeType.EXTERNAL,
         );
       }
+      // Producer orphans (rel entries no XML references) re-emit verbatim so
+      // the rebuilt .rels stays byte-equivalent to the source topology.
+      for (const orphan of elOpts.orphanRelationships ?? []) {
+        if (elRels.hasRelationship(orphan.type as RelationshipType, orphan.target)) continue;
+        const numeric = /^rId(\d+)$/.exec(orphan.rId);
+        const rid =
+          numeric && !elRels.hasId(orphan.rId) ? Number(numeric[1]) : elRels.nextRelationshipId;
+        elRels.addRelationship(
+          rid,
+          orphan.type as RelationshipType,
+          orphan.target,
+          orphan.targetMode === "External" ? TargetModeType.EXTERNAL : undefined,
+        );
+      }
       if (elRels.relationshipCount > 0) {
         mapping[`ExternalLinkRels${elIdx}`] = {
           data: XML_DECL + elRels.serialize(),
@@ -716,7 +740,9 @@ export function compileWorkbook(
 
   // Shared Strings — AFTER worksheets so all strings are collected
   if (ctx.sharedStrings.count > 0 || options.sharedStringsDeclared === true) {
-    addWorkbookRelationship(RELATIONSHIP_TYPES.sharedStrings, "sharedStrings.xml");
+    if (options.sharedStringsRelationshipPresent !== false) {
+      addWorkbookRelationship(RELATIONSHIP_TYPES.sharedStrings, "sharedStrings.xml");
+    }
     const ssXml = sharedStringsDesc.stringify(ctx.sharedStrings.toDescriptorOptions(), ctx);
     mapping["SharedStrings"] = {
       data: XML_DECL + ssXml,
@@ -727,7 +753,13 @@ export function compileWorkbook(
   // Styles and theme are optional OPC parts. Fresh documents get Office's
   // defaults; a parsed round-trip follows the source and omits absent parts.
   if (includeStyles) {
-    const stylesXml = stylesDesc.stringify({ styles: ctx.styles }, ctx);
+    const stylesXml = stylesDesc.stringify(
+      {
+        styles: ctx.styles,
+        ...(options.stylesXmlSpace ? { rootXmlSpace: options.stylesXmlSpace } : {}),
+      },
+      ctx,
+    );
     mapping["Styles"] = {
       data: XML_DECL + stylesXml,
       path: stylesPath,
@@ -737,6 +769,15 @@ export function compileWorkbook(
   if (includeTheme) {
     const themeRels = new Relationships();
     const themePath = options.themePath ?? "xl/theme/theme1.xml";
+    for (const relationship of options.passthroughRelationships ?? []) {
+      if (relationship.source !== themePath) continue;
+      themeRels.addRelationship(
+        relationship.rId,
+        relationship.relationshipType as RelationshipType,
+        relationship.target,
+        relationship.targetMode,
+      );
+    }
     const themeXml = options.theme
       ? bindMediaPlaceholders(
           buildThemeXml(options.theme, withPartRelationships(ctx, themeRels, themePath)),
@@ -876,7 +917,14 @@ export function compileWorkbook(
   );
   if (calcChainCells.length > 0 && !(srcReferencesCalcChain && options.calcChain === undefined)) {
     mapping["CalcChain"] = {
-      data: calcChainDesc.stringify({ cells: calcChainCells }, ctx) ?? "",
+      data:
+        calcChainDesc.stringify(
+          {
+            cells: calcChainCells,
+            ...(options.calcChainXmlSpace ? { rootXmlSpace: options.calcChainXmlSpace } : {}),
+          },
+          ctx,
+        ) ?? "",
       path: "xl/calcChain.xml",
     };
     addWorkbookRelationship(RELATIONSHIP_TYPES.calcChain, "calcChain.xml");
@@ -1064,6 +1112,7 @@ export function compileWorkbook(
 export interface WorksheetCompileState {
   globalMediaIdx: number;
   globalChartIdx: number;
+  globalChartExIdx: number;
   globalSmartArtIdx: number;
   globalPivotIdx: number;
   globalPivotCacheIdx: number;
@@ -1764,10 +1813,12 @@ function compileWorksheetPart(
     sheetXml = editSheetTailMarker(
       sheetXml,
       "<!--TABLE_PARTS-->",
-      buildTablePartsXml(wsTableParts),
+      buildTablePartsXml(wsTableParts, wsOpts.tablePartsCount),
     );
   } else if (wsOpts.preserveEmptyTableParts) {
-    sheetXml = editSheetTailMarker(sheetXml, "<!--TABLE_PARTS-->", '<tableParts count="0"/>');
+    const emptyTableParts =
+      wsOpts.tablePartsCount === false ? "<tableParts/>" : '<tableParts count="0"/>';
+    sheetXml = editSheetTailMarker(sheetXml, "<!--TABLE_PARTS-->", emptyTableParts);
   }
   // Strip placeholders the compiler did not replace (drawing, legacyDrawing,
   // tableParts) — their existence depends on relationships owned here.
@@ -1792,7 +1843,7 @@ function compileWorksheetPart(
   if (wsRels) {
     mapping[`WorksheetRels${i}`] = {
       data: XML_DECL + wsRels.serialize(),
-      path: partPathToRelsPath(wsPath),
+      path: wsOpts.sourceRelsPath ?? partPathToRelsPath(wsPath),
     };
   }
 

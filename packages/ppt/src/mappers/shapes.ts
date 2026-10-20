@@ -31,6 +31,12 @@ import {
 } from "./text";
 
 type EndpointShapeProperties = Pick<ShapePropertiesOptions, "fill" | "outline" | "effects">;
+
+type DrawingPlaceholderOptions = {
+  placeholder?: Exclude<NonNullable<ShapeOptions["placeholder"]>, true>;
+  placeholderSize?: NonNullable<ShapeOptions["placeholderSize"]>;
+  placeholderIndex?: number;
+};
 export function readDrawingChildren(
   view: DataView,
   drawing: RecordNode,
@@ -585,7 +591,7 @@ function endpointShapeProperties(
 
 function placeholderOptions(
   metadata: ReturnType<typeof readShapePlaceholder>,
-): ShapeOptions | Record<string, never> {
+): DrawingPlaceholderOptions | Record<string, never> {
   if (!metadata) return {};
   return {
     ...(metadata.placeholder !== undefined ? { placeholder: metadata.placeholder } : {}),

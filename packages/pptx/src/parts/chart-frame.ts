@@ -37,6 +37,8 @@ export interface ChartOptions
   sourcePath?: string;
   /** Chart-part relationships other than userShapes; round-trip only. */
   sourceRelationships?: ChartSourceRelationship[];
+  /** Source userShapes relationship target; round-trip only. */
+  userShapesSourceTarget?: string;
 
   /** Chart-owned themeOverride part (chart rel → a:themeOverride part). */
   themeOverride?: ChartThemeOverrideData;

@@ -1,4 +1,5 @@
-import { decodeBase64, zipSync } from "@office-open/core";
+import { zipSync } from "@office-open/core/opc";
+import { decodeBase64 } from "@office-open/core/opc";
 import { describe, expect, it } from "vite-plus/test";
 
 import { generateOffice } from "../generate";

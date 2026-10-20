@@ -7,20 +7,21 @@
  */
 
 import {
-  IMAGE_MEDIA_CONTENT_TYPES,
-  RELATIONSHIP_TYPES,
-  Relationships,
-  PPTX_PARTS,
-  toUint8Array,
   getReferencedMedia,
+  Relationships,
   replacePlaceholders,
-  partContentTypeResolver,
+  toUint8Array,
   withDiagramNamespaces,
 } from "@office-open/core";
-import type { Zippable } from "@office-open/core";
-import { partPathToRelsPath } from "@office-open/core";
-import type { RelationshipType } from "@office-open/core";
 import { ChartCollection } from "@office-open/core/chart";
+import {
+  IMAGE_MEDIA_CONTENT_TYPES,
+  partContentTypeResolver,
+  PPTX_PARTS,
+  RELATIONSHIP_TYPES,
+} from "@office-open/core/opc";
+import type { RelationshipType, Zippable } from "@office-open/core/opc";
+import { partPathToRelsPath, relativePartTarget } from "@office-open/core/opc";
 import {
   stringifyColorDefinitionPart,
   stringifyLayoutDefinitionPart,
@@ -29,9 +30,10 @@ import {
 import { SmartArtCollection } from "@office-open/core/smartart";
 import { themeOverrideDesc } from "@office-open/core/theme";
 import { getColorXml, getLayoutXml, getStyleXml, DEFAULT_DRAWING_XML } from "@parts/smartart";
-import type { PresentationOptions } from "@shared/file";
+import type { SmartArtDataRelationshipOptions } from "@parts/smartart";
+import type { PresentationOptions, SlideOptions } from "@shared/file";
 
-import type { PptxWriteContext } from "../context";
+import type { PptxWriteContext, SmartArtEntry } from "../context";
 import { commentAuthorsDesc, slideCommentsDesc } from "../parts/descriptors/comments";
 import { notesSlideDesc } from "../parts/descriptors/notes-slide";
 import { slideSyncDesc } from "../parts/descriptors/slide-sync";
@@ -73,7 +75,7 @@ export function compileTailParts(
   charts: ChartCollection,
   smartArts: SmartArtCollection,
   artifacts: SlideCompileArtifacts,
-  slideCount: number,
+  slides: readonly SlideOptions[],
   options: PresentationOptions,
 ): void {
   // Chart parts
@@ -97,7 +99,28 @@ export function compileTailParts(
   ];
   for (const [i, chart] of allCharts.entries()) {
     const chartPath = chart.sourcePath ?? `ppt/charts/chart${i + 1}.xml`;
-    files[chartPath] = encoder.encode(chart.xml);
+    const sourceIdReplacements = new Map(
+      (chart.sourceRelationships ?? [])
+        .filter((relationship) => /^rId\d+$/.test(relationship.rId))
+        .map((relationship) => [`hlink:${relationship.rId}`, relationship.rId] as const),
+    );
+    const sourceImageReplacements = new Map(
+      (chart.sourceRelationships ?? [])
+        .filter(
+          (relationship) =>
+            /^rId\d+$/.test(relationship.rId) && relationship.relationshipType.endsWith("/image"),
+        )
+        .flatMap((relationship) => {
+          const fileName = relationship.target.split("/").pop();
+          return fileName ? [[fileName, relationship.rId] as const] : [];
+        }),
+    );
+    files[chartPath] = encoder.encode(
+      replacePlaceholders(
+        chart.xml,
+        new Map([...sourceImageReplacements, ...sourceIdReplacements]),
+      ),
+    );
     const chartRels = new Relationships();
     for (const relationship of chart.sourceRelationships ?? []) {
       chartRels.addRelationship(
@@ -111,13 +134,11 @@ export function compileTailParts(
     // the body part (chartUserShapes relationship, same directory).
     if (chart.userShapes) {
       const userShapesPath = chart.userShapes.path ?? `ppt/charts/userShapes${i + 1}.xml`;
-      files[userShapesPath] = encoder.encode(chart.userShapes.xml);
+      if (chart.userShapes.xml !== "") files[userShapesPath] = encoder.encode(chart.userShapes.xml);
       chartRels.addRelationship(
         chart.userShapes.relationshipId,
         CHART_USER_SHAPES_REL,
-        userShapesPath.startsWith("ppt/charts/")
-          ? userShapesPath.slice("ppt/charts/".length)
-          : userShapesPath,
+        chart.userShapes.sourceTarget ?? relativePartTarget(chartPath, userShapesPath),
       );
     }
     if (chartRels.relationshipCount > 0) {
@@ -138,6 +159,8 @@ export function compileTailParts(
       style: s.style,
       color: s.color,
       raw: s.raw,
+      sourceDataRelationships: undefined as SmartArtDataRelationshipOptions[] | undefined,
+      sourcePaths: undefined as SmartArtEntry["sourcePaths"],
     })),
     ...descCtx.smartArts.map((s) => ({
       key: s.key,
@@ -146,30 +169,50 @@ export function compileTailParts(
       style: s.style,
       color: s.color,
       raw: s.raw,
+      sourceDataRelationships: s.sourceDataRelationships,
+      sourcePaths: s.sourcePaths,
     })),
   ];
   for (const [i, sa] of allSmartArts.entries()) {
+    const dataPath = sa.sourcePaths?.data ?? `ppt/diagrams/data${i + 1}.xml`;
+    const layoutPath = sa.sourcePaths?.layout ?? `ppt/diagrams/layout${i + 1}.xml`;
+    const quickStylePath = sa.sourcePaths?.quickStyle ?? `ppt/diagrams/quickStyle${i + 1}.xml`;
+    const colorsPath = sa.sourcePaths?.colors ?? `ppt/diagrams/colors${i + 1}.xml`;
     const drawingRelationship =
       sa.raw?.drawing !== undefined && sa.raw.drawingRelationship !== false;
-    const mediaIds = new Map(
-      (sa.raw?.media ?? []).map((media, mediaIndex) => [
-        media.fileName,
-        `rId${(drawingRelationship ? 2 : 1) + mediaIndex}`,
-      ]),
+    const mediaIds = new Map<string, string>();
+    if (sa.sourceDataRelationships && sa.sourceDataRelationships.length > 0) {
+      for (const media of sa.raw?.media ?? []) {
+        const sourceRel = sa.sourceDataRelationships.find(
+          (rel) =>
+            rel.target.endsWith(media.fileName) || rel.target.split("/").pop() === media.fileName,
+        );
+        mediaIds.set(media.fileName, sourceRel?.id ?? `rId1`);
+      }
+    } else {
+      (sa.raw?.media ?? []).forEach((media, mediaIndex) => {
+        mediaIds.set(media.fileName, `rId${(drawingRelationship ? 2 : 1) + mediaIndex}`);
+      });
+    }
+    const sourceIds = new Map(
+      (sa.sourceDataRelationships ?? [])
+        .filter((relationship) => /^rId\d+$/.test(relationship.id))
+        .map((relationship) => [`hlink:${relationship.id}`, relationship.id] as const),
     );
-    const dataBody = replacePlaceholders(sa.dataModelXml, mediaIds).replace(/^<\?xml[^>]*\?>/, "");
-    files[`ppt/diagrams/data${i + 1}.xml`] = encoder.encode(
-      XML_DECL + withDiagramNamespaces(dataBody),
-    );
-    files[`ppt/diagrams/layout${i + 1}.xml`] = encoder.encode(
+    const dataBody = replacePlaceholders(
+      sa.dataModelXml,
+      new Map([...mediaIds, ...sourceIds]),
+    ).replace(/^<\?xml[^>]*\?>/, "");
+    files[dataPath] = encoder.encode(XML_DECL + withDiagramNamespaces(dataBody));
+    files[layoutPath] = encoder.encode(
       typeof sa.layout === "string"
         ? getLayoutXml(sa.layout)
         : stringifyLayoutDefinitionPart(sa.layout),
     );
-    files[`ppt/diagrams/quickStyle${i + 1}.xml`] = encoder.encode(
+    files[quickStylePath] = encoder.encode(
       typeof sa.style === "string" ? getStyleXml(sa.style) : stringifyStyleDefinitionPart(sa.style),
     );
-    files[`ppt/diagrams/colors${i + 1}.xml`] = encoder.encode(
+    files[colorsPath] = encoder.encode(
       typeof sa.color === "string" ? getColorXml(sa.color) : stringifyColorDefinitionPart(sa.color),
     );
     const drawingFileName = sa.raw?.drawingFileName ?? `drawing${i + 1}.xml`;
@@ -178,23 +221,34 @@ export function compileTailParts(
     } else if (sa.raw === undefined) {
       files[`ppt/diagrams/drawing${i + 1}.xml`] = encoder.encode(DEFAULT_DRAWING_XML);
     }
-    const dataRels = new Relationships(`ppt/diagrams/data${i + 1}.xml`);
-    if (drawingRelationship) {
-      dataRels.addRelationship(
-        1,
-        RELATIONSHIP_TYPES.diagramDrawingMs,
-        drawingFileName === `drawing${i + 1}.xml` ? `drawing${i + 1}.xml` : drawingFileName,
-      );
-    }
-    for (const [mediaIndex, media] of (sa.raw?.media ?? []).entries()) {
-      dataRels.addRelationship(
-        (drawingRelationship ? 2 : 1) + mediaIndex,
-        RELATIONSHIP_TYPES.image,
-        `../media/${media.fileName}`,
-      );
+    const dataRels = new Relationships(dataPath);
+    if (sa.sourceDataRelationships) {
+      for (const relationship of sa.sourceDataRelationships) {
+        dataRels.addRelationship(
+          relationship.id,
+          relationship.relationshipType as RelationshipType,
+          relationship.target,
+          relationship.targetMode,
+        );
+      }
+    } else {
+      if (drawingRelationship) {
+        dataRels.addRelationship(
+          1,
+          RELATIONSHIP_TYPES.diagramDrawingMs,
+          drawingFileName === `drawing${i + 1}.xml` ? `drawing${i + 1}.xml` : drawingFileName,
+        );
+      }
+      for (const [mediaIndex, media] of (sa.raw?.media ?? []).entries()) {
+        dataRels.addRelationship(
+          (drawingRelationship ? 2 : 1) + mediaIndex,
+          RELATIONSHIP_TYPES.image,
+          `../media/${media.fileName}`,
+        );
+      }
     }
     if (dataRels.relationshipCount > 0) {
-      files[`ppt/diagrams/_rels/data${i + 1}.xml.rels`] = encoder.encode(dataRels.serialize());
+      files[partPathToRelsPath(dataPath)] = encoder.encode(dataRels.serialize());
     }
   }
 
@@ -203,8 +257,13 @@ export function compileTailParts(
     !!options.view?.outlineView?.slides && options.view.outlineView.slides.length > 0;
   if (hasOutlineViewSlides) {
     const vpRels = new Relationships();
-    for (let i = 0; i < slideCount; i++) {
-      vpRels.addRelationship(i + 1, RELATIONSHIP_TYPES.slide, `slides/slide${i + 1}.xml`);
+    for (const [i, slide] of slides.entries()) {
+      const slidePath = slide.sourcePath ?? `ppt/slides/slide${i + 1}.xml`;
+      vpRels.addRelationship(
+        i + 1,
+        RELATIONSHIP_TYPES.slide,
+        relativePartTarget("ppt/viewProps.xml", slidePath),
+      );
     }
     files["ppt/_rels/viewProps.xml.rels"] = encoder.encode(XML_DECL + vpRels.serialize());
   }
@@ -242,7 +301,12 @@ export function compileTailParts(
       nsRels.addRelationship(1, RELATIONSHIP_TYPES.notesMaster, "../notesMasters/notesMaster1.xml");
     }
     if (!nsRels.hasRelationshipKind("slide")) {
-      nsRels.addRelationship(2, RELATIONSHIP_TYPES.slide, `../slides/slide${slideIdx + 1}.xml`);
+      const slidePath = slides[slideIdx]?.sourcePath ?? `ppt/slides/slide${slideIdx + 1}.xml`;
+      nsRels.addRelationship(
+        2,
+        RELATIONSHIP_TYPES.slide,
+        relativePartTarget(notesSourcePath, slidePath),
+      );
     }
     // Media referenced by notes shapes gets slide-style image wiring (notes
     // accept pictures just like slides do).

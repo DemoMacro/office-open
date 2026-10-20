@@ -710,6 +710,42 @@ export function parseWorksheetStream(
         ];
         break;
       }
+      case RecordCode.DefaultColWidth: {
+        if (record.body.byteLength < 2)
+          throw new XlsParseError("Invalid legacy XLS file: truncated default column width");
+        worksheetExtras.sheetFormat = {
+          ...(worksheetExtras.sheetFormat === false ? {} : worksheetExtras.sheetFormat),
+          baseColWidth: dataView(record.body).getUint16(0, true),
+        };
+        break;
+      }
+      case RecordCode.PrintHeaders:
+      case RecordCode.PrintGridlines:
+      case RecordCode.Gridset:
+      case RecordCode.HCenter:
+      case RecordCode.VCenter: {
+        if (record.body.byteLength < 2)
+          throw new XlsParseError("Invalid legacy XLS file: truncated print setting");
+        const value = dataView(record.body).getUint16(0, true);
+        if (value !== 0 && value !== 1)
+          throw new XlsParseError("Invalid legacy XLS file: invalid print setting", {
+            recordType: record.code,
+            recordName: "Print Setting",
+            offset: record.start,
+            length: record.body.byteLength,
+            byteRange: [record.start + 4, record.start + 6],
+            reason: "invalid-boolean-value",
+          });
+        const enabled = value === 1;
+        const printOptions = { ...worksheetExtras.printOptions };
+        if (record.code === RecordCode.PrintHeaders) printOptions.headings = enabled;
+        if (record.code === RecordCode.PrintGridlines) printOptions.gridLines = enabled;
+        if (record.code === RecordCode.Gridset) printOptions.gridLinesSet = enabled;
+        if (record.code === RecordCode.HCenter) printOptions.horizontalCentered = enabled;
+        if (record.code === RecordCode.VCenter) printOptions.verticalCentered = enabled;
+        worksheetExtras.printOptions = printOptions;
+        break;
+      }
       case RecordCode.MergedCells: {
         const view = new DataView(
           record.body.buffer,

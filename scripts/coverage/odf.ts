@@ -131,7 +131,7 @@ async function main(): Promise<void> {
 
   for (const entry of ODF_CODEC_OWNERSHIP) {
     try {
-      const result = runOdfCoverageFixture(
+      const result = await runOdfCoverageFixture(
         entry.fixtureKey as Parameters<typeof runOdfCoverageFixture>[0],
       );
       if (!result.semanticRoundTrip) {
@@ -146,7 +146,7 @@ async function main(): Promise<void> {
     }
     for (const negative of entry.negativeCapabilities ?? []) {
       try {
-        runOdfNegativeFixture(negative.testId as Parameters<typeof runOdfNegativeFixture>[0]);
+        await runOdfNegativeFixture(negative.testId as Parameters<typeof runOdfNegativeFixture>[0]);
       } catch (error) {
         failures.push(
           `${entry.id}/${negative.testId}: ${error instanceof Error ? error.message : String(error)}`,

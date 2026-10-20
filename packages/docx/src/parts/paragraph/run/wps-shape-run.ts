@@ -24,6 +24,8 @@ interface ShapeRunOptions {
   transformation: MediaTransformation;
   floating?: Floating;
   altText?: DocPropertiesOptions;
+  /** Whether the drawing wrapper carried wp:docPr; round-trip only. */
+  docPropertiesPresent?: boolean;
   /**
    * Raw XML of the mc:Fallback (VML equivalent) — carried verbatim so the full
    * mc:AlternateContent round-trips. Round-trip channel: captured from a

@@ -115,7 +115,7 @@ const options: PresentationOptions = {
                 marker: { symbol: "circle", size: 7 },
                 invertIfNegative: true,
                 trendlines: [{ type: "linear", name: "Trend", dispEq: true, dispRSqr: true }],
-                errorBars: { direction: "y", barType: "both", valueType: "fixedValue", value: 2 },
+                errorBars: [{ direction: "y", barType: "both", valueType: "fixedValue", value: 2 }],
                 dataLabels: { showVal: true, position: "top" },
                 dataPoints: [{ index: 2, marker: { symbol: "diamond", size: 9 } }],
               },

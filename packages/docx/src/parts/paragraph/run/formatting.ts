@@ -21,6 +21,8 @@ import type { HexColorOrAuto, UcharHexNumber } from "@office-open/core";
  */
 export interface ColorOptions {
   val?: HexColorOrAuto;
+  /** Source `w:val` spelling (for producer-specific `#RRGGBB`); round-trip only. */
+  valRaw?: string;
   /** Theme color slot: "dark1"/"light1" text/background, "accent1"–"accent6" theme accents, "hyperlink"/"followedHyperlink". */
   themeColor?: ThemeColor;
   themeTint?: UcharHexNumber;

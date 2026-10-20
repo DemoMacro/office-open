@@ -1,6 +1,7 @@
+import type { DataType } from "@office-open/core";
+import { strFromU8, strToU8, toUint8ArrayAsync, unzipSync, zipSync } from "@office-open/core";
 import { parse } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
-import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
 
 import { OcfManifestError, OcfMimeTypeError, OdfXmlError } from "../errors";
 import {
@@ -153,10 +154,15 @@ export function generateOcf(
   );
 }
 
-export function readOcf(
+export function readOcfSync(
   data: Uint8Array,
-  expectedMimeType: string,
-): { files: OdfFiles; binaries: Record<string, Uint8Array>; manifest: OcfManifestOptions } {
+  expectedMimeType: string | readonly string[],
+): {
+  files: OdfFiles;
+  binaries: Record<string, Uint8Array>;
+  manifest: OcfManifestOptions;
+} {
+  const expectedMimeTypes = Array.isArray(expectedMimeType) ? expectedMimeType : [expectedMimeType];
   const entries = unzipSync(data);
   const files: OdfFiles = {};
   const binaries: Record<string, Uint8Array> = {};
@@ -182,8 +188,8 @@ export function readOcf(
   }
   const rootEntry = manifest.entries.find((entry) => entry.fullPath === "/");
   const mimeType = entries.mimetype ? strFromU8(entries.mimetype) : rootEntry?.mediaType;
-  if (mimeType && mimeType !== expectedMimeType)
-    throw new OcfMimeTypeError(expectedMimeType, mimeType);
+  if (mimeType && !expectedMimeTypes.includes(mimeType))
+    throw new OcfMimeTypeError(expectedMimeTypes[0]!, mimeType);
   validateManifestPaths(
     manifest,
     Object.keys(entries).filter(
@@ -192,6 +198,17 @@ export function readOcf(
     Object.keys(entries).filter((path) => path !== "mimetype" && path !== "META-INF/manifest.xml"),
   );
   return { files, binaries, manifest };
+}
+
+export async function readOcf(
+  data: DataType,
+  expectedMimeType: string | readonly string[],
+): Promise<{
+  files: OdfFiles;
+  binaries: Record<string, Uint8Array>;
+  manifest: OcfManifestOptions;
+}> {
+  return readOcfSync(await toUint8ArrayAsync(data), expectedMimeType);
 }
 
 export function hasOcfManifestOverlay(manifest: OcfManifestOptions): boolean {

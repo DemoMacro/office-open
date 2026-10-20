@@ -1,6 +1,6 @@
 import { readFile, writeFile } from "node:fs/promises";
 
-import { OOXML_PACKAGE_FORMATS } from "@office-open/core";
+import { OOXML_PACKAGE_FORMATS } from "@office-open/core/opc";
 import { defineCommand, runMain } from "citty";
 
 import { detectOffice, type OfficeFormatInfo } from "./formats";

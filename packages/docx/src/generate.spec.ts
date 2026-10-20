@@ -1,5 +1,6 @@
-import { unzipSync, zipSync } from "@office-open/core";
+import { unzipSync, zipSync } from "@office-open/core/opc";
 import type { GroupChildMediaData } from "@shared/media";
+import type { SectionChild } from "@shared/section";
 import { describe, expect, it } from "vite-plus/test";
 
 import { compileDocument } from "./compiler";
@@ -94,6 +95,65 @@ describe("package variants", () => {
       expect(generated.type).toBe(mimeType.toLowerCase());
       expect(passthrough.type).toBe(mimeType.toLowerCase());
     }
+  });
+});
+
+describe("deep documents", () => {
+  it("generates deeply nested tables without exhausting the stack", async () => {
+    let child: SectionChild = { paragraph: { children: ["Leaf"] } };
+    for (let depth = 0; depth < 2_000; depth += 1) {
+      child = { table: { rows: [{ cells: [{ children: [child] }] }] } };
+    }
+    const generated = await generateDocument(
+      { sections: [{ children: [child] }] },
+      { type: "uint8array" },
+    );
+    expect(generated.byteLength).toBeGreaterThan(0);
+  });
+});
+
+describe("malformed package boundaries", () => {
+  it("rejects negative paragraph spacing during parse", async () => {
+    const generated = await generateDocument(
+      { sections: [{ children: [{ paragraph: { children: ["Spacing"] } }] }] },
+      { type: "uint8array" },
+    );
+    const entries = unzipSync(generated);
+    const documentXml = new TextDecoder().decode(entries["word/document.xml"]);
+    entries["word/document.xml"] = new TextEncoder().encode(
+      documentXml.replace("<w:p>", '<w:p><w:pPr><w:spacing w:before="-1"/></w:pPr>'),
+    );
+    const invalid = zipSync(entries);
+    expect(() => parseDocumentSync(invalid)).toThrowError(
+      /Paragraph spacing before cannot be negative/,
+    );
+  });
+
+  it("rejects a parsed table whose source omitted tblGrid", async () => {
+    const generated = await generateDocument(
+      {
+        sections: [
+          {
+            children: [
+              {
+                table: {
+                  rows: [{ cells: [{ children: [{ paragraph: { children: ["Cell"] } }] }] }],
+                },
+              },
+            ],
+          },
+        ],
+      },
+      { type: "uint8array" },
+    );
+    const entries = unzipSync(generated);
+    const documentXml = new TextDecoder().decode(entries["word/document.xml"]);
+    entries["word/document.xml"] = new TextEncoder().encode(
+      documentXml.replace(/<w:tblGrid>.*?<\/w:tblGrid>/s, ""),
+    );
+    expect(() => parseDocumentSync(zipSync(entries))).toThrowError(
+      /Table is missing its required grid/,
+    );
   });
 });
 
@@ -287,6 +347,36 @@ describe("package metadata presence", () => {
     expect(new TextDecoder().decode(output["[Content_Types].xml"]!)).toContain(
       'PartName="/word/document2.xml"',
     );
+  });
+
+  it("round-trips a non-default core-properties part path", () => {
+    const coreXml =
+      '<?xml version="1.0"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>Selected</dc:title></cp:coreProperties>';
+    const source = zipSync({
+      "[Content_Types].xml": new TextEncoder().encode(
+        '<?xml version="1.0"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+          '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>' +
+          '<Override PartName="/docProps/core1.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>' +
+          "</Types>",
+      ),
+      "_rels/.rels": new TextEncoder().encode(
+        '<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+          '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>' +
+          '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core1.xml"/>' +
+          "</Relationships>",
+      ),
+      "word/document.xml": new TextEncoder().encode(
+        '<?xml version="1.0"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body/></w:document>',
+      ),
+      "docProps/core1.xml": new TextEncoder().encode(coreXml),
+      "docProps/core.xml": new TextEncoder().encode(coreXml),
+    });
+    const parsed = parseDocumentSync(source);
+    expect(parsed.corePropertiesPath).toBe("docProps/core1.xml");
+    expect(parsed.title).toBe("Selected");
+    const output = unzipSync(generateDocumentSync(parsed, { type: "uint8array" }));
+    expect(Object.keys(output)).toContain("docProps/core1.xml");
+    expect(new TextDecoder().decode(output["_rels/.rels"]!)).toContain("docProps/core1.xml");
   });
 });
 

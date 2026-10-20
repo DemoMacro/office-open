@@ -9,6 +9,7 @@
  * @module
  */
 
+import type { DataType } from "../../util/data-type";
 import type { Panose, Percentage } from "../../util/values";
 import type { SolidFillOptions } from "../color/solid-fill";
 import type { EffectListOptions } from "../effects/effect-list";
@@ -65,6 +66,21 @@ export interface TextHyperlinkOptions {
   invalidUrl?: string;
   /** Add the target to browser history (a:hlinkClick `@history`, default true). */
   history?: boolean;
+  /** Raw inner XML of the a:extLst child (a:hlinkClick tail, round-trip). */
+  ext?: string;
+  /** a:snd — sound played when the hyperlink is activated. */
+  sound?: HyperlinkSoundOptions;
+}
+
+export interface HyperlinkSoundOptions {
+  /** a:snd `@name`. */
+  name?: string;
+  /** Sound payload registered as package media. */
+  data: DataType;
+  /** Media extension without the dot (wav, mp3, wma, aac). */
+  type: string;
+  /** Source media file name, pinned so relationship targets and placeholders stay stable. */
+  fileName?: string;
 }
 
 // ── Text fonts (CT_TextFont: a:latin / a:ea / a:cs / a:sym) ──
@@ -171,7 +187,7 @@ export type BulletStyleOptions = {
   color?: string | SolidFillOptions;
   /** a:buClrTx — bullet color follows the text run color. */
   colorFollowsText?: boolean;
-  /** a:buSzPct — bullet size as a percentage of the text size (60 = 60%). */
+  /** a:buSzPct — bullet size as a percentage of the text size (60 = 60%, 46.999 = 46.999%). */
   size?: number;
   /** a:buSzTx — bullet size follows the text run size. */
   sizeFollowsText?: boolean;
@@ -326,8 +342,28 @@ export interface TextFieldOptions {
   text?: string;
   /** a:rPr — run properties. */
   properties?: TextCharacterPropertiesOptions;
+  /**
+   * The source carried a bare `<a:rPr/>` with no attributes or children.
+   * Round-trip marker only — re-emits the empty element instead of dropping
+   * it (element presence is part of the source's fidelity).
+   */
+  emptyProperties?: boolean;
   /** a:pPr — paragraph properties (CT_TextParagraphProperties). */
   paragraphProperties?: TextParagraphPropertiesOptions;
+  /** ODF `text:fixed`; retained so static and dynamic fields round-trip distinctly. */
+  fixed?: boolean;
+  /** ODF `text:date-value` for a fixed datetime field. */
+  dateValue?: string;
+  /** ODF `text:time-value` for a fixed time field. */
+  timeValue?: string;
+  /** ODF `style:data-style-name` for formatted date fields. */
+  dataStyleName?: string;
+  /** ODF `text:display` for filename fields. */
+  display?: "full" | "path" | "name" | "name-and-extension";
+  /** ODF `text:select-page` for page-number fields. */
+  selectPage?: "current" | "previous" | "next";
+  /** ODF `text:page-adjust` offset for page-number fields. */
+  pageAdjust?: number;
 }
 
 // ── Soft line break (a:br) ──

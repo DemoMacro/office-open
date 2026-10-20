@@ -10,8 +10,25 @@ export type { HeaderFooterOptions };
 
 /** Options for the notes master (p:notesMaster). */
 export interface NotesMasterOptions {
-  /** Background (p:bg); defaults to the MS Office bgRef idx="1001". */
+  /** Root spTree cNvPr id — round-trip only. */
+  shapeTreeId?: number;
+  /** Root spTree cNvPr name — round-trip only. */
+  shapeTreeName?: string;
+  /** Root spTree cNvPr creation id — round-trip only. */
+  shapeTreeCreationId?: string;
+  /** Root spTree cNvPr extension-list inner XML — round-trip only. */
+  shapeTreeExt?: string;
+  /** Root spTree group properties black-and-white mode (`@bwMode`). */
+  shapeTreeBlackWhiteMode?: string;
+  /** Omit the shape-tree root transform when the source omitted it. */
+  groupTransformless?: boolean;
+  /**
+   * Background (p:bg). Omitted options emit the MS Office default
+   * bgRef idx="1001"; `false` preserves a source that has no p:bg.
+   */
   background?: BackgroundOptions;
+  /** Whether the source declared p:bg; false preserves absence. */
+  backgroundPresent?: boolean;
   /** Custom spTree shapes (p:spTree children after the group header). */
   children?: SlideChild[];
   /** Color mapping overrides (p:clrMap). */
@@ -20,6 +37,8 @@ export interface NotesMasterOptions {
   headerFooter?: HeaderFooterOptions;
   /** Notes text style (p:notesStyle, CT_TextListStyle); defaults to the Office 9-level notes style. */
   notesStyle?: TextListStyleOptions;
+  /** Whether the source master carried p:notesStyle; false suppresses the fresh default. */
+  notesStylePresent?: boolean;
   /** The notes master's own theme part (ppt/theme/themeN.xml); defaults to the Office theme. */
   theme?: ThemeOptions;
   /** Trailing p:extLst inner XML (e.g. p14:creationId) — verbatim round-trip. */

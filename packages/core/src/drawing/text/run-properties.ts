@@ -14,6 +14,7 @@ import type { Element as XmlElement } from "@office-open/xml";
 import type { CustomDescriptor, ReadContext, WriteContext } from "../../descriptor";
 import { parse, stringify } from "../../descriptor";
 import { emitPercent, parsePercentAttr } from "../../util/converters";
+import { toUint8Array } from "../../util/data-type";
 import { xsdStrikeStyle, xsdTextCaps, xsdUnderlineStyle } from "../../util/mappings";
 import { parseOnOff } from "../../util/values";
 import type { Percentage } from "../../util/values";
@@ -48,6 +49,13 @@ let nextHyperlinkId = 1;
  * hyperlinks (both serialize CT_Hyperlink elements).
  */
 export function registerHyperlink(hl: TextHyperlinkOptions, ctx: WriteContext): string | undefined {
+  if (hl.sound) {
+    ctx.addMedia(
+      toUint8Array(hl.sound.data),
+      hl.sound.type,
+      hl.sound.fileName ?? `hlink-sound.${hl.sound.type}`,
+    );
+  }
   if (hl.url === undefined && hl.slide === undefined && hl.referenceId?.startsWith("{")) {
     return undefined;
   }
@@ -86,7 +94,13 @@ export function buildHyperlinkElement(
   if (hl.highlightClick !== undefined) attrs.push(`highlightClick="${hl.highlightClick ? 1 : 0}"`);
   if (hl.endSound !== undefined) attrs.push(`endSnd="${hl.endSound ? 1 : 0}"`);
   if (hl.invalidUrl !== undefined) attrs.push(`invalidUrl="${escapeXml(hl.invalidUrl)}"`);
-  return attrs.length ? `<${tag} ${attrs.join(" ")}/>` : `<${tag}/>`;
+  const openTag = attrs.length ? `<${tag} ${attrs.join(" ")}>` : `<${tag}>`;
+  const sound = hl.sound
+    ? `<a:snd r:embed="{audio:${hl.sound.fileName ?? `hlink-sound.${hl.sound.type}`}}"${
+        hl.sound.name === undefined ? "" : ` name="${escapeXml(hl.sound.name)}"`
+      }/>`
+    : "";
+  return `${openTag}${sound}${hl.ext ?? ""}</${tag}>`;
 }
 
 export function readHyperlink(el: XmlElement, ctx: ReadContext): TextHyperlinkOptions {
@@ -128,6 +142,23 @@ export function readHyperlink(el: XmlElement, ctx: ReadContext): TextHyperlinkOp
     hl.invalidUrl = String(el.attributes["invalidUrl"]);
   if (el.attributes?.["history"] !== undefined)
     hl.history = parseOnOff(el.attributes["history"]) ?? true;
+  const extLst = findChild(el, "a:extLst");
+  if (extLst) hl.ext = stringifyElement(extLst);
+  const snd = findChild(el, "a:snd");
+  if (snd) {
+    const soundId = snd.attributes?.["r:embed"];
+    const mediaPath = soundId === undefined ? undefined : ctx.resolveRelationship(String(soundId));
+    const raw = mediaPath === undefined ? undefined : ctx.getRaw(mediaPath);
+    const type = mediaPath === undefined ? undefined : mediaPath.split(".").pop();
+    if (raw && mediaPath !== undefined && type !== undefined) {
+      hl.sound = {
+        data: raw,
+        type,
+        fileName: mediaPath.split("/").pop(),
+        ...(snd.attributes?.["name"] === undefined ? {} : { name: String(snd.attributes["name"]) }),
+      };
+    }
+  }
   return hl as TextHyperlinkOptions;
 }
 

@@ -1,6 +1,6 @@
 {
   "name": "@office-open/odf",
-  "version": "0.14.6",
+  "version": "0.15.0",
   "description": "Shared OpenDocument container, XML runtime, metadata, chart, database, form, and drawing codecs",
   "keywords": [
     "chart",
@@ -52,10 +52,7 @@
     "check": "vp check --fix"
   },
   "dependencies": {
-    "@office-open/xml": "workspace:*",
-    "fflate": "0.8.3"
-  },
-  "devDependencies": {
-    "@office-open/core": "workspace:*"
+    "@office-open/core": "workspace:*",
+    "@office-open/xml": "workspace:*"
   }
 }

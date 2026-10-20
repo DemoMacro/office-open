@@ -21,6 +21,11 @@ import type { TableCellBordersOptions, TextDirection } from "./table-cell-compon
 export interface TableCellPropertiesOptionsBase {
   /** Conditional formatting style (cnfStyle) */
   cnfStyle?: CnfStyleOptions;
+  /**
+   * The source carried a bare `<w:tcPr/>` with no attributes or children.
+   * Round-trip marker only — re-emits the empty element.
+   */
+  cellProperties?: boolean;
   /** Shading (background color/pattern) for the cell */
   shading?: ShadingProperties;
   /** Cell margins (padding) for the cell content */
@@ -39,6 +44,11 @@ export interface TableCellPropertiesOptionsBase {
   rowSpan?: number;
   /** Border settings for the cell edges */
   borders?: TableCellBordersOptions;
+  /**
+   * The source carried a bare `<w:tcBorders/>` with no sides.
+   * Round-trip marker only — re-emits the empty element.
+   */
+  emptyBorders?: boolean;
   /** Horizontal merge setting (hMerge) */
   horizontalMerge?: "continue" | "restart";
   /** Whether the cell content does not wrap (noWrap) */

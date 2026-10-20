@@ -21,28 +21,30 @@ export const tagListDesc: CustomDescriptor<StringTagOptions[]> = {
   },
 
   parse(el) {
-    return (el.elements ?? []).reduce<StringTagOptions[]>((tags, child) => {
-      if (child.name !== "p:tag") {
-        throw new PptxParseError(
-          `Unsupported tags child "${child.name}"`,
-          "p:tagLst",
-          `p:tagLst/${child.name}`,
-          "unsupported-element",
-        );
-      }
-      const name = attr(child, "name");
-      const val = attr(child, "val");
-      if (name === undefined || val === undefined) {
-        throw new PptxParseError(
-          "Tag requires name and val",
-          "p:tagLst",
-          "p:tagLst/p:tag",
-          "missing-required-attribute",
-        );
-      }
-      tags.push({ name, val });
-      return tags;
-    }, []);
+    return (el.elements ?? [])
+      .filter((child) => child.type === "element")
+      .reduce<StringTagOptions[]>((tags, child) => {
+        if (child.name !== "p:tag") {
+          throw new PptxParseError(
+            `Unsupported tags child "${child.name}"`,
+            "p:tagLst",
+            `p:tagLst/${child.name}`,
+            "unsupported-element",
+          );
+        }
+        const name = attr(child, "name");
+        const val = attr(child, "val");
+        if (name === undefined || val === undefined) {
+          throw new PptxParseError(
+            "Tag requires name and val",
+            "p:tagLst",
+            "p:tagLst/p:tag",
+            "missing-required-attribute",
+          );
+        }
+        tags.push({ name, val });
+        return tags;
+      }, []);
   },
 };
 

@@ -4,7 +4,7 @@
  * @module
  */
 
-import { convertToEmu } from "@office-open/core";
+import { convertToEmu, parseOnOff } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { parse, stringify } from "@office-open/core/descriptor";
 import type { ReadContext } from "@office-open/core/descriptor";
@@ -18,6 +18,7 @@ import {
   presetGeometryDesc,
   scene3DDesc,
   shape3DDesc,
+  shapePropertiesDesc,
   shapeLockingDesc,
   stringifyEndpointConnection,
   stringifyNonVisualDrawingProperties,
@@ -99,6 +100,7 @@ function parseLineSpPr(
   }
 
   const paint = result.properties;
+  const shapeProperties = parse(shapePropertiesDesc, spPr, ctx);
 
   // Only parse fill when a fill child exists — fillDesc returns
   // { type: "none" } for an empty spPr, which would spuriously emit <a:noFill/>.
@@ -112,6 +114,8 @@ function parseLineSpPr(
   if (scene3d) paint.scene3d = scene3DDesc.parse(scene3d, ctx);
   const sp3d = findChild(spPr, "a:sp3d");
   if (sp3d) paint.shape3d = shape3DDesc.parse(sp3d, ctx);
+  if (shapeProperties.extensions !== undefined) paint.extensions = shapeProperties.extensions;
+  if (shapeProperties.ext !== undefined) paint.ext = shapeProperties.ext;
 
   return result;
 }
@@ -135,7 +139,7 @@ export const lineShapeDesc: CustomDescriptor<LineShapeOptions> = {
 
     // p:nvSpPr
     const spLocks = opts.locking ? (shapeLockingDesc.stringify(opts.locking, ctx) ?? "") : "";
-    const txBoxAttr = opts.textBox ? ' txBox="1"' : "";
+    const txBoxAttr = opts.textBox === undefined ? "" : ` txBox="${opts.textBox ? "1" : "0"}"`;
     const nvPr = opts.userDrawn ? '<p:nvPr userDrawn="1"/>' : "<p:nvPr/>";
     const cNvSpPr = spLocks
       ? `<p:cNvSpPr${txBoxAttr}>${spLocks}</p:cNvSpPr>`
@@ -168,6 +172,11 @@ export const lineShapeDesc: CustomDescriptor<LineShapeOptions> = {
     if (sp.effects) spPrParts.push(stringify(effectListDesc, sp.effects, ctx) ?? "");
     if (sp.scene3d) spPrParts.push(scene3DDesc.stringify(sp.scene3d, ctx) ?? "");
     if (sp.shape3d) spPrParts.push(shape3DDesc.stringify(sp.shape3d, ctx) ?? "");
+    if (sp.extensions !== undefined || sp.ext !== undefined) {
+      spPrParts.push(
+        stringify(shapePropertiesDesc, { extensions: sp.extensions, ext: sp.ext }, ctx) ?? "",
+      );
+    }
 
     parts.push(`<p:spPr${spPrAttrs}>${spPrParts.join("")}</p:spPr>`);
 
@@ -181,7 +190,7 @@ export const lineShapeDesc: CustomDescriptor<LineShapeOptions> = {
     const txBodyContent = opts.textBody
       ? (textBodyDesc.stringify(opts.textBody, ctx) ?? "")
       : '<a:bodyPr wrap="square"/><a:lstStyle/><a:p/>';
-    parts.push(`<p:txBody>${txBodyContent}</p:txBody>`);
+    if (opts.textBodyPresent !== false) parts.push(`<p:txBody>${txBodyContent}</p:txBody>`);
 
     return `<p:sp>${parts.join("")}</p:sp>`;
   },
@@ -198,7 +207,8 @@ export const lineShapeDesc: CustomDescriptor<LineShapeOptions> = {
       const locks = shapeLockingDesc.parse(spLocks, _ctx);
       if (locks && Object.keys(locks).length > 0) result.locking = locks;
     }
-    if (attrBool(cNvSpPr, "txBox")) result.textBox = true;
+    if (cNvSpPr?.attributes?.["txBox"] !== undefined)
+      result.textBox = parseOnOff(cNvSpPr.attributes["txBox"]) ?? false;
     if (attrBool(nvSpPr ? findChild(nvSpPr, "p:nvPr") : undefined, "userDrawn"))
       result.userDrawn = true;
 
@@ -218,6 +228,7 @@ export const lineShapeDesc: CustomDescriptor<LineShapeOptions> = {
     // p:txBody — keep the source's wrap/anchor hints and empty-paragraph rPr.
     const txBody = findChild(el, "p:txBody");
     if (txBody) result.textBody = textBodyDesc.parse(txBody, _ctx);
+    else result.textBodyPresent = false;
 
     return result as LineShapeOptions;
   },
@@ -253,7 +264,7 @@ export const connectorShapeDesc: CustomDescriptor<ConnectorOptions> = {
 
     // p:nvCxnSpPr — cNvCxnSpPr holds optional cxnSpLocks/stCxn/endCxn.
     const cNvCxnSpPrInner: string[] = [];
-    if (opts.locking) {
+    if (opts.locking !== undefined) {
       const locks = stringify(connectorLockingDesc, opts.locking, ctx);
       if (locks) cNvCxnSpPrInner.push(locks);
     }
@@ -294,6 +305,11 @@ export const connectorShapeDesc: CustomDescriptor<ConnectorOptions> = {
     if (sp.effects) spPrParts.push(stringify(effectListDesc, sp.effects, ctx) ?? "");
     if (sp.scene3d) spPrParts.push(scene3DDesc.stringify(sp.scene3d, ctx) ?? "");
     if (sp.shape3d) spPrParts.push(shape3DDesc.stringify(sp.shape3d, ctx) ?? "");
+    if (sp.extensions !== undefined || sp.ext !== undefined) {
+      spPrParts.push(
+        stringify(shapePropertiesDesc, { extensions: sp.extensions, ext: sp.ext }, ctx) ?? "",
+      );
+    }
 
     parts.push(`<p:spPr${spPrAttrs}>${spPrParts.join("")}</p:spPr>`);
 
@@ -319,7 +335,7 @@ export const connectorShapeDesc: CustomDescriptor<ConnectorOptions> = {
         const cxnSpLocks = findChild(cNvCxnSpPr, "a:cxnSpLocks");
         if (cxnSpLocks) {
           const locks = parse(connectorLockingDesc, cxnSpLocks, _ctx);
-          if (locks && Object.keys(locks).length > 0) result.locking = locks;
+          if (locks) result.locking = locks;
         }
         const stCxn = findChild(cNvCxnSpPr, "a:stCxn");
         if (stCxn) {

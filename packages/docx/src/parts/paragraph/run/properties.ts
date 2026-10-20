@@ -150,9 +150,13 @@ export interface RunStylePropertiesOptions extends W14RunEffectsOptions {
   italicComplexScript?: boolean;
   /** Source `italicComplexScript/@w:val` lexical form; round-trip only — do not hand-author. */
   italicComplexScriptRaw?: OnOffLexicalValue;
+  /** Source right-to-left toggle lexical form; round-trip only — do not hand-author. */
+  rightToLeftRaw?: OnOffLexicalValue;
   /** Underline: "words" underlines words only, "dashLong"/"dashLongHeavy" long dashes, "*Heavy" variants thicken the pattern. */
   underline?: {
     color?: HexColorOrAuto;
+    /** Source `w:color` spelling (for producer-specific `#RRGGBB`); round-trip only. */
+    colorRaw?: string;
     type?: (typeof UnderlineType)[keyof typeof UnderlineType];
     /** Theme color slot referenced by w:themeColor. */
     themeColor?: ThemeColor;
@@ -211,6 +215,8 @@ export interface RunStylePropertiesOptions extends W14RunEffectsOptions {
   shadow?: boolean;
   webHidden?: boolean;
   fitText?: number;
+  /** Fit-text control id (w:fitText `@w:id`, round-trip). */
+  fitTextId?: number;
   complexScript?: boolean;
   eastAsianLayout?: EastAsianLayoutOptions;
   /** Relationship ID for a content part (w:contentPart with r:id) */
@@ -243,7 +249,17 @@ export type RunPropertiesOptions = {
  *
  * Used for revision tracking when run properties have been modified.
  */
-export type RunPropertiesChangeOptions = {} & RunPropertiesOptions & ChangedProperties;
+export type RunPropertiesChangeOptions = {} & RunPropertiesOptions &
+  ChangedProperties & {
+    /** Track-change insertion on the original paragraph-mark run properties. */
+    insertion?: ChangedProperties;
+    /** Track-change deletion on the original paragraph-mark run properties. */
+    deletion?: ChangedProperties;
+    /** Move-from revision on the original paragraph-mark run properties. */
+    movedFrom?: ChangedProperties;
+    /** Move-to revision on the original paragraph-mark run properties. */
+    movedTo?: ChangedProperties;
+  };
 
 export type ParagraphRunPropertiesOptions = {
   insertion?: ChangedProperties;

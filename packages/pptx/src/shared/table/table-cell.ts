@@ -2,6 +2,7 @@ import type { BaseTableCellOptions, UniversalMeasure } from "@office-open/core";
 import type {
   Cell3DOptions,
   ParagraphDescriptorOptions,
+  BodyPropertiesOptions,
   TextHorzOverflow,
   TextVertical,
   VerticalAnchor,
@@ -30,8 +31,12 @@ export interface TableCellOptions extends Omit<BaseTableCellOptions, "verticalAl
   horizontalOverflow?: TextHorzOverflow;
   text?: string;
   children?: (ParagraphDescriptorOptions | string)[];
+  /** false preserves a source `a:tc` with no optional `a:txBody`. */
+  textBodyPresent?: boolean;
   /** Cell text-body list style (`a:lstStyle`), including its extension list. */
   listStyle?: TextListStyleOptions;
+  /** Complete cell text-body properties (`a:bodyPr`). */
+  bodyProperties?: BodyPropertiesOptions;
   fill?: FillOptions;
   /** Cell bevel (a:cell3D in a:tcPr). */
   cell3D?: Cell3DOptions;

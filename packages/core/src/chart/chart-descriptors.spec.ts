@@ -7,6 +7,7 @@ import { chartSpaceDesc } from "./chart-descriptors";
 import type {
   BubbleSeriesData,
   ChartSeriesData,
+  CategoryPointOptions,
   ChartSpaceOptions,
   ScatterSeriesData,
 } from "./types";
@@ -35,6 +36,46 @@ describe("chartSpaceDesc", () => {
 
     const result = roundTrip(opts);
     expect(result.ext).toBe(ext);
+  });
+
+  it("preserves sparse and empty series-name cache points", () => {
+    const sparse: CategoryPointOptions = { index: 3, text: "Later" };
+    const sparseResult = roundTrip({
+      type: "column",
+      series: [{ name: sparse, nameFormula: "Sheet1!$A$1", values: [1] }],
+    });
+    expect((sparseResult.series as ChartSeriesData[])[0]!.name).toEqual(sparse);
+
+    const empty: CategoryPointOptions = { index: 0, text: "" };
+    const emptyResult = roundTrip({
+      type: "column",
+      series: [{ name: empty, nameFormula: "Sheet1!$A$1", values: [1] }],
+    });
+    expect((emptyResult.series as ChartSeriesData[])[0]!.name).toEqual(empty);
+  });
+
+  it("omits series-name ptCount while preserving its cache point", () => {
+    const opts: ChartSpaceOptions = {
+      type: "column",
+      series: [
+        {
+          name: "Label",
+          nameFormula: "Sheet1!$B$1",
+          nameCache: true,
+          namePointCount: false,
+          values: [1],
+        },
+      ],
+    };
+    const xml = stringify(chartSpaceDesc, opts, {} as WriteContext)!;
+    expect(xml).toContain("<c:strCache><c:pt");
+    expect(xml).not.toContain("<c:strCache><c:ptCount");
+
+    const result = roundTrip(opts);
+    const series = (result.series as ChartSeriesData[])[0]!;
+    expect(series.name).toBe("Label");
+    expect(series.nameCache).toBe(true);
+    expect(series.namePointCount).toBe(false);
   });
 
   it("round-trips column chart type detection", () => {
@@ -148,6 +189,14 @@ describe("chartSpaceDesc", () => {
       valueFormula: "Sheet1!$B$2:$B$2",
       bubbleSizeFormula: "Sheet1!$C$2:$C$2",
     });
+  });
+
+  it("preserves an empty series formula reference", () => {
+    const series = roundTrip({
+      type: "column",
+      series: [{ name: "S", values: [1], valueFormula: "" }],
+    }).series as ChartSeriesData[];
+    expect(series[0]!.valueFormula).toBe("");
   });
 
   it("round-trips bar chart type (distinguished from column via c:barDir)", () => {
@@ -284,13 +333,15 @@ describe("chartSpaceDesc", () => {
         {
           name: "S1",
           values: [10, 20],
-          errorBars: {
-            direction: "y",
-            barType: "both",
-            valueType: "fixedValue",
-            value: 5,
-            noEndCap: false,
-          },
+          errorBars: [
+            {
+              direction: "y",
+              barType: "both",
+              valueType: "fixedValue",
+              value: 5,
+              noEndCap: false,
+            },
+          ],
         },
       ],
     };
@@ -303,10 +354,10 @@ describe("chartSpaceDesc", () => {
     const result = roundTrip(opts);
     const ser = result.series[0] as ChartSeriesData;
     const errorBars = ser.errorBars;
-    expect(errorBars?.direction).toBe("y");
-    expect(errorBars?.valueType).toBe("fixedValue");
-    expect(errorBars?.value).toBe(5);
-    expect(errorBars?.noEndCap).toBe(false);
+    expect(errorBars?.[0]?.direction).toBe("y");
+    expect(errorBars?.[0]?.valueType).toBe("fixedValue");
+    expect(errorBars?.[0]?.value).toBe(5);
+    expect(errorBars?.[0]?.noEndCap).toBe(false);
   });
 
   it("round-trips error bars with custom plus/minus values", () => {
@@ -317,20 +368,63 @@ describe("chartSpaceDesc", () => {
         {
           name: "S",
           values: [10],
-          errorBars: {
-            valueType: "custom",
-            barType: "both",
-            plusValue: 3,
-            minusValue: 1.5,
-          },
+          errorBars: [
+            {
+              valueType: "custom",
+              barType: "both",
+              plus: [3],
+              plusLiteral: true,
+              minus: [1.5],
+              minusLiteral: true,
+            },
+          ],
         },
       ],
     };
     const result = roundTrip(opts);
     const ser = result.series[0] as ChartSeriesData;
     const errorBars = ser.errorBars;
-    expect(errorBars?.plusValue).toBe(3);
-    expect(errorBars?.minusValue).toBe(1.5);
+    expect(errorBars?.[0]?.plus).toEqual([3]);
+    expect(errorBars?.[0]?.plusLiteral).toBe(true);
+    expect(errorBars?.[0]?.minus).toEqual([1.5]);
+    expect(errorBars?.[0]?.minusLiteral).toBe(true);
+  });
+
+  it("round-trips error-bar formatting", () => {
+    const series: ScatterSeriesData[] = [
+      {
+        name: "S",
+        xValues: [1],
+        yValues: [2],
+        errorBars: [
+          {
+            direction: "x",
+            valueType: "standardError",
+            noEndCap: false,
+            shapeProperties: { outline: { width: 9525 } },
+          },
+          {
+            direction: "y",
+            valueType: "standardError",
+            noEndCap: false,
+            shapeProperties: { outline: { width: 12700 } },
+          },
+        ],
+      },
+    ];
+    const opts: ChartSpaceOptions = {
+      type: "scatter",
+      series,
+    };
+    const xml = stringify(chartSpaceDesc, opts, {} as WriteContext)!;
+    const errorBarsIndex = xml.indexOf("c:errBars");
+    expect(xml.indexOf("c:spPr", errorBarsIndex)).toBeGreaterThan(errorBarsIndex);
+
+    const result = roundTrip(opts);
+    const errorBars = (result.series[0] as ChartSeriesData).errorBars;
+    expect(errorBars).toHaveLength(2);
+    expect(errorBars?.[0]?.shapeProperties?.outline?.width).toBe(9525);
+    expect(errorBars?.[1]?.shapeProperties?.outline?.width).toBe(12700);
   });
 
   // ── Data labels ──
@@ -437,7 +531,10 @@ describe("chartSpaceDesc", () => {
 
     const result = roundTrip(opts);
     const ser = result.series[0] as ChartSeriesData;
-    expect(ser.trendlines?.[0]?.label?.numberFormat).toBe("0.00");
+    expect(ser.trendlines?.[0]?.label?.numberFormat).toEqual({
+      formatCode: "0.00",
+      sourceLinked: false,
+    });
   });
 
   it("round-trips per-point data label overrides (dLbl)", () => {
@@ -468,7 +565,7 @@ describe("chartSpaceDesc", () => {
     expect(labels).toHaveLength(2);
     expect(labels[0]?.delete).toBe(true);
     expect(labels[1]?.position).toBe("outsideEnd");
-    expect(labels[1]?.numberFormat).toBe("0.0");
+    expect(labels[1]?.numberFormat).toEqual({ formatCode: "0.0", sourceLinked: false });
   });
 
   it("round-trips leaderLines element", () => {
@@ -538,6 +635,31 @@ describe("chartSpaceDesc", () => {
     expect(xml).not.toContain("c:showPercent");
     // per-point c:dLbl overrides sit outside the choice and survive
     expect(xml).toContain('c:idx val="0"');
+  });
+
+  it("round-trips deleted data-label layout preservation", () => {
+    const opts: ChartSpaceOptions = {
+      type: "line",
+      categories: ["A", "B"],
+      series: [
+        {
+          name: "S",
+          values: [1, 2],
+          dataLabels: {
+            delete: true,
+            layout: true,
+            labels: [{ index: 1, delete: true, layout: true }],
+          },
+        },
+      ],
+    };
+    const xml = stringify(chartSpaceDesc, opts, {} as WriteContext)!;
+    expect(xml).toContain('<c:delete val="1"/><c:layout/>');
+
+    const result = roundTrip(opts);
+    const dataLabels = (result.series[0] as ChartSeriesData).dataLabels;
+    expect(dataLabels?.layout).toBe(true);
+    expect(dataLabels?.labels?.[0]?.layout).toBe(true);
   });
 
   it("keeps delete:false plus shared settings on the settings arm", () => {
@@ -732,9 +854,22 @@ describe("chartSpaceDesc", () => {
 
     const result = roundTrip(opts);
     const ser = result.series[0] as ChartSeriesData;
-    expect(ser.marker?.symbol).toBe("circle");
-    expect(ser.marker?.size).toBe(7);
+    expect(ser.marker).toMatchObject({ symbol: "circle", size: 7 });
     expect(ser.smooth).toBe(true);
+  });
+
+  it("round-trips stock series marker and smooth", () => {
+    const opts: ChartSpaceOptions = {
+      type: "stock",
+      categories: ["A", "B"],
+      series: [{ name: "S", values: [1, 2], marker: { symbol: "circle", size: 7 }, smooth: false }],
+    };
+    const xml = stringify(chartSpaceDesc, opts, {} as WriteContext);
+    expect(xml).toContain('c:symbol val="circle"');
+    expect(xml).toContain('<c:smooth val="0"/>');
+    const ser = roundTrip(opts).series[0] as ChartSeriesData;
+    expect(ser.marker).toMatchObject({ symbol: "circle", size: 7 });
+    expect(ser.smooth).toBe(false);
   });
 
   it("round-trips 3D bar series invertIfNegative, pictureOptions, and shape", () => {
@@ -809,8 +944,7 @@ describe("chartSpaceDesc", () => {
     };
     const result = roundTrip(opts);
     const ser = result.series[0] as ChartSeriesData;
-    expect(ser.dataPoints?.[0]?.marker?.symbol).toBe("star");
-    expect(ser.dataPoints?.[0]?.marker?.size).toBe(10);
+    expect(ser.dataPoints?.[0]?.marker).toMatchObject({ symbol: "star", size: 10 });
   });
 
   it("series with enhancements is byte-stable on round-trip", () => {
@@ -878,10 +1012,12 @@ describe("chartSpaceDesc", () => {
     expect(xml).toContain('c:h val="0.6"');
 
     const result = roundTrip(opts);
-    expect(result.plotAreaLayout?.layoutTarget).toBe("inner");
-    expect(result.plotAreaLayout?.xMode).toBe("edge");
-    expect(result.plotAreaLayout?.x).toBeCloseTo(0.1);
-    expect(result.plotAreaLayout?.h).toBeCloseTo(0.6);
+    expect(result.plotAreaLayout).toMatchObject({
+      layoutTarget: "inner",
+      xMode: "edge",
+      x: "0.1",
+      h: "0.6",
+    });
   });
 
   it("preserves manual layout numeric lexical forms", () => {
@@ -899,7 +1035,48 @@ describe("chartSpaceDesc", () => {
 
     const result = roundTrip(opts);
     expect(result.title).toMatchObject({ layout: { x } });
-    expect(result.plotAreaLayout?.y).toBe(y);
+    expect(result.plotAreaLayout).toMatchObject({ y });
+  });
+
+  it("round-trips title references, empty markers and chart spPr black-white mode", () => {
+    const opts: ChartSpaceOptions = {
+      type: "line",
+      title: { reference: "Chart", referenceFormula: "Sheet1!$H$1" },
+      series: [{ name: "S", values: [1], marker: true }],
+      backWall: {
+        shapeProperties: { blackWhiteMode: "gray", geometry: "rect" },
+      },
+    };
+    const xml = stringify(chartSpaceDesc, opts, {} as WriteContext)!;
+    expect(xml).toContain("<c:tx><c:strRef><c:f>Sheet1!$H$1</c:f>");
+    expect(xml).toContain("<c:marker/>");
+    expect(xml).toContain('<c:backWall><c:spPr bwMode="gray">');
+
+    const result = roundTrip(opts);
+    expect(result.title).toEqual({
+      reference: "Chart",
+      referenceCache: true,
+      referencePointCount: 1,
+      referenceFormula: "Sheet1!$H$1",
+    });
+    expect((result.series as ChartSeriesData[])[0]?.marker).toBe(true);
+    expect(result.backWall?.shapeProperties).toMatchObject({ blackWhiteMode: "gray" });
+  });
+
+  it("distinguishes absent and empty plot-area layouts", () => {
+    const absent = roundTrip({
+      type: "column",
+      series: [{ name: "S", values: [1, 2] }],
+      plotAreaLayout: false,
+    });
+    expect(absent.plotAreaLayout).toBe(false);
+
+    const empty = roundTrip({
+      type: "column",
+      series: [{ name: "S", values: [1, 2] }],
+      plotAreaLayout: true,
+    });
+    expect(empty.plotAreaLayout).toBe(true);
   });
 
   it("preserves sparse chart cache point indexes", () => {
@@ -991,6 +1168,36 @@ describe("chartSpaceDesc", () => {
     const series = result.series?.[0] as ChartSeriesData;
     expect(series.valueCache).toBe(false);
     expect(stringify(chartSpaceDesc, result, {} as WriteContext)).not.toContain("<c:numCache>");
+  });
+
+  it("preserves omitted legacy series and grouping elements", () => {
+    const source =
+      '<?xml version="1.0" encoding="UTF-8"?>' +
+      '<c:chartSpace xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart">' +
+      '<c:chart><c:plotArea><c:barChart><c:barDir val="col"/>' +
+      '<c:ser><c:order val="0"/>' +
+      "<c:val><c:numRef><c:f>Sheet1!$A$1</c:f></c:numRef></c:val>" +
+      '</c:ser><c:axId val="1"/><c:axId val="2"/>' +
+      "</c:barChart></c:plotArea></c:chart></c:chartSpace>";
+    const el = parseXml(source).elements?.[0];
+    if (!el) throw new Error("expected a chart root");
+    const result = parse(chartSpaceDesc, el, {} as ReadContext);
+    const series = result.series?.[0] as ChartSeriesData;
+    expect(series.indexDeclared).toBe(false);
+    expect(series.orderDeclared).toBe(true);
+    expect(result.groupingDeclared).toBe(false);
+
+    const xml = stringify(chartSpaceDesc, result, {} as WriteContext)!;
+    expect(xml).not.toContain("<c:idx");
+    expect(xml).toContain('<c:order val="0"/>');
+    expect(xml).not.toContain("<c:grouping");
+
+    const reparsedEl = parseXml(xml).elements?.[0];
+    if (!reparsedEl) throw new Error("regenerated chart has no root element");
+    const reparsed = parse(chartSpaceDesc, reparsedEl, {} as ReadContext);
+    const reparsedSeries = reparsed.series?.[0] as ChartSeriesData | undefined;
+    expect(reparsedSeries?.indexDeclared).toBe(false);
+    expect(reparsed.groupingDeclared).toBe(false);
   });
 
   it("3D walls and manual layout are byte-stable on round-trip", () => {
@@ -1095,6 +1302,20 @@ describe("chartSpaceDesc", () => {
     expect(xml).toContain('<c:wireframe val="1"/>');
   });
 
+  it("round-trips 3D surface charts", () => {
+    const opts: ChartSpaceOptions = {
+      type: "surface",
+      threeD: true,
+      categories: ["A", "B"],
+      series: [{ name: "S", values: [1, 2] }],
+    };
+    const result = roundTrip(opts);
+    expect(result).toMatchObject({ type: "surface", threeD: true });
+    const xml = stringify(chartSpaceDesc, result, {} as WriteContext);
+    expect(xml).toContain("<c:surface3DChart>");
+    expect(xml).toContain("</c:surface3DChart>");
+  });
+
   it("round-trips line chart high-low lines, up/down bars, and drop lines", () => {
     const opts: ChartSpaceOptions = {
       type: "line",
@@ -1115,9 +1336,79 @@ describe("chartSpaceDesc", () => {
 
     const result = roundTrip(opts);
     expect(result.highLowLines).toBe(true);
-    expect(result.upDownBars).toBe(true);
-    expect(result.upDownBarsGapWidth).toBe(150);
+    expect(result.upDownBars).toEqual({ gapWidth: 150, upBars: true, downBars: true });
+    expect(result.upDownBarsGapWidth).toBeUndefined();
     expect(result.dropLines).toBe(true);
+  });
+
+  it("round-trips formatted high-low lines", () => {
+    const opts: ChartSpaceOptions = {
+      type: "stock",
+      categories: ["A", "B"],
+      series: [{ name: "S", values: [1, 2] }],
+      highLowLines: {
+        shapeProperties: {
+          blackWhiteMode: "auto",
+          fill: { type: "solid", color: "FF0000" },
+          outline: { type: "solidFill", color: "0000FF", width: 12700 },
+        },
+      },
+    };
+    const xml = stringify(chartSpaceDesc, opts, {} as WriteContext);
+    expect(xml).toContain('<c:hiLowLines><c:spPr bwMode="auto">');
+    expect(xml).toContain('<a:solidFill><a:srgbClr val="FF0000"/></a:solidFill>');
+    expect(xml).toContain('<a:ln w="12700"><a:solidFill><a:srgbClr val="0000FF"/>');
+
+    const result = roundTrip(opts);
+    expect(result.highLowLines).toEqual({
+      shapeProperties: {
+        blackWhiteMode: "auto",
+        fill: { type: "solid", color: { value: "FF0000" } },
+        outline: { type: "solidFill", color: { value: "0000FF" }, width: 12700 },
+      },
+    });
+  });
+
+  it("round-trips formatted up and down bars", () => {
+    const opts: ChartSpaceOptions = {
+      type: "line",
+      categories: ["A", "B"],
+      series: [{ name: "S", values: [1, 2] }],
+      upDownBars: {
+        gapWidth: 150,
+        upBars: {
+          shapeProperties: { fill: { type: "solid", color: { value: "00B050" } } },
+        },
+        downBars: true,
+      },
+    };
+    const xml = stringify(chartSpaceDesc, opts, {} as WriteContext);
+    expect(xml).toContain('<c:upDownBars><c:gapWidth val="150"/>');
+    expect(xml).toContain('<c:upBars><c:spPr><a:solidFill><a:srgbClr val="00B050"/>');
+    expect(xml).toContain("<c:downBars/>");
+
+    const result = roundTrip(opts);
+    expect(result.upDownBars).toEqual({
+      gapWidth: 150,
+      upBars: { shapeProperties: { fill: { type: "solid", color: { value: "00B050" } } } },
+      downBars: true,
+    });
+    expect(result.upDownBarsGapWidth).toBeUndefined();
+  });
+
+  it("round-trips omitted up and down bars", () => {
+    const opts: ChartSpaceOptions = {
+      type: "line",
+      categories: ["A", "B"],
+      series: [{ name: "S", values: [1, 2] }],
+      upDownBars: { upBars: false, downBars: true },
+    };
+    const xml = stringify(chartSpaceDesc, opts, {} as WriteContext);
+    expect(xml).toContain("<c:upDownBars><c:downBars/></c:upDownBars>");
+    expect(xml).not.toContain("<c:upBars");
+
+    const result = roundTrip(opts);
+    expect(result.upDownBars).toEqual({ upBars: false, downBars: true });
   });
 
   it("round-trips area chart drop lines", () => {
@@ -1407,7 +1698,11 @@ describe("chartSpaceDesc", () => {
       {
         index: 0,
         marker: { symbol: "circle", size: 7 },
-        dataLabel: { index: 3, numberFormat: "0%", showVal: true },
+        dataLabel: {
+          index: 3,
+          numberFormat: { formatCode: "0%", sourceLinked: false },
+          showVal: true,
+        },
       },
     ]);
     expect(result.userShapes).toEqual({ relationshipId: "rId9", anchors: [] });
@@ -1450,6 +1745,39 @@ describe("chartSpaceDesc", () => {
 
     const result = roundTrip(opts);
     expect(result.bandFormats).toEqual([{ index: 0 }, { index: 1 }]);
+  });
+
+  it("round-trips surface band format shape properties", () => {
+    const opts: ChartSpaceOptions = {
+      type: "surface",
+      categories: ["A", "B"],
+      series: [{ name: "S", values: [1, 2] }],
+      bandFormats: [
+        { index: 0 },
+        {
+          index: 1,
+          shapeProperties: {
+            blackWhiteMode: "gray",
+            fill: { type: "solid", color: { value: "0070C0" } },
+          },
+        },
+      ],
+    };
+    const xml = stringify(chartSpaceDesc, opts, {} as WriteContext);
+    expect(xml).toContain('<c:bandFmt><c:idx val="0"/></c:bandFmt>');
+    expect(xml).toContain('<c:spPr bwMode="gray"><a:solidFill><a:srgbClr val="0070C0"/>');
+
+    const result = roundTrip(opts);
+    expect(result.bandFormats).toEqual([
+      { index: 0 },
+      {
+        index: 1,
+        shapeProperties: {
+          blackWhiteMode: "gray",
+          fill: { type: "solid", color: { value: "0070C0" } },
+        },
+      },
+    ]);
   });
 
   it("round-trips legend position and deleted entries", () => {
@@ -1701,5 +2029,39 @@ describe("chartSpaceDesc", () => {
     expect(result.secondaryGroups?.[0]?.axisIds).toEqual([333, 444]);
     expect(result.secondaryGroups?.[0]?.series[0]?.index).toBe(0);
     expect(result.secondaryGroups?.[0]?.series[0]?.order).toBe(1);
+  });
+
+  it("round-trips decorations on a secondary stock chart group", () => {
+    const opts: ChartSpaceOptions = {
+      type: "column",
+      categories: ["A", "B"],
+      series: [{ name: "Volume", values: [1, 2] }],
+      axes: [
+        { kind: "category", id: 111, crossAxisId: 222 },
+        { kind: "value", id: 222, crossAxisId: 111 },
+      ],
+      secondaryGroups: [
+        {
+          type: "stock",
+          series: [{ name: "Open", values: [3, 4], index: 0, order: 1 }],
+          highLowLines: true,
+          upDownBars: true,
+          upDownBarsGapWidth: 150,
+          axisIds: [333, 444],
+        },
+      ],
+    };
+
+    const xml = stringify(chartSpaceDesc, opts, {} as WriteContext);
+    expect(xml).toContain("<c:stockChart>");
+    expect(xml).toContain("<c:hiLowLines/>");
+    expect(xml).toContain('c:gapWidth val="150"');
+
+    const result = roundTrip(opts);
+    expect(result.secondaryGroups?.[0]).toMatchObject({
+      type: "stock",
+      highLowLines: true,
+      upDownBars: { gapWidth: 150, upBars: true, downBars: true },
+    });
   });
 });

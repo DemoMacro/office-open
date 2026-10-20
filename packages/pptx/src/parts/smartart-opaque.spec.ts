@@ -1,5 +1,5 @@
-import { unzipSync } from "@office-open/core";
 import { toUint8Array } from "@office-open/core";
+import { unzipSync, zipSync } from "@office-open/core/opc";
 import { describe, expect, it } from "vitest";
 
 import { generatePresentation } from "../generate";
@@ -13,6 +13,51 @@ const DRAWING =
 const IMAGE = new Uint8Array([1, 2, 3, 4]);
 
 describe("SmartArt opaque part round-trip", () => {
+  it("preserves every source data-part relationship", async () => {
+    const generated = await generatePresentation({
+      slides: [
+        {
+          children: [
+            {
+              smartart: {
+                x: 0,
+                y: 0,
+                width: "100px",
+                height: "100px",
+                nodes: [{ text: "Source" }],
+              },
+            },
+          ],
+        },
+      ],
+    });
+    const archive = unzipSync(generated);
+    archive["ppt/diagrams/_rels/data1.xml.rels"] = new TextEncoder().encode(
+      XML_DECL +
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink" ' +
+        'Target="https://example.com/" TargetMode="External"/></Relationships>',
+    );
+    const parsed = await parsePresentation(zipSync(archive));
+    const child = parsed.slides?.[0]?.children?.[0];
+    if (!child || !("smartart" in child)) throw new Error("expected a SmartArt child");
+    expect(child.smartart.sourceDataRelationships).toEqual([
+      {
+        id: "rId1",
+        relationshipType:
+          "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
+        target: "https://example.com/",
+        targetMode: "External",
+      },
+    ]);
+
+    const regenerated = await generatePresentation(parsed);
+    const rels = new TextDecoder().decode(
+      unzipSync(regenerated)["ppt/diagrams/_rels/data1.xml.rels"]!,
+    );
+    expect(rels).toContain('Id="rId1"');
+  });
+
   it("preserves the drawing cache while rebuilding canonical diagram parts", async () => {
     const generated = await generatePresentation({
       slides: [

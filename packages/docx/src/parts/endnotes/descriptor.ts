@@ -27,6 +27,8 @@ import type { BodyContext } from "../../context";
 export interface EndnoteOptions {
   id?: number;
   children: NoteChild[];
+  /** Whether to inject the standard reference mark; false preserves source absence. */
+  autoReferenceMark?: boolean;
 }
 
 /** System endnote (separator / continuationSeparator). Round-tripped verbatim. */
@@ -61,6 +63,7 @@ const CONTINUATION_SEPARATOR_ENDNOTE =
 export const endnotesDesc: CustomDescriptor<EndnotesData, BodyContext> = createNotesDesc({
   rootTag: "w:endnotes",
   noteTag: "w:endnote",
+  referenceMarkTag: "w:endnoteRef",
   refRunXml: ENDNOTE_REF_RUN,
   separatorXml: SEPARATOR_ENDNOTE,
   continuationSeparatorXml: CONTINUATION_SEPARATOR_ENDNOTE,

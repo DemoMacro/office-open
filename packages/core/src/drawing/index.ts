@@ -14,7 +14,12 @@ export type { ScRgbColorOptions } from "./color/sc-rgb-color";
 export { createPresetColor, PresetColor } from "./color/preset-color";
 export type { PresetColorOptions } from "./color/preset-color";
 export { createColorTransforms } from "./color/color-transform";
-export type { ColorTransformOptions } from "./color/color-transform";
+export type {
+  BooleanTransformKey,
+  ColorTransformItem,
+  ColorTransformOptions,
+  ValueTransformKey,
+} from "./color/color-transform";
 
 // Fill
 export {
@@ -127,7 +132,7 @@ export { createTransform2D, createGroupTransform2D } from "./transform";
 export type { Transform2DOptions, GroupTransform2DOptions } from "./transform";
 
 // Black/white mode (ST_BlackWhiteMode — @bwMode on spPr/grpSpPr)
-export type { BlackWhiteMode } from "./black-white-mode";
+export { parseBlackWhiteMode, type BlackWhiteMode } from "./black-white-mode";
 
 // Shared background/whole formatting containers
 export {

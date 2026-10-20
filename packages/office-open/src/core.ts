@@ -6,7 +6,6 @@ export type {
   AlgorithmParameterOptions,
   AnimateOneByOneOptions,
   AnimationLevelOptions,
-  AppPropertiesOptions,
   AxisNumberFormatOptions,
   AxisOptions,
   AxisScalingOptions,
@@ -60,7 +59,6 @@ export type {
   CorePropertiesOptions,
   CustomColorOptions,
   CustomGeometryOptions,
-  CustomPropertyOptions,
   DataLabelOptions,
   DataLabelsOptions,
   DataModelOptions,
@@ -68,7 +66,6 @@ export type {
   DataTableOptions,
   DefaultShapeDefinitionOptions,
   DefaultShapeStyleOptions,
-  DeriveContentTypesOptions,
   DiagramCategoryOptions,
   DiagramDescriptionOptions,
   DiagramExtensionListOptions,
@@ -88,7 +85,6 @@ export type {
   ExtraColorSchemeOptions,
   FillOptions,
   FillOverlayEffectOptions,
-  FinalizeContentTypesOptions,
   FlatTextOptions,
   FontCollectionOptions,
   FontReferenceOptions,
@@ -103,7 +99,6 @@ export type {
   GroupLockingOptions,
   GroupShapePropertiesOptions,
   GroupTransform2DOptions,
-  HeadingPairOptions,
   HierBranchOptions,
   HslColorOptions,
   InnerShadowEffectOptions,
@@ -270,8 +265,16 @@ export type {
   VmlWrapOptions,
   WhenOptions,
   XmlNamespaceOptions,
-  ZipOptions,
 } from "@office-open/core";
+
+export type {
+  AppPropertiesOptions,
+  CustomPropertyOptions,
+  DeriveContentTypesOptions,
+  FinalizeContentTypesOptions,
+  HeadingPairOptions,
+  ZipOptions,
+} from "@office-open/core/opc";
 export {
   convertEmuToInches,
   convertEmuToPixels,

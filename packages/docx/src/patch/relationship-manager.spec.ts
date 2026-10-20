@@ -1,5 +1,5 @@
-import { TargetModeType } from "@office-open/core";
 import { appendRelationship, getNextRelationshipIndex } from "@office-open/core";
+import { TargetModeType } from "@office-open/core/opc";
 import { describe, expect, it } from "vite-plus/test";
 
 describe("relationship-manager", () => {

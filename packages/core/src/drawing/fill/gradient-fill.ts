@@ -98,8 +98,8 @@ export type GradientShadeOptions = LinearShadeOptions | PathShadeOptions;
  * ```
  */
 export interface GradientFillOptions {
-  /** Gradient color stops (minimum 2); color accepts a hex string or SolidFillOptions */
-  stops: readonly GradientStopOptions[];
+  /** Gradient color stops; omitted preserves a source a:gradFill without a stop list. */
+  stops?: readonly GradientStopOptions[];
   /** Shade type (linear or path) */
   shade?: GradientShadeOptions;
   /**
@@ -197,8 +197,9 @@ export const createGradientFill = (options: GradientFillOptions): string => {
   const children: string[] = [];
 
   // Gradient stop list
-  const stopElements = options.stops.map(createGradientStop);
-  children.push(element("a:gsLst", undefined, stopElements));
+  if (options.stops?.length) {
+    children.push(element("a:gsLst", undefined, options.stops.map(createGradientStop)));
+  }
 
   // Shade properties (a:lin or a:path)
   if (options.shade) {

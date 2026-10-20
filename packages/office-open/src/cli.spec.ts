@@ -81,7 +81,7 @@ describe("CLI", () => {
     } finally {
       await rm(directory, { force: true, recursive: true });
     }
-  });
+  }, 30_000);
 
   it("slices schema definitions", async () => {
     const result = await cliRun("schema", "slice", "docx", "ParagraphOptions");

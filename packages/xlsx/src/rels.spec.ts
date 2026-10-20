@@ -1,4 +1,4 @@
-import { unzipSync } from "@office-open/core";
+import { unzipSync } from "@office-open/core/opc";
 import { describe, expect, it } from "vite-plus/test";
 
 import { generateWorkbook } from "./generate";
@@ -193,6 +193,29 @@ describe("worksheet rels with passthrough source ids and rebuilt parts", () => {
 });
 
 describe("optional workbook parts", () => {
+  it("preserves relationships owned by a rebuilt theme part", async () => {
+    const options: WorkbookOptions = {
+      worksheets: [{ name: "Sheet1", rows: [] }],
+      theme: {},
+      passthroughRelationships: [
+        {
+          source: "xl/theme/theme1.xml",
+          relationshipType: IMAGE_REL,
+          target: "../media/image1.png",
+          rId: "rId1",
+        },
+      ],
+      rawParts: [{ path: "xl/media/image1.png", data: new Uint8Array([1, 2, 3]) }],
+    };
+
+    const buffer = await generateWorkbook(options);
+    const rels = decodeEntry(buffer, "xl/theme/_rels/theme1.xml.rels");
+
+    expect(rels).toContain(`Id="rId1"`);
+    expect(rels).toContain(`Type="${IMAGE_REL}"`);
+    expect(rels).toContain(`Target="../media/image1.png"`);
+  });
+
   it("adds default styles and theme only for fresh workbooks", async () => {
     const worksheet = { name: "Sheet1", rows: [] };
     const fresh = await generateWorkbook({ worksheets: [worksheet] });

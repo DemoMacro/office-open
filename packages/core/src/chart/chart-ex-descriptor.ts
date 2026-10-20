@@ -108,7 +108,7 @@ const LABEL_POSITIONS_FROM: Record<string, ChartExLabelPosition> = {
   r: "right",
   t: "top",
 };
-const NUMERIC_DIMENSIONS = new Set(["val", "xVal", "yVal", "size", "degree"]);
+const NUMERIC_DIMENSIONS = new Set(["val", "x", "xVal", "y", "yVal", "size", "degree", "colorVal"]);
 
 const element = (
   name: string,
@@ -264,9 +264,11 @@ function parseText(el: XmlElement | undefined): ChartExText | undefined {
   const data = findChild(el, "txData");
   if (data) {
     const formula = parseFormula(findChild(data, "f"));
-    if (!formula) throw new Error("ChartEx txData is missing f");
     const value = findChild(data, "v");
-    return { formula, ...(value ? { value: textOf(value) } : {}) };
+    return {
+      ...(formula ? { formula } : {}),
+      ...(value ? { value: textOf(value) } : {}),
+    };
   }
   const rich = findChild(el, "rich");
   if (rich) return { rich: textBodyDesc.parse(rich, {} as ReadContext) };
@@ -979,7 +981,10 @@ function parseBinning(el: XmlElement): ChartExBinning {
 function parseGeoCache(el: XmlElement): ChartExGeoCache {
   const entries: ChartExGeoCache["entries"] = [];
   for (const child of el.elements ?? []) {
-    if (child.name === "binary") entries.push({ kind: "binary", value: textOf(child) });
+    const localName = child.name?.includes(":")
+      ? child.name.slice(child.name.indexOf(":") + 1)
+      : child.name;
+    if (localName === "binary") entries.push({ kind: "binary", value: textOf(child) });
     else if (isName(child, "clear")) entries.push({ kind: "clear" });
     else throw new Error(`ChartEx geoCache has unexpected child ${child.name}`);
   }
@@ -1051,7 +1056,7 @@ function seriesXml(series: ChartExSeries): string {
       dataLabelsXml(series.dataLabels),
       dataId,
       seriesLayoutPropertiesXml(series.layoutProperties),
-      ...(series.axisIds ?? []).map((id) => element("axisId", undefined, [String(id)])),
+      ...(series.axisIds ?? []).map((id) => element("axisId", { val: id })),
       extensionsXml(series.extensions),
     ],
   );
@@ -1087,7 +1092,7 @@ function parseSeries(el: XmlElement): ChartExSeries {
     ...(dataIdElement ? { dataId: requiredNumber(dataIdElement, "val", "series/dataId") } : {}),
     ...(layoutProperties ? { layoutProperties } : {}),
     axisIds: children(el, "axisId").map((axisId) =>
-      number(textOf(axisId), "series/axisId", "text"),
+      number(attr(axisId, "val") ?? textOf(axisId), "series/axisId", "value"),
     ),
     ...(extensions ? { extensions } : {}),
     ...(hidden === undefined ? {} : { hidden }),
@@ -1278,7 +1283,7 @@ export const chartExSpaceDesc: CustomDescriptor<ChartExSpaceOptions> = {
         options.chart ? chartXml(options.chart) : dashboardXml(options.dashboard),
         shapeXml(options.shapeProperties),
         textPropertiesXml(options.textProperties),
-        options.colorMapping ? stringifyColorMapping(options.colorMapping, "clrMapOvr") : "",
+        options.colorMapping ? stringifyColorMapping(options.colorMapping, "cx:clrMapOvr") : "",
         options.formatOverrides
           ? element("fmtOvrs", undefined, formatOverridesXml(options.formatOverrides))
           : "",
@@ -1294,8 +1299,22 @@ export const chartExSpaceDesc: CustomDescriptor<ChartExSpaceOptions> = {
     const chart = findChild(el, "chart");
     const dashboard = findChild(el, "dashboard");
     if (!chart && !dashboard) throw new Error("ChartEx chartSpace requires chart or dashboard");
+    const knownChildren = new Set([
+      "chartData",
+      "chart",
+      "dashboard",
+      "spPr",
+      "txPr",
+      "clrMapOvr",
+      "fmtOvrs",
+      "printSettings",
+      "extLst",
+    ]);
     for (const [index, child] of (el.elements ?? []).entries()) {
-      if (!isName(child, "chartData") && child !== chart && child !== dashboard) {
+      const name = child.name?.includes(":")
+        ? child.name.slice(child.name.indexOf(":") + 1)
+        : child.name;
+      if (!knownChildren.has(name ?? "")) {
         throw new ChartExParseError(
           `ChartEx chartSpace has unknown child ${child.name}`,
           "chartSpace",
@@ -1318,8 +1337,8 @@ export const chartExSpaceDesc: CustomDescriptor<ChartExSpaceOptions> = {
       ...(dashboard ? { dashboard: parseDashboard(dashboard) } : {}),
       ...(shapeProperties ? { shapeProperties } : {}),
       ...(textProperties ? { textProperties } : {}),
-      ...(parseColorMapping(findChild(el, "clrMapOvr"))
-        ? { colorMapping: parseColorMapping(findChild(el, "clrMapOvr")) }
+      ...(parseColorMapping(findChild(el, "cx:clrMapOvr"))
+        ? { colorMapping: parseColorMapping(findChild(el, "cx:clrMapOvr")) }
         : {}),
       ...(formatOverridesElement
         ? { formatOverrides: parseFormatOverrides(formatOverridesElement) }

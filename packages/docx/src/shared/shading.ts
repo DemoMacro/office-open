@@ -42,20 +42,32 @@ import type { Element } from "@office-open/xml";
 export interface ShadingProperties {
   fill?: HexColorOrAuto;
   color?: HexColorOrAuto;
+  /** Source `@w:fill` when it is outside the canonical hex/auto surface; round-trip only. */
+  fillRaw?: string;
+  /** Source `@w:color` when it is outside the canonical hex/auto surface; round-trip only. */
+  colorRaw?: string;
   /** Fill pattern (ST_Shd): "clear" solid fill, "nil" no fill, "percentN" dot-density percent, "horizontalStripe"/"diagonalStripe"/"horizontalCross"/"diagonalCross" hatch patterns. */
-  type?: (typeof ShadingType)[keyof typeof ShadingType];
+  type?: (typeof ShadingType)[keyof typeof ShadingType] | null;
   /** Theme color reference */
   themeColor?: ThemeColor;
   /** Theme color tint (2-char hex) */
   themeTint?: UcharHexNumber;
+  /** Source `@w:themeTint` when it is not 2-char hex; round-trip only. */
+  themeTintRaw?: string;
   /** Theme color shade (2-char hex) */
   themeShade?: UcharHexNumber;
+  /** Source `@w:themeShade` when it is not 2-char hex; round-trip only. */
+  themeShadeRaw?: string;
   /** Theme fill color reference */
   themeFill?: ThemeColor;
   /** Theme fill tint (2-char hex) */
   themeFillTint?: UcharHexNumber;
+  /** Source `@w:themeFillTint` when it is not 2-char hex; round-trip only. */
+  themeFillTintRaw?: string;
   /** Theme fill shade (2-char hex) */
   themeFillShade?: UcharHexNumber;
+  /** Source `@w:themeFillShade` when it is not 2-char hex; round-trip only. */
+  themeFillShadeRaw?: string;
 }
 
 /**
@@ -136,27 +148,45 @@ export const ShadingType = {
 export function parseShading(shd: Element): ShadingProperties | undefined {
   const shading: ShadingProperties = {};
   const fill = attr(shd, "w:fill");
-  if (fill) shading.fill = fill;
+  if (fill) {
+    shading.fill = fill;
+    if (!/^(?:auto|[0-9a-fA-F]{6})$/.test(fill)) shading.fillRaw = fill;
+  }
   const color = attr(shd, "w:color");
-  if (color) shading.color = color;
+  if (color) {
+    shading.color = color;
+    if (!/^(?:auto|[0-9a-fA-F]{6})$/.test(color)) shading.colorRaw = color;
+  }
   const val = attr(shd, "w:val");
-  if (val) shading.type = xsdShadingPattern.from(val) as ShadingProperties["type"];
+  shading.type =
+    val === undefined ? null : (xsdShadingPattern.from(val) as ShadingProperties["type"]);
   const themeColor = attr(shd, "w:themeColor");
   if (themeColor) {
     shading.themeColor = themeColor as ThemeColor;
   }
   const themeTint = attr(shd, "w:themeTint");
-  if (themeTint) shading.themeTint = themeTint;
+  if (themeTint) {
+    if (/^[0-9a-fA-F]{2}$/.test(themeTint)) shading.themeTint = themeTint;
+    else shading.themeTintRaw = themeTint;
+  }
   const themeShade = attr(shd, "w:themeShade");
-  if (themeShade) shading.themeShade = themeShade;
+  if (themeShade) {
+    if (/^[0-9a-fA-F]{2}$/.test(themeShade)) shading.themeShade = themeShade;
+    else shading.themeShadeRaw = themeShade;
+  }
   const themeFill = attr(shd, "w:themeFill");
   if (themeFill) {
     shading.themeFill = themeFill as ThemeColor;
   }
   const themeFillTint = attr(shd, "w:themeFillTint");
-  if (themeFillTint) shading.themeFillTint = themeFillTint;
+  if (themeFillTint) {
+    if (/^[0-9a-fA-F]{2}$/.test(themeFillTint)) shading.themeFillTint = themeFillTint;
+    else shading.themeFillTintRaw = themeFillTint;
+  }
   const themeFillShade = attr(shd, "w:themeFillShade");
-  if (themeFillShade) shading.themeFillShade = themeFillShade;
-  if (Object.keys(shading).length === 0) return undefined;
+  if (themeFillShade) {
+    if (/^[0-9a-fA-F]{2}$/.test(themeFillShade)) shading.themeFillShade = themeFillShade;
+    else shading.themeFillShadeRaw = themeFillShade;
+  }
   return shading;
 }

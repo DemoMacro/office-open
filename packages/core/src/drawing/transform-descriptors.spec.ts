@@ -99,4 +99,21 @@ describe("groupTransform2DDesc", () => {
     expect(result.childExtentWidth).toBe(50000);
     expect(result.childExtentHeight).toBe(60000);
   });
+
+  it("omits absent child-coordinate elements and preserves empty lenient sources", () => {
+    const absent = stringify(
+      groupTransform2DDesc,
+      { x: 0, y: 0, width: 1, height: 1 },
+      {} as WriteContext,
+    )!;
+    expect(absent).not.toContain("<a:chOff");
+    expect(absent).not.toContain("<a:chExt");
+
+    const empty = roundTrip(groupTransform2DDesc, {
+      childOffsetPresent: true,
+      childExtentPresent: true,
+    });
+    expect(empty.childOffsetPresent).toBe(true);
+    expect(empty.childExtentPresent).toBe(true);
+  });
 });

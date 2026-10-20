@@ -12,9 +12,11 @@
 import { parseOnOff } from "@office-open/core";
 import { xsdSlideLayoutType } from "@office-open/core";
 import type { CustomDescriptor, ReadContext } from "@office-open/core/descriptor";
+import { parseNonVisualDrawingProperties } from "@office-open/core/drawing";
 import {
   attr,
   attrNum,
+  escapeXml,
   findChild,
   parse as parseXml,
   stringify as stringifyXml,
@@ -38,7 +40,7 @@ import { timingDesc } from "./animation";
 import { backgroundDesc } from "./background";
 import { parseChild, stringifyChild } from "./bridge";
 import { colorMappingOverrideDesc } from "./color-map-override";
-import { readTransition, stringifyTransition } from "./slide";
+import { parseTransitionElement, stringifyTransition } from "./slide";
 
 // ── Descriptor ──
 
@@ -57,12 +59,18 @@ export const slideLayoutDesc: CustomDescriptor<LayoutDefinition, PptxWriteContex
     if (opts.matchingName !== undefined) attrs.push(`matchingName="${opts.matchingName}"`);
     if (opts.preserve) attrs.push('preserve="1"');
     if (opts.userDrawn) attrs.push('userDrawn="1"');
-    if (opts.showMasterShapes === false) attrs.push('showMasterSp="0"');
-    if (opts.showMasterPlaceholderAnimations === false) attrs.push('showMasterPhAnim="0"');
+    if (opts.showMasterShapesPresent || opts.showMasterShapes === false)
+      attrs.push(`showMasterSp="${opts.showMasterShapes === false ? 0 : 1}"`);
+    if (
+      opts.showMasterPlaceholderAnimationsPresent ||
+      opts.showMasterPlaceholderAnimations === false
+    )
+      attrs.push(`showMasterPhAnim="${opts.showMasterPlaceholderAnimations === false ? 0 : 1}"`);
     parts.push(`<p:sldLayout ${NS} ${attrs.join(" ")}>`);
 
     // p:cSld (CT_CommonSlideData) — optional name attribute.
-    parts.push(`<p:cSld${opts.name !== undefined ? ` name="${opts.name}"` : ""}>`);
+    const cSldName = opts.cSldName ?? opts.name;
+    parts.push(`<p:cSld${cSldName !== undefined ? ` name="${escapeXml(cSldName)}"` : ""}>`);
 
     if (opts.background) {
       parts.push(backgroundDesc.stringify(opts.background, ctx) ?? "");
@@ -70,7 +78,16 @@ export const slideLayoutDesc: CustomDescriptor<LayoutDefinition, PptxWriteContex
 
     // p:spTree
     parts.push("<p:spTree>");
-    parts.push(stringifySpTreeHeader(opts.shapeTreeId, opts.shapeTreeName));
+    parts.push(
+      stringifySpTreeHeader(
+        opts.shapeTreeId,
+        opts.shapeTreeName,
+        opts.shapeTreeBlackWhiteMode,
+        opts.groupTransformless,
+        opts.shapeTreeCreationId,
+        opts.shapeTreeExt,
+      ),
+    );
     if (opts.children) {
       for (const child of opts.children) {
         const xml = stringifyChild(child, ctx);
@@ -81,7 +98,7 @@ export const slideLayoutDesc: CustomDescriptor<LayoutDefinition, PptxWriteContex
 
     // custDataLst + controls (inside cSld per CT_CommonSlideData).
     parts.push(stringifyCustDataLst(opts.customerData));
-    parts.push(stringifyControls(opts.controls));
+    parts.push(stringifyControls(opts.controls, (picture) => stringifyChild({ picture }, ctx)));
 
     // cSld-tail extLst (p14:creationId's home) — verbatim.
     if (opts.cSldExt) parts.push(`<p:extLst>${opts.cSldExt}</p:extLst>`);
@@ -108,7 +125,13 @@ export const slideLayoutDesc: CustomDescriptor<LayoutDefinition, PptxWriteContex
     parts.push(stringifySlideHf(opts.headerFooter));
 
     // p:extLst — verbatim round-trip (last child per CT_SlideLayout sequence).
-    if (opts.ext) parts.push(`<p:extLst>${opts.ext}</p:extLst>`);
+    if (opts.ext !== undefined) {
+      const modified =
+        opts.extensionListModified === undefined
+          ? ""
+          : ` mod="${opts.extensionListModified ? 1 : 0}"`;
+      parts.push(`<p:extLst${modified}>${opts.ext}</p:extLst>`);
+    }
 
     parts.push("</p:sldLayout>");
     return parts.join("");
@@ -126,11 +149,15 @@ export const slideLayoutDesc: CustomDescriptor<LayoutDefinition, PptxWriteContex
     if (preserveAttr !== undefined) result.preserve = parseOnOff(preserveAttr) ?? false;
     if (parseOnOff(attr(el, "userDrawn"))) result.userDrawn = true;
     const showMasterShapes = attr(el, "showMasterSp");
-    if (showMasterShapes !== undefined)
+    if (showMasterShapes !== undefined) {
+      result.showMasterShapesPresent = true;
       result.showMasterShapes = parseOnOff(showMasterShapes) ?? true;
+    }
     const showMasterPlaceholderAnimations = attr(el, "showMasterPhAnim");
-    if (showMasterPlaceholderAnimations !== undefined)
+    if (showMasterPlaceholderAnimations !== undefined) {
+      result.showMasterPlaceholderAnimationsPresent = true;
       result.showMasterPlaceholderAnimations = parseOnOff(showMasterPlaceholderAnimations) ?? true;
+    }
 
     // p:cSld (CT_CommonSlideData).
     const cSld = findChild(el, "p:cSld");
@@ -138,21 +165,32 @@ export const slideLayoutDesc: CustomDescriptor<LayoutDefinition, PptxWriteContex
       const name = attr(cSld, "name");
       if (name !== undefined) {
         result.name = name;
+        result.cSldName = name;
         // Only map display names that have a real ST_SlideLayoutType value —
       }
 
       const bg = findChild(cSld, "p:bg");
+      if (!bg) result.backgroundPresent = false;
       if (bg) result.background = backgroundDesc.parse(bg, ctx);
 
       // spTree — structured children + derived placeholder positions.
       const spTree = findChild(cSld, "p:spTree");
       if (spTree) {
+        const spTreeGroupProperties = findChild(spTree, "p:grpSpPr");
+        if (spTreeGroupProperties && findChild(spTreeGroupProperties, "a:xfrm") === undefined) {
+          result.groupTransformless = true;
+        }
+        const spTreeBwMode = spTreeGroupProperties?.attributes?.["bwMode"] as string | undefined;
+        if (spTreeBwMode !== undefined) result.shapeTreeBlackWhiteMode = spTreeBwMode;
         const nvGrpSpPr = findChild(spTree, "p:nvGrpSpPr");
         const rootCnvPr = nvGrpSpPr ? findChild(nvGrpSpPr, "p:cNvPr") : undefined;
+        const rootProperties = parseNonVisualDrawingProperties(rootCnvPr);
         const shapeTreeId = rootCnvPr ? attrNum(rootCnvPr, "id") : undefined;
         if (shapeTreeId !== undefined) result.shapeTreeId = shapeTreeId;
-        const shapeTreeName = rootCnvPr ? attr(rootCnvPr, "name") : undefined;
-        if (shapeTreeName !== undefined) result.shapeTreeName = shapeTreeName;
+        if (rootProperties.name !== undefined) result.shapeTreeName = rootProperties.name;
+        if (rootProperties.creationId !== undefined)
+          result.shapeTreeCreationId = rootProperties.creationId;
+        if (rootProperties.ext !== undefined) result.shapeTreeExt = rootProperties.ext;
         const children: SlideChild[] = [];
         const placeholders: LayoutPlaceholderOptions = {};
         for (const child of spTree.elements ?? []) {
@@ -170,7 +208,10 @@ export const slideLayoutDesc: CustomDescriptor<LayoutDefinition, PptxWriteContex
 
       // custDataLst + controls (inside cSld).
       result.customerData = parseCustDataLst(findChild(cSld, "p:custDataLst"));
-      result.controls = parseControls(findChild(cSld, "p:controls"));
+      result.controls = parseControls(findChild(cSld, "p:controls"), (picture) => {
+        const child = parseChild(picture, ctx);
+        return child && "picture" in child ? child.picture : undefined;
+      });
 
       // cSld-tail extLst (p14:creationId's home) — verbatim, distinct from
       // the root-level extLst read below (two separate XSD slots).
@@ -186,8 +227,7 @@ export const slideLayoutDesc: CustomDescriptor<LayoutDefinition, PptxWriteContex
     if (clrMapOvr) result.colorMappingOverride = colorMappingOverrideDesc.parse(clrMapOvr, ctx);
 
     // p:transition.
-    const transition = findChild(el, "p:transition");
-    if (transition) result.transition = readTransition(transition, ctx);
+    result.transition = parseTransitionElement(el, ctx);
 
     // p:timing (structured entries, or verbatim inner XML fallback).
     const timing = findChild(el, "p:timing");
@@ -202,6 +242,8 @@ export const slideLayoutDesc: CustomDescriptor<LayoutDefinition, PptxWriteContex
     // p:extLst — verbatim inner XML for unmodeled extensions.
     const extLst = findChild(el, "p:extLst");
     if (extLst) {
+      const modified = attr(extLst, "mod");
+      if (modified !== undefined) result.extensionListModified = parseOnOff(modified) ?? false;
       const inner = stringifyXml(extLst);
       if (inner) result.ext = inner;
     }

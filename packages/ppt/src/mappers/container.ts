@@ -2,7 +2,7 @@ import {
   decryptRc4CryptoApi,
   parseRc4CryptoApiHeader,
   verifyRc4CryptoApiPassword,
-} from "@office-open/core";
+} from "@office-open/core/cfb";
 
 import { PptParseError } from "../errors";
 import { readPersistReferences, readStreamOffset } from "../parts/persist";

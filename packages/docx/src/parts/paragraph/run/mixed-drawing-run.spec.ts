@@ -1,4 +1,4 @@
-import { unzipSync, zipSync } from "@office-open/core";
+import { unzipSync, zipSync } from "@office-open/core/opc";
 import { describe, expect, it } from "vite-plus/test";
 
 import { generateDocument } from "../../../generate";
@@ -11,6 +11,7 @@ const DECODER = new TextDecoder();
 
 const DOCUMENT_XML = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
   xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"
   xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"
   xmlns:synthetic="https://example.invalid/synthetic-drawing">
@@ -49,10 +50,10 @@ const CONTENT_TYPES_XML = `<?xml version="1.0" encoding="UTF-8" standalone="yes"
   <Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
 </Types>`;
 
-function source() {
+function source(documentXml = DOCUMENT_XML) {
   return zipSync({
     "[Content_Types].xml": ENCODER.encode(CONTENT_TYPES_XML),
-    "word/document.xml": ENCODER.encode(DOCUMENT_XML),
+    "word/document.xml": ENCODER.encode(documentXml),
   });
 }
 
@@ -98,6 +99,42 @@ describe("mixed DrawingML runs", () => {
     expect(xml).toContain('name="Second synthetic"');
 
     const reparsed = parseDocumentSync(first) as DocumentOptions;
-    expect(await generateDocument(reparsed, { type: "uint8array" })).toEqual(first);
+    const second = await generateDocument(reparsed, { type: "uint8array" });
+    const firstParts = unzipSync(first);
+    const secondParts = unzipSync(second);
+    expect(Object.keys(secondParts).sort()).toEqual(Object.keys(firstParts).sort());
+    for (const [path, bytes] of Object.entries(firstParts)) {
+      expect(secondParts[path]!).toEqual(bytes);
+    }
+  });
+
+  it("keeps text before a single compatibility-wrapped drawing", async () => {
+    const xml = DOCUMENT_XML.replace(
+      /<w:r w:rsidR="00AA0001">[\s\S]*?<\/w:r>/,
+      [
+        '<w:r w:rsidR="00AA0001">',
+        "<w:t>marked</w:t>",
+        '<mc:AlternateContent><mc:Choice Requires="synthetic">',
+        "<w:drawing>",
+        '<wp:inline distT="0" distB="0" distL="0" distR="0">',
+        '<wp:extent cx="914400" cy="914400"/>',
+        '<wp:docPr id="1" name="Compatibility synthetic"/>',
+        '<a:graphic><a:graphicData uri="https://example.invalid/synthetic-drawing">',
+        '<synthetic:shape id="2" state="wrapped"/>',
+        "</a:graphicData></a:graphic>",
+        "</wp:inline>",
+        "</w:drawing>",
+        "</mc:Choice></mc:AlternateContent>",
+        "</w:r>",
+      ].join(""),
+    );
+    const parsed = parseDocumentSync(source(xml)) as DocumentOptions;
+    const run = mixedRun(parsed);
+    expect(run.children?.[0]).toBe("marked");
+    expect(run.children?.[1]).toMatchObject({
+      unsupportedDrawing: { graphicDataUri: "https://example.invalid/synthetic-drawing" },
+    });
+    expect(xml).toContain("<w:t>marked</w:t>");
+    expect(xml).toContain('name="Compatibility synthetic"');
   });
 });

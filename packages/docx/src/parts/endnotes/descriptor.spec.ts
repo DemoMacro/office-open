@@ -97,11 +97,41 @@ describe("endnotesDesc round-trip", () => {
     const root = parseXml(source).elements?.[0];
     if (!root) throw new Error("parsed document has no root element");
     const parsed = endnotesDesc.parse(root, readCtx);
+    parsed.autoReferenceMarks?.set(1, true);
 
     const xml = endnotesDesc.stringify(parsed, writeCtx as any)!;
     expect(xml).toContain(
       '</w:pPr><w:r><w:rPr><w:rStyle w:val="EndnoteReference"/></w:rPr><w:endnoteRef/></w:r>',
     );
     expect(xml.indexOf("<w:endnoteRef/>")).toBeGreaterThan(xml.indexOf("</w:pPr>"));
+  });
+
+  it("preserves absent and custom endnote reference marks", () => {
+    const absent =
+      '<w:endnotes xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+      '<w:endnote w:id="1"><w:p><w:r><w:t>custom note</w:t></w:r></w:p></w:endnote>' +
+      "</w:endnotes>";
+    const absentRoot = parseXml(absent).elements?.[0];
+    if (!absentRoot) throw new Error("parsed document has no root element");
+    const parsedAbsent = endnotesDesc.parse(absentRoot, readCtx);
+    const absentXml = endnotesDesc.stringify(parsedAbsent, writeCtx as never)!;
+    expect(absentXml).not.toContain("<w:endnoteRef/>");
+
+    const freshXml = endnotesDesc.stringify(
+      { notes: new Map([[1, ["fresh note"]]]) },
+      writeCtx as never,
+    )!;
+    expect(freshXml).toContain("<w:endnoteRef/>");
+
+    const custom =
+      '<w:endnotes xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+      '<w:endnote w:id="2"><w:p><w:r><w:rPr><w:b/></w:rPr><w:endnoteRef/></w:r>' +
+      "<w:r><w:t>§</w:t></w:r></w:p></w:endnote></w:endnotes>";
+    const customRoot = parseXml(custom).elements?.[0];
+    if (!customRoot) throw new Error("parsed document has no root element");
+    const parsedCustom = endnotesDesc.parse(customRoot, readCtx);
+    const customXml = endnotesDesc.stringify(parsedCustom, writeCtx as never)!;
+    expect(customXml.match(/<w:endnoteRef\/>/g)).toHaveLength(1);
+    expect(customXml).toContain("<w:b/>");
   });
 });

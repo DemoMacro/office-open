@@ -1,7 +1,4 @@
 import {
-  RELATIONSHIP_TYPES,
-  PPTX_NS,
-  OoxmlMimeType,
   appendOverride,
   appendRelationship,
   applyCorePropertiesOverride,
@@ -9,18 +6,23 @@ import {
   createReplacer,
   getNextRelationshipIndex,
   nextNumericId,
-  partPathToRelsPath,
+  OoxmlMimeType,
+  PPTX_NS,
   removeOverride,
   replaceHyperlinkPlaceholders,
-  strFromU8,
   toJson,
-  unzipSync,
   zipAndConvert,
 } from "@office-open/core";
 import type { BasePatchOptions, OutputByType, OutputType } from "@office-open/core";
 import { toUint8Array } from "@office-open/core";
 import type { ReadContext } from "@office-open/core/descriptor";
 import type { TextRunOptions } from "@office-open/core/drawing";
+import {
+  partPathToRelsPath,
+  RELATIONSHIP_TYPES,
+  strFromU8,
+  unzipSync,
+} from "@office-open/core/opc";
 import { OOXML_XML_DECLARATION } from "@office-open/xml";
 import { findChild, stringify, parse } from "@office-open/xml";
 import type { Element } from "@office-open/xml";

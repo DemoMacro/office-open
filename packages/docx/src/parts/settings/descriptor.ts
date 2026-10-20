@@ -29,7 +29,6 @@ import {
 import type { OnOffLexicalValue } from "../paragraph/run/properties";
 import type {
   SettingsOptions,
-  SettingsOnOffValue,
   DocumentProtectionOptions,
   WriteProtectionOptions,
   MailMergeOptions,
@@ -37,6 +36,7 @@ import type {
   OdsoFieldMapDataOptions,
   MailMergeRecipientsOptions,
   RecipientDataOptions,
+  SettingsOnOffValue,
   CompatibilityOptions,
   CompatSettingOptions,
   CaptionsOptions,
@@ -46,6 +46,9 @@ import type {
   RsidsOptions,
   ReadModeInkLockDownOptions,
   RevisionViewOptions,
+  TmCommentsPropertiesOptions,
+  TmLastPositionOptions,
+  TmReviewPropertiesOptions,
   DocumentFootnotePropertiesOptions,
   DocumentEndnotePropertiesOptions,
   ShapeDefaultsOptions,
@@ -110,7 +113,9 @@ function numVal(tag: string, val: number | undefined): string {
 }
 
 function measureVal(tag: string, val: number | PositiveUniversalMeasure | undefined): string {
-  return val !== undefined ? `<${tag} ${valAttr(tag)}="${twipsMeasureValue(val)}"/>` : "";
+  if (val === undefined) return "";
+  const value = typeof val === "string" ? val : twipsMeasureValue(val);
+  return `<${tag} ${valAttr(tag)}="${value}"/>`;
 }
 
 function strVal(tag: string, val: string | undefined): string {
@@ -121,6 +126,118 @@ function docIdVal(tag: string, val: string | undefined, text: string | undefined
   if (val === undefined) return "";
   const inline = text === undefined ? "" : escapeXml(text);
   return `<${tag} ${valAttr(tag)}="${escapeXml(val)}">${inline}</${tag}>`;
+}
+
+function stringifyTmCommentsProperties(options: TmCommentsPropertiesOptions): string {
+  return `<w:tmCommentsPr>${numVal("w:tmCommentsPlace", options.place)}${numVal(
+    "w:tmCommentsWidth",
+    options.width,
+  )}${numVal("w:tmCommentsColor", options.color)}</w:tmCommentsPr>`;
+}
+
+function stringifyTmReviewProperties(options: TmReviewPropertiesOptions): string {
+  const children: Array<[string, number | undefined]> = [
+    ["w:tmReviewEnabled", options.enabled],
+    ["w:tmReviewShow", options.show],
+    ["w:tmReviewPrint", options.print],
+    ["w:tmRevisionNum", options.revisionNumber],
+    ["w:tmReviewMarkIns", options.insertionMark],
+    ["w:tmReviewColorIns", options.insertionColor],
+    ["w:tmReviewMarkDel", options.deletionMark],
+    ["w:tmReviewColorDel", options.deletionColor],
+    ["w:tmReviewMarkFmt", options.formattingMark],
+    ["w:tmReviewColorFmt", options.formattingColor],
+    ["w:tmReviewMarkLn", options.lineMark],
+    ["w:tmReviewColorLn", options.lineColor],
+    ["w:tmReviewToolTip", options.tooltip],
+  ];
+  return `<w:tmReviewPr>${children
+    .map(([tag, value]) => numVal(tag, value))
+    .join("")}</w:tmReviewPr>`;
+}
+
+function stringifyTmPosition(
+  tag: string,
+  options: { paragraphIndex?: number; index?: number } | undefined,
+): string {
+  if (!options) return "";
+  return `<${tag}>${numVal("w:tmLastPosPgfIdx", options.paragraphIndex)}${numVal(
+    "w:tmLastPosIdx",
+    options.index,
+  )}</${tag}>`;
+}
+
+function stringifyTmLastPosition(options: TmLastPositionOptions): string {
+  const tableRectangle =
+    options.tableRectangle === undefined
+      ? ""
+      : attrEl("w:tmLastPosTblRect", {
+          "w:left": options.tableRectangle.left,
+          "w:top": options.tableRectangle.top,
+          "w:right": options.tableRectangle.right,
+          "w:bottom": options.tableRectangle.bottom,
+        });
+  return `<w:tmLastPos>${numVal("w:tmLastPosPage", options.page)}${numVal(
+    "w:tmLastPosSelect",
+    options.selection,
+  )}${numVal("w:tmLastPosFrameIdx", options.frameIndex)}${stringifyTmPosition(
+    "w:tmLastPosCaret",
+    options.caret,
+  )}${stringifyTmPosition("w:tmLastPosAnchor", options.anchor)}${tableRectangle}</w:tmLastPos>`;
+}
+
+function parseTmCommentsProperties(el: Element): TmCommentsPropertiesOptions {
+  return {
+    place: readNum(findChild(el, "w:tmCommentsPlace"), "w:val"),
+    width: readNum(findChild(el, "w:tmCommentsWidth"), "w:val"),
+    color: readNum(findChild(el, "w:tmCommentsColor"), "w:val"),
+  };
+}
+
+function parseTmReviewProperties(el: Element): TmReviewPropertiesOptions {
+  const value = (tag: string): number | undefined => readNum(findChild(el, tag), "w:val");
+  return {
+    enabled: value("w:tmReviewEnabled"),
+    show: value("w:tmReviewShow"),
+    print: value("w:tmReviewPrint"),
+    revisionNumber: value("w:tmRevisionNum"),
+    insertionMark: value("w:tmReviewMarkIns"),
+    insertionColor: value("w:tmReviewColorIns"),
+    deletionMark: value("w:tmReviewMarkDel"),
+    deletionColor: value("w:tmReviewColorDel"),
+    formattingMark: value("w:tmReviewMarkFmt"),
+    formattingColor: value("w:tmReviewColorFmt"),
+    lineMark: value("w:tmReviewMarkLn"),
+    lineColor: value("w:tmReviewColorLn"),
+    tooltip: value("w:tmReviewToolTip"),
+  };
+}
+
+function parseTmPosition(el: Element | undefined): { paragraphIndex?: number; index?: number } {
+  return {
+    paragraphIndex: readNum(findChild(el, "w:tmLastPosPgfIdx"), "w:val"),
+    index: readNum(findChild(el, "w:tmLastPosIdx"), "w:val"),
+  };
+}
+
+function parseTmLastPosition(el: Element): TmLastPositionOptions {
+  const rect = findChild(el, "w:tmLastPosTblRect");
+  const position = (tag: string) => parseTmPosition(findChild(el, tag));
+  return {
+    page: readNum(findChild(el, "w:tmLastPosPage"), "w:val"),
+    selection: readNum(findChild(el, "w:tmLastPosSelect"), "w:val"),
+    frameIndex: readNum(findChild(el, "w:tmLastPosFrameIdx"), "w:val"),
+    caret: position("w:tmLastPosCaret"),
+    anchor: position("w:tmLastPosAnchor"),
+    tableRectangle: rect
+      ? {
+          left: readNum(rect, "w:left"),
+          top: readNum(rect, "w:top"),
+          right: readNum(rect, "w:right"),
+          bottom: readNum(rect, "w:bottom"),
+        }
+      : undefined,
+  };
 }
 
 /** Build attribute string from key-value pairs, skipping undefined. */
@@ -180,6 +297,11 @@ function readStr(el: Element | undefined, name: string): string | undefined {
   if (!el) return undefined;
   const v = attr(el, name);
   return v === undefined || v === "" ? undefined : v;
+}
+
+/** Read an optional string while preserving an explicitly empty `w:val=""`. */
+function readOptionalStr(el: Element | undefined, name: string): string | undefined {
+  return el ? attr(el, name) : undefined;
 }
 
 /** Read an attribute constrained to an enum; undefined if absent or not allowed. */
@@ -347,16 +469,15 @@ function applyCompatSetting(target: CompatibilityAccumulator, child: Element): v
   const name = attr(child, "w:name");
   const val = attr(child, "w:val");
   if (name === undefined || val === undefined) return;
+  const extras = (target.compatSettings as CompatSettingOptions[] | undefined) ?? [];
+  extras.push({ name, val, uri: attr(child, "w:uri") });
+  target.compatSettings = extras;
   const sugar = COMPAT_SETTING_SUGAR[name];
   if (sugar === "version") {
     const n = parseInt(val, 10);
     if (!Number.isNaN(n)) target.version = n;
-  } else if (sugar !== undefined) {
+  } else if (sugar !== undefined && target[sugar] === undefined) {
     target[sugar] = parseOnOff(val) ?? true;
-  } else {
-    const extras = (target.compatSettings as CompatSettingOptions[] | undefined) ?? [];
-    extras.push({ name, val, uri: attr(child, "w:uri") });
-    target.compatSettings = extras;
   }
 }
 
@@ -370,7 +491,7 @@ function parseCompatibility(el: Element): CompatibilityOptions | undefined {
     if (child.type !== "element" || !child.name) continue;
     const key = flagMap[child.name];
     if (key !== undefined) {
-      o[key] = true;
+      o[key] = readOnOff(child);
       continue;
     }
     if (child.name === "w:compatSetting") {
@@ -535,8 +656,8 @@ function parseMailMerge(el: Element): MailMergeOptions | undefined {
   if (dataType) o.dataType = dataType as MailMergeOptions["dataType"];
   const dest = readStr(findChild(el, "w:destination"), "w:val");
   if (dest) o.destination = dest as MailMergeOptions["destination"];
-  const connectString = readStr(findChild(el, "w:connectString"), "w:val");
-  if (connectString) o.connectString = connectString;
+  const connectString = readOptionalStr(findChild(el, "w:connectString"), "w:val");
+  if (connectString !== undefined) o.connectString = connectString;
   const query = readStr(findChild(el, "w:query"), "w:val");
   if (query) o.query = query;
   const dsEl = findChild(el, "w:dataSource");
@@ -599,8 +720,11 @@ const DOC_PROTECT_EDITS = ["none", "readOnly", "comments", "trackedChanges", "fo
 
 function stringifyDocProtect(opts: DocumentProtectionOptions): string {
   const derived = maybeDerive(opts.password, opts.hashValue);
-  const enforcement = opts.enforcementRaw ?? (opts.enforcement === false ? "0" : "1");
-  const attrs: Record<string, string | number> = { "w:enforcement": enforcement };
+  const enforcement =
+    opts.enforcementRaw ??
+    (opts.enforcement === null ? undefined : opts.enforcement === false ? "0" : "1");
+  const attrs: Record<string, string | number> = {};
+  if (enforcement !== undefined) attrs["w:enforcement"] = enforcement;
   if (opts.edit !== undefined) attrs["w:edit"] = opts.edit;
   if (opts.formatting !== undefined) attrs["w:formatting"] = opts.formatting ? "1" : "0";
   if (opts.algorithmName ?? derived?.algorithmName)
@@ -609,17 +733,24 @@ function stringifyDocProtect(opts: DocumentProtectionOptions): string {
     attrs["w:hashValue"] = opts.hashValue ?? derived!.hashValue;
   if (opts.saltValue ?? derived?.saltValue)
     attrs["w:saltValue"] = opts.saltValue ?? derived!.saltValue;
-  if (opts.hash !== undefined) attrs["w:hash"] = opts.hash;
-  if (opts.salt !== undefined) attrs["w:salt"] = opts.salt;
+  if (opts.cryptoAlgorithmSidRaw !== undefined)
+    attrs["w:cryptAlgorithmSid"] = opts.cryptoAlgorithmSidRaw;
   if (opts.spinCount ?? derived?.spinCount)
     attrs["w:spinCount"] = opts.spinCount ?? derived!.spinCount;
   if (opts.cryptoAlgorithmClass !== undefined)
     attrs["w:cryptAlgorithmClass"] = opts.cryptoAlgorithmClass;
-  if (opts.cryptoAlgorithmSid !== undefined) attrs["w:cryptAlgorithmSid"] = opts.cryptoAlgorithmSid;
+  else if (opts.cryptoAlgorithmSid !== undefined)
+    attrs["w:cryptAlgorithmSid"] = opts.cryptoAlgorithmSid;
   if (opts.cryptoAlgorithmType !== undefined)
     attrs["w:cryptAlgorithmType"] = opts.cryptoAlgorithmType;
+  if (opts.cryptoAlgorithmSid !== undefined && opts.cryptoAlgorithmSidRaw === undefined)
+    attrs["w:cryptAlgorithmSid"] = opts.cryptoAlgorithmSid;
   if (opts.cryptoProvider !== undefined) attrs["w:cryptProvider"] = opts.cryptoProvider;
   if (opts.cryptoProviderType !== undefined) attrs["w:cryptProviderType"] = opts.cryptoProviderType;
+  if (opts.hashRaw !== undefined) attrs["w:hash"] = opts.hashRaw;
+  else if (opts.hash !== undefined) attrs["w:hash"] = opts.hash;
+  if (opts.saltRaw !== undefined) attrs["w:salt"] = opts.saltRaw;
+  else if (opts.salt !== undefined) attrs["w:salt"] = opts.salt;
   if (opts.cryptoProviderTypeExtension !== undefined)
     attrs["w:cryptProviderTypeExt"] = opts.cryptoProviderTypeExtension;
   if (opts.cryptoProviderTypeExtensionSource !== undefined)
@@ -857,30 +988,29 @@ function stringifyCompatibility(opts: CompatibilityOptions): string {
   const p: string[] = [];
   // Individual compat on/off elements (XSD order — same table drives parse)
   for (const [key, tag] of COMPAT_FLAG_MAP) {
-    if (opts[key as keyof CompatibilityOptions]) p.push(onOff(tag, true));
+    const value = opts[key as keyof CompatibilityOptions];
+    if (value !== undefined) p.push(onOff(tag, value as boolean));
   }
   // Word 2010 extension flag — after the CT_Compat on/off elements
   if (opts.enableOpenTypeKerning) p.push("<w14:enableOpenTypeKerning/>");
-  // compatSetting elements last (XSD order)
-  if (opts.version) p.push(compatSetting("compatibilityMode", opts.version));
-  if (opts.overrideTableStyleFontSizeAndJustification)
-    p.push(compatSetting("overrideTableStyleFontSizeAndJustification", 1));
-  if (opts.enableOpenTypeFeatures) p.push(compatSetting("enableOpenTypeFeatures", 1));
-  if (opts.doNotFlipMirrorIndents) p.push(compatSetting("doNotFlipMirrorIndents", 1));
-
-  // Additional compatSetting entries (sugar fields above take precedence on name clash)
+  // Sugar defaults are needed only when parsed/fresh input did not retain the
+  // original compatSetting entries. Parsed input always carries every entry in
+  // compatSettings so duplicate producer entries round-trip verbatim.
   if (opts.compatSettings) {
-    const emitted = new Set<string>();
-    if (opts.version) emitted.add("compatibilityMode");
-    if (opts.overrideTableStyleFontSizeAndJustification)
-      emitted.add("overrideTableStyleFontSizeAndJustification");
-    if (opts.enableOpenTypeFeatures) emitted.add("enableOpenTypeFeatures");
-    if (opts.doNotFlipMirrorIndents) emitted.add("doNotFlipMirrorIndents");
-    for (const cs of opts.compatSettings) {
-      if (emitted.has(cs.name)) continue;
-      p.push(compatSetting(cs.name, cs.val, cs.uri));
-      emitted.add(cs.name);
-    }
+    for (const cs of opts.compatSettings) p.push(compatSetting(cs.name, cs.val, cs.uri));
+  } else {
+    if (opts.version !== undefined) p.push(compatSetting("compatibilityMode", opts.version));
+    if (opts.overrideTableStyleFontSizeAndJustification !== undefined)
+      p.push(
+        compatSetting(
+          "overrideTableStyleFontSizeAndJustification",
+          opts.overrideTableStyleFontSizeAndJustification ? 1 : 0,
+        ),
+      );
+    if (opts.enableOpenTypeFeatures !== undefined)
+      p.push(compatSetting("enableOpenTypeFeatures", opts.enableOpenTypeFeatures ? 1 : 0));
+    if (opts.doNotFlipMirrorIndents !== undefined)
+      p.push(compatSetting("doNotFlipMirrorIndents", opts.doNotFlipMirrorIndents ? 1 : 0));
   }
   // An explicitly empty options object round-trips a bare `<w:compat/>`
   // (source documents carry it as a placeholder with no flags).
@@ -1026,7 +1156,7 @@ export const settingsDesc: CustomDescriptor<
     // hyphenation — sibling CT_Settings elements, flattened onto the root
     p.push(onOff("w:autoHyphenation", opts.autoHyphenation));
     p.push(numVal("w:consecutiveHyphenLimit", opts.consecutiveHyphenLimit));
-    p.push(numVal("w:hyphenationZone", opts.hyphenationZone));
+    p.push(measureVal("w:hyphenationZone", opts.hyphenationZone));
     p.push(onOff("w:doNotHyphenateCaps", opts.doNotHyphenateCaps));
 
     p.push(onOff("w:showEnvelope", opts.showEnvelope));
@@ -1037,8 +1167,8 @@ export const settingsDesc: CustomDescriptor<
     p.push(onOff("w:bookFoldRevPrinting", opts.bookFoldRevPrinting));
     p.push(onOff("w:bookFoldPrinting", opts.bookFoldPrinting));
     p.push(numVal("w:bookFoldPrintingSheets", opts.bookFoldPrintingSheets));
-    p.push(numVal("w:drawingGridHorizontalSpacing", opts.drawingGridHorizontalSpacing));
-    p.push(numVal("w:drawingGridVerticalSpacing", opts.drawingGridVerticalSpacing));
+    p.push(measureVal("w:drawingGridHorizontalSpacing", opts.drawingGridHorizontalSpacing));
+    p.push(measureVal("w:drawingGridVerticalSpacing", opts.drawingGridVerticalSpacing));
     p.push(numVal("w:displayHorizontalDrawingGridEvery", opts.displayHorizontalDrawingGridEvery));
     p.push(numVal("w:displayVerticalDrawingGridEvery", opts.displayVerticalDrawingGridEvery));
     // XSD order: doNotUseMarginsForDrawingGridOrigin (55) → origins (56,57)
@@ -1180,6 +1310,21 @@ export const settingsDesc: CustomDescriptor<
     p.push(onOff("w14:conflictMode", opts.w14ConflictMode));
     if (opts.w15ChartTrackingRefBased) p.push(`<w15:chartTrackingRefBased/>`);
     p.push(docIdVal("w15:docId", opts.w15DocId, opts.w15DocIdText));
+    p.push(numVal("w:tmPrefOne", opts.tmPrefOne));
+    p.push(numVal("w:tmPrefTwo", opts.tmPrefTwo));
+    p.push(numVal("w:tmFmtPref", opts.tmFormatPreference));
+    if (opts.tmCommentsProperties !== undefined)
+      p.push(stringifyTmCommentsProperties(opts.tmCommentsProperties));
+    if (opts.tmReviewProperties !== undefined)
+      p.push(stringifyTmReviewProperties(opts.tmReviewProperties));
+    if (opts.tmLastPosition !== undefined) p.push(stringifyTmLastPosition(opts.tmLastPosition));
+    if (opts.tmApplicationRevision !== undefined)
+      p.push(
+        attrEl("w:tmAppRevision", {
+          "w:date": opts.tmApplicationRevision.date,
+          "w:val": opts.tmApplicationRevision.val,
+        }),
+      );
 
     const body = p.join("");
     return `<w:settings ${documentNamespaceAttributesInDialect(
@@ -1399,15 +1544,22 @@ export const settingsDesc: CustomDescriptor<
         prot.edit = edit as DocumentProtectionOptions["edit"];
       }
       const enforcement = attr(docProtEl, "w:enforcement");
+      Object.assign(prot, readPasswordAttrs(docProtEl));
+      const cryptoAlgorithmSidRaw = attr(docProtEl, "w:cryptAlgorithmSid");
+      if (cryptoAlgorithmSidRaw !== undefined) prot.cryptoAlgorithmSidRaw = cryptoAlgorithmSidRaw;
+      const hashRaw = attr(docProtEl, "w:hash");
+      if (hashRaw !== undefined) prot.hashRaw = hashRaw;
+      const saltRaw = attr(docProtEl, "w:salt");
+      if (saltRaw !== undefined) prot.saltRaw = saltRaw;
       if (enforcement !== undefined) {
-        Object.assign(prot, readPasswordAttrs(docProtEl));
         if (parseOnOff(enforcement) !== undefined) {
           prot.enforcementRaw = enforcement as OnOffLexicalValue;
         }
         prot.enforcement = parseOnOff(enforcement) ?? true;
-        const formatting = attr(docProtEl, "w:formatting");
-        if (formatting !== undefined) prot.formatting = parseOnOff(formatting) ?? false;
       }
+      const formatting = attr(docProtEl, "w:formatting");
+      if (formatting !== undefined) prot.formatting = parseOnOff(formatting) ?? false;
+      if (enforcement === undefined) prot.enforcement = null;
       if (Object.keys(prot).length > 0) opts.documentProtection = prot;
     }
 
@@ -1422,8 +1574,8 @@ export const settingsDesc: CustomDescriptor<
     if (noHyphCaps !== undefined) opts.doNotHyphenateCaps = noHyphCaps;
     const consLimit = readNum(findChild(el, "w:consecutiveHyphenLimit"), "w:val");
     if (consLimit !== undefined) opts.consecutiveHyphenLimit = consLimit;
-    const zone = readNum(findChild(el, "w:hyphenationZone"), "w:val");
-    if (zone !== undefined) opts.hyphenationZone = zone;
+    const zone = attrMeasure(findChild(el, "w:hyphenationZone"), "w:val");
+    if (zone !== undefined) opts.hyphenationZone = parsePositiveMeasure(zone);
 
     // summaryLength → w:summaryLength/@w:val
     const summaryLength = readNum(findChild(el, "w:summaryLength"), "w:val");
@@ -1437,12 +1589,19 @@ export const settingsDesc: CustomDescriptor<
     const drawNum: Array<{ key: keyof SettingsOptions; tag: string }> = [
       { key: "drawingGridHorizontalSpacing", tag: "w:drawingGridHorizontalSpacing" },
       { key: "drawingGridVerticalSpacing", tag: "w:drawingGridVerticalSpacing" },
+    ];
+    for (const { key, tag } of drawNum) {
+      const value = attrMeasure(findChild(el, tag), "w:val");
+      assignSetting(opts, key, value === undefined ? undefined : parsePositiveMeasure(value));
+    }
+
+    const drawInt: Array<{ key: keyof SettingsOptions; tag: string }> = [
       { key: "displayHorizontalDrawingGridEvery", tag: "w:displayHorizontalDrawingGridEvery" },
       { key: "displayVerticalDrawingGridEvery", tag: "w:displayVerticalDrawingGridEvery" },
       { key: "drawingGridHorizontalOrigin", tag: "w:drawingGridHorizontalOrigin" },
       { key: "drawingGridVerticalOrigin", tag: "w:drawingGridVerticalOrigin" },
     ];
-    for (const { key, tag } of drawNum) {
+    for (const { key, tag } of drawInt) {
       const v = readNum(findChild(el, tag), "w:val");
       assignSetting(opts, key, v);
     }
@@ -1471,9 +1630,9 @@ export const settingsDesc: CustomDescriptor<
       if (!lbEl) continue;
       const entry: Record<string, string> = {};
       const lang = attr(lbEl, "w:lang");
-      if (lang) entry.lang = lang;
+      if (lang !== undefined) entry.lang = lang;
       const val = attr(lbEl, "w:val");
-      if (val) entry.val = val;
+      if (val !== undefined) entry.val = val;
       if (Object.keys(entry).length > 0) assignSetting(opts, key, entry);
     }
 
@@ -1506,12 +1665,29 @@ export const settingsDesc: CustomDescriptor<
       if (en) opts.endnoteProperties = en;
     }
 
-    // compatibility — tri-state: object when <w:compat> holds content, false
-    // when absent (prevents fresh defaults from being injected on round-trip).
-    const compatEl = findChild(el, "w:compat");
-    let compat: CompatibilityOptions | undefined = compatEl
-      ? parseCompatibility(compatEl)
-      : undefined;
+    // compatibility — tri-state: object when any <w:compat> holds content,
+    // false when absent (prevents fresh defaults from being injected on
+    // round-trip). Producer bugs can emit more than one container; parse them
+    // all and rebuild the XSD's single-container form.
+    const compatEls = (el.elements ?? []).filter(
+      (child): child is Element => child.type === "element" && child.name === "w:compat",
+    );
+    let compat: CompatibilityOptions | undefined;
+    for (const compatEl of compatEls) {
+      const parsed = parseCompatibility(compatEl);
+      if (!parsed) continue;
+      compat ??= {};
+      for (const [key, value] of Object.entries(parsed)) {
+        if (key === "compatSettings") {
+          compat.compatSettings = [
+            ...(compat.compatSettings ?? []),
+            ...(value as CompatSettingOptions[]),
+          ];
+        } else {
+          (compat as Record<string, unknown>)[key] = value;
+        }
+      }
+    }
     // Word 2010 transitional documents can strand compatSetting entries at
     // the settings root, outside w:compat — fold them into the same domain so
     // they re-emit at their XSD position inside w:compat.
@@ -1539,18 +1715,19 @@ export const settingsDesc: CustomDescriptor<
     // rsids → w:rsids (CT_DocRsids)
     const rsidsEl = findChild(el, "w:rsids");
     if (rsidsEl) {
-      const rsids: Record<string, unknown> = {};
+      const rsids: RsidsOptions = {};
       const root = readStr(findChild(rsidsEl, "w:rsidRoot"), "w:val");
       if (root) rsids.rsidRoot = root;
-      const list: string[] = [];
+      const list: NonNullable<RsidsOptions["rsids"]> = [];
       for (const child of rsidsEl.elements ?? []) {
         if (child.name !== "w:rsid") continue;
-        list.push(attr(child, "w:val") ?? "");
+        const value = attr(child, "w:val");
+        list.push(value ?? "");
       }
       if (list.length > 0) rsids.rsids = list;
       // An empty w:rsids element still round-trips as { rsids: {} } — element
       // existence is part of the fidelity contract (pandoc emits it empty).
-      opts.rsids = rsids as RsidsOptions;
+      opts.rsids = rsids;
     }
 
     // mathPr → m:mathPr (CT_MathPr)
@@ -1677,6 +1854,25 @@ export const settingsDesc: CustomDescriptor<
     if (w15DocId) opts.w15DocId = w15DocId;
     const w15DocIdText = textOf(findChild(el, "w15:docId"));
     if (w15DocIdText !== undefined && w15DocIdText !== "") opts.w15DocIdText = w15DocIdText;
+    const tmPrefOne = readNum(findChild(el, "w:tmPrefOne"), "w:val");
+    if (tmPrefOne !== undefined) opts.tmPrefOne = tmPrefOne;
+    const tmPrefTwo = readNum(findChild(el, "w:tmPrefTwo"), "w:val");
+    if (tmPrefTwo !== undefined) opts.tmPrefTwo = tmPrefTwo;
+    const tmFormatPreference = readNum(findChild(el, "w:tmFmtPref"), "w:val");
+    if (tmFormatPreference !== undefined) opts.tmFormatPreference = tmFormatPreference;
+    const tmCommentsProperties = findChild(el, "w:tmCommentsPr");
+    if (tmCommentsProperties)
+      opts.tmCommentsProperties = parseTmCommentsProperties(tmCommentsProperties);
+    const tmReviewProperties = findChild(el, "w:tmReviewPr");
+    if (tmReviewProperties) opts.tmReviewProperties = parseTmReviewProperties(tmReviewProperties);
+    const tmLastPosition = findChild(el, "w:tmLastPos");
+    if (tmLastPosition) opts.tmLastPosition = parseTmLastPosition(tmLastPosition);
+    const tmApplicationRevision = findChild(el, "w:tmAppRevision");
+    if (tmApplicationRevision)
+      opts.tmApplicationRevision = {
+        date: readNum(tmApplicationRevision, "w:date"),
+        val: readNum(tmApplicationRevision, "w:val"),
+      };
 
     return opts;
   },
@@ -1719,13 +1915,22 @@ function parseShapeDefaultsInner(el: Element): ShapeDefaultsOptions {
   return out as ShapeDefaultsOptions;
 }
 
-/** Serialize one w:recipientData entry (CT_RecipientData). */
-function stringifyRecipientData(opts: RecipientDataOptions): string {
-  return `<w:recipientData>${[
-    onOff("w:active", opts.active),
-    numVal("w:column", opts.column),
-    strVal("w:uniqueTag", opts.uniqueTag),
-  ].join("")}</w:recipientData>`;
+/** Serialize one recipientData entry in its source vocabulary. */
+function stringifyRecipientData(opts: RecipientDataOptions, prefix: "w" | "wne"): string {
+  const active = "active" in opts ? opts.active : undefined;
+  const activeXml =
+    active === true
+      ? `<${prefix}:active ${valAttr(`${prefix}:active`)}="1"/>`
+      : onOff(`${prefix}:active`, active);
+  const children =
+    "hash" in opts
+      ? [activeXml, strVal(`${prefix}:hash`, opts.hash)]
+      : [
+          activeXml,
+          numVal(`${prefix}:column`, opts.column),
+          strVal(`${prefix}:uniqueTag`, opts.uniqueTag),
+        ];
+  return `<${prefix}:recipientData>${children.join("")}</${prefix}:recipientData>`;
 }
 
 /** Mail merge recipients part (w:recipients). */
@@ -1733,23 +1938,47 @@ export const mailMergeRecipientsDesc: CustomDescriptor<MailMergeRecipientsOption
   kind: "custom",
 
   stringify(opts) {
-    const children = opts.recipients.map(stringifyRecipientData).join("");
+    if (opts.namespace === "wne") {
+      const children = opts.recipients
+        .map((recipient) => stringifyRecipientData(recipient, "wne"))
+        .join("");
+      return `<wne:recipients xmlns:wne="http://schemas.microsoft.com/office/word/2006/wordml">${children}</wne:recipients>`;
+    }
+    const children = opts.recipients
+      .map((recipient) => stringifyRecipientData(recipient, "w"))
+      .join("");
     return `<w:recipients xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">${children}</w:recipients>`;
   },
 
   parse(el) {
+    const prefix = el.name === "wne:recipients" ? "wne" : "w";
     const recipients: RecipientDataOptions[] = [];
     for (const child of el.elements ?? []) {
-      if (child.name !== "w:recipientData") continue;
-      const column = Number(attr(findChild(child, "w:column") ?? {}, "w:val") ?? Number.NaN);
-      const uniqueTag = readStr(findChild(child, "w:uniqueTag"), "w:val");
+      if (child.name !== `${prefix}:recipientData`) continue;
+      const activeEl = findChild(child, `${prefix}:active`);
+      const active = readOnOff(activeEl);
+      const hash = readStr(findChild(child, `${prefix}:hash`), `${prefix}:val`);
+      if (hash !== undefined) {
+        const recipient: RecipientDataOptions = {
+          ...(active !== undefined ? { active } : {}),
+          hash,
+        };
+        recipients.push(recipient);
+        continue;
+      }
+      const column = Number(
+        attr(findChild(child, `${prefix}:column`) ?? {}, `${prefix}:val`) ?? Number.NaN,
+      );
+      const uniqueTag = readStr(findChild(child, `${prefix}:uniqueTag`), `${prefix}:val`);
       if (Number.isFinite(column) && uniqueTag) {
-        const recipient: RecipientDataOptions = { column, uniqueTag };
-        const active = readOnOff(findChild(child, "w:active"));
-        if (active !== undefined) recipient.active = active;
+        const recipient: RecipientDataOptions = {
+          ...(active !== undefined ? { active } : {}),
+          column,
+          uniqueTag,
+        };
         recipients.push(recipient);
       }
     }
-    return { recipients };
+    return { ...(prefix === "wne" ? { namespace: "wne" } : {}), recipients };
   },
 };

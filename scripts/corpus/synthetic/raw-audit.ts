@@ -42,19 +42,19 @@ function findRawXml(value: unknown, seen: Set<object>, path: string): RawAuditBl
 export function auditCanonicalOptions(
   options: unknown,
   allowedOpaqueParts: readonly RegExp[],
-  orphanedXmlParts?: ReadonlySet<string>,
+  orphanedParts?: ReadonlySet<string>,
   allowedOpaquePaths?: ReadonlySet<string>,
   modeledXmlPaths?: ReadonlySet<string>,
 ): RawAuditBlocker[] {
   const blockers = findRawXml(options, new Set(), "");
   const rawParts = (options as { rawParts?: readonly RawPartLike[] }).rawParts ?? [];
   for (const part of rawParts) {
-    if (allowedOpaqueParts.some((pattern) => pattern.test(part.path))) continue;
-    if (allowedOpaquePaths?.has(part.path)) continue;
-    if (orphanedXmlParts?.has(part.path)) {
+    if (orphanedParts?.has(part.path)) {
       blockers.push({ part: part.path, reason: "orphaned-independent-part" });
       continue;
     }
+    if (allowedOpaqueParts.some((pattern) => pattern.test(part.path))) continue;
+    if (allowedOpaquePaths?.has(part.path)) continue;
     if (XML_PART.test(part.path)) {
       if (!modeledXmlPaths || modeledXmlPaths.has(part.path.toLowerCase())) {
         blockers.push({ part: part.path, reason: "modeled-xml-passthrough" });

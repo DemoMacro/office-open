@@ -84,9 +84,22 @@ export const groupTransform2DDesc: CustomDescriptor<GroupTransform2DOptions> = {
   stringify(opts, ctx) {
     const base = transform2DDesc.stringify(opts, ctx) ?? "<a:xfrm/>";
 
-    // Append chOff and chExt children before closing tag (values are already in EMU)
-    const chOff = `<a:chOff x="${opts.childOffsetX ?? 0}" y="${opts.childOffsetY ?? 0}"/>`;
-    const chExt = `<a:chExt cx="${opts.childExtentWidth ?? 0}" cy="${opts.childExtentHeight ?? 0}"/>`;
+    // Append optional child-coordinate children before closing tag (values are
+    // already in EMU). Presence markers preserve empty lenient-source elements.
+    const hasChildOffset =
+      opts.childOffsetX !== undefined ||
+      opts.childOffsetY !== undefined ||
+      opts.childOffsetPresent === true;
+    const hasChildExtent =
+      opts.childExtentWidth !== undefined ||
+      opts.childExtentHeight !== undefined ||
+      opts.childExtentPresent === true;
+    const chOff = hasChildOffset
+      ? `<a:chOff x="${opts.childOffsetX ?? 0}" y="${opts.childOffsetY ?? 0}"/>`
+      : "";
+    const chExt = hasChildExtent
+      ? `<a:chExt cx="${opts.childExtentWidth ?? 0}" cy="${opts.childExtentHeight ?? 0}"/>`
+      : "";
 
     if (base.endsWith("/>")) {
       return `<a:xfrm>${chOff}${chExt}</a:xfrm>`;
@@ -97,6 +110,9 @@ export const groupTransform2DDesc: CustomDescriptor<GroupTransform2DOptions> = {
     const result = transform2DDesc.parse(el, ctx) as Record<string, unknown>;
 
     const chOff = findChild(el, "a:chOff");
+    if (chOff) {
+      result.childOffsetPresent = true;
+    }
     if (chOff?.attributes) {
       const cx = attrMeasure(chOff, "x");
       result.childOffsetX = cx ?? 0;
@@ -105,6 +121,9 @@ export const groupTransform2DDesc: CustomDescriptor<GroupTransform2DOptions> = {
     }
 
     const chExt = findChild(el, "a:chExt");
+    if (chExt) {
+      result.childExtentPresent = true;
+    }
     if (chExt?.attributes) {
       const ccx = attrMeasure(chExt, "cx");
       result.childExtentWidth = ccx ?? 0;

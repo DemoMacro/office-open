@@ -7,7 +7,15 @@ import { customPropertiesDesc } from "./custom-properties";
 const writeCtx = {} as unknown as WriteContext;
 const readCtx = {} as unknown as ReadContext;
 
-function roundTrip(properties: { name: string; value: string | number | boolean | Date }[]) {
+function roundTrip(
+  properties: {
+    name: string;
+    value: string | number | boolean | Date;
+    fmtid?: string;
+    pid?: number;
+    linkTarget?: string;
+  }[],
+) {
   const xml = customPropertiesDesc.stringify({ properties }, writeCtx)!;
   const doc = parseXml(xml);
   const el = doc.elements?.[0];
@@ -98,8 +106,12 @@ describe("customPropertiesDesc source vt spelling", () => {
     );
     expect(parsed.properties[0]?.value).toBe(1033);
     expect(parsed.properties[0]?.valueType).toBe("vt:r8");
+    expect(parsed.properties[0]?.fmtid).toBe("{D5CDD505-2E9C-101B-9397-08002B2CF9AE}");
+    expect(parsed.properties[0]?.pid).toBe(2);
     const xml = customPropertiesDesc.stringify(parsed, writeCtx)!;
     expect(xml).toContain("<vt:r8>1033</vt:r8>");
+    expect(xml).toContain('fmtid="{D5CDD505-2E9C-101B-9397-08002B2CF9AE}"');
+    expect(xml).toContain('pid="2"');
     expect(xml).not.toContain("vt:i4");
   });
 
@@ -121,5 +133,29 @@ describe("customPropertiesDesc source vt spelling", () => {
     expect(parsed.properties[0]?.valueLexeme).toBe("0");
     const xml = customPropertiesDesc.stringify(parsed, writeCtx)!;
     expect(xml).toContain("<vt:bool>0</vt:bool>");
+  });
+});
+
+describe("customPropertiesDesc relationship metadata", () => {
+  it("round-trips a linked property target", () => {
+    const result = roundTrip([
+      {
+        name: "Linked",
+        value: "Value",
+        fmtid: "{D5CDD505-2E9C-101B-9397-08002B2CF9AE}",
+        pid: 7,
+        linkTarget: "rId1",
+      },
+    ]);
+    expect(result.properties).toEqual([
+      {
+        name: "Linked",
+        value: "Value",
+        fmtid: "{D5CDD505-2E9C-101B-9397-08002B2CF9AE}",
+        pid: 7,
+        linkTarget: "rId1",
+        valueLexeme: "Value",
+      },
+    ]);
   });
 });

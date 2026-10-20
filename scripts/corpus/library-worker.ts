@@ -1,6 +1,11 @@
 import { parentPort, workerData } from "node:worker_threads";
 
-import { runLibrary, type LibraryRunInput } from "./library";
+import { runLibrary, type CorpusFile, type LibraryRunInput } from "./library";
 
-const result = await runLibrary(workerData.libraryId, workerData.input as LibraryRunInput);
+const { libraryId, input, files } = workerData as {
+  libraryId: string;
+  input: LibraryRunInput;
+  files?: CorpusFile[];
+};
+const result = await runLibrary(libraryId, input, files);
 parentPort?.postMessage(result);

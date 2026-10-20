@@ -1,16 +1,17 @@
-import type { ConnectorLockingOptions, ShapeLockingOptions } from "@office-open/core/drawing";
+import type {
+  ConnectorLockingOptions,
+  NonVisualDrawingPropertiesOptions,
+  EndpointConnectionOptions,
+  ShapeLockingOptions,
+} from "@office-open/core/drawing";
 
-export interface NonVisualShapePropertiesOptions {
+import type { HyperlinkOptions } from "../../../../doc-properties/doc-properties";
+
+export interface NonVisualShapePropertiesOptions extends NonVisualDrawingPropertiesOptions {
   /** Drawing id (wps:cNvPr `@id`). */
   id?: number;
-  /** Drawing name (wps:cNvPr `@name`). */
-  name?: string;
-  /** Alt-text description (wps:cNvPr `@descr`). */
-  description?: string;
-  /** Alt-text title (wps:cNvPr `@title`). */
-  title?: string;
-  /** Hidden drawing marker (wps:cNvPr `@hidden`). */
-  hidden?: boolean;
+  /** Click or hover hyperlink on the shape itself (wps:cNvPr/a:hlinkClick). */
+  hyperlink?: HyperlinkOptions;
   /** Shape type marker (wps:cNvSpPr `@txBox`) — "1" marks a text box. */
   textBox?: string;
   /**
@@ -23,4 +24,8 @@ export interface NonVisualShapePropertiesOptions {
   locking?: ShapeLockingOptions;
   /** Connector locks (wps:cNvCnPr/a:cxnSpLocks), when connector is set. */
   connectorLocking?: ConnectorLockingOptions;
+  /** Connector start endpoint (wps:cNvCnPr/a:stCxn). */
+  startConnection?: EndpointConnectionOptions;
+  /** Connector end endpoint (wps:cNvCnPr/a:endCxn). */
+  endConnection?: EndpointConnectionOptions;
 }

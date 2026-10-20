@@ -1,4 +1,5 @@
-import { Relationships, type XmlifyedFile, replaceNumberingPlaceholders } from "@office-open/core";
+import { Relationships, replaceNumberingPlaceholders } from "@office-open/core";
+import { type XmlifyedFile } from "@office-open/core/opc";
 import { escapeXml } from "@office-open/xml";
 
 import { stringifyBodyChild, type BodyContext } from "../body";
@@ -8,23 +9,28 @@ import type { TextBoxPartOptions } from "../parts/drawing/inline/graphic/graphic
 import { XML_DECL, registerPartMedia, resolvePartCharts, resolvePartMedia } from "./shared";
 
 function collectTextBoxParts(value: unknown, parts: TextBoxPartOptions[], seen: Set<object>): void {
-  if (!value || typeof value !== "object" || seen.has(value)) return;
-  seen.add(value);
-  if (Array.isArray(value)) {
-    for (const child of value) collectTextBoxParts(child, parts, seen);
-    return;
+  const pending: unknown[] = [value];
+  while (pending.length > 0) {
+    const item = pending.pop();
+    if (!item || typeof item !== "object" || seen.has(item)) continue;
+    seen.add(item);
+    if (Array.isArray(item)) {
+      for (let index = item.length - 1; index >= 0; index -= 1) pending.push(item[index]);
+      continue;
+    }
+    const record = item as Record<string, unknown>;
+    const part = record.textBoxPart;
+    if (
+      typeof part === "object" &&
+      part !== null &&
+      typeof (part as TextBoxPartOptions).path === "string" &&
+      Array.isArray((part as TextBoxPartOptions).children)
+    ) {
+      parts.push(part as TextBoxPartOptions);
+    }
+    const children = Object.values(record);
+    for (let index = children.length - 1; index >= 0; index -= 1) pending.push(children[index]);
   }
-  const record = value as Record<string, unknown>;
-  const part = record.textBoxPart;
-  if (
-    typeof part === "object" &&
-    part !== null &&
-    typeof (part as TextBoxPartOptions).path === "string" &&
-    Array.isArray((part as TextBoxPartOptions).children)
-  ) {
-    parts.push(part as TextBoxPartOptions);
-  }
-  for (const child of Object.values(record)) collectTextBoxParts(child, parts, seen);
 }
 
 interface CompiledTextBoxPart {

@@ -29,4 +29,22 @@ describe("buildCommentData", () => {
     );
     expect(authors?.[0]?.lastIdx).toBe(9);
   });
+
+  it("preserves duplicate author names as distinct author ids", () => {
+    const { authors } = buildCommentData(
+      [
+        {
+          comments: [
+            { author: "Same", authorId: 1, idx: 1, x: 0, y: 0, text: "first" },
+            { author: "Same", authorId: 5, idx: 1, x: 0, y: 0, text: "second" },
+          ],
+        },
+      ],
+      [
+        { id: 1, name: "Same", initials: "S1", clrIdx: 1, lastIdx: 1 },
+        { id: 5, name: "Same", initials: "S5", clrIdx: 5, lastIdx: 1 },
+      ],
+    );
+    expect(authors?.map((author) => author.id)).toEqual([1, 5]);
+  });
 });

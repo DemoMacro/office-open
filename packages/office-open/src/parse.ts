@@ -1,5 +1,5 @@
+import { toUint8ArrayAsync, type DataType } from "@office-open/core";
 import type { DocumentOptions } from "@office-open/docx";
-import type { OdpPresentationOptions } from "@office-open/odp";
 import type { OdsWorkbookOptions } from "@office-open/ods";
 import type { OdtDocumentOptions } from "@office-open/odt";
 import type { PresentationOptions } from "@office-open/pptx";
@@ -33,29 +33,30 @@ export type ParsedOffice =
       format: Exclude<PresentationParseFormat, "odp">;
       options: PresentationOptions;
     }
-  | { format: "odp"; options: OdpPresentationOptions };
+  | { format: "odp"; options: PresentationOptions };
 
 export async function parseOffice(
-  input: Uint8Array | string,
+  input: DataType,
   options?: OfficeParseOptions,
 ): Promise<ParsedOffice> {
-  const info = detectOffice(input);
+  const data = await toUint8ArrayAsync(input);
+  const info = detectOffice(data);
   if (info.family === "document") {
     return {
       format: info.format as DocumentParseFormat,
-      options: await parseDocument(input, options),
+      options: await parseDocument(data, options),
     } as ParsedOffice;
   }
   if (info.family === "workbook") {
     return {
       format: info.format as WorkbookParseFormat,
-      options: await parseWorkbook(input, options),
+      options: await parseWorkbook(data, options),
     } as ParsedOffice;
   }
   if (info.family === "presentation") {
     return {
       format: info.format as PresentationParseFormat,
-      options: await parsePresentation(input, options),
+      options: await parsePresentation(data, options),
     } as ParsedOffice;
   }
   throw new Error("Encrypted OOXML documents are not supported by the unified parser");

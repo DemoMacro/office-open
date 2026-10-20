@@ -229,6 +229,7 @@ const FAMILY_PROPERTIES: Record<OdfStyleFamily, string[]> = {
   section: ["style:section-properties"],
   "page-layout": ["style:page-layout-properties"],
   "drawing-page": ["style:drawing-page-properties"],
+  ruby: ["style:ruby-properties"],
 };
 
 const ATTRIBUTE_PREFIXES: Record<OdfStyleFamily, RegExp> = Object.fromEntries([
@@ -242,6 +243,7 @@ const ATTRIBUTE_PREFIXES: Record<OdfStyleFamily, RegExp> = Object.fromEntries([
   ["section", /^(fo|style|text|officeooo|loext):/],
   ["page-layout", /^(fo|style|text|svg|officeooo|loext):/],
   ["drawing-page", /^(fo|style|draw|svg|dr3d|presentation|smil|officeooo|loext):/],
+  ["ruby", /^(fo|style|text|officeooo|loext):/],
 ]) as Record<OdfStyleFamily, RegExp>;
 
 function parseFamily(value: string | undefined, style: Element): OdfStyleFamily {
@@ -256,6 +258,7 @@ function parseFamily(value: string | undefined, style: Element): OdfStyleFamily 
     "section",
     "page-layout",
     "drawing-page",
+    "ruby",
   ];
   if (value && families.includes(value as OdfStyleFamily)) return value as OdfStyleFamily;
   throw styleError(style, value ?? "style:family", "unknown style family");

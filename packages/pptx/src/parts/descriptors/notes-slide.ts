@@ -13,11 +13,13 @@
 
 import { parseOnOff } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
+import { parseNonVisualDrawingProperties } from "@office-open/core/drawing";
 import { findChild, stringify as stringifyXml } from "@office-open/xml";
+import { attr, attrNum } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import { buildNotesSlideXml } from "@parts/notes-slide";
 import type { SlideChild } from "@parts/slide/slide-child";
-import { SP_TREE_HEADER } from "@shared/constants";
+import { stringifySpTreeHeader } from "@shared/constants";
 
 import type { PptxWriteContext } from "../../context";
 import type { BackgroundOptions } from "../background";
@@ -28,6 +30,18 @@ import { colorMappingOverrideDesc, type ColorMappingOverrideOptions } from "./co
 // ── Types ──
 
 export interface NotesSlideOptions {
+  /** Root spTree cNvPr id — round-trip only. */
+  shapeTreeId?: number;
+  /** Root spTree cNvPr name — round-trip only. */
+  shapeTreeName?: string;
+  /** Root spTree cNvPr creation id — round-trip only. */
+  shapeTreeCreationId?: string;
+  /** Root spTree cNvPr extension-list inner XML — round-trip only. */
+  shapeTreeExt?: string;
+  /** Root spTree group properties black-and-white mode (`@bwMode`). */
+  shapeTreeBlackWhiteMode?: string;
+  /** Omit the shape-tree root transform when the source omitted it. */
+  groupTransformless?: boolean;
   /** Notes text — shorthand that builds a fresh sldImg + body placeholder slide. */
   text?: string;
   /** Shape-tree children (structured). When set, the structured path is used. */
@@ -54,6 +68,12 @@ export const notesSlideDesc: CustomDescriptor<NotesSlideOptions, PptxWriteContex
     // Simple text path — fresh builder with sldImg + body placeholders.
     const structured =
       opts.children !== undefined ||
+      opts.shapeTreeId !== undefined ||
+      opts.shapeTreeName !== undefined ||
+      opts.shapeTreeCreationId !== undefined ||
+      opts.shapeTreeExt !== undefined ||
+      opts.shapeTreeBlackWhiteMode !== undefined ||
+      opts.groupTransformless !== undefined ||
       opts.background !== undefined ||
       opts.colorMappingOverride !== undefined ||
       opts.cSldExt !== undefined;
@@ -74,7 +94,16 @@ export const notesSlideDesc: CustomDescriptor<NotesSlideOptions, PptxWriteContex
     parts.push("<p:cSld>");
     if (opts.background) parts.push(backgroundDesc.stringify(opts.background, ctx) ?? "");
     parts.push("<p:spTree>");
-    parts.push(SP_TREE_HEADER);
+    parts.push(
+      stringifySpTreeHeader(
+        opts.shapeTreeId,
+        opts.shapeTreeName,
+        opts.shapeTreeBlackWhiteMode,
+        opts.groupTransformless,
+        opts.shapeTreeCreationId,
+        opts.shapeTreeExt,
+      ),
+    );
     if (opts.children) {
       for (const child of opts.children) {
         const xml = stringifyChild(child, ctx);
@@ -112,6 +141,26 @@ export const notesSlideDesc: CustomDescriptor<NotesSlideOptions, PptxWriteContex
 
       const spTree = findChild(cSld, "p:spTree");
       if (spTree) {
+        const shapeTreeGroupProperties = findChild(spTree, "p:grpSpPr");
+        if (
+          shapeTreeGroupProperties &&
+          findChild(shapeTreeGroupProperties, "a:xfrm") === undefined
+        ) {
+          result.groupTransformless = true;
+        }
+        const shapeTreeBwMode = attr(shapeTreeGroupProperties, "bwMode");
+        if (shapeTreeBwMode !== undefined) result.shapeTreeBlackWhiteMode = shapeTreeBwMode;
+        const rootGroupProperties = findChild(spTree, "p:nvGrpSpPr");
+        const rootDrawingProperties = findChild(rootGroupProperties, "p:cNvPr");
+        const rootProperties = parseNonVisualDrawingProperties(rootDrawingProperties);
+        const shapeTreeId = rootDrawingProperties
+          ? attrNum(rootDrawingProperties, "id")
+          : undefined;
+        if (shapeTreeId !== undefined) result.shapeTreeId = shapeTreeId;
+        if (rootProperties.name !== undefined) result.shapeTreeName = rootProperties.name;
+        if (rootProperties.creationId !== undefined)
+          result.shapeTreeCreationId = rootProperties.creationId;
+        if (rootProperties.ext !== undefined) result.shapeTreeExt = rootProperties.ext;
         const children: SlideChild[] = [];
         for (const child of spTree.elements ?? []) {
           // Skip the tree container structure (nvGrpSpPr/grpSpPr).

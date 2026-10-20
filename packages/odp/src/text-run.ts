@@ -1,10 +1,11 @@
 import type {
   ParagraphDescriptorOptions,
+  TextFieldOptions,
   TextBreakOptions,
   TextBodyOptions,
   TextRunOptions,
 } from "@office-open/core";
-import { attributeString, escapeText, textOf, xmlElement } from "@office-open/odf";
+import { attributeNumber, attributeString, escapeText, textOf, xmlElement } from "@office-open/odf";
 import type { Element } from "@office-open/xml";
 
 import { unknownSlideChild } from "./presentation";
@@ -27,6 +28,7 @@ export function textBodyXml(body: TextBodyOptions | undefined, styles: string[])
         : (value.children ?? []).map((run) => {
             if (typeof run === "string") return escapeText(run);
             if ("break" in run) return xmlElement("text:line-break");
+            if ("type" in run) return fieldXml(run as TextFieldOptions);
             const textRun = run as TextRunOptions;
             if (!("text" in run) || !textRun.hyperlink) return "";
             const properties = textProperties(textRun);
@@ -49,6 +51,118 @@ export function textProperties(run: TextRunOptions): TextProperties {
     underline: run.underline === "single" ? "single" : undefined,
     size: run.size,
   };
+}
+
+function fieldXml(field: TextFieldOptions): string {
+  const fixed = field.fixed === undefined ? undefined : String(field.fixed);
+  switch (field.type) {
+    case "slidenum":
+      return xmlElement(
+        "text:page-number",
+        {
+          "text:select-page": field.selectPage,
+          "text:page-adjust": field.pageAdjust,
+          "text:fixed": fixed,
+        },
+        [escapeText(field.text ?? "")],
+      );
+    case "slidecount":
+      return xmlElement("text:page-count", { "text:fixed": fixed }, [escapeText(field.text ?? "")]);
+    case "slidename":
+      return xmlElement("loext:page-name", { "text:fixed": fixed }, [escapeText(field.text ?? "")]);
+    case "author":
+      return xmlElement("text:author-name", { "text:fixed": fixed }, [
+        escapeText(field.text ?? ""),
+      ]);
+    case "filename":
+      return xmlElement("text:file-name", { "text:display": field.display, "text:fixed": fixed }, [
+        escapeText(field.text ?? ""),
+      ]);
+    case "datetime":
+      return xmlElement(
+        "text:date",
+        {
+          "style:data-style-name": field.dataStyleName,
+          "text:date-value": field.dateValue,
+          "text:fixed": fixed,
+        },
+        [escapeText(field.text ?? "")],
+      );
+    case "time":
+      return xmlElement(
+        "text:time",
+        {
+          "style:data-style-name": field.dataStyleName,
+          "text:time-value": field.timeValue,
+          "text:fixed": fixed,
+        },
+        [escapeText(field.text ?? "")],
+      );
+    default:
+      throw unknownSlideChild({ name: field.type }, "/text:p/field");
+  }
+}
+
+function parseField(element: Element): TextFieldOptions {
+  const text = textOf(element);
+  const fixed = attributeString(element, "text:fixed");
+  const fixedOption = fixed === undefined ? {} : { fixed: fixed === "true" };
+  switch (element.name) {
+    case "text:page-number": {
+      const pageAdjust = attributeNumber(element, "text:page-adjust");
+      const selectPage = attributeString(element, "text:select-page");
+      return {
+        type: "slidenum",
+        text,
+        ...fixedOption,
+        ...(selectPage === undefined
+          ? {}
+          : { selectPage: selectPage as "current" | "previous" | "next" }),
+        ...(pageAdjust === undefined ? {} : { pageAdjust }),
+      };
+    }
+    case "text:page-count":
+      return { type: "slidecount", text, ...fixedOption };
+    case "loext:page-name":
+      return { type: "slidename", text, ...fixedOption };
+    case "text:author-name":
+      return { type: "author", text, ...fixedOption };
+    case "text:file-name": {
+      const display = attributeString(element, "text:display");
+      return {
+        type: "filename",
+        text,
+        ...fixedOption,
+        ...(display === undefined
+          ? {}
+          : { display: display as "full" | "path" | "name" | "name-and-extension" }),
+      };
+    }
+    case "text:date": {
+      const dateValue = attributeString(element, "text:date-value");
+      const dataStyleName = attributeString(element, "style:data-style-name");
+      return {
+        type: "datetime",
+        text,
+        ...fixedOption,
+        ...(dateValue === undefined ? {} : { dateValue }),
+        ...(dataStyleName === undefined ? {} : { dataStyleName }),
+      };
+    }
+    case "text:time": {
+      const timeValue = attributeString(element, "text:time-value");
+      const dataStyleName = attributeString(element, "style:data-style-name");
+      return {
+        type: "time",
+        text,
+        ...fixedOption,
+        ...(timeValue === undefined ? {} : { timeValue }),
+        ...(dataStyleName === undefined ? {} : { dataStyleName }),
+      };
+    }
+    default:
+      throw unknownSlideChild(element, `/${element.name ?? "text:p"}`);
+  }
 }
 
 export function parseParagraph(
@@ -82,6 +196,16 @@ export function parseParagraph(
         text: textOf(child),
         ...textStyles.get(attributeString(child, "text:style-name") ?? ""),
       });
+    } else if (
+      child.name === "text:page-number" ||
+      child.name === "text:page-count" ||
+      child.name === "loext:page-name" ||
+      child.name === "text:author-name" ||
+      child.name === "text:file-name" ||
+      child.name === "text:date" ||
+      child.name === "text:time"
+    ) {
+      children.push(parseField(child));
     } else if (child.name) {
       throw unknownSlideChild(child, `/${paragraph.name ?? "text:p"}`);
     }

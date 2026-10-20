@@ -603,10 +603,11 @@ function stringifyLevel(opts: LevelsOptions): string {
     if (opts.legacy.indent !== undefined) attrs.push(`w:legacyIndent="${opts.legacy.indent}"`);
     addFragment("legacy", `<w:legacy ${attrs.join(" ")}/>`);
   }
-  addFragment(
-    "alignment",
-    `<w:lvlJc w:val="${xsdJcAlignment.to(opts.alignment ?? AlignmentType.START)}"/>`,
-  );
+  if (opts.alignment !== null)
+    addFragment(
+      "alignment",
+      `<w:lvlJc w:val="${xsdJcAlignment.to(opts.alignment ?? AlignmentType.START)}"/>`,
+    );
   const pPrXml = stringifyParagraphProperties(opts.paragraph).xml;
   if (pPrXml) addFragment("paragraph", pPrXml);
   const rPrXml = stringifyRunProperties(opts.run);
@@ -709,7 +710,11 @@ export function parseNumberingDefinitions(
       const levelOpts = parseLevelEl(child, parseParagraphProperties, ctx);
       if (levelOpts) levels.push(levelOpts);
     }
-    if (levels.length === 0 && !hasStyleProperties(abstractEl)) return undefined;
+    if (levels.length === 0 && !hasStyleProperties(abstractEl)) {
+      const restartVal = attrBool(abstractEl, "w15:restartNumberingAfterBreak");
+      if (restartVal === undefined) return undefined;
+      return { levels, properties: { restartNumberingAfterBreak: restartVal } };
+    }
 
     const properties: AbstractNumberingPropertiesOptions = {};
     for (const [tag, key] of ABSTRACT_EXTRA_PROPS) {
@@ -835,6 +840,14 @@ export function parseNumberingDefinitions(
   if (numPicBullets.length > 0) result.numPicBullets = numPicBullets;
   if (numIdMacAtCleanup !== undefined) result.numIdMacAtCleanup = numIdMacAtCleanup;
   return result;
+}
+
+function unwrapNestedContainer(el: Element | undefined, name: string): Element | undefined {
+  if (!el) return el;
+  const children = el.elements ?? [];
+  const nested = children.filter((child) => child.name === name);
+  const hasOwnProperties = Object.keys(el.attributes ?? {}).length > 0;
+  return !hasOwnProperties && children.length === 1 && nested.length === 1 ? nested[0] : el;
 }
 
 function parseLevelEl(
@@ -977,6 +990,8 @@ function parseLevelEl(
   if (lvlJc) {
     const val = attr(lvlJc, "w:val");
     if (val) opts.alignment = xsdJcAlignment.from(val) as LevelsOptions["alignment"];
+  } else {
+    opts.alignment = null;
   }
 
   // Level attributes (w:tplc templateCode; w:tentative; w15:tentative)
@@ -990,7 +1005,7 @@ function parseLevelEl(
   // Run + paragraph properties — reuse the complete parse helpers for full
   // fidelity (stringifyLevel delegates to stringifyRunProperties /
   // stringifyParagraphProperties, so parse must use the matching readers).
-  const rPr = findChild(el, "w:rPr");
+  const rPr = unwrapNestedContainer(findChild(el, "w:rPr"), "w:rPr");
   if (rPr) {
     const runOpts = parseRunProperties(rPr);
     if (Object.keys(runOpts).length > 0) opts.run = runOpts;

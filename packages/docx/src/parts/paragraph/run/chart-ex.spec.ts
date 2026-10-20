@@ -1,4 +1,4 @@
-import { unzipSync } from "@office-open/core";
+import { unzipSync, zipSync } from "@office-open/core/opc";
 import { describe, expect, it } from "vite-plus/test";
 
 import { generateDocumentSync } from "../../../generate";
@@ -72,5 +72,22 @@ describe("DOCX ChartEx", () => {
 
     const regenerated = unzipSync(generateDocumentSync(parsed));
     expect(regenerated["word/charts/chartEx1.xml"]).toEqual(generated["word/charts/chartEx1.xml"]);
+  });
+
+  it("parses ChartEx references by namespace-local name rather than prefix", () => {
+    const generated = unzipSync(
+      generateDocumentSync({
+        sections: [{ children: [{ paragraph: { children: [{ chartEx: chartExOptions }] } }] }],
+      }),
+    );
+    const documentXml = new TextDecoder().decode(generated["word/document.xml"]);
+    generated["word/document.xml"] = new TextEncoder().encode(
+      documentXml.replaceAll("<cx:", "<chart14:").replaceAll("</cx:", "</chart14:"),
+    );
+    const aliased = zipSync(generated);
+    const parsed = parseDocumentSync(aliased);
+    const child = parsed.sections?.[0]?.children?.[0];
+    const paragraph = child as { paragraph?: { children?: unknown[] } };
+    expect(paragraph.paragraph?.children?.[0]).toMatchObject({ chartEx: chartExOptions });
   });
 });

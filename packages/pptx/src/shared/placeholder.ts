@@ -9,7 +9,12 @@
  * @module
  */
 
-import type { BlackWhiteMode, ShapeLockingOptions, UniversalMeasure } from "@office-open/core";
+import {
+  parseOnOff,
+  type BlackWhiteMode,
+  type ShapeLockingOptions,
+  type UniversalMeasure,
+} from "@office-open/core";
 import type { ReadContext } from "@office-open/core/descriptor";
 import { shapePropertiesDesc, textBodyDesc } from "@office-open/core/drawing";
 import type {
@@ -106,11 +111,18 @@ export interface PlaceholderPosition {
 export interface PlaceholderFacets {
   /** Source cNvPr id — reused on round-trip instead of the standard 2–6 slots. */
   id?: number;
+  /** Verbatim cNvPr extension-list children; separate from spPr extensions. */
+  cNvPrExtension?: string;
   /** `@bwMode` on the placeholder's p:spPr. */
   blackWhiteMode?: BlackWhiteMode;
   /** Shape locks from p:cNvSpPr/a:spLocks. */
   locking?: ShapeLockingOptions;
+  /** Explicit text-box marker on `p:cNvSpPr/@txBox`; `false` preserves `0`. */
+  textBox?: boolean;
   geometry?: ShapePropertiesOptions["geometry"];
+  flipHorizontal?: boolean;
+  flipVertical?: boolean;
+  rotation?: number;
   customGeometry?: ShapePropertiesOptions["customGeometry"];
   fill?: ShapePropertiesOptions["fill"];
   outline?: ShapePropertiesOptions["outline"];
@@ -131,9 +143,19 @@ export interface PlaceholderFacets {
 export interface PlaceholderDefinition
   extends PlaceholderPosition, PlaceholderFacets, NonVisualDrawingPropertiesOptions {
   /** CT_Placeholder `@sz` — sizing hint (default "full"). */
-  placeholderSize?: PlaceholderSize;
+  placeholderSize?: PlaceholderSize | null;
+  /** CT_Placeholder `@idx`; null preserves a source placeholder without it. */
+  placeholderIndex?: number | null;
+  /** CT_Placeholder `@orient`; null preserves an omitted orientation. */
+  placeholderOrientation?: "horizontal" | "vertical" | null;
+  /** CT_Placeholder `@hasCustomPrompt`; null preserves an omitted prompt flag. */
+  hasCustomPrompt?: boolean | null;
   /** Customer-data references (p:nvPr > p:custDataLst > p:tags/p:custData). */
   customerData?: SlideCustomerDataReferenceOptions[];
+  /** p:nvPr `@userDrawn` on the source placeholder shape (round-trip). */
+  userDrawn?: boolean;
+  /** false preserves a source placeholder p:cNvSpPr without a:spLocks. */
+  lockingPresent?: boolean;
 }
 
 /** Result of resolving a placeholder against the layout/master chain. */
@@ -158,6 +180,12 @@ function asDefinition(ph: unknown): PlaceholderDefinition | undefined {
     : undefined;
 }
 
+function parsePlaceholderOrientation(value: string): "horizontal" | "vertical" {
+  if (value === "horz") return "horizontal";
+  if (value === "vert") return "vertical";
+  throw new Error(`Invalid placeholder orientation: ${value}`);
+}
+
 function pickPosition(def: PlaceholderDefinition | undefined): PlaceholderPosition | undefined {
   if (!def) return undefined;
   const { x, y, width, height } = def;
@@ -171,6 +199,9 @@ function pickFacets(def: PlaceholderDefinition | undefined): PlaceholderFacets |
   if (!def) return undefined;
   const facets: PlaceholderFacets = {};
   if (def.geometry !== undefined) facets.geometry = def.geometry;
+  if (def.flipHorizontal !== undefined) facets.flipHorizontal = def.flipHorizontal;
+  if (def.flipVertical !== undefined) facets.flipVertical = def.flipVertical;
+  if (def.rotation !== undefined) facets.rotation = def.rotation;
   if (def.customGeometry !== undefined) facets.customGeometry = def.customGeometry;
   if (def.fill !== undefined) facets.fill = def.fill;
   if (def.outline !== undefined) facets.outline = def.outline;
@@ -265,14 +296,31 @@ export function extractPlaceholderDefinition(
 
   const def: Partial<PlaceholderDefinition> = {};
   const placeholderSize = attr(ph, "sz");
-  if (placeholderSize !== undefined) def.placeholderSize = placeholderSize as PlaceholderSize;
+  def.placeholderSize = placeholderSize === undefined ? null : (placeholderSize as PlaceholderSize);
+  const placeholderIndex = attr(ph, "idx");
+  def.placeholderIndex = placeholderIndex === undefined ? null : Number(placeholderIndex);
+  const placeholderOrientation = attr(ph, "orient");
+  def.placeholderOrientation =
+    placeholderOrientation === undefined
+      ? null
+      : parsePlaceholderOrientation(placeholderOrientation);
+  const hasCustomPrompt = attr(ph, "hasCustomPrompt");
+  def.hasCustomPrompt =
+    hasCustomPrompt === undefined ? null : (parseOnOff(hasCustomPrompt) ?? false);
   const customerData = parseCustDataLst(nvPr ? findChild(nvPr, "p:custDataLst") : undefined);
   if (customerData) def.customerData = customerData;
+  const userDrawn = nvPr?.attributes?.["userDrawn"];
+  if (userDrawn !== undefined) def.userDrawn = parseOnOff(userDrawn) ?? false;
 
-  // cNvPr fields (name/description/title/hidden + a16:creationId) so a
-  // re-emitted placeholder keeps its identity.
+  // cNvPr fields (name/description/title/hidden + extensions) so a re-emitted
+  // placeholder keeps its identity. spPr extensions use PlaceholderFacets.ext.
   const cNvPr = nvSpPr ? findChild(nvSpPr, "p:cNvPr") : undefined;
-  Object.assign(def, parseNonVisualDrawingProperties(cNvPr));
+  const nonVisual = parseNonVisualDrawingProperties(cNvPr);
+  if (nonVisual.ext !== undefined) {
+    def.cNvPrExtension = nonVisual.ext;
+    delete nonVisual.ext;
+  }
+  Object.assign(def, nonVisual);
   const cNvPrId = cNvPr ? attr(cNvPr, "id") : undefined;
   if (cNvPrId !== undefined) def.id = Number(cNvPrId);
   const cNvSpPr = nvSpPr ? findChild(nvSpPr, "p:cNvSpPr") : undefined;
@@ -297,6 +345,9 @@ export function extractPlaceholderDefinition(
     }
     if (Object.keys(locking).length > 0) def.locking = locking as ShapeLockingOptions;
   }
+  const textBox = cNvSpPr?.attributes?.["txBox"];
+  if (textBox !== undefined) def.textBox = parseOnOff(textBox) ?? false;
+  if (lockingEl === undefined) def.lockingPresent = false;
 
   // Position + spPr facets from shapePropertiesDesc.parse.
   const spPr = findChild(spEl, "p:spPr");
@@ -309,13 +360,18 @@ export function extractPlaceholderDefinition(
       if (spPrOpts.y !== undefined) def.y = spPrOpts.y;
       if (spPrOpts.width !== undefined) def.width = spPrOpts.width;
       if (spPrOpts.height !== undefined) def.height = spPrOpts.height;
+      if (spPrOpts.flipHorizontal !== undefined) def.flipHorizontal = spPrOpts.flipHorizontal;
+      if (spPrOpts.flipVertical !== undefined) def.flipVertical = spPrOpts.flipVertical;
+      if (spPrOpts.rotation !== undefined) def.rotation = spPrOpts.rotation;
       // rect is the placeholder geometry default — carry only non-rect.
       if (spPrOpts.customGeometry) {
         def.customGeometry = spPrOpts.customGeometry;
-      } else if (spPrOpts.geometry !== undefined) {
+      } else if (spPrOpts.geometry !== undefined && spPrOpts.geometry !== null) {
         const preset =
           typeof spPrOpts.geometry === "string" ? spPrOpts.geometry : spPrOpts.geometry.preset;
         if (preset !== "rect") def.geometry = spPrOpts.geometry;
+      } else {
+        def.geometry = null;
       }
       if (spPrOpts.fill !== undefined) def.fill = spPrOpts.fill;
       if (spPrOpts.outline !== undefined) def.outline = spPrOpts.outline;

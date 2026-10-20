@@ -93,6 +93,7 @@ export const DOCX_PARTS = {
     "word/embeddings/",
     "word/printerSettings/",
     "word/fonts/",
+    "word/activeX/activeX",
     "customXml/",
     "docProps/thumbnail.",
     "word/charts/style",
@@ -314,6 +315,12 @@ export const DOCX_PARTS = {
       presence: { kind: "conditional", flag: "macro-enabled package" },
     },
     {
+      opaque: true,
+      path: "word/attachedToolbars.bin",
+      contentType: "application/binary",
+      presence: { kind: "conditional", flag: "attached toolbar binary" },
+    },
+    {
       path: "word/vbaData.xml",
       contentType: "application/vnd.ms-word.vbaData+xml",
       presence: { kind: "conditional", flag: "macro-enabled package" },
@@ -331,6 +338,7 @@ export const PPTX_PARTS = {
     "ppt/ink/",
     "ppt/drawings/",
     "ppt/printerSettings/",
+    "ddp/",
     "_rels/",
     "ppt/_rels/",
     "ppt/slideMasters/_rels/",
@@ -346,6 +354,9 @@ export const PPTX_PARTS = {
   opaquePrefixes: [
     "ppt/embeddings/",
     "ppt/media/",
+    "ppt/ddp/",
+    "ddp/",
+    "ppt/activeX/activeX",
     "ppt/ink/",
     "ppt/printerSettings/",
     "ppt/drawings/vmlDrawing",
@@ -355,6 +366,9 @@ export const PPTX_PARTS = {
     "ppt/charts/chartEx",
     "ppt/charts/_rels/chartEx",
     "ppt/diagrams/drawing",
+    "ppt/fonts/",
+    "ppt/drawings/legacyDiagramText",
+    "ppt/legacyDocTextInfo.bin",
     "_xmlsignatures/",
     "docProps/thumbnail.",
   ],
@@ -689,6 +703,11 @@ export const XLSX_PARTS = {
       presence: { kind: "repeated", countFrom: "charts" },
     },
     {
+      path: "xl/charts/chartEx${i}.xml",
+      contentType: "application/vnd.ms-office.chartex+xml",
+      presence: { kind: "repeated", countFrom: "worksheet chartEx anchors" },
+    },
+    {
       path: "xl/charts/userShapes${i}.xml",
       contentType: "application/vnd.openxmlformats-officedocument.drawingml.chartUserShapes+xml",
       presence: { kind: "repeated", countFrom: "charts with user shapes" },
@@ -734,6 +753,12 @@ export const XLSX_PARTS = {
       path: "xl/metadata.xml",
       contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheetMetadata+xml",
       presence: { kind: "conditional", flag: "metadata" },
+    },
+    {
+      opaque: true,
+      path: "xl/metadata",
+      contentType: "application/binary",
+      presence: { kind: "conditional", flag: "custom workbook metadata binary" },
     },
     {
       path: "xl/xmlMaps.xml",

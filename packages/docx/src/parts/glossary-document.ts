@@ -7,14 +7,13 @@
  * @module
  */
 
+import { parseOnOff, Relationships } from "@office-open/core";
 import {
-  parseOnOff,
   partPathToRelsPath,
   RELATIONSHIP_TYPES,
   relativePartTarget,
-  Relationships,
   resolveRelationshipTarget,
-} from "@office-open/core";
+} from "@office-open/core/opc";
 import {
   parseSectionPropertiesEl,
   sectionPropertiesDesc,

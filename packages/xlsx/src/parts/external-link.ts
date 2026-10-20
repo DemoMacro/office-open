@@ -61,6 +61,18 @@ export interface ExternalSheetDataOptions {
   rows?: ExternalRowOptions[];
 }
 
+/** One verbatim source relationship of an external link part (OPC round-trip
+ * only — fresh authoring never produces these). */
+export interface ExternalLinkSourceRelationshipOptions {
+  /** Relationship id as written in the source .rels (e.g. "rId2"). */
+  rId: string;
+  /** Full relationship type URI. */
+  type: string;
+  /** Target exactly as written in the source .rels. */
+  target: string;
+  targetMode?: "External";
+}
+
 /** An external workbook link (xl/externalLinks/externalLinkN.xml). */
 export interface ExternalLinkOptions {
   /** Source part path (xl/externalLinks/externalLink3.xml) — round-trip only. */
@@ -79,6 +91,9 @@ export interface ExternalLinkOptions {
   oleTarget?: string;
   /** Source relationship type of the OLE target; round-trip only. */
   oleTargetTypeRaw?: string;
+  /** Source relationships the XML never references (producer orphans);
+   * round-trip only. */
+  orphanRelationships?: ExternalLinkSourceRelationshipOptions[];
 }
 
 /** One cached DDE value (CT_DdeValue — val element + type attribute). */
@@ -171,7 +186,7 @@ export const externalLinkDesc: CustomDescriptor<ExternalLinkOptions> = {
         bookParts.push("</definedNames>");
       }
 
-      if (book.sheetDataSet && book.sheetDataSet.length > 0) {
+      if (book.sheetDataSet) {
         bookParts.push("<sheetDataSet>");
         for (const sd of book.sheetDataSet) {
           const sdAttrs: Record<string, string | number | boolean | undefined> = {
@@ -355,7 +370,7 @@ export const externalLinkDesc: CustomDescriptor<ExternalLinkOptions> = {
           if (rows.length > 0) sd.rows = rows;
           sds.push(sd);
         }
-        if (sds.length > 0) book.sheetDataSet = sds;
+        book.sheetDataSet = sds;
       }
 
       result.externalBook = book;

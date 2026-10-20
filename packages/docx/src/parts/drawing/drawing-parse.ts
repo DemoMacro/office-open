@@ -12,12 +12,7 @@ import {
   type ChartSpaceOptions,
   type UniversalMeasure,
 } from "@office-open/core";
-import {
-  parseOnOff,
-  partPathToRelsPath,
-  RELATIONSHIP_TYPES,
-  resolveRelationshipTarget,
-} from "@office-open/core";
+import { parseOnOff } from "@office-open/core";
 import {
   blipDesc,
   customGeometryDesc,
@@ -32,6 +27,7 @@ import {
   pictureLockingDesc,
   presetGeometryDesc,
   shapePropertiesDesc,
+  stretchDesc,
 } from "@office-open/core";
 import {
   ChartExParseError,
@@ -42,6 +38,7 @@ import {
 import {
   tileDesc,
   connectorLockingDesc,
+  parseEndpointConnection,
   parseBackgroundFormatting,
   parseWholeE2oFormatting,
   scene3DDesc,
@@ -55,6 +52,11 @@ import type {
 } from "@office-open/core/drawing";
 import { parseNonVisualContentPartProperties } from "@office-open/core/drawing";
 import {
+  partPathToRelsPath,
+  RELATIONSHIP_TYPES,
+  resolveRelationshipTarget,
+} from "@office-open/core/opc";
+import {
   isBuiltinColorDefinition,
   isBuiltinLayoutDefinition,
   isBuiltinStyleDefinition,
@@ -63,7 +65,11 @@ import {
   parseLayoutDefinition,
   parseStyleDefinition,
 } from "@office-open/core/smartart";
-import type { SmartArtRawParts } from "@office-open/core/smartart";
+import type {
+  SmartArtRawMediaPart,
+  SmartArtRawParts,
+  SmartArtSourceRelationship,
+} from "@office-open/core/smartart";
 import {
   attr,
   attrBool,
@@ -75,6 +81,7 @@ import {
 } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import { parseRegisteredBodyChild } from "@parts/bodychildren";
+import type { BackgroundRawMediaOptions } from "@parts/document/document-background/document-background";
 import type { ChartExOptions } from "@parts/paragraph/run/chart-ex-run";
 import type { ChartOptions } from "@parts/paragraph/run/chart-run";
 import type {
@@ -144,6 +151,7 @@ interface SmartArtSourcePaths {
 }
 
 const smartArtSourcePaths = new WeakMap<object, SmartArtSourcePaths>();
+const smartArtSourceRelationships = new WeakMap<object, SmartArtSourceRelationship[]>();
 
 const userShapesSourcePaths = new WeakMap<object, string>();
 
@@ -272,6 +280,10 @@ export function takeSmartArtSourcePaths(options: object) {
   return smartArtSourcePaths.get(options);
 }
 
+export function takeSmartArtSourceRelationships(options: object) {
+  return smartArtSourceRelationships.get(options);
+}
+
 export function takeUserShapesSourcePath(options: object) {
   return userShapesSourcePaths.get(options);
 }
@@ -352,6 +364,27 @@ export type DrawingChild =
   | { contentPart: ContentPartOptions }
   | { unsupportedDrawing: UnsupportedDrawingOptions };
 
+/** Attach an MCE VML fallback to the DrawingML child that owns its Choice. */
+export function attachDrawingVmlFallback(
+  target: DrawingChild,
+  vmlFallback: string,
+  vmlFallbackMedia?: BackgroundRawMediaOptions[],
+): void {
+  if ("wpsShape" in target) {
+    target.wpsShape.vmlFallback = vmlFallback;
+    target.wpsShape.vmlFallbackMedia = vmlFallbackMedia;
+  } else if ("wpgGroup" in target) {
+    target.wpgGroup.vmlFallback = vmlFallback;
+    target.wpgGroup.vmlFallbackMedia = vmlFallbackMedia;
+  } else if ("wordprocessingCanvas" in target) {
+    target.wordprocessingCanvas.vmlFallback = vmlFallback;
+    target.wordprocessingCanvas.vmlFallbackMedia = vmlFallbackMedia;
+  } else if ("unsupportedDrawing" in target) {
+    target.unsupportedDrawing.vmlFallback = vmlFallback;
+    target.unsupportedDrawing.vmlFallbackMedia = vmlFallbackMedia;
+  }
+}
+
 /**
  * Parse a w:drawing element and dispatch to the correct parser
  * based on the graphicData URI.
@@ -411,10 +444,16 @@ interface AnchorInfo {
   floating?: Floating;
   altText?: DocPropertiesOptions;
   graphicFrameLocks?: GraphicFrameLocksOptions | null;
+  /** Whether the wrapper carried wp:docPr. */
+  docPropertiesPresent?: boolean;
   /** wp:effectExtent in EMUs. */
   effectExtent?: { left: number; top: number; right: number; bottom: number };
+  /** Whether the wrapper carried wp:effectExtent. */
+  effectExtentPresent?: boolean;
   extensionIds?: DrawingExtensionIds;
   inlineDistances?: NonNullable<MediaTransformation["inlineDistances"]>;
+  /** Whether the inline wrapper carried distance attributes. */
+  inlineDistancePresent?: boolean;
 }
 
 function readAnchorTransformation(info: AnchorInfo): MediaTransformation {
@@ -424,6 +463,10 @@ function readAnchorTransformation(info: AnchorInfo): MediaTransformation {
     ...(info.effectExtent ? { effectExtent: info.effectExtent } : {}),
   });
   if (info.inlineDistances) transformation.inlineDistances = info.inlineDistances;
+  if (info.inlineDistancePresent !== undefined)
+    transformation.inlineDistancePresent = info.inlineDistancePresent;
+  if (info.effectExtentPresent !== undefined)
+    transformation.effectExtentPresent = info.effectExtentPresent;
   return transformation;
 }
 
@@ -506,6 +549,8 @@ function readGrpSpLocks(cNvGrpSpPr: Element | undefined): GroupShapeLocksOptions
   if (!locks) return undefined;
   const result: GroupShapeLocksOptions = {};
   const a = locks.attributes ?? {};
+  const hasRealAttributes = Object.keys(a).some((name) => !name.startsWith("xmlns"));
+  if (!hasRealAttributes) return { emptyLocks: true };
   if (a["noGrp"] !== undefined) result.noGrp = parseOnOff(a["noGrp"]) ?? true;
   if (a["noUngrp"] !== undefined) result.noUngrp = parseOnOff(a["noUngrp"]) ?? true;
   if (a["noSelect"] !== undefined) result.noSelect = parseOnOff(a["noSelect"]) ?? true;
@@ -522,8 +567,12 @@ function readGrpSpLocks(cNvGrpSpPr: Element | undefined): GroupShapeLocksOptions
  * Returns `null` when the drawing has neither wrapper.
  */
 function parseAnchorOrInline(el: Element, ctx: DocxReadContext): AnchorInfo | null {
-  const inline = findFirst(el, "wp:inline");
-  const anchor = inline ? undefined : findFirst(el, "wp:anchor");
+  // Wrapper selection must inspect direct children only. An anchored text box
+  // can contain an inline picture in its nested w:txbxContent; searching the
+  // full subtree would mistake that inner wrapper for the drawing's wrapper
+  // and silently replace the outer wp:anchor with inline placement.
+  const inline = findChild(el, "wp:inline");
+  const anchor = inline ? undefined : findChild(el, "wp:anchor");
   const parent = inline ?? anchor;
   if (!parent) return null;
 
@@ -546,6 +595,7 @@ function parseAnchorOrInline(el: Element, ctx: DocxReadContext): AnchorInfo | nu
     if (left !== undefined) distances.left = left;
     if (right !== undefined) distances.right = right;
     if (Object.keys(distances).length > 0) info.inlineDistances = distances;
+    else info.inlineDistancePresent = false;
   }
 
   // Extent (EMU)
@@ -559,6 +609,7 @@ function parseAnchorOrInline(el: Element, ctx: DocxReadContext): AnchorInfo | nu
 
   // Effect extent (raw EMUs — round-tripped verbatim, never converted to pixels)
   const ee = findChild(parent, "wp:effectExtent");
+  if (!ee) info.effectExtentPresent = false;
   if (ee) {
     const effectPath = "wp:effectExtent";
     info.effectExtent = {
@@ -571,6 +622,7 @@ function parseAnchorOrInline(el: Element, ctx: DocxReadContext): AnchorInfo | nu
 
   // Alt text (wp:docPr) — keep the id too so it round-trips verbatim
   const docPr = findChild(parent, "wp:docPr");
+  if (!docPr && anchor) info.docPropertiesPresent = false;
   if (docPr) {
     const cNvPrOpts = parseNonVisualDrawingProperties(docPr);
     const id = attr(docPr, "id");
@@ -622,6 +674,7 @@ function parseAnchorOrInline(el: Element, ctx: DocxReadContext): AnchorInfo | nu
         findFirst(child, "wp:positionH") !== undefined,
     );
     const posH = findFirst(posHAlternate ?? anchor, "wp:positionH");
+    if (!posH) floating.horizontalPositionPresent = false;
     if (posH) {
       const hp = readPosition(posH);
       const fallback = readPositionFallback(posHAlternate, "wp:positionH");
@@ -637,6 +690,7 @@ function parseAnchorOrInline(el: Element, ctx: DocxReadContext): AnchorInfo | nu
         findFirst(child, "wp:positionV") !== undefined,
     );
     const posV = findFirst(posVAlternate ?? anchor, "wp:positionV");
+    if (!posV) floating.verticalPositionPresent = false;
     if (posV) {
       const vp = readPosition(posV);
       const fallback = readPositionFallback(posVAlternate, "wp:positionV");
@@ -649,6 +703,7 @@ function parseAnchorOrInline(el: Element, ctx: DocxReadContext): AnchorInfo | nu
     // Wrap (element name → TextWrappingType number) + optional side
     const wrap = readWrap(anchor, ctx, parent);
     if (wrap) floating.wrap = wrap;
+    else floating.wrapPresent = false;
 
     // Anchor-level flags (stringifyAnchor writes all of these)
     const allowOverlap = attrBool(anchor, "allowOverlap");
@@ -660,12 +715,13 @@ function parseAnchorOrInline(el: Element, ctx: DocxReadContext): AnchorInfo | nu
     const layoutInCell = attrBool(anchor, "layoutInCell");
     if (layoutInCell !== undefined) floating.layoutInCell = layoutInCell;
     const relativeHeight = attrNum(anchor, "relativeHeight");
-    if (relativeHeight !== undefined) floating.zIndex = relativeHeight;
+    floating.zIndex = relativeHeight ?? null;
 
     const hidden = attrBool(anchor, "hidden");
     if (hidden !== undefined) floating.hidden = hidden;
 
     const simplePos = findChild(anchor, "wp:simplePos");
+    if (!simplePos) floating.simplePosPresent = false;
     const simplePosX = attr(simplePos, "x");
     const simplePosY = attr(simplePos, "y");
     const coordinate = (value: string | undefined): number | UniversalMeasure | undefined => {
@@ -709,7 +765,7 @@ function parseAnchorOrInline(el: Element, ctx: DocxReadContext): AnchorInfo | nu
       floating.verticalSize = vs as RelativeSizeOptions;
     }
 
-    if (Object.keys(floating).length > 0) info.floating = floating as Floating;
+    if (anchor) info.floating = (Object.keys(floating).length > 0 ? floating : {}) as Floating;
   }
 
   return info;
@@ -791,6 +847,14 @@ export function parsePictureRun(
     if (rotWithShape !== undefined) imageOpts.rotWithShape = rotWithShape;
     const srcRect = readSourceRectangle(blipFill);
     if (srcRect) imageOpts.sourceRectangle = srcRect;
+    const stretch = findChild(blipFill, "a:stretch");
+    if (!stretch) {
+      imageOpts.stretch = false;
+    } else {
+      imageOpts.fillRectangle = findChild(stretch, "a:fillRect")
+        ? stretchDesc.parse(stretch, ctx)
+        : false;
+    }
     const tile = findChild(blipFill, "a:tile");
     if (tile) imageOpts.tile = tileDesc.parse(tile, ctx);
   }
@@ -798,10 +862,13 @@ export function parsePictureRun(
   // Picture non-visual properties (pic:nvPicPr/pic:cNvPr)
   const cNvPr = readPicCnvPr(el, ctx);
   if (cNvPr) imageOpts.nonVisualProperties = cNvPr;
+  else imageOpts.nonVisualPropertiesPresent = false;
+
+  const picSpPr = findFirst(el, "pic:spPr");
+  if (!picSpPr) imageOpts.shapePropertiesPresent = false;
 
   // Picture shape properties (pic:spPr): outline + fill + effects round-trip
   // via the shared core descriptors (bidirectional).
-  const picSpPr = findFirst(el, "pic:spPr");
   if (picSpPr) {
     const bwMode = attr(picSpPr, "bwMode");
     if (bwMode) {
@@ -824,6 +891,19 @@ export function parsePictureRun(
     if (scene3d) imageOpts.scene3d = scene3DDesc.parse(scene3d, ctx);
     const sp3d = findChild(picSpPr, "a:sp3d");
     if (sp3d) imageOpts.shape3d = shape3DDesc.parse(sp3d, ctx);
+    const picExtLst = findChild(picSpPr, "a:extLst");
+    if (picExtLst) {
+      const exts = (picExtLst.elements ?? [])
+        .filter((child) => child.type === "element" && child.name === "a:ext")
+        .map((child) => ({
+          uri: attr(child, "uri") ?? "",
+          content: (child.elements ?? []).map((e) => stringifyElement(e)).join("") || undefined,
+        }));
+      if (exts.length > 0)
+        (imageOpts as { shapeExtensions?: { uri: string; content?: string }[] }).shapeExtensions =
+          exts;
+      else imageOpts.shapeExtensions = [];
+    }
     // Rotation/flip live on pic:spPr/a:xfrm (ST_Angle in 1/60000 deg). Convert
     // to degrees to match the MediaTransformation API — createTransformation
     // multiplies back by 60_000 on stringify, so integer-degree rotation stays
@@ -853,6 +933,7 @@ export function parsePictureRun(
   // brightness/contrast/tint adjustments applied directly to the image data.
   const blipResult = blipDesc.parse(blip, ctx);
   if (blipResult.blipEffects) imageOpts.blipEffects = blipResult.blipEffects;
+  if (blipResult.ext !== undefined) (imageOpts as { blipExt?: string }).blipExt = blipResult.ext;
 
   // External linked source (a:blip @r:link) — resolve the URL from the
   // current part's rels so stringify re-registers the External relationship.
@@ -981,6 +1062,20 @@ function readSourceRectangle(parent: Element): SourceRectangleOptions | undefine
   // An empty <a:srcRect/> is meaningful (explicit no-crop reset), so return
   // the object even when no l/t/r/b attributes are present.
   return result as SourceRectangleOptions;
+}
+
+/**
+ * Read the stretch fill mode while preserving element-level markers:
+ * `false` means the source had bare `<a:stretch/>`; an object means it had
+ * `<a:fillRect/>`; `undefined` means `a:stretch` was absent.
+ */
+function readStretchFillRectangle(
+  parent: Element,
+  ctx: DocxReadContext,
+): SourceRectangleOptions | false | undefined {
+  const stretch = findChild(parent, "a:stretch");
+  if (!stretch) return false;
+  return findChild(stretch, "a:fillRect") ? stretchDesc.parse(stretch, ctx) : false;
 }
 
 /**
@@ -1118,6 +1213,8 @@ function parseWpsShapeCore(wspEl: Element, ctx: DocxReadContext): ShapeCoreOptio
   // Word 2010 can externalize text-box content into a w14:txbx part. Parse its
   // block children so the referenced XML part is rebuilt, not passed through.
   const txbx = findChild(wspEl, "wps:txbx");
+  const textBoxId = attrNum(txbx, "id");
+  if (textBoxId !== undefined) result.textBoxId = textBoxId;
   const textBoxRelationshipId = attr(txbx, "r:txbx");
   const textBoxPath = textBoxRelationshipId
     ? ctx.docx.partRefs.partTextBoxes.get(ctx.currentPart)?.get(textBoxRelationshipId)
@@ -1166,41 +1263,45 @@ function parseWpsShapeCore(wspEl: Element, ctx: DocxReadContext): ShapeCoreOptio
   if (normalEastAsianFlow !== undefined) result.normalEastAsianFlow = normalEastAsianFlow;
 
   // Non-visual shape properties: wps:cNvPr (id/name/descr) + a choice of
-  // wps:cNvSpPr (txBox marker) or wps:cNvCnPr (connector) — mutually exclusive.
-  const cNvPr = findChild(wspEl, "wps:cNvPr");
-  const cNvSpPr = findChild(wspEl, "wps:cNvSpPr");
-  const cNvCnPr = findChild(wspEl, "wps:cNvCnPr");
-  const txBox = cNvSpPr ? attr(cNvSpPr, "txBox") : undefined;
-  const spLocks = cNvSpPr ? findChild(cNvSpPr, "a:spLocks") : undefined;
-  const cxnSpLocks = cNvCnPr ? findChild(cNvCnPr, "a:cxnSpLocks") : undefined;
-  if (cNvPr || cNvSpPr || cNvCnPr || spLocks) {
-    const nvp: NonVisualShapePropertiesOptions = {};
-    if (cNvPr) {
-      const id = attrNum(cNvPr, "id");
-      const name = attr(cNvPr, "name");
-      const descr = attr(cNvPr, "descr");
-      const title = attr(cNvPr, "title");
-      const hidden = attrBool(cNvPr, "hidden");
-      if (id !== undefined) nvp.id = id;
-      if (name) nvp.name = name;
-      if (descr) nvp.description = descr;
-      if (title) nvp.title = title;
-      if (hidden !== undefined) nvp.hidden = hidden;
-    }
-    if (cNvCnPr) {
-      nvp.connector = true;
-      if (cxnSpLocks) nvp.connectorLocking = connectorLockingDesc.parse(cxnSpLocks, ctx);
-    } else if (txBox !== undefined || spLocks) {
-      if (txBox !== undefined) nvp.textBox = txBox;
-      if (spLocks) nvp.locking = shapeLockingDesc.parse(spLocks, ctx);
-    }
-    result.nonVisualProperties = nvp as NonVisualShapePropertiesOptions;
+  // wps:cNvSpPr (txBox marker) or wps:cNvCnPr (connector). Some producers emit
+  // both the transitional bare form and a legacy wrapped form.
+  const nonVisualWrapper = findChild(wspEl, "wps:nvSpPr");
+  const directProperties = parseWpsNonVisualProperties(
+    findChild(wspEl, "wps:cNvPr"),
+    findChild(wspEl, "wps:cNvSpPr"),
+    findChild(wspEl, "wps:cNvCnPr"),
+    ctx,
+  );
+  const wrappedProperties = nonVisualWrapper
+    ? parseWpsNonVisualProperties(
+        findChild(nonVisualWrapper, "wps:cNvPr"),
+        findChild(nonVisualWrapper, "wps:cNvSpPr"),
+        findChild(nonVisualWrapper, "wps:cNvCnPr"),
+        ctx,
+      )
+    : undefined;
+  if (directProperties) {
+    result.nonVisualProperties = directProperties;
+    if (wrappedProperties) result.wrappedNonVisualProperties = wrappedProperties;
+  } else if (wrappedProperties) {
+    result.nonVisualProperties = wrappedProperties;
+    result.nonVisualPropertiesWrapped = true;
+  } else {
+    result.nonVisualPropertiesPresent = false;
   }
 
   // Shape properties (wps:spPr) — fill/outline/effects/geometry round-trip via
   // the shared core descriptors (bidirectional) so spPr stays structured.
   const spPr = findChild(wspEl, "wps:spPr");
+  if (!spPr) result.shapePropertiesPresent = false;
   if (spPr) {
+    result.transformPresent = findChild(spPr, "a:xfrm") !== undefined;
+    const offset = findChild(findChild(spPr, "a:xfrm"), "a:off");
+    const offsetX = attrNum(offset, "x");
+    const offsetY = attrNum(offset, "y");
+    if (offsetX !== undefined && offsetY !== undefined) {
+      result.shapeOffset = { x: offsetX, y: offsetY };
+    }
     const bwMode = attr(spPr, "bwMode");
     if (bwMode) result.blackWhiteMode = bwMode as ShapeCoreOptions["blackWhiteMode"];
     const fill = readShapeFill(spPr, ctx);
@@ -1225,6 +1326,7 @@ function parseWpsShapeCore(wspEl: Element, ctx: DocxReadContext): ShapeCoreOptio
 
   // Body properties (wps:bodyPr)
   const bodyPr = findChild(wspEl, "wps:bodyPr");
+  if (!bodyPr) result.bodyPropertiesPresent = false;
   if (bodyPr) result.bodyProperties = parseBodyProperties(bodyPr, ctx);
 
   // Shape style (wps:style) — theme references (lnRef/fillRef/effectRef/fontRef)
@@ -1239,6 +1341,38 @@ function parseWpsShapeCore(wspEl: Element, ctx: DocxReadContext): ShapeCoreOptio
  * EMU values intact (no pixel rounding) so group child coordinates survive
  * round-trip without drift.
  */
+function parseWpsNonVisualProperties(
+  cNvPr: Element | undefined,
+  cNvSpPr: Element | undefined,
+  cNvCnPr: Element | undefined,
+  ctx: DocxReadContext,
+): NonVisualShapePropertiesOptions | undefined {
+  if (!cNvPr && !cNvSpPr && !cNvCnPr) return undefined;
+  const properties: NonVisualShapePropertiesOptions = {};
+  if (cNvPr) {
+    Object.assign(properties, parseNonVisualDrawingProperties(cNvPr));
+    const id = attrNum(cNvPr, "id");
+    if (id !== undefined) properties.id = id;
+    const hyperlink = readCnvPrHyperlink(cNvPr, ctx);
+    if (hyperlink) properties.hyperlink = hyperlink;
+  }
+  if (cNvCnPr) {
+    properties.connector = true;
+    const locks = findChild(cNvCnPr, "a:cxnSpLocks");
+    if (locks) properties.connectorLocking = connectorLockingDesc.parse(locks, ctx);
+    const startConnection = findChild(cNvCnPr, "a:stCxn");
+    const endConnection = findChild(cNvCnPr, "a:endCxn");
+    if (startConnection) properties.startConnection = parseEndpointConnection(startConnection);
+    if (endConnection) properties.endConnection = parseEndpointConnection(endConnection);
+  } else if (cNvSpPr) {
+    const textBox = attr(cNvSpPr, "txBox");
+    if (textBox !== undefined) properties.textBox = textBox;
+    const locks = findChild(cNvSpPr, "a:spLocks");
+    if (locks) properties.locking = shapeLockingDesc.parse(locks, ctx);
+  }
+  return properties;
+}
+
 function readChildTransformation(spPr: Element | undefined): MediaTransformation {
   const result: MediaTransformation = { width: 0, height: 0 };
   if (!spPr) return result;
@@ -1332,6 +1466,10 @@ function parsePicChildMediaData(picEl: Element, ctx: DocxReadContext): MediaData
   if (!mediaPath) return undefined;
   const data = ctx.docx.doc.getRaw(mediaPath);
   if (!data) return undefined;
+  const groupCompression = attr(blip, "cstate");
+  if (groupCompression !== undefined && !BLIP_COMPRESSIONS.has(groupCompression)) {
+    invalidDrawingModel(ctx, blip, "a:blip/@cstate", `unknown compression: ${groupCompression}`);
+  }
 
   const spPr = findChild(picEl, "pic:spPr");
   const result: MediaData = {
@@ -1341,17 +1479,34 @@ function parsePicChildMediaData(picEl: Element, ctx: DocxReadContext): MediaData
     ...(mediaPath.startsWith("word/media/") ? {} : { partPath: mediaPath }),
     data,
     transformation: readChildTransformation(spPr),
+    ...(groupCompression !== undefined ? { compression: groupCompression as BlipCompression } : {}),
   };
   const blipFill = findChild(picEl, "pic:blipFill");
   if (blipFill) {
     const srcRect = readSourceRectangle(blipFill);
     if (srcRect) result.sourceRectangle = srcRect;
+    const fillRectangle = readStretchFillRectangle(blipFill, ctx);
+    if (fillRectangle !== undefined) result.fillRectangle = fillRectangle;
   }
   const cNvPr = readPicCnvPr(picEl, ctx);
   if (cNvPr) result.nonVisualProperties = cNvPr;
+  else result.nonVisualPropertiesPresent = false;
+  if (!spPr) result.shapePropertiesPresent = false;
+  const groupUseLocalDpi = readBlipUseLocalDpi(blip);
+  if (groupUseLocalDpi !== undefined) {
+    result.useLocalDpi = groupUseLocalDpi.value;
+    result.useLocalDpiUri = groupUseLocalDpi.uri;
+  }
   // Grouped picture spPr (fill/outline) rides on GroupCommonMediaData so it
   // round-trips through stringifyGroupChild → stringifyShapeProps.
   if (spPr) {
+    const groupBwMode = attr(spPr, "bwMode");
+    if (groupBwMode !== undefined) {
+      if (!isBlackWhiteMode(groupBwMode)) {
+        invalidDrawingModel(ctx, spPr, "pic:spPr/@bwMode", `unknown mode: ${groupBwMode}`);
+      }
+      result.blackWhiteMode = groupBwMode as BlackWhiteMode;
+    }
     const fill = readShapeFill(spPr, ctx);
     if (fill) (result as MediaData & GroupCommonMediaData).fill = fill;
     const ln = findChild(spPr, "a:ln");
@@ -1395,6 +1550,7 @@ function parseWpsShapeDrawing(
   const shapeXfrm = findChild(findChild(wsp, "wps:spPr"), "a:xfrm");
   const shapeFlipHorizontal = attrBool(shapeXfrm, "flipH");
   const shapeFlipVertical = attrBool(shapeXfrm, "flipV");
+  const shapeRotation = attrNum(shapeXfrm, "rot");
   const shapeExtentEl = findChild(shapeXfrm, "a:ext");
   const shapeExtentWidth = attrNum(shapeExtentEl, "cx");
   const shapeExtentHeight = attrNum(shapeExtentEl, "cy");
@@ -1415,8 +1571,12 @@ function parseWpsShapeDrawing(
   }
   if (shapeFlipHorizontal !== undefined) shape.transformation.flipHorizontal = shapeFlipHorizontal;
   if (shapeFlipVertical !== undefined) shape.transformation.flipVertical = shapeFlipVertical;
+  if (shapeRotation !== undefined) shape.transformation.rotation = parseAngle(shapeRotation);
   if (info.floating) shape.floating = info.floating;
   if (info.altText) shape.altText = info.altText;
+  if (info.docPropertiesPresent !== undefined) {
+    shape.docPropertiesPresent = info.docPropertiesPresent;
+  }
   if (info.graphicFrameLocks !== undefined) shape.graphicFrameLocks = info.graphicFrameLocks;
   if (info.extensionIds) shape.extensionIds = info.extensionIds;
   if (graphicDataUri !== undefined && graphicDataUri !== WPS_URI)
@@ -1437,29 +1597,70 @@ function parseWpgGroupDrawing(
 
   const info = parseAnchorOrInline(el, ctx) ?? {};
   const grpSpPr = findChild(wgp, "wpg:grpSpPr");
-  const { childOffsetX, childOffsetY, childExtentWidth, childExtentHeight } =
-    readGroupCoords(grpSpPr);
+  const {
+    childOffsetX,
+    childOffsetY,
+    childOffsetPresent,
+    childExtentWidth,
+    childExtentHeight,
+    childExtentPresent,
+  } = readGroupCoords(grpSpPr);
+  const groupXfrm = findChild(grpSpPr, "a:xfrm");
+  const groupFlipHorizontal = attrBool(groupXfrm, "flipH");
+  const groupFlipVertical = attrBool(groupXfrm, "flipV");
+  const groupRotation = attrNum(groupXfrm, "rot");
+  const groupExtentEl = findChild(groupXfrm, "a:ext");
+  const groupExtentWidth = attrNum(groupExtentEl, "cx");
+  const groupExtentHeight = attrNum(groupExtentEl, "cy");
 
   const group: GroupOptions = {
     children: parseGroupChildren(wgp, ctx),
     transformation: readAnchorTransformation(info),
   };
+  if (
+    groupExtentWidth !== undefined &&
+    groupExtentHeight !== undefined &&
+    (groupExtentWidth !== Number(info.width) || groupExtentHeight !== Number(info.height))
+  ) {
+    group.groupExtent = {
+      width: groupExtentWidth,
+      height: groupExtentHeight,
+    };
+  }
   if (childOffsetX !== undefined) group.childOffsetX = childOffsetX;
   if (childOffsetY !== undefined) group.childOffsetY = childOffsetY;
+  if (childOffsetPresent) group.childOffsetPresent = childOffsetPresent;
   if (childExtentWidth !== undefined) group.childExtentWidth = childExtentWidth;
   if (childExtentHeight !== undefined) group.childExtentHeight = childExtentHeight;
+  if (childExtentPresent) group.childExtentPresent = childExtentPresent;
+  if (groupFlipHorizontal !== undefined) group.transformation.flipHorizontal = groupFlipHorizontal;
+  if (groupFlipVertical !== undefined) group.transformation.flipVertical = groupFlipVertical;
+  if (groupRotation !== undefined) group.transformation.rotation = parseAngle(groupRotation);
   if (info.floating) group.floating = info.floating;
   if (info.altText) group.altText = info.altText;
   if (info.graphicFrameLocks !== undefined) group.graphicFrameLocks = info.graphicFrameLocks;
   if (info.extensionIds) group.extensionIds = info.extensionIds;
   const grpSpLocks = readGrpSpLocks(findChild(wgp, "wpg:cNvGrpSpPr"));
   if (grpSpLocks) group.groupShapeLocks = grpSpLocks;
+  const groupBwMode = attr(grpSpPr, "bwMode");
+  if (groupBwMode) group.blackWhiteMode = groupBwMode as GroupOptions["blackWhiteMode"];
   // Group shape props (grpSpPr): fill + effects round-trip via shared descriptors.
   if (grpSpPr) {
     const fill = readShapeFill(grpSpPr, ctx);
     if (fill) group.fill = fill;
     const effectLst = findChild(grpSpPr, "a:effectLst");
     if (effectLst) group.effects = effectListDesc.parse(effectLst, ctx);
+    const extensionList = findChild(grpSpPr, "a:extLst");
+    if (extensionList) {
+      group.extensions = (extensionList.elements ?? [])
+        .filter((child) => child.name === "a:ext")
+        .map((extension) => ({
+          uri: attr(extension, "uri") ?? "",
+          ...(extension.elements?.length
+            ? { content: (extension.elements ?? []).map(stringifyElement).join("") }
+            : {}),
+        }));
+    }
   }
 
   return { wpgGroup: group as GroupOptions };
@@ -1516,8 +1717,10 @@ function parseWordprocessingCanvasDrawing(
 function readGroupCoords(grpSpPr: Element | undefined): {
   childOffsetX?: number;
   childOffsetY?: number;
+  childOffsetPresent?: boolean;
   childExtentWidth?: number;
   childExtentHeight?: number;
+  childExtentPresent?: boolean;
 } {
   if (!grpSpPr) return {};
   const xfrm = findChild(grpSpPr, "a:xfrm");
@@ -1525,15 +1728,19 @@ function readGroupCoords(grpSpPr: Element | undefined): {
   const result: {
     childOffsetX?: number;
     childOffsetY?: number;
+    childOffsetPresent?: boolean;
     childExtentWidth?: number;
     childExtentHeight?: number;
+    childExtentPresent?: boolean;
   } = {};
   const off = findChild(xfrm, "a:chOff");
+  if (off) result.childOffsetPresent = true;
   if (off?.attributes) {
     result.childOffsetX = Number(off.attributes["x"] ?? 0);
     result.childOffsetY = Number(off.attributes["y"] ?? 0);
   }
   const ext = findChild(xfrm, "a:chExt");
+  if (ext) result.childExtentPresent = true;
   if (ext?.attributes) {
     result.childExtentWidth = Number(ext.attributes["cx"] ?? 0);
     result.childExtentHeight = Number(ext.attributes["cy"] ?? 0);
@@ -1624,6 +1831,12 @@ function bridgeChartExternalData(
   if (!data) return;
   ext.data = data;
   ext.fileName = embeddingPath.split("/").pop() ?? embeddingPath;
+  const relationshipType = attr(rel, "Type");
+  ext.relationshipType = relationshipType?.endsWith("/package")
+    ? "package"
+    : relationshipType?.endsWith("/oleObject")
+      ? "oleObject"
+      : undefined;
 }
 
 /**
@@ -1655,7 +1868,9 @@ function bridgeChartUserShapes(
   if (!userShapesPath || us.anchors.length > 0) return;
   const bodyEl = ctx.docx.doc.get(userShapesPath);
   if (!bodyEl) return;
-  us.anchors = userShapesDesc.parse(bodyEl, ctx).anchors;
+  const parsed = userShapesDesc.parse(bodyEl, ctx);
+  us.anchors = parsed.anchors;
+  if (parsed.rootElement !== undefined) us.rootElement = parsed.rootElement;
 }
 
 function relationshipTargetMode(rId: string, ctx: DocxReadContext): "External" | undefined {
@@ -1682,6 +1897,8 @@ function readCnvPrHyperlink(
     hyperlink.clickTargetMode = relationshipTargetMode(clickRid, ctx);
     const tooltip = attr(clickEl, "tooltip");
     if (tooltip) hyperlink.clickTooltip = tooltip;
+    const clickTargetFrame = attr(clickEl, "tgtFrame");
+    if (clickTargetFrame) hyperlink.clickTargetFrame = clickTargetFrame;
   }
   const hoverEl = findChild(el, "a:hlinkHover");
   const hoverRid = attr(hoverEl, "r:id");
@@ -1691,6 +1908,8 @@ function readCnvPrHyperlink(
     hyperlink.hoverTargetMode = relationshipTargetMode(hoverRid, ctx);
     const tooltip = attr(hoverEl, "tooltip");
     if (tooltip) hyperlink.hoverTooltip = tooltip;
+    const hoverTargetFrame = attr(hoverEl, "tgtFrame");
+    if (hoverTargetFrame) hyperlink.hoverTargetFrame = hoverTargetFrame;
   }
   return hyperlink.click !== undefined || hyperlink.hover !== undefined ? hyperlink : undefined;
 }
@@ -1734,15 +1953,11 @@ function parseGroupGraphicFrame(
 
   const cNvPr = findChild(el, "wpg:cNvPr") ?? findChild(el, "wp:cNvPr");
   if (cNvPr) {
-    const nvp: NonVisualPropertiesOptions = {};
+    const nvp: NonVisualPropertiesOptions = {
+      ...parseNonVisualDrawingProperties(cNvPr),
+    };
     const id = attrNum(cNvPr, "id");
-    const name = attr(cNvPr, "name");
-    const descr = attr(cNvPr, "descr");
-    const title = attr(cNvPr, "title");
     if (id !== undefined) nvp.id = id;
-    if (name) nvp.name = name;
-    if (descr) nvp.description = descr;
-    if (title) nvp.title = title;
     if (Object.keys(nvp).length > 0) md.nonVisualProperties = nvp;
   }
   const cNvFrPr = findChild(el, "wpg:cNvFrPr") ?? findChild(el, "wp:cNvFrPr");
@@ -1797,15 +2012,11 @@ function parseGroupChartExGraphicFrame(
   };
   const cNvPr = findChild(el, "wpg:cNvPr") ?? findChild(el, "wp:cNvPr");
   if (cNvPr) {
-    const nvp: NonVisualPropertiesOptions = {};
+    const nvp: NonVisualPropertiesOptions = {
+      ...parseNonVisualDrawingProperties(cNvPr),
+    };
     const id = attrNum(cNvPr, "id");
-    const name = attr(cNvPr, "name");
-    const descr = attr(cNvPr, "descr");
-    const title = attr(cNvPr, "title");
     if (id !== undefined) nvp.id = id;
-    if (name) nvp.name = name;
-    if (descr) nvp.description = descr;
-    if (title) nvp.title = title;
     if (Object.keys(nvp).length > 0) md.nonVisualProperties = nvp;
   }
   const cNvFrPr = findChild(el, "wpg:cNvFrPr") ?? findChild(el, "wp:cNvFrPr");
@@ -1863,19 +2074,40 @@ interface NonVisualContentPartNv extends NonVisualPropertiesOptions {
  */
 function parseNestedGroup(grpSpEl: Element, ctx: DocxReadContext): GroupMediaData {
   const grpSpPr = findChild(grpSpEl, "wpg:grpSpPr");
-  const { childOffsetX, childOffsetY, childExtentWidth, childExtentHeight } =
-    readGroupCoords(grpSpPr);
+  const cNvPr = findChild(grpSpEl, "wpg:cNvPr");
+  const {
+    childOffsetX,
+    childOffsetY,
+    childOffsetPresent,
+    childExtentWidth,
+    childExtentHeight,
+    childExtentPresent,
+  } = readGroupCoords(grpSpPr);
   const result: GroupMediaData = {
     type: "wpg",
     transformation: readChildTransformation(grpSpPr),
     children: parseGroupChildren(grpSpEl, ctx),
   };
+  const nestedProperties = parseNonVisualDrawingProperties(cNvPr);
+  const nestedId = attrNum(cNvPr, "id");
+  if (nestedId === undefined && Object.keys(nestedProperties).length === 0) {
+    result.nonVisualPropertiesPresent = false;
+  } else {
+    result.nonVisualProperties = {
+      ...(nestedId !== undefined ? { id: nestedId } : {}),
+      ...nestedProperties,
+    };
+  }
   if (childOffsetX !== undefined) result.childOffsetX = childOffsetX;
   if (childOffsetY !== undefined) result.childOffsetY = childOffsetY;
+  if (childOffsetPresent) result.childOffsetPresent = childOffsetPresent;
   if (childExtentWidth !== undefined) result.childExtentWidth = childExtentWidth;
   if (childExtentHeight !== undefined) result.childExtentHeight = childExtentHeight;
+  if (childExtentPresent) result.childExtentPresent = childExtentPresent;
   const grpSpLocks = readGrpSpLocks(findChild(grpSpEl, "wpg:cNvGrpSpPr"));
   if (grpSpLocks) result.groupShapeLocks = grpSpLocks;
+  const blackWhiteMode = grpSpPr ? attr(grpSpPr, "bwMode") : undefined;
+  if (blackWhiteMode) result.blackWhiteMode = blackWhiteMode as GroupMediaData["blackWhiteMode"];
   if (grpSpPr) {
     const fill = readShapeFill(grpSpPr, ctx);
     if (fill) result.fill = fill;
@@ -2103,7 +2335,7 @@ function parseChartDrawing(el: Element, ctx: DocxReadContext): { chart: ChartOpt
 }
 
 function parseChartExDrawing(el: Element, ctx: DocxReadContext): { chartEx: ChartExOptions } {
-  const chartRef = findFirst(el, "cx:chart");
+  const chartRef = findChartExReference(el);
   if (!chartRef) {
     throw new DocxParseError(
       "ChartEx drawing is missing its chart reference",
@@ -2163,6 +2395,20 @@ function parseChartExDrawing(el: Element, ctx: DocxReadContext): { chartEx: Char
   return { chartEx: opts };
 }
 
+/**
+ * The graphicData URI already proves this is ChartEx. Match by local name so a
+ * producer may bind the ChartEx namespace to any prefix.
+ */
+function findChartExReference(el: Element): Element | undefined {
+  for (const child of el.elements ?? []) {
+    if (child.type !== "element") continue;
+    if ((child.name?.split(":").pop() ?? child.name) === "chart") return child;
+    const descendant = findChartExReference(child);
+    if (descendant) return descendant;
+  }
+  return undefined;
+}
+
 // ── SmartArt parsing ────────────────────────────────────────────────────────
 
 function parseSmartArtDrawing(
@@ -2195,6 +2441,8 @@ function parseSmartArtDrawing(
     dataRels: partPathToRelsPath(dataPath),
   };
   smartArtSourcePaths.set(opts, sourcePaths);
+  const sourceRelationships = readChartSourceRelationships(dataPath, ctx);
+  if (sourceRelationships.length > 0) smartArtSourceRelationships.set(opts, sourceRelationships);
 
   // Verbatim source parts: byte-exact round-trip outranks the modeled fold.
   const raw = readSmartArtRawParts(dataPath, ctx, sourcePaths);
@@ -2274,7 +2522,7 @@ function readSmartArtRawParts(
   const relsPath = partPathToRelsPath(dataPath);
   const relsEl = ctx.docx.doc.get(relsPath);
   if (relsEl) {
-    const media: { fileName: string; data: Uint8Array }[] = [];
+    const media: SmartArtRawMediaPart[] = [];
     // Walk the rels as elements (not a regex scan) so attribute order,
     // single quotes and spacing variants all resolve.
     for (const rel of relsEl.elements ?? []) {
@@ -2290,6 +2538,8 @@ function readSmartArtRawParts(
           consumePartPath(ctx, drawingPath);
           const bytes = ctx.docx.doc.getRaw(drawingPath);
           if (bytes) raw.drawing = bytes;
+          raw.drawingRels = ctx.docx.doc.getRaw(partPathToRelsPath(drawingPath));
+          consumePartPath(ctx, partPathToRelsPath(drawingPath));
         }
         drawingRelationship = true;
         continue;
@@ -2301,7 +2551,11 @@ function readSmartArtRawParts(
       const mediaPath = resolveRelationshipTarget(dataPath, target);
       const bytes = ctx.docx.doc.getRaw(mediaPath);
       if (bytes) {
-        media.push({ fileName: mediaPath.split("/").pop() ?? mediaPath, data: bytes });
+        media.push({
+          fileName: mediaPath.split("/").pop() ?? mediaPath,
+          data: bytes,
+          partPath: mediaPath,
+        });
       }
     }
     if (media.length > 0) raw.media = media;
@@ -2318,6 +2572,8 @@ function readSmartArtRawParts(
       consumePartPath(ctx, drawingPath);
       const bytes = ctx.docx.doc.getRaw(drawingPath);
       if (bytes) raw.drawing = bytes;
+      raw.drawingRels = ctx.docx.doc.getRaw(partPathToRelsPath(drawingPath));
+      consumePartPath(ctx, partPathToRelsPath(drawingPath));
     }
   }
   raw.drawingRelationship = drawingRelationship;

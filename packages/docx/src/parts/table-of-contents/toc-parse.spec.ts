@@ -61,6 +61,59 @@ describe("parseTocFieldFromElements", () => {
   });
 });
 
+describe("parseBody revision and shared-run TOC fields", () => {
+  it("does not treat a generic SDT wrapper as a second TOC", () => {
+    const inner =
+      '<w:sdt><w:sdtPr><w:id w:val="5983877"/></w:sdtPr>' +
+      '<w:sdtContent><w:p><w:r><w:fldChar w:fldCharType="begin"/></w:r>' +
+      '<w:r><w:instrText xml:space="preserve"> TOC \\o "1-3" </w:instrText></w:r>' +
+      '<w:r><w:fldChar w:fldCharType="separate"/></w:r></w:p>' +
+      "<w:p><w:r><w:t>Chapter</w:t></w:r></w:p>" +
+      '<w:p><w:r><w:fldChar w:fldCharType="end"/></w:r></w:p></w:sdtContent></w:sdt>';
+    const outer =
+      `<w:sdt><w:sdtPr><w:id w:val="12652376"/></w:sdtPr>` +
+      `<w:sdtContent>${inner}</w:sdtContent></w:sdt>`;
+    const root = parseXml(outer).elements?.[0];
+    if (!root) throw new Error("parsed SDT has no root element");
+    expect(
+      parseToc(root, readCtx, (elements) =>
+        elements.map((element) => ({ paragraph: parseTocFieldFromElements([element]) as never })),
+      ),
+    ).toBeUndefined();
+  });
+
+  it("does not aggregate a TOC field hidden in a moved-from block", () => {
+    const xml = `<w:body>
+      <w:p><w:moveFrom><w:r><w:fldChar w:fldCharType="begin"/></w:r>
+        <w:r><w:instrText xml:space="preserve"> TOC \\o "1-3" </w:instrText></w:r>
+        <w:r><w:fldChar w:fldCharType="separate"/></w:r></w:moveFrom></w:p>
+      <w:p><w:r><w:fldChar w:fldCharType="end"/></w:r></w:p>
+    </w:body>`;
+    const body = parseXml(xml).elements?.[0];
+    if (!body) throw new Error("parsed document has no root element");
+    const children = parseBody(body, readCtx)[0]?.children ?? [];
+    expect(children[0]).toHaveProperty("rawXml");
+    expect(children[0]).not.toHaveProperty("toc");
+  });
+
+  it("does not duplicate result text shared with the first field-control run", () => {
+    const xml = `<w:body>
+      <w:p><w:pPr><w:pStyle w:val="TOC1"/></w:pPr><w:r><w:rPr><w:b/></w:rPr><w:fldChar w:fldCharType="begin"/>
+        <w:instrText xml:space="preserve">TOC \\o "1-3"</w:instrText>
+        <w:fldChar w:fldCharType="separate"/><w:t>First</w:t></w:r></w:p>
+      <w:p><w:r><w:t>2</w:t><w:fldChar w:fldCharType="end"/></w:r></w:p>
+    </w:body>`;
+    const body = parseXml(xml).elements?.[0];
+    if (!body) throw new Error("parsed document has no root element");
+    const child = parseBody(body, readCtx)[0]?.children[0];
+    if (!child || !("toc" in child)) throw new Error("parsed document has no TOC child");
+    const toc = child.toc;
+    expect(toc?.headResultInFirstRun).toBe(true);
+    expect(JSON.stringify(toc?.entries?.[0])).not.toContain("First");
+    expect(toc?.headRunsXml).toContain("First");
+  });
+});
+
 describe("parseToc", () => {
   it("parses an SDT-wrapped TOC by docPartGallery", () => {
     const xml = `<w:sdt>
@@ -76,6 +129,46 @@ describe("parseToc", () => {
     expect(result?.alias).toBe("Contents");
     expect(result?.headingStyleRange).toBe("1-3");
     expect(result?.hyperlink).toBe(true);
+  });
+
+  it("keeps gallery-only content as a generic SDT", () => {
+    const xml = `<w:sdt>
+      <w:sdtPr><w:docPartObj><w:docPartGallery w:val="Table of Contents"/></w:docPartObj></w:sdtPr>
+      <w:sdtContent><w:p><w:r><w:t>Custom gallery content</w:t></w:r></w:p></w:sdtContent>
+    </w:sdt>`;
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    expect(parseToc(el, readCtx)).toBeUndefined();
+  });
+
+  it("recognizes a deleted TOC instruction", () => {
+    const xml = `<w:sdt>
+      <w:sdtPr><w:docPartObj><w:docPartGallery w:val="Table of Contents"/></w:docPartObj></w:sdtPr>
+      <w:sdtContent><w:p>
+        <w:r><w:fldChar w:fldCharType="begin"/></w:r>
+        <w:r><w:delInstrText> TOC \\o "1-3" </w:delInstrText></w:r>
+        <w:r><w:fldChar w:fldCharType="separate"/></w:r>
+      </w:p></w:sdtContent>
+    </w:sdt>`;
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    expect(parseToc(el, readCtx)?.headingStyleRange).toBe("1-3");
+  });
+
+  it("preserves the lexical value of w:docPartUnique", () => {
+    const xml = `<w:sdt>
+      <w:sdtPr><w:docPartObj><w:docPartGallery w:val="Table of Contents"/><w:docPartUnique w:val="0"/></w:docPartObj></w:sdtPr>
+      <w:sdtContent><w:p><w:r><w:fldChar w:fldCharType="begin"/></w:r>
+        <w:r><w:instrText xml:space="preserve"> TOC </w:instrText></w:r>
+        <w:r><w:fldChar w:fldCharType="end"/></w:r></w:p></w:sdtContent>
+    </w:sdt>`;
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const result = parseToc(el, readCtx);
+
+    expect(result?.docPartUnique).toBe(true);
+    expect(result?.docPartUniqueRaw).toBe("0");
+    expect(stringifyTableOfContents(undefined, result)).toContain('<w:docPartUnique w:val="0"/>');
   });
 
   it("captures rendered entries inside an SDT-wrapped TOC", () => {
@@ -94,6 +187,100 @@ describe("parseToc", () => {
     // 2 rendered entries + the bare field-closing paragraph (the stringify
     // path injects the end run back into it, keeping the paragraph count).
     expect(result?.entries).toHaveLength(3);
+  });
+
+  it("does not duplicate deferred outer TOC controls inside an entry", () => {
+    const xml = `<w:sdt>
+      <w:sdtPr><w:docPartObj><w:docPartGallery w:val="Table of Contents"/></w:docPartObj></w:sdtPr>
+      <w:sdtContent>
+        <w:p><w:ins w:id="21"><w:r><w:fldChar w:fldCharType="begin"/></w:r>
+          <w:r><w:instrText xml:space="preserve"> TOC \\o "1-3" </w:instrText></w:r>
+          <w:r><w:fldChar w:fldCharType="separate"/></w:r>
+          <w:ins w:id="22"><w:r><w:t>Heading One</w:t></w:r></w:ins></w:ins></w:p>
+        <w:p><w:r><w:fldChar w:fldCharType="end"/></w:r></w:p>
+      </w:sdtContent>
+    </w:sdt>`;
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const result = parseToc(el, readCtx, (els, ctx) =>
+      els.map((element) => parseSectionChild(element, ctx)),
+    );
+    expect(result).toBeDefined();
+    expect(JSON.stringify(result?.entries ?? [])).not.toContain('fldCharType="begin"');
+    expect(result?.headRunsXml).toBeDefined();
+    expect(result?.headRunsXml).toMatch(/^<w:ins\b/);
+    expect(result?.headRunsXml).toMatch(/<\/w:ins>$/);
+  });
+
+  it("does not duplicate deferred deleted TOC controls inside an entry", () => {
+    const xml = `<w:sdt>
+      <w:sdtPr><w:docPartObj><w:docPartGallery w:val="Table of Contents"/></w:docPartObj></w:sdtPr>
+      <w:sdtContent>
+        <w:p><w:del w:id="21"><w:r><w:fldChar w:fldCharType="begin"/></w:r>
+          <w:r><w:delInstrText xml:space="preserve"> TOC \\o "1-3" </w:delInstrText></w:r>
+          <w:r><w:fldChar w:fldCharType="separate"/></w:r>
+          <w:ins w:id="22"><w:r><w:t>Heading One</w:t></w:r></w:ins></w:del></w:p>
+        <w:p><w:r><w:fldChar w:fldCharType="end"/></w:r></w:p>
+      </w:sdtContent>
+    </w:sdt>`;
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const result = parseToc(el, readCtx, (els, ctx) =>
+      els.map((element) => parseSectionChild(element, ctx)),
+    );
+    expect(JSON.stringify(result?.entries ?? [])).not.toContain('fldCharType="begin"');
+  });
+
+  it("does not inject a second field end when the last entry already closes the field", () => {
+    const fieldEnd = '<w:r><w:fldChar w:fldCharType="end"/></w:r>';
+    const xml = `<w:sdt>
+      <w:sdtPr><w:docPartObj><w:docPartGallery w:val="Table of Contents"/></w:docPartObj></w:sdtPr>
+      <w:sdtContent>
+        <w:p><w:r><w:fldChar w:fldCharType="begin"/></w:r>
+          <w:r><w:instrText xml:space="preserve"> TOC \\o "1-3" </w:instrText></w:r>
+          <w:r><w:fldChar w:fldCharType="separate"/></w:r></w:p>
+        <w:p><w:pPr><w:pStyle w:val="TOC1"/></w:pPr><w:r><w:t>Heading One</w:t></w:r>${fieldEnd}</w:p>
+      </w:sdtContent>
+    </w:sdt>`;
+    const element = parseXml(xml).elements?.[0];
+    if (!element) throw new Error("parsed document has no root element");
+    const result = parseToc(element, readCtx, (elements, context) =>
+      elements.map((child) => parseSectionChild(child, context)),
+    );
+    expect(result?.endMarkerInEntries).toBe(true);
+    expect(
+      stringifyTableOfContents(
+        undefined,
+        result,
+        `<w:p><w:pPr><w:pStyle w:val="TOC1"/></w:pPr><w:r><w:t>Heading One</w:t></w:r>${fieldEnd}</w:p>`,
+      ).match(/w:fldCharType="end"/g),
+    ).toHaveLength(1);
+  });
+});
+
+describe("parseBody self-contained TOC entries", () => {
+  it("does not duplicate the aggregate field inside its first entry", () => {
+    const xml = `<w:body>
+      <w:sdt><w:sdtPr><w:docPartObj><w:docPartGallery w:val="Table of Contents"/></w:docPartObj></w:sdtPr>
+      <w:sdtContent><w:p><w:r><w:fldChar w:fldCharType="begin"/></w:r>
+        <w:r><w:instrText xml:space="preserve"> TOC \\f \\o "1-9" \\h </w:instrText></w:r>
+        <w:r><w:fldChar w:fldCharType="separate"/></w:r>
+        <w:hyperlink w:anchor="heading"><w:r><w:t>Heading One</w:t></w:r></w:hyperlink>
+        <w:r><w:fldChar w:fldCharType="end"/></w:r></w:p></w:sdtContent></w:sdt>
+    </w:body>`;
+    const body = parseXml(xml).elements?.[0];
+    if (!body) throw new Error("parsed document has no root element");
+    const toc = parseBody(body, readCtx)
+      .flatMap((section) => section.children)
+      .find((child) => "toc" in child)?.toc;
+    const firstEntry = toc?.entries?.[0];
+    const entryChildren =
+      firstEntry && "paragraph" in firstEntry && typeof firstEntry.paragraph !== "string"
+        ? (firstEntry.paragraph.children ?? [])
+        : [];
+    expect(entryChildren).toHaveLength(2);
+    expect(entryChildren[0]).toHaveProperty("hyperlink");
+    expect(entryChildren[1]).toMatchObject({ fieldMarker: { type: "end" } });
   });
 });
 
@@ -250,6 +437,35 @@ describe("parseBody TOC entry preservation", () => {
     expect(tocChild?.toc.entries).toHaveLength(2);
   });
 
+  it("preserves a complete nested PAGEREF field in the TOC head paragraph", () => {
+    // Pandoc and Word can place the first rendered entry in the same paragraph
+    // as the outer TOC head. The incomplete outer field must release typed
+    // result members without losing the complete nested page-number field.
+    const xml = `<w:body>
+      <w:p><w:r><w:fldChar w:fldCharType="begin"/></w:r>
+        <w:r><w:instrText xml:space="preserve"> TOC \\o "1-3" \\u </w:instrText></w:r>
+        <w:r><w:fldChar w:fldCharType="separate"/></w:r>
+        <w:r><w:t>Heading One</w:t></w:r>
+        <w:r><w:fldChar w:fldCharType="begin"/></w:r>
+        <w:r><w:instrText xml:space="preserve"> PAGEREF _Toc1 \\h </w:instrText></w:r>
+        <w:r><w:fldChar w:fldCharType="separate"/></w:r>
+        <w:r><w:t>1</w:t></w:r>
+        <w:r><w:fldChar w:fldCharType="end"/></w:r></w:p>
+      <w:p><w:r><w:fldChar w:fldCharType="end"/></w:r></w:p>
+    </w:body>`;
+    const body = parseXml(xml).elements?.[0];
+    if (!body) throw new Error("parsed document has no root element");
+    const sections = parseBody(body, readCtx);
+    const tocChild = (sections[0]?.children ?? []).find((c) => "toc" in c) as
+      | { toc: { entries?: unknown[] } }
+      | undefined;
+    expect(tocChild?.toc.entries).toHaveLength(2);
+    const entry = JSON.stringify(tocChild?.toc.entries?.[0]);
+    expect(entry).toContain("Heading One");
+    expect(entry).toContain("PAGEREF _Toc1");
+    expect(entry).toContain('"result":"1"');
+  });
+
   it("keeps the field-closing paragraph's properties as a trailing entry", () => {
     // Word parks the entry style's pPr (pStyle/divId) on the field-closing
     // paragraph. Dropping it loses that formatting on round-trip.
@@ -292,13 +508,13 @@ describe("parseBody TOC entry preservation", () => {
     const tocIdx = children.findIndex((c) => "toc" in c);
     const tocChild = children[tocIdx] as { toc: { entries?: unknown[] } };
     expect(tocChild.toc.entries).toHaveLength(1);
-    // The heading follows the TOC as a regular body paragraph, its orphan end
-    // marker consumed.
+    // The heading follows the TOC as a regular body paragraph. Its field end
+    // stays as a verbatim child so the cross-paragraph field remains closed.
     const after = children[tocIdx + 1];
     const afterJson = JSON.stringify(after);
     expect(afterJson).toContain("Heading2");
     expect(afterJson).toContain("Heading Two");
-    expect(afterJson).not.toContain("fldChar");
+    expect(afterJson).toContain("fieldMarker");
   });
 
   it("carries the field control runs' rPr through the structured TOC", () => {
@@ -329,6 +545,31 @@ describe("parseBody TOC entry preservation", () => {
     expect(emitted.match(/<w:noProof\/>/g)).toHaveLength(3);
     expect(emitted).toContain(`${end}<w:fldChar w:fldCharType="end"/>`);
     expect(emitted.match(/w:fldCharType="end"/g)).toHaveLength(1);
+  });
+
+  it("preserves field-end run revision ids", () => {
+    const xml = `<w:body>
+      <w:p><w:r><w:fldChar w:fldCharType="begin"/></w:r>
+        <w:r><w:instrText xml:space="preserve"> TOC \\o "1-3" \\h </w:instrText></w:r>
+        <w:r><w:fldChar w:fldCharType="separate"/></w:r></w:p>
+      <w:p><w:r><w:t>Heading One</w:t></w:r></w:p>
+      <w:p><w:r w:rsidR="00000001" w:rsidRPr="00000002" w:rsidDel="00000003"><w:fldChar w:fldCharType="end"/></w:r></w:p>
+    </w:body>`;
+    const body = parseXml(xml).elements?.[0];
+    if (!body) throw new Error("parsed document has no root element");
+    const sections = parseBody(body, readCtx);
+    const tocChild = (sections[0]?.children ?? []).find((c) => "toc" in c) as
+      | {
+          toc: {
+            endAdditionRsid?: string;
+            endRunPropertiesRsid?: string;
+            endDeletionRsid?: string;
+          };
+        }
+      | undefined;
+    expect(tocChild?.toc.endAdditionRsid).toBe("00000001");
+    expect(tocChild?.toc.endRunPropertiesRsid).toBe("00000002");
+    expect(tocChild?.toc.endDeletionRsid).toBe("00000003");
   });
 
   it("does not double-emit a page break kept inside the closing paragraph", () => {
@@ -499,6 +740,27 @@ describe("TOC field boundary round-trip", () => {
       | undefined;
     expect(tocChild?.toc.entries).toHaveLength(2);
     expect(children).toHaveLength(1);
+  });
+});
+
+describe("parseBody TOC property-only head paragraphs", () => {
+  it("keeps a property-only head paragraph inside rendered TOC entries", () => {
+    const xml = `<w:body>
+      <w:p><w:pPr><w:pStyle w:val="TOC1"/></w:pPr>
+        <w:r><w:fldChar w:fldCharType="begin" w:dirty="1"/></w:r>
+        <w:r><w:instrText xml:space="preserve"> TOC \\o "1-3" \\h </w:instrText></w:r>
+        <w:r><w:fldChar w:fldCharType="separate"/></w:r></w:p>
+      <w:p><w:pPr><w:pStyle w:val="TOC2"/></w:pPr><w:r><w:t>Heading One</w:t></w:r></w:p>
+      <w:p><w:r><w:fldChar w:fldCharType="end"/></w:r></w:p>
+    </w:body>`;
+    const body = parseXml(xml).elements?.[0];
+    if (!body) throw new Error("parsed document has no root element");
+    const sections = parseBody(body, readCtx);
+    const tocChild = (sections[0]?.children ?? []).find((c) => "toc" in c) as
+      | { toc: { entries?: { paragraph?: { style?: string } }[] } }
+      | undefined;
+    expect(tocChild?.toc.entries).toHaveLength(3);
+    expect(tocChild?.toc.entries?.[0]?.paragraph?.style).toBe("TOC1");
   });
 });
 

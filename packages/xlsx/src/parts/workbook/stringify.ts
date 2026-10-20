@@ -38,6 +38,7 @@ function reorderLegacyWorkbook(parts: string[]): string[] {
 
 export function stringifyWorkbook(opts: WorkbookDescriptorOptions): string {
   const confAttr = opts.conformance ? ` conformance="${opts.conformance}"` : "";
+  const rootSpaceAttr = opts.rootXmlSpace ? ` xml:space="${opts.rootXmlSpace}"` : "";
   const parts: string[] = [
     '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"' +
       ' xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"' +
@@ -47,7 +48,7 @@ export function stringifyWorkbook(opts: WorkbookDescriptorOptions): string {
       ' xmlns:xr="http://schemas.microsoft.com/office/spreadsheetml/2014/revision"' +
       ' xmlns:xr6="http://schemas.microsoft.com/office/spreadsheetml/2016/revision6"' +
       ' xmlns:xr10="http://schemas.microsoft.com/office/spreadsheetml/2016/revision10"' +
-      ` xmlns:xr2="http://schemas.microsoft.com/office/spreadsheetml/2015/revision2"${confAttr}>`,
+      ` xmlns:xr2="http://schemas.microsoft.com/office/spreadsheetml/2015/revision2"${confAttr}${rootSpaceAttr}>`,
   ];
 
   // File version (CT_Workbook first child). Fresh compiles emit Excel 2007
@@ -69,7 +70,9 @@ export function stringifyWorkbook(opts: WorkbookDescriptorOptions): string {
     const fsAttrs: string[] = [];
     if (fs.readOnlyRecommended) fsAttrs.push('readOnlyRecommended="1"');
     if (fs.userName) fsAttrs.push(`userName="${escapeXml(fs.userName)}"`);
-    if (fs.reservationPassword) {
+    if (fs.reservationPasswordHashRaw !== undefined) {
+      fsAttrs.push(`reservationPassword="${escapeXml(fs.reservationPasswordHashRaw)}"`);
+    } else if (fs.reservationPassword) {
       fsAttrs.push(`reservationPassword="${escapeXml(fs.reservationPassword)}"`);
       if (fs.hashValue === undefined) {
         const derived = derivePasswordHash(fs.reservationPassword);
@@ -275,9 +278,11 @@ export function stringifyWorkbook(opts: WorkbookDescriptorOptions): string {
   const functionGroups = opts.functionGroups;
   if (functionGroups) {
     // builtInGroupCount defaults to 16 per CT_FunctionGroups — omit the
-    // attribute on the default so a source without it round-trips verbatim.
+    // attribute unless the source declared it, so a source without the
+    // attribute round-trips verbatim while an explicit 16 survives.
     const builtInGroupCountAttr =
-      opts.builtInGroupCount === undefined || opts.builtInGroupCount === 16
+      opts.builtInGroupCount === undefined ||
+      (opts.builtInGroupCount === 16 && opts.builtInGroupCountPresent !== true)
         ? ""
         : ` builtInGroupCount="${opts.builtInGroupCount}"`;
     const fgParts: string[] = [`<functionGroups${builtInGroupCountAttr}>`];
@@ -302,14 +307,17 @@ export function stringifyWorkbook(opts: WorkbookDescriptorOptions): string {
       if (dn.help !== undefined) dnAttrs.push(`help="${escapeXml(dn.help)}"`);
       if (dn.statusBar !== undefined) dnAttrs.push(`statusBar="${escapeXml(dn.statusBar)}"`);
       if (dn.localSheetId !== undefined) dnAttrs.push(`localSheetId="${dn.localSheetId}"`);
-      if (dn.hidden) dnAttrs.push('hidden="1"');
-      if (dn.function) dnAttrs.push('function="1"');
-      if (dn.vbProcedure) dnAttrs.push('vbProcedure="1"');
-      if (dn.xlm) dnAttrs.push('xlm="1"');
+      if (dn.hidden !== undefined) dnAttrs.push(`hidden="${dn.hidden ? 1 : 0}"`);
+      if (dn.function !== undefined) dnAttrs.push(`function="${dn.function ? 1 : 0}"`);
+      if (dn.vbProcedure !== undefined) dnAttrs.push(`vbProcedure="${dn.vbProcedure ? 1 : 0}"`);
+      if (dn.xlm !== undefined) dnAttrs.push(`xlm="${dn.xlm ? 1 : 0}"`);
       if (dn.functionGroupId !== undefined) dnAttrs.push(`functionGroupId="${dn.functionGroupId}"`);
       if (dn.shortcutKey !== undefined) dnAttrs.push(`shortcutKey="${escapeXml(dn.shortcutKey)}"`);
-      if (dn.publishToServer) dnAttrs.push('publishToServer="1"');
-      if (dn.workbookParameter) dnAttrs.push('workbookParameter="1"');
+      if (dn.publishToServer !== undefined)
+        dnAttrs.push(`publishToServer="${dn.publishToServer ? 1 : 0}"`);
+      if (dn.workbookParameter !== undefined)
+        dnAttrs.push(`workbookParameter="${dn.workbookParameter ? 1 : 0}"`);
+      if (dn.xmlSpace !== undefined) dnAttrs.push(`xml:space="${dn.xmlSpace}"`);
       dnParts.push(`<definedName ${dnAttrs.join(" ")}>${escapeXml(dn.value)}</definedName>`);
     }
     dnParts.push("</definedNames>");
@@ -336,6 +344,8 @@ export function stringifyWorkbook(opts: WorkbookDescriptorOptions): string {
     if (cp.refMode) cpAttrs.push(`refMode="${escapeXml(cp.refMode)}"`);
     if (cp.fullPrecision !== undefined) cpAttrs.push(`fullPrecision="${cp.fullPrecision ? 1 : 0}"`);
     if (cp.calcCompleted !== undefined) cpAttrs.push(`calcCompleted="${cp.calcCompleted ? 1 : 0}"`);
+    for (const fa of cp.foreignAttributes ?? [])
+      cpAttrs.push(`${fa.name}="${escapeXml(fa.value)}"`);
     parts.push(cpAttrs.length > 0 ? `<calcPr ${cpAttrs.join(" ")}/>` : "<calcPr/>");
   }
 
@@ -481,13 +491,18 @@ export function stringifyWorkbook(opts: WorkbookDescriptorOptions): string {
 // ── Exported helper functions ──
 
 /** Generate tableParts XML fragment for embedding in a worksheet. */
-export function buildTablePartsXml(tableParts: TablePartReference[]): string {
+export function buildTablePartsXml(
+  tableParts: TablePartReference[],
+  count?: number | false,
+): string {
   if (tableParts.length === 0) return "";
   const ordered = tableParts
     .map((tp, index) => ({ tp, index }))
     .sort((a, b) => (a.tp.order ?? a.index) - (b.tp.order ?? b.index))
     .map((entry) => entry.tp);
-  const p: string[] = [`<tableParts count="${tableParts.length}">`];
+  const declaredCount = count === false ? undefined : (count ?? tableParts.length);
+  const countAttr = declaredCount === undefined ? "" : ` count="${declaredCount}"`;
+  const p: string[] = [`<tableParts${countAttr}>`];
   for (const tp of ordered) {
     p.push(`<tablePart r:id="${tp.rId}"/>`);
   }

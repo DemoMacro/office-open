@@ -43,6 +43,62 @@ export interface ShapeDefaultsOptions {
  */
 export type SettingsOnOffValue = boolean | "true" | "false" | "1" | "0" | "on" | "off" | "t" | "f";
 
+/** Vendor settings extension attributes for w:tmCommentsPr (round-trip only). */
+export interface TmCommentsPropertiesOptions {
+  /** Vendor-defined comment placement (w:tmCommentsPlace, round-trip only). */
+  place?: number;
+  /** Vendor-defined comment width (w:tmCommentsWidth, round-trip only). */
+  width?: number;
+  /** Vendor-defined comment color (w:tmCommentsColor, round-trip only). */
+  color?: number;
+}
+
+/** Vendor settings extension attributes for w:tmReviewPr (round-trip only). */
+export interface TmReviewPropertiesOptions {
+  /** Vendor-defined review enabled state (w:tmReviewEnabled, round-trip only). */
+  enabled?: number;
+  /** Vendor-defined review visibility (w:tmReviewShow, round-trip only). */
+  show?: number;
+  /** Vendor-defined print behavior (w:tmReviewPrint, round-trip only). */
+  print?: number;
+  /** Vendor-defined revision counter (w:tmRevisionNum, round-trip only). */
+  revisionNumber?: number;
+  /** Vendor-defined insertion marker (w:tmReviewMarkIns, round-trip only). */
+  insertionMark?: number;
+  /** Vendor-defined insertion color (w:tmReviewColorIns, round-trip only). */
+  insertionColor?: number;
+  /** Vendor-defined deletion marker (w:tmReviewMarkDel, round-trip only). */
+  deletionMark?: number;
+  /** Vendor-defined deletion color (w:tmReviewColorDel, round-trip only). */
+  deletionColor?: number;
+  /** Vendor-defined formatting marker (w:tmReviewMarkFmt, round-trip only). */
+  formattingMark?: number;
+  /** Vendor-defined formatting color (w:tmReviewColorFmt, round-trip only). */
+  formattingColor?: number;
+  /** Vendor-defined line marker (w:tmReviewMarkLn, round-trip only). */
+  lineMark?: number;
+  /** Vendor-defined line color (w:tmReviewColorLn, round-trip only). */
+  lineColor?: number;
+  /** Vendor-defined tooltip state (w:tmReviewToolTip, round-trip only). */
+  tooltip?: number;
+}
+
+/** Vendor settings extension attributes for w:tmLastPos (round-trip only). */
+export interface TmLastPositionOptions {
+  /** Vendor-defined page position (w:tmLastPosPage, round-trip only). */
+  page?: number;
+  /** Vendor-defined selection position (w:tmLastPosSelect, round-trip only). */
+  selection?: number;
+  /** Vendor-defined frame index (w:tmLastPosFrameIdx, round-trip only). */
+  frameIndex?: number;
+  /** Vendor-defined caret position (w:tmLastPosCaret, round-trip only). */
+  caret?: { paragraphIndex?: number; index?: number };
+  /** Vendor-defined anchor position (w:tmLastPosAnchor, round-trip only). */
+  anchor?: { paragraphIndex?: number; index?: number };
+  /** Vendor-defined table rectangle (w:tmLastPosTblRect, round-trip only). */
+  tableRectangle?: { left?: number; top?: number; right?: number; bottom?: number };
+}
+
 /**
  * Options for configuring document settings.
  *
@@ -75,8 +131,11 @@ export interface SettingsOptions {
   autoHyphenation?: SettingsOnOffValue;
   /** Maximum number of consecutive lines ending with a hyphenated word (w:consecutiveHyphenLimit) */
   consecutiveHyphenLimit?: number;
-  /** Distance from the margin within which hyphenation is avoided, in twips (w:hyphenationZone) */
-  hyphenationZone?: number;
+  /**
+   * Distance from the margin within which hyphenation is avoided, in twips
+   * (`360`) or verbatim `"18pt"` (w:hyphenationZone).
+   */
+  hyphenationZone?: number | PositiveUniversalMeasure;
   /** Hyphenate words in all capital letters (w:doNotHyphenateCaps) */
   doNotHyphenateCaps?: SettingsOnOffValue;
   /** Controls whether punctuation is compressed at line ends */
@@ -223,16 +282,30 @@ export interface SettingsOptions {
    * some producers place non-identifier content in this extension element).
    */
   w15DocIdText?: string;
+  /** Vendor-defined preference value (w:tmPrefOne, round-trip only). */
+  tmPrefOne?: number;
+  /** Vendor-defined secondary preference value (w:tmPrefTwo, round-trip only). */
+  tmPrefTwo?: number;
+  /** Vendor-defined format preference (w:tmFmtPref, round-trip only). */
+  tmFormatPreference?: number;
+  /** Vendor-defined comment display properties (w:tmCommentsPr, round-trip only). */
+  tmCommentsProperties?: TmCommentsPropertiesOptions;
+  /** Vendor-defined review display properties (w:tmReviewPr, round-trip only). */
+  tmReviewProperties?: TmReviewPropertiesOptions;
+  /** Vendor-defined last edit position (w:tmLastPos, round-trip only). */
+  tmLastPosition?: TmLastPositionOptions;
+  /** Vendor-defined application revision marker (w:tmAppRevision, round-trip only). */
+  tmApplicationRevision?: { date?: number; val?: number };
   /** Click and type paragraph style name */
   clickAndTypeStyle?: string;
   /** Summary length percentage (0-100) */
   summaryLength?: number;
   /** Number of sheets per booklet in book fold printing */
   bookFoldPrintingSheets?: number;
-  /** Horizontal spacing for the drawing grid (twips) */
-  drawingGridHorizontalSpacing?: number;
-  /** Vertical spacing for the drawing grid (twips) */
-  drawingGridVerticalSpacing?: number;
+  /** Horizontal spacing for the drawing grid, in twips or verbatim points. */
+  drawingGridHorizontalSpacing?: number | PositiveUniversalMeasure;
+  /** Vertical spacing for the drawing grid, in twips or verbatim points. */
+  drawingGridVerticalSpacing?: number | PositiveUniversalMeasure;
   /** Display horizontal gridlines every N units */
   displayHorizontalDrawingGridEvery?: number;
   /** Display vertical gridlines every N units */
@@ -368,10 +441,16 @@ export interface DocumentProtectionOptions {
   edit?: "none" | "readOnly" | "comments" | "trackedChanges" | "forms";
   /** Whether formatting is restricted */
   formatting?: boolean;
-  /** Whether protection is enforced; false is preserved explicitly. */
-  enforcement?: boolean;
+  /** Whether protection is enforced; null preserves a source-omitted attribute. */
+  enforcement?: boolean | null;
   /** Source `documentProtection/@w:enforcement` lexical form; round-trip only — do not hand-author. */
   enforcementRaw?: OnOffLexicalValue;
+  /** Source `@w:cryptAlgorithmSid` lexical form; round-trip only — do not hand-author. */
+  cryptoAlgorithmSidRaw?: string;
+  /** Source legacy `@w:hash` lexical form; round-trip only — do not hand-author. */
+  hashRaw?: string;
+  /** Source legacy `@w:salt` lexical form; round-trip only — do not hand-author. */
+  saltRaw?: string;
   /** Plaintext password — automatically hashed to hashValue/saltValue when provided */
   password?: string;
   /** Password hash (SHA-512 base64) */
@@ -511,8 +590,8 @@ export interface OdsoOptions {
   recipientData?: string[];
 }
 
-/** One recipient entry in word/recipients.xml (CT_RecipientData). */
-export interface RecipientDataOptions {
+/** Standard recipient entry in `w:recipients` (CT_RecipientData). */
+export interface StandardRecipientDataOptions {
   /** Whether the recipient is included in the merge (w:active). */
   active?: boolean;
   /** Zero-based source column for this recipient (w:column, required). */
@@ -520,6 +599,17 @@ export interface RecipientDataOptions {
   /** Stable recipient hash as base64 (w:uniqueTag/@w:val, required). */
   uniqueTag: Base64;
 }
+
+/** Legacy vendor recipient entry in `wne:recipients` (round-trip only). */
+export interface LegacyRecipientDataOptions {
+  /** Whether the recipient is included in the merge (wne:active). */
+  active?: boolean;
+  /** Stable recipient hash (wne:hash/@wne:val, required). */
+  hash: string;
+}
+
+/** Recipient entry supported by the standard or legacy vendor vocabulary. */
+export type RecipientDataOptions = StandardRecipientDataOptions | LegacyRecipientDataOptions;
 
 /** One word/recipients.xml part (w:recipients). */
 export interface MailMergeRecipientsOptions {
@@ -529,6 +619,8 @@ export interface MailMergeRecipientsOptions {
    * such as recipientData.xml.
    */
   partName?: string;
+  /** Legacy `wne` vocabulary; standard `w` is omitted (round-trip only). */
+  namespace?: "wne";
   recipients: RecipientDataOptions[];
 }
 

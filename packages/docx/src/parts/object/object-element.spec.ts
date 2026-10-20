@@ -105,6 +105,38 @@ describe("objectDesc.parse", () => {
     );
   });
 
+  it("preserves an empty OLE ProgID", () => {
+    const el = parseObjectXml(`<v:shape id="_x0000_i1025"/><o:OLEObject Type="Embed" ProgID=""/>`);
+    const opts = objectDesc.parse(el, readCtx({}));
+    expect(opts.embed).toMatchObject({ progId: "" });
+  });
+
+  it("round-trips a v:rect OLE preview with signature instructions", () => {
+    const el = parseObjectXml(
+      `<v:rect id="_x0000_i1025" o:ole="" o:preferrelative="1" stroked="0" ` +
+        `style="width:11.25pt;height:11.25pt">` +
+        `<o:signatureline o:signinginstructions="Sign here"/></v:rect>`,
+    );
+    const opts = objectDesc.parse(el, readCtx({}));
+
+    expect(opts.shapeId).toBe("_x0000_i1025");
+    expect(opts.previewShapeKind).toBe("rect");
+    expect(opts.previewShape).toMatchObject({
+      id: "_x0000_i1025",
+      ole: "",
+      preferrelative: true,
+      stroked: false,
+      signatureline: { signinginstructions: "Sign here" },
+    });
+    expect(objectDesc.stringify(opts, {} as never)).toContain('<v:rect id="_x0000_i1025"');
+    expect(objectDesc.stringify(opts, {} as never)).toContain(
+      'style="width:11.25pt;height:11.25pt">',
+    );
+    expect(objectDesc.stringify(opts, {} as never)).toContain(
+      `<o:signatureline o:signinginstructions="Sign here"/>`,
+    );
+  });
+
   it("captures the complete preview shape with source relationship ids", () => {
     const el = parseObjectXml(
       `<v:shape id="_x0000_i1025" type="#_x0000_t75" alt="preview" ` +

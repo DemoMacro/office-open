@@ -113,6 +113,14 @@ export function lengthToEmu(value: string | undefined): number | undefined {
   return factor === undefined ? undefined : Math.round(amount * factor);
 }
 
+/** Converts an authored number (EMU) or ODF universal length to EMU. */
+export function odfLengthToEmu(value: number | string): number {
+  if (typeof value === "number") return value;
+  const emu = lengthToEmu(value);
+  if (emu === undefined) throw new Error(`Invalid ODF length: ${value}`);
+  return emu;
+}
+
 export function emuToLength(emu: number | string | undefined, unit: "cm" | "px" = "cm"): string {
   const value = typeof emu === "string" ? lengthToEmu(emu) : emu;
   if (value === undefined) return "0cm";

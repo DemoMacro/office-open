@@ -52,6 +52,21 @@ export type MediaAnimationType = "playAudio" | "playVideo" | "play";
 /** Animation timing value in milliseconds, or "indefinite" for open-ended timing. */
 export type AnimationDuration = number | "indefinite";
 
+/** Generic SMIL-compatible timing container preserved by ODP and extensible timing sources. */
+export type AnimationTimeNode = "par" | "seq" | "iterate";
+
+/** Low-level animation behavior carried by format-specific timing models. */
+export type AnimationBehavior =
+  | "set"
+  | "animate"
+  | "animateTransform"
+  | "animateMotion"
+  | "animateColor"
+  | "transitionFilter"
+  | "audio"
+  | "command"
+  | "animatePhysics";
+
 /** Interpolation for property animations (p:anim @calcmode). */
 export type AnimationCalcMode = "discrete" | "linear" | "formula";
 
@@ -174,7 +189,6 @@ export interface AnimationOptions {
   path?: string;
   /** Animation speed as integer percent (100 = normal speed). */
   speed?: number;
-  repeatCount?: number;
   autoReverse?: boolean;
   color?: string;
 
@@ -255,8 +269,6 @@ export interface AnimationOptions {
   additive?: "base" | "sum" | "repl" | "mult" | "none";
   /** Accumulate mode: "none", "always". */
   accumulate?: "none" | "always";
-  /** Transform type: "pt", "img". */
-  transformType?: "pt" | "img";
   /** Runtime context string. */
   runtimeContext?: string;
   /** Override mode: "normal", "childStyle". */
@@ -345,4 +357,82 @@ export interface AnimationOptions {
 
   // Build animations (A1) — top-level timing container
   builds?: AnimationBuildOptions[];
+
+  /** Generic timing container when the source uses a nested timing tree. */
+  timeNode?: AnimationTimeNode;
+  /** Behavior element for generic timing sources; PowerPoint writers project it into presets. */
+  behavior?: AnimationBehavior;
+  /** Nested timing children; only valid with timeNode. */
+  children?: AnimationOptions[];
+  /** Timing-tree node role (presentation:node-type). */
+  timingNodeRole?: string;
+  /** Format-specific preset identifier (presentation:preset-id). */
+  presetId?: string;
+  /** Format-specific preset subtype identifier (presentation:preset-sub-type). */
+  presetSubType?: string;
+  /** Format-specific preset class; canonical PowerPoint classes use class. */
+  presetClass?: string;
+  /** Preset property selector used by presentation animation extensions. */
+  presetProperty?: string;
+  /** Restricts presentation preset effects to text. */
+  presetTextOnly?: boolean;
+  /** Presentation-specific additive mode for a preset. */
+  presetAdditive?: "replace" | "add";
+  /** Referenced timing master element. */
+  masterElement?: string;
+  /** Local anim:id from ODF timing XML. */
+  animationId?: string;
+  /** Stable timing node identifier from source timing XML. */
+  timingId?: string;
+  /** Iteration step for anim:iterate. */
+  iterateType?: string;
+  /** Sub-item targeted inside a shape, such as background, text, or a named view. */
+  targetSubItem?: string;
+  /** Begin timing expression. Durations use milliseconds; expressions are preserved verbatim. */
+  begin?: AnimationDuration | string;
+  /** End timing expression. Durations use milliseconds; expressions are preserved verbatim. */
+  end?: AnimationDuration | string;
+  /** Fill behavior at the end of the time node (smil:fill). */
+  timeFill?: "remove" | "freeze" | "hold" | "transition" | "autoReverse";
+  /** Explicit repeat count; "indefinite" repeats without bound. */
+  repeatCount?: number | "indefinite";
+  /** Comma- or semicolon-separated animation values. */
+  values?: string[];
+  /** Comma- or semicolon-separated normalized progress times in the 0-1 range. */
+  keyTimes?: number[];
+  /** Transition type (anim:transitionFilter smil:type). */
+  transitionType?: string;
+  /** Transition subtype (anim:transitionFilter smil:subtype). */
+  transitionSubType?: string;
+  /** Transition mode (anim:transitionFilter smil:mode). */
+  transitionMode?: "in" | "out";
+  /** Transition fade color (anim:transitionFilter smil:fadeColor). */
+  fadeColor?: string;
+  /** Transition direction (anim:transitionFilter smil:direction). */
+  transitionDirection?: "left" | "right" | "up" | "down";
+  /** Color interpolation space for color animations. */
+  colorInterpolation?: "rgb" | "hsl";
+  /** Rotation direction when interpolating colors in HSL space. */
+  colorInterpolationDirection?: "clockwise" | "counter-clockwise";
+  /** LibreOffice physics animation properties. */
+  physicsAnimation?: {
+    /** Particle density for the physics simulation. */
+    density?: number;
+    /** Bounciness in the inclusive 0-1 range; LibreOffice defaults to 0.1. */
+    bounciness?: number;
+    /** Initial horizontal velocity. */
+    velocityX?: number;
+    /** Initial vertical velocity. */
+    velocityY?: number;
+  };
+  /** Transform behavior type (anim:animateTransform smil:type). */
+  transformType?: "pt" | "img" | "scale" | "rotate" | "translate" | "skewX" | "skewY";
+  /** Motion origin (anim:animateMotion smil:origin). */
+  motionOrigin?: string;
+  /** Motion rotation in degrees (anim:animateMotion smil:rotate). */
+  motionRotation?: number | "auto";
+  /** Audio source relationship path (anim:audio xlink:href). */
+  audioSource?: string;
+  /** Audio playback level as integer percent (0-100). */
+  audioLevel?: number;
 }

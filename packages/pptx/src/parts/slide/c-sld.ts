@@ -9,10 +9,11 @@
  */
 
 import { parseOnOff } from "@office-open/core";
-import { attr, attrNum, findChild } from "@office-open/xml";
+import { attr, attrNum, escapeXml, findChild } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import type { SlideCustomerDataReferenceOptions } from "@shared/customer-data";
 import type { SlideHeaderFooterOptions } from "@shared/header-footer";
+import type { PictureOptions } from "@shared/picture";
 
 import type { ControlOptions } from "./slide";
 
@@ -51,45 +52,107 @@ export function parseCustDataLst(
 // ── p:controls ──
 
 /** Serialize cSld controls; empty string when there are none. */
-export function stringifyControls(controls: ControlOptions[] | undefined): string {
+export function stringifyControls(
+  controls: ControlOptions[] | undefined,
+  stringifyPicture?: (picture: PictureOptions) => string | undefined,
+): string {
   if (!controls || controls.length === 0) return "";
   const items = controls
-    .map((c) => {
-      const attrs: string[] = [];
-      if (c.shapeId !== undefined) attrs.push(`spid="${c.shapeId}"`);
-      if (c.name) attrs.push(`name="${c.name}"`);
-      if (c.showAsIcon) attrs.push('showAsIcon="1"');
-      if (c.rId) attrs.push(`r:id="${c.rId}"`);
-      if (c.imageWidth !== undefined) attrs.push(`imgW="${c.imageWidth}"`);
-      if (c.imageHeight !== undefined) attrs.push(`imgH="${c.imageHeight}"`);
-      return `<p:control ${attrs.join(" ")}/>`;
+    .map((control) => {
+      if (control.alternateContent) {
+        const alternate = control.alternateContent;
+        const namespace =
+          alternate.requiresPrefix && alternate.requiresNamespace
+            ? ` xmlns:${alternate.requiresPrefix}="${escapeXml(alternate.requiresNamespace)}"`
+            : "";
+        const requires = alternate.requires ? ` Requires="${escapeXml(alternate.requires)}"` : "";
+        return (
+          '<mc:AlternateContent xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006">' +
+          `<mc:Choice${namespace}${requires}>${stringifyControlElement(
+            alternate.choice,
+            stringifyPicture,
+          )}</mc:Choice>` +
+          `<mc:Fallback>${stringifyControlElement(
+            alternate.fallback,
+            stringifyPicture,
+          )}</mc:Fallback></mc:AlternateContent>`
+        );
+      }
+      return stringifyControlElement(control, stringifyPicture);
     })
     .join("");
   return `<p:controls>${items}</p:controls>`;
 }
 
+function stringifyControlElement(
+  control: ControlOptions,
+  stringifyPicture?: (picture: PictureOptions) => string | undefined,
+): string {
+  const attrs: string[] = [];
+  if (control.shapeId !== undefined) attrs.push(`spid="${escapeXml(control.shapeId)}"`);
+  if (control.name) attrs.push(`name="${escapeXml(control.name)}"`);
+  if (control.showAsIcon) attrs.push('showAsIcon="1"');
+  if (control.rId) attrs.push(`r:id="${control.rId}"`);
+  if (control.imageWidth !== undefined) attrs.push(`imgW="${control.imageWidth}"`);
+  if (control.imageHeight !== undefined) attrs.push(`imgH="${control.imageHeight}"`);
+  const picture = control.picture && stringifyPicture ? stringifyPicture(control.picture) : "";
+  const opening = `<p:control${attrs.length > 0 ? ` ${attrs.join(" ")}` : ""}`;
+  return picture ? `${opening}>${picture}</p:control>` : `${opening}/>`;
+}
+
 /** Parse a p:controls element into control options. */
-export function parseControls(el: Element | undefined): ControlOptions[] | undefined {
+export function parseControls(
+  el: Element | undefined,
+  parsePicture?: (picture: Element) => PictureOptions | undefined,
+): ControlOptions[] | undefined {
   if (!el) return undefined;
   const items: ControlOptions[] = [];
   for (const ctrl of el.elements ?? []) {
-    if (ctrl.name !== "p:control") continue;
-    const item: ControlOptions = {};
-    // @spid is ST_ShapeID (a token like "_x0000_s1026"), never numeric.
-    const shapeId = attr(ctrl, "spid");
-    if (shapeId) item.shapeId = shapeId;
-    const name = attr(ctrl, "name");
-    if (name) item.name = name;
-    if (parseOnOff(attr(ctrl, "showAsIcon"))) item.showAsIcon = true;
-    const rId = attr(ctrl, "r:id");
-    if (rId) item.rId = rId;
-    const imageWidth = attrNum(ctrl, "imgW");
-    if (imageWidth !== undefined) item.imageWidth = imageWidth;
-    const imageHeight = attrNum(ctrl, "imgH");
-    if (imageHeight !== undefined) item.imageHeight = imageHeight;
-    items.push(item);
+    if (ctrl.name === "mc:AlternateContent") {
+      const choiceEl = findChild(ctrl, "mc:Choice");
+      const fallbackEl = findChild(ctrl, "mc:Fallback");
+      const choiceControl = choiceEl ? findChild(choiceEl, "p:control") : undefined;
+      const fallbackControl = fallbackEl ? findChild(fallbackEl, "p:control") : undefined;
+      if (!choiceControl || !fallbackControl) continue;
+      const requires = attr(choiceEl, "Requires") ?? undefined;
+      const requiresPrefix = requires ?? undefined;
+      const requiresNamespace = requires ? attr(choiceEl, `xmlns:${requires}`) : undefined;
+      items.push({
+        alternateContent: {
+          ...(requires ? { requires } : {}),
+          ...(requiresPrefix ? { requiresPrefix } : {}),
+          ...(requiresNamespace ? { requiresNamespace } : {}),
+          choice: parseControlElement(choiceControl, parsePicture),
+          fallback: parseControlElement(fallbackControl, parsePicture),
+        },
+      });
+    } else if (ctrl.name === "p:control") {
+      items.push(parseControlElement(ctrl, parsePicture));
+    }
   }
   return items.length > 0 ? items : undefined;
+}
+
+function parseControlElement(
+  ctrl: Element,
+  parsePicture?: (picture: Element) => PictureOptions | undefined,
+): ControlOptions {
+  const item: ControlOptions = {};
+  const shapeId = attr(ctrl, "spid");
+  if (shapeId) item.shapeId = shapeId;
+  const name = attr(ctrl, "name");
+  if (name) item.name = name;
+  if (parseOnOff(attr(ctrl, "showAsIcon"))) item.showAsIcon = true;
+  const rId = attr(ctrl, "r:id");
+  if (rId) item.rId = rId;
+  const imageWidth = attrNum(ctrl, "imgW");
+  if (imageWidth !== undefined) item.imageWidth = imageWidth;
+  const imageHeight = attrNum(ctrl, "imgH");
+  if (imageHeight !== undefined) item.imageHeight = imageHeight;
+  const pictureEl = findChild(ctrl, "p:pic");
+  const picture = pictureEl && parsePicture ? parsePicture(pictureEl) : undefined;
+  if (picture) item.picture = picture;
+  return item;
 }
 
 // ── p:hf (CT_HeaderFooter, attribute form) ──

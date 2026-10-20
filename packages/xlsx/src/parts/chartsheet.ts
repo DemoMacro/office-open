@@ -70,6 +70,8 @@ export interface ChartsheetProtectionOptions {
    * SheetProtectionOptions); use the algorithmName quadruplet for round-trip.
    */
   password?: string;
+  /** Source legacy `@password` hash (4-hex-digit legacy Excel hash); round-trip only. */
+  passwordHashRaw?: string;
   /** Modern encryption: algorithm name (e.g. "SHA-512") */
   algorithmName?: string;
   /** Modern encryption: base64-encoded hash value */
@@ -197,9 +199,17 @@ export const chartsheetDesc: CustomDescriptor<ChartsheetDescriptorOptions> = {
     if (opts.sheetProtection) {
       const sp = opts.sheetProtection;
       const spAttrs: Record<string, string | number | boolean | undefined> = {};
-      if (sp.password) spAttrs.password = hashPassword(sp.password);
+      if (sp.passwordHashRaw !== undefined) {
+        spAttrs.password = sp.passwordHashRaw;
+      } else if (sp.password) {
+        spAttrs.password = hashPassword(sp.password);
+      }
       let derived: ReturnType<typeof derivePasswordHash> | undefined;
-      if (sp.password !== undefined && sp.hashValue === undefined) {
+      if (
+        sp.passwordHashRaw === undefined &&
+        sp.password !== undefined &&
+        sp.hashValue === undefined
+      ) {
         derived = derivePasswordHash(sp.password);
       }
       spAttrs.algorithmName = sp.algorithmName ?? derived?.algorithmName;
@@ -305,7 +315,8 @@ export const chartsheetDesc: CustomDescriptor<ChartsheetDescriptorOptions> = {
     const sheetProtectionEl = findChild(el, "sheetProtection");
     if (sheetProtectionEl) {
       const sp: Partial<ChartsheetProtectionOptions> = {};
-      // @password (legacy hash) not read back — see parseSheetProtectionEl note.
+      const legacyHash = attr(sheetProtectionEl, "password");
+      if (legacyHash) sp.passwordHashRaw = legacyHash;
       const an = attr(sheetProtectionEl, "algorithmName");
       if (an) sp.algorithmName = an;
       const hv = attr(sheetProtectionEl, "hashValue");

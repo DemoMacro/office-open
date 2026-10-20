@@ -1,11 +1,12 @@
 import {
-  convertOutput,
-  OOXML_PACKAGE_FORMATS,
+  toUint8ArrayAsync,
+  type DataType,
   type OutputByType,
   type OutputType,
   type PackerOptions,
   type ReproducibleGenerationOptions,
 } from "@office-open/core";
+import { OOXML_PACKAGE_FORMATS } from "@office-open/core/opc";
 import {
   generatePresentation as generateOdpPresentation,
   parsePresentation as parseOdpPresentation,
@@ -48,14 +49,12 @@ export type PresentationPatchRequest<T extends OutputType = OutputType> = Omit<
   outputType?: T;
 };
 
-const ODP_MIME_TYPE = "application/vnd.oasis.opendocument.presentation";
-
 export async function parsePresentation(
-  input: Uint8Array | string,
+  input: DataType,
   options?: PresentationParseOptions,
 ): Promise<PresentationOptions> {
-  const info = detectOffice(input);
-  const data = typeof input === "string" ? new TextEncoder().encode(input) : input;
+  const data = await toUint8ArrayAsync(input);
+  const info = detectOffice(data);
 
   switch (info.format) {
     case "odp":
@@ -85,7 +84,7 @@ export async function generatePresentation<
 
   if (format === "odp") {
     if (reproducible) throw new Error("Reproducible generation is not supported for ODP");
-    return convertOutput(generateOdpPresentation(options), outputType, ODP_MIME_TYPE);
+    return generateOdpPresentation(options, outputType);
   }
 
   return generatePptxPresentation(

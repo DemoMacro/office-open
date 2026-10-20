@@ -6,7 +6,7 @@ import {
   parseRc4CryptoApiHeader,
   verifyLegacyRc4Password,
   verifyRc4CryptoApiPassword,
-} from "@office-open/core";
+} from "@office-open/core/cfb";
 import type { WorkbookOptions, WorksheetOptions } from "@office-open/xlsx";
 
 import { readRequiredStream } from "../cfb/container";
@@ -87,7 +87,18 @@ export function parseWorkbook(data: Uint8Array, options?: LegacyParseOptions): W
         : undefined,
     definedNames: state.definedNames.length > 0 ? state.definedNames : undefined,
     externalLinks: state.externalLinks.length > 0 ? state.externalLinks : undefined,
-    properties: { date1904: state.date1904 },
+    properties: {
+      date1904: state.date1904,
+      ...(state.saveExternalLinkValues === undefined
+        ? {}
+        : { saveExternalLinkValues: state.saveExternalLinkValues }),
+      ...(state.refreshAllConnections === undefined
+        ? {}
+        : { refreshAllConnections: state.refreshAllConnections }),
+      ...(state.builtInGroupCount === undefined
+        ? {}
+        : { builtInGroupCount: state.builtInGroupCount }),
+    },
   };
 }
 

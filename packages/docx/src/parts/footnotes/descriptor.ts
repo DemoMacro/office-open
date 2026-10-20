@@ -27,6 +27,8 @@ import type { BodyContext } from "../../context";
 export interface FootnoteOptions {
   id?: number;
   children: NoteChild[];
+  /** Whether to inject the standard reference mark; false preserves source absence. */
+  autoReferenceMark?: boolean;
 }
 
 /** System footnote (separator / continuationSeparator). Round-tripped verbatim. */
@@ -61,6 +63,7 @@ const CONTINUATION_SEPARATOR_FOOTNOTE =
 export const footnotesDesc: CustomDescriptor<FootnotesData, BodyContext> = createNotesDesc({
   rootTag: "w:footnotes",
   noteTag: "w:footnote",
+  referenceMarkTag: "w:footnoteRef",
   refRunXml: FOOTNOTE_REF_RUN,
   separatorXml: SEPARATOR_FOOTNOTE,
   continuationSeparatorXml: CONTINUATION_SEPARATOR_FOOTNOTE,

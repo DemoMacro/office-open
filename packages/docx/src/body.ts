@@ -63,6 +63,8 @@ import type {
   ParagraphRunPropertiesOptions,
   RunPropertiesOptions,
 } from "@parts/paragraph/run/properties";
+import { ON_OFF_LEXICAL_VALUES } from "@parts/paragraph/run/properties";
+import type { OnOffLexicalValue } from "@parts/paragraph/run/properties";
 import type { RunOptions } from "@parts/paragraph/run/run";
 import { parseRun, parseRunProperties, parsedRunToOptions } from "@parts/paragraph/run/run-parse";
 import { parseSdtProperties } from "@parts/sdt/sdt-parse";
@@ -74,6 +76,7 @@ import type { SectionChild } from "@shared/section";
 import { parseShading } from "@shared/shading";
 
 import type { DocxReadContext, DocxWriteContext, BodyContext } from "./context";
+import { DocxParseError } from "./errors";
 import { tableDesc, altChunkDesc, sdtBlockDesc, customXmlBlockDesc, subDocDesc } from "./parts";
 import { parseCustomXmlProperties } from "./parts/bodychildren";
 import { stringifyChildDispatch, stringifyRunInline } from "./parts/inline";
@@ -81,10 +84,12 @@ import { parseMathChildren, parseMathParagraph } from "./parts/paragraph/math/st
 import type {
   ComplexFieldInstructionMember,
   ComplexFieldOptions,
+  FieldMarkerOptions,
   ParagraphChild,
   SdtRunOptions,
   TrackChangeChild,
 } from "./parts/paragraph/paragraph";
+import type { NumberingChangeOptions } from "./parts/paragraph/properties";
 import {
   EMPTY_PPR_RESULT,
   paragraphIdentityAttrs,
@@ -132,6 +137,24 @@ export function stringifyParagraph(
 ): string {
   const isPlainText = typeof opts === "string";
   const resolved: ParagraphOptions = isPlainText ? { text: opts } : opts;
+  if (
+    !isPlainText &&
+    (resolved.sectionHeaders !== undefined || resolved.sectionFooters !== undefined)
+  ) {
+    resolved.sectionProperties = {
+      ...resolved.sectionProperties,
+      ...ctx.fileData.registerInlineSection({
+        headers: resolved.sectionHeaders,
+        footers: resolved.sectionFooters,
+        properties: resolved.sectionProperties,
+      }),
+    };
+  }
+  const embeddedSectionXml =
+    !isPlainText && !sectionPropertiesXml && resolved.sectionProperties !== undefined
+      ? (sectionPropertiesDesc.stringify(resolved.sectionProperties, ctx) ?? "")
+      : "";
+  const paragraphSectionXml = sectionPropertiesXml ?? embeddedSectionXml;
   let body = "";
 
   // Build paragraph properties — direct string output, no intermediate object tree.
@@ -151,18 +174,22 @@ export function stringifyParagraph(
 
   // Paragraph properties XML
   if (props.xml) {
-    if (sectionPropertiesXml) {
+    if (paragraphSectionXml) {
       // Insert sectPr before closing </w:pPr>; a self-closed empty pPr
       // (emptyProperties round-trip marker) expands to host the section break.
-      body += props.xml.includes("</w:pPr>")
-        ? props.xml.replace("</w:pPr>", sectionPropertiesXml + "</w:pPr>")
-        : props.xml.replace(/\/>$/, `>${sectionPropertiesXml}</w:pPr>`);
+      const changeIndex = props.xml.indexOf("<w:pPrChange");
+      body +=
+        changeIndex >= 0
+          ? props.xml.slice(0, changeIndex) + paragraphSectionXml + props.xml.slice(changeIndex)
+          : props.xml.includes("</w:pPr>")
+            ? props.xml.replace("</w:pPr>", paragraphSectionXml + "</w:pPr>")
+            : props.xml.replace(/\/>$/, `>${paragraphSectionXml}</w:pPr>`);
     } else {
       body += props.xml;
     }
-  } else if (sectionPropertiesXml) {
+  } else if (paragraphSectionXml) {
     // No pPr but we need sectPr — wrap in pPr
-    body += `<w:pPr>${sectionPropertiesXml}</w:pPr>`;
+    body += `<w:pPr>${paragraphSectionXml}</w:pPr>`;
   }
 
   // Text shorthand — the run is `{ text }` by construction (no rPr/break/children/rsid),
@@ -504,7 +531,7 @@ export function stringifyDocumentXml(ctx: DocxWriteContext, docCtx: BodyContext)
 }
 
 function textElementXml(tag: string, text: string, preserve?: boolean): string {
-  const preserveSpace = preserve === undefined ? /^[\t\n\r ]|[\t\n\r ]$/.test(text) : preserve;
+  const preserveSpace = preserve === true || /^[\t\n\r ]|[\t\n\r ]$/.test(text);
   const attr = preserveSpace ? ' xml:space="preserve"' : "";
   return `<${tag}${attr}>${escapeXml(text)}</${tag}>`;
 }
@@ -584,7 +611,16 @@ const ON_OFF_PARAGRAPH_PROPS = [
 ] as const;
 
 // pBdr side element names (CT_PBdr children order).
-const PBDR_SIDES = ["top", "bottom", "left", "right", "between", "bar"] as const;
+const PBDR_SIDES = [
+  "top",
+  "left",
+  "bottom",
+  "right",
+  "between",
+  "bar",
+  "insideHorizontal",
+  "insideVertical",
+] as const;
 
 // Inline element payloads extracted from the ParagraphChild union — used by
 // parse to build typed objects instead of Record<string, unknown>.
@@ -629,8 +665,24 @@ export function parseParagraphProperties(
   if (spacing) {
     const sp: SpacingProperties = {};
     const before = attrMeasure(spacing, "w:before");
+    if (before !== undefined && isNegativeMeasure(before)) {
+      throw new DocxParseError(
+        "Paragraph spacing before cannot be negative",
+        ctx.currentPart,
+        "/w:spacing/@w:before",
+        "invalid-value",
+      );
+    }
     if (before !== undefined) sp.before = before as SpacingProperties["before"];
     const after = attrMeasure(spacing, "w:after");
+    if (after !== undefined && isNegativeMeasure(after)) {
+      throw new DocxParseError(
+        "Paragraph spacing after cannot be negative",
+        ctx.currentPart,
+        "/w:spacing/@w:after",
+        "invalid-value",
+      );
+    }
     if (after !== undefined) sp.after = after as SpacingProperties["after"];
     const line = attrMeasure(spacing, "w:line");
     if (line !== undefined) sp.line = line as SpacingProperties["line"];
@@ -646,7 +698,7 @@ export function parseParagraphProperties(
     if (beforeLines !== undefined) sp.beforeLines = beforeLines;
     const afterLines = attrNum(spacing, "w:afterLines");
     if (afterLines !== undefined) sp.afterLines = afterLines;
-    if (Object.keys(sp).length > 0) opts.spacing = sp;
+    opts.spacing = sp;
   }
 
   // Indent — left/right/start/end are ST_SignedTwipsMeasure, hanging/firstLine
@@ -656,7 +708,17 @@ export function parseParagraphProperties(
   if (ind) {
     const indentObj: IndentProperties = {};
     const left = attrMeasure(ind, "w:left");
-    if (left !== undefined) indentObj.left = left as IndentProperties["left"];
+    // Lenient producers emit an unprefixed @left on w:ind; the OOXML attribute
+    // is namespaced, but Word and LibreOffice both read the tolerated spelling.
+    const legacyLeftValue = attr(ind, "left");
+    let legacyLeft: number | string | undefined;
+    if (legacyLeftValue !== undefined) {
+      const legacyNumber = Number(legacyLeftValue);
+      legacyLeft = Number.isNaN(legacyNumber) ? legacyLeftValue : legacyNumber;
+    }
+    if (left !== undefined || legacyLeft !== undefined) {
+      indentObj.left = (left ?? legacyLeft) as IndentProperties["left"];
+    }
     const leftChars = attrNum(ind, "w:leftChars");
     if (leftChars !== undefined) indentObj.leftChars = leftChars;
     const right = attrMeasure(ind, "w:right");
@@ -675,15 +737,14 @@ export function parseParagraphProperties(
     const hangingChars = attrNum(ind, "w:hangingChars");
     if (hangingChars !== undefined) indentObj.hangingChars = hangingChars;
     const firstLine = attrMeasure(ind, "w:firstLine");
+    const firstLineRaw = attr(ind, "w:firstLine");
     const firstLineChars = attrNum(ind, "w:firstLineChars");
     if (firstLineChars !== undefined) indentObj.firstLineChars = firstLineChars;
-    // hanging/firstLine are ST_TwipsMeasure (non-negative), yet some
-    // generators emit negatives — Word reads those as the twin (a negative
-    // firstLine indents like hanging and vice versa) and re-saves them
-    // flipped, so parse does the same. A legal twin keeps priority.
-    if (typeof hanging === "number" && hanging < 0) indentObj.firstLine ??= -hanging;
+    // Preserve generator-authored negative lexical values verbatim; fresh
+    // negative convenience values still normalize to the positive twin below.
+    if (typeof hanging === "number" && hanging < 0) indentObj.hangingRaw = attr(ind, "w:hanging");
     else if (hanging !== undefined) indentObj.hanging = hanging as IndentProperties["hanging"];
-    if (typeof firstLine === "number" && firstLine < 0) indentObj.hanging ??= -firstLine;
+    if (typeof firstLine === "number" && firstLine < 0) indentObj.firstLineRaw = firstLineRaw;
     else if (firstLine !== undefined)
       indentObj.firstLine = firstLine as IndentProperties["firstLine"];
     if (Object.keys(indentObj).length > 0) opts.indent = indentObj;
@@ -742,52 +803,46 @@ export function parseParagraphProperties(
         }
         opts.numbering = rev;
       }
-    } else if (ctx.numberingCache.size > 0) {
-      // Cache lookup ("" = a w:num lacking the abstractNumId child → treated
-      // like an unknown id, falling to the bullet, same as the old inline scan).
-      const abstractNumId = ctx.numIdCache.get(numId);
-      if (abstractNumId) {
-        // autoStyle: false suppresses the ListParagraph pStyle auto-injection
-        // in stringifyParagraphProperties. Round-tripped list paragraphs carry
-        // no pStyle in the source (the list formatting lives in numbering);
-        // injecting ListParagraph would reference a style that round-tripped
-        // styles.xml may not define → dangling reference Word rejects.
-        const numberingOpts: {
-          reference: string;
-          level?: number;
-          autoStyle: boolean;
-          numberingChange?: { original: string; id: string; author: string; date?: string };
-          insertion?: NumberingInsertionOptions;
-        } = { reference: `list_${numId}`, level, autoStyle: false };
-        // w:numberingChange (CT_TrackChangeNumbering) — child of w:numPr
-        const numberingChangeEl = findChild(numPr, "w:numberingChange");
-        if (numberingChangeEl) {
-          const nc: { original: string; id: string; author: string; date?: string } = {
-            original: attr(numberingChangeEl, "w:original") ?? "",
-            id: attr(numberingChangeEl, "w:id") ?? "",
-            author: attr(numberingChangeEl, "w:author") ?? "",
-          };
-          const ncDate = attr(numberingChangeEl, "w:date");
-          if (ncDate) nc.date = ncDate;
-          numberingOpts.numberingChange = nc;
-        }
-        // w:ins (CT_TrackChange) — numbering applied as a revision
-        const insEl = findChild(numPr, "w:ins");
-        if (insEl) {
-          const ins: Partial<NumberingInsertionOptions> = {
-            id: attr(insEl, "w:id") ?? "",
-            author: attr(insEl, "w:author") ?? "",
-          };
-          const insDate = attr(insEl, "w:date");
-          if (insDate) ins.date = insDate;
-          numberingOpts.insertion = ins as NumberingInsertionOptions;
-        }
-        opts.numbering = numberingOpts;
-      } else {
-        opts.bullet = { level: level ?? 0 };
-      }
     } else {
-      opts.bullet = { level: level ?? 0 };
+      // Round-tripped IDs must survive even when the source package has no
+      // numbering part or points at a producer-specific unknown definition.
+      const numberingOpts: {
+        reference: string;
+        sourceNumId?: number;
+        level?: number;
+        autoStyle: boolean;
+        numberingChange?: { original: string; id: string; author: string; date?: string };
+        insertion?: NumberingInsertionOptions;
+      } = {
+        reference: `list_${numId}`,
+        sourceNumId: Number(numId),
+        level,
+        autoStyle: false,
+      };
+      // w:numberingChange (CT_TrackChangeNumbering) — child of w:numPr
+      const numberingChangeEl = findChild(numPr, "w:numberingChange");
+      if (numberingChangeEl) {
+        const nc: { original: string; id: string; author: string; date?: string } = {
+          original: attr(numberingChangeEl, "w:original") ?? "",
+          id: attr(numberingChangeEl, "w:id") ?? "",
+          author: attr(numberingChangeEl, "w:author") ?? "",
+        };
+        const ncDate = attr(numberingChangeEl, "w:date");
+        if (ncDate) nc.date = ncDate;
+        numberingOpts.numberingChange = nc;
+      }
+      // w:ins (CT_TrackChange) — numbering applied as a revision
+      const insEl = findChild(numPr, "w:ins");
+      if (insEl) {
+        const ins: Partial<NumberingInsertionOptions> = {
+          id: attr(insEl, "w:id") ?? "",
+          author: attr(insEl, "w:author") ?? "",
+        };
+        const insDate = attr(insEl, "w:date");
+        if (insDate) ins.date = insDate;
+        numberingOpts.insertion = ins as NumberingInsertionOptions;
+      }
+      opts.numbering = numberingOpts;
     }
   }
 
@@ -806,7 +861,7 @@ export function parseParagraphProperties(
       if (leader) tabObj.leader = leader as TabStopDefinition["leader"];
       tabStops.push(tabObj as TabStopDefinition);
     }
-    if (tabStops.length > 0) opts.tabStops = tabStops;
+    opts.tabStops = tabStops;
   }
 
   // On/off properties
@@ -814,19 +869,36 @@ export function parseParagraphProperties(
     const child = findChild(el, name);
     if (child) opts[optKey] = attrBool(child, "w:val") ?? true;
   }
+  const hyphenationLines = findChild(el, "w:hyphenationLines");
+  const hyphenationLineCount = hyphenationLines ? attrNum(hyphenationLines, "w:val") : undefined;
+  if (hyphenationLineCount !== undefined) opts.hyphenationLines = hyphenationLineCount;
+  const contextualSpacing = findChild(el, "w:contextualSpacing");
+  const contextualSpacingRaw =
+    contextualSpacing === undefined ? undefined : attr(contextualSpacing, "w:val");
+  if (
+    contextualSpacingRaw !== undefined &&
+    (ON_OFF_LEXICAL_VALUES as readonly string[]).includes(contextualSpacingRaw)
+  )
+    opts.contextualSpacingRaw = contextualSpacingRaw as OnOffLexicalValue;
 
   // Thematic break
   const pBdr = findChild(el, "w:pBdr");
   if (pBdr) {
     const border: BordersOptions = {};
     for (const side of PBDR_SIDES) {
-      const sideEl = findChild(pBdr, `w:${side}`);
+      const sideName =
+        side === "insideHorizontal"
+          ? "w:insideH"
+          : side === "insideVertical"
+            ? "w:insideV"
+            : `w:${side}`;
+      const sideEl = findChild(pBdr, sideName);
       if (!sideEl) continue;
       const sideOpts = parseBorderSide(sideEl);
       if (!sideOpts) continue;
       border[side] = sideOpts;
     }
-    if (Object.keys(border).length > 0) opts.border = border;
+    opts.border = border;
   }
 
   // Shading
@@ -941,6 +1013,8 @@ export function parseParagraphProperties(
       anchorLock?: boolean;
       width?: number | UniversalMeasure;
       height?: number | UniversalMeasure;
+      fillColorRaw?: string;
+      fillColorAttrRaw?: "fillcolor" | "w:fillcolor";
     } = {};
     for (const [attrName, optName] of [
       ["w:dropCap", "dropCap"],
@@ -1006,7 +1080,14 @@ export function parseParagraphProperties(
     if (w !== undefined) frame.width = w;
     const h = attrMeasure(framePr, "w:h") as number | UniversalMeasure;
     if (h !== undefined) frame.height = h;
+    const fillColor = attr(framePr, "w:fillcolor") ?? attr(framePr, "fillcolor");
+    if (fillColor !== undefined) {
+      frame.fillColorRaw = fillColor;
+      frame.fillColorAttrRaw =
+        attr(framePr, "w:fillcolor") === undefined ? "fillcolor" : "w:fillcolor";
+    }
     if (Object.keys(frame).length > 0) opts.frame = frame as FrameOptions;
+    else opts.frame = {};
   }
 
   // Revision (w:pPrChange) — symmetric with stringifyParagraphProperties
@@ -1033,6 +1114,10 @@ export function parseParagraphProperties(
   }
 
   return opts;
+}
+
+function isNegativeMeasure(value: number | string): boolean {
+  return typeof value === "number" ? value < 0 : value.trimStart().startsWith("-");
 }
 
 // CT_Cnf attribute order — shared by parseCnfStyle (w:val digits + w: attrs).
@@ -1078,6 +1163,7 @@ function parseCnfStyle(el: Element): NonNullable<ParagraphPropertiesOptions["cnf
 interface FieldRunState {
   kind: "form" | "complex" | null;
   pendingFormField: FormFieldOptions | null;
+  pendingFormFieldFieldLock?: boolean;
   pendingInstruction: string;
   pendingResult: string;
   controlRPr?: string;
@@ -1091,6 +1177,8 @@ interface FieldRunState {
   collectingResult: boolean;
   /** Source xml:space marker on the first plain result text. */
   resultPreserveSpace?: boolean;
+  /** False only inside a TOC aggregator that re-creates orphan stage markers. */
+  preserveOrphanMarkers?: boolean;
   /** Instruction-stage run elements (begin → separate/end), buffered for the
    *  plain-shape check at the closing end marker. */
   instrRunEls: Element[];
@@ -1101,12 +1189,23 @@ interface FieldRunState {
   instructionPreserveSpace?: boolean;
   /** Result-stage run elements (separate → end), buffered likewise. */
   resultRunEls: Element[];
+  /** Source run when all field stages were packed into a single w:r. */
+  compoundRunXml?: string;
+  /** True while replaying logical runs from the current compound source run. */
+  replayingCompoundRun?: boolean;
+  /** End marker run paired with a compound source run. */
+  compoundEndRunXml?: string;
+  /** Revision metadata embedded in the begin marker. */
+  beginNumberingChange?: NumberingChangeOptions;
+  /** The currently open nested field; all logical input is delegated to it. */
+  nested?: FieldRunState;
 }
 
 const initialFieldRunState = (): FieldRunState => ({
   kind: null,
   depth: 0,
   pendingFormField: null,
+  pendingFormFieldFieldLock: undefined,
   pendingInstruction: "",
   pendingResult: "",
   collectingResult: false,
@@ -1116,7 +1215,101 @@ const initialFieldRunState = (): FieldRunState => ({
   resultPreserveSpace: false,
   instrRunEls: [],
   resultRunEls: [],
+  compoundRunXml: undefined,
 });
+
+function activeFieldState(state: FieldRunState): FieldRunState {
+  let current = state;
+  while (current.nested) current = current.nested;
+  return current;
+}
+
+function isHyperlinkChild(
+  child: ParagraphChild,
+): child is Extract<ParagraphChild, { hyperlink: unknown }> {
+  return "hyperlink" in child;
+}
+
+function nestedFieldMember(child: ParagraphChild): ComplexFieldInstructionMember | undefined {
+  if ("complexField" in child) return { complexField: child.complexField };
+  if ("formField" in child) return child;
+  return undefined;
+}
+
+/** Collect an unterminated field's buffered control/result runs, including nested fields. */
+function incompleteFieldRunElements(state: FieldRunState): Element[] {
+  const nestedElements = state.nested ? incompleteFieldRunElements(state.nested) : [];
+  return [
+    state.beginRunEl,
+    ...state.instrRunEls,
+    ...(state.collectingResult && state.separatorRunEl ? [state.separatorRunEl] : []),
+    ...nestedElements,
+    ...state.resultRunEls,
+  ].filter((element): element is Element => element !== undefined);
+}
+
+/** Serialize an unterminated field's buffered control/result runs verbatim. */
+function flushIncompleteFieldRunState(state: FieldRunState): { rawXml: string } | undefined {
+  if (!state.kind) return undefined;
+  const elements = incompleteFieldRunElements(state);
+  if (elements.length === 0) return undefined;
+  return { rawXml: elements.map((element) => stringifyElement(element)).join("") };
+}
+
+function parseNumberingChange(element: Element): NumberingChangeOptions {
+  const date = attr(element, "w:date");
+  return {
+    original: attr(element, "w:original") ?? "",
+    id: attr(element, "w:id") ?? "",
+    author: attr(element, "w:author") ?? "",
+    ...(date !== undefined ? { date } : {}),
+  };
+}
+
+function parseFieldMarkerRun(run: Element, type: "separate" | "end"): FieldMarkerOptions {
+  const marker: FieldMarkerOptions = { type };
+  const rPrXml = runRPrXml(run);
+  if (rPrXml !== undefined) marker.rPrXml = rPrXml;
+  const additionRsid = attr(run, "w:rsidR");
+  if (additionRsid) marker.additionRsid = additionRsid;
+  const runPropertiesRsid = attr(run, "w:rsidRPr");
+  if (runPropertiesRsid) marker.runPropertiesRsid = runPropertiesRsid;
+  const deletionRsid = attr(run, "w:rsidDel");
+  if (deletionRsid) marker.deletionRsid = deletionRsid;
+  if (findChild(run, "w:lastRenderedPageBreak")) marker.lastRenderedPageBreak = true;
+  const fldChar = findChild(run, "w:fldChar");
+  const numberingChangeEl = fldChar && findChild(fldChar, "w:numberingChange");
+  if (numberingChangeEl) marker.numberingChange = parseNumberingChange(numberingChangeEl);
+  return marker;
+}
+
+/**
+ * Release an unterminated field inside a track-change wrapper. Control runs
+ * stay verbatim, while completed result members are already canonical and must
+ * not disappear with the unclosed outer field.
+ */
+function incompleteTrackChangeFieldChildren(state: FieldRunState): TrackChangeChild[] {
+  if (!state.kind) return [];
+
+  const headerState: FieldRunState = {
+    ...state,
+    resultRunEls: state.nested ? state.resultRunEls : [],
+  };
+  const header = flushIncompleteFieldRunState(headerState);
+  const children: TrackChangeChild[] = header ? [header] : [];
+  const members = state.collectingResult ? state.resultMembers : state.instructionMembers;
+
+  for (const member of members) {
+    if ("run" in member) {
+      if (state.collectingResult) children.push(member.run);
+      continue;
+    }
+    if ("complexField" in member || "formField" in member) {
+      children.push(member);
+    }
+  }
+  return children;
+}
 
 /**
  * True when the field-stage runs are exactly what the plain stringify template
@@ -1133,10 +1326,38 @@ function isPlainFieldRuns(
   if (runs.length === 0) return true;
   if (runs.length > 1) return false;
   const run = runs[0]!;
-  if (attr(run, "w:rsidR") || attr(run, "w:rsidRPr") || attr(run, "w:rsidDel")) return false;
   if (runRPrXml(run) !== expectedRPr) return false;
   const content = (run.elements ?? []).filter((c) => c.name !== "w:rPr");
   return content.length === 1 && tags.includes(content[0]!.name!);
+}
+
+/**
+ * Split a run that packs a complete (often nested) field into one XML run.
+ * Word normally emits one field stage per run, but some producers put every
+ * marker and instruction in one `w:r`; feeding that run only once would drop
+ * every stage after its first marker.
+ */
+function splitCompoundFieldRun(run: Element): Element[] {
+  const elements = run.elements ?? [];
+  const fieldControls = elements.filter(
+    (child) =>
+      child.name === "w:fldChar" ||
+      child.name === "w:instrText" ||
+      child.name === "w:delInstrText" ||
+      child.name === "w:t" ||
+      child.name === "w:delText",
+  );
+  if (!elements.some((child) => child.name === "w:fldChar") || fieldControls.length < 2) {
+    return [run];
+  }
+
+  const properties = elements.find((child) => child.name === "w:rPr");
+  return fieldControls.map((child) => ({
+    ...structuredClone(run),
+    elements: properties
+      ? [structuredClone(properties), structuredClone(child)]
+      : [structuredClone(child)],
+  }));
 }
 
 /**
@@ -1155,6 +1376,31 @@ function feedFieldRun(
   state: FieldRunState,
   ctx: DocxReadContext,
 ): { consumed: boolean; child?: ParagraphChild } {
+  if (state.nested) {
+    const fed = feedFieldRun(run, state.nested, ctx);
+    const member = fed.child ? nestedFieldMember(fed.child) : undefined;
+    if (member) {
+      state.depth--;
+      (state.collectingResult ? state.resultMembers : state.instructionMembers).push(member);
+      state.nested = undefined;
+    }
+    return { consumed: true };
+  }
+
+  const logicalRuns = splitCompoundFieldRun(run);
+  if (logicalRuns.length > 1) {
+    state.compoundRunXml = stringifyElement(run);
+    state.compoundEndRunXml = undefined;
+    state.replayingCompoundRun = true;
+    let child: ParagraphChild | undefined;
+    for (const logicalRun of logicalRuns) {
+      const fed = feedFieldRun(logicalRun, state, ctx);
+      if (fed.child) child = fed.child;
+    }
+    state.replayingCompoundRun = false;
+    return { consumed: true, child };
+  }
+
   const fldCharEl = findChild(run, "w:fldChar");
   if (fldCharEl) {
     const fctype = attr(fldCharEl, "w:fldCharType");
@@ -1164,22 +1410,33 @@ function feedFieldRun(
       // nested chain verbatim in the outer field's stage buffer instead of
       // resetting the accumulator — the plain state machine cannot represent
       // interleaved instructions, and the verbatim channel round-trips them.
-      if (state.kind === "complex" && state.depth > 0) {
+      if (state.kind && state.depth > 0) {
         state.depth++;
-        (state.collectingResult ? state.resultRunEls : state.instrRunEls).push(run);
+        state.nested = initialFieldRunState();
+        feedFieldRun(run, state.nested, ctx);
         return { consumed: true };
       }
+      state.pendingFormFieldFieldLock = undefined;
       const ffDataEl = findChild(fldCharEl, "w:ffData");
       if (ffDataEl) {
         state.kind = "form";
         state.pendingFormField = parseFormFieldData(ffDataEl);
+        state.pendingFormFieldFieldLock = attrBool(fldCharEl, "w:fldLock");
+        state.instructionPreserveSpace = false;
+        state.resultPreserveSpace = false;
       } else {
         state.kind = "complex";
         state.pendingInstruction = "";
         state.pendingResult = "";
+        state.instructionPreserveSpace = false;
+        state.resultPreserveSpace = false;
       }
       // The begin run's rPr stands in for the field's control-run rPr.
       state.controlRPr = runRPrXml(run);
+      const numberingChangeEl = findChild(fldCharEl, "w:numberingChange");
+      state.beginNumberingChange = numberingChangeEl
+        ? parseNumberingChange(numberingChangeEl)
+        : undefined;
       state.beginRunEl = run;
       state.separatorRunEl = undefined;
       state.resultRPr = undefined;
@@ -1190,27 +1447,44 @@ function feedFieldRun(
       state.resultMembers = [];
       state.resultRunEls = [];
     } else if (fctype === "separate") {
-      if (state.kind === "complex" && state.depth > 1) {
-        (state.collectingResult ? state.resultRunEls : state.instrRunEls).push(run);
+      if (state.kind && state.depth > 1) {
+        if (state.nested) feedFieldRun(run, state.nested, ctx);
+        else (state.collectingResult ? state.resultRunEls : state.instrRunEls).push(run);
         return { consumed: true };
       }
       state.collectingResult = true;
       state.separatorRunEl = run;
       state.resultRunEls = [];
     } else if (fctype === "end" && state.kind) {
-      if (state.kind === "complex" && state.depth > 1) {
+      if (state.kind && state.depth > 1) {
         state.depth--;
-        (state.collectingResult ? state.resultRunEls : state.instrRunEls).push(run);
+        if (state.nested) {
+          const fed = feedFieldRun(run, state.nested, ctx);
+          const member = fed.child ? nestedFieldMember(fed.child) : undefined;
+          if (member) {
+            (state.collectingResult ? state.resultMembers : state.instructionMembers).push(member);
+            state.nested = undefined;
+          }
+        } else (state.collectingResult ? state.resultRunEls : state.instrRunEls).push(run);
         return { consumed: true };
+      }
+      if (state.compoundRunXml && !state.replayingCompoundRun) {
+        state.compoundEndRunXml = stringifyElement(run);
       }
       let child: ParagraphChild | undefined;
       if (state.kind === "form" && state.pendingFormField) {
         const formChild: ParagraphChild = { formField: state.pendingFormField };
+        if (state.pendingFormFieldFieldLock !== undefined) {
+          formChild.fieldLock = state.pendingFormFieldFieldLock;
+        }
         const beginRsid = attr(state.beginRunEl ?? run, "w:rsidR");
         if (beginRsid) formChild.additionRsid = beginRsid;
         const beginRunPropertiesRsid = attr(state.beginRunEl ?? run, "w:rsidRPr");
         if (beginRunPropertiesRsid) formChild.runPropertiesRsid = beginRunPropertiesRsid;
         if (state.controlRPr) formChild.rPrXml = state.controlRPr;
+        if (findChild(state.beginRunEl ?? run, "w:lastRenderedPageBreak")) {
+          formChild.lastRenderedPageBreak = true;
+        }
         const separatorRsid = state.separatorRunEl
           ? attr(state.separatorRunEl, "w:rsidR")
           : undefined;
@@ -1235,12 +1509,19 @@ function feedFieldRun(
           formChild.instructionRunPropertiesRsid = instructionRunPropertiesRsid;
         const instructionRPrXml = instructionRun ? runRPrXml(instructionRun) : undefined;
         formChild.instructionRPrXml = instructionRPrXml;
-        formChild.hasResult = state.resultRunEls.length > 0;
+        formChild.hasResult = state.resultRunEls.length > 0 || state.separatorRunEl !== undefined;
+        if (formChild.hasResult && state.resultRunEls.length === 0) {
+          formChild.resultRunsXml = "";
+        }
         if (
           !isPlainFieldRuns(state.instrRunEls, state.controlRPr, ["w:instrText", "w:delInstrText"])
         ) {
           formChild.instrRunsXml = state.instrRunEls.map((el) => stringifyElement(el)).join("");
         }
+        const hasFormFieldInstructionMarkers = state.instructionMembers.some(
+          (member) => !("run" in member),
+        );
+        if (hasFormFieldInstructionMarkers) formChild.instructionMembers = state.instructionMembers;
         if (
           !isPlainFieldRuns(state.resultRunEls, state.resultRPr ?? state.controlRPr, [
             "w:t",
@@ -1249,6 +1530,8 @@ function feedFieldRun(
         ) {
           formChild.resultRunsXml = state.resultRunEls.map((el) => stringifyElement(el)).join("");
         }
+        const hasFormFieldResultMarkers = state.resultMembers.some((member) => !("run" in member));
+        if (hasFormFieldResultMarkers) formChild.resultMembers = state.resultMembers;
         const resultRunEl = state.resultRunEls.at(-1);
         const resultRsid = resultRunEl ? attr(resultRunEl, "w:rsidR") : undefined;
         const resultRPrRsid = resultRunEl ? attr(resultRunEl, "w:rsidRPr") : undefined;
@@ -1265,6 +1548,9 @@ function feedFieldRun(
         child = formChild;
       } else if (state.kind === "complex") {
         const cf: ComplexFieldOptions = { instruction: state.pendingInstruction };
+        const fieldDataEl = findChild(findChild(state.beginRunEl ?? run, "w:fldChar"), "w:fldData");
+        const fieldData = fieldDataEl ? textOf(fieldDataEl) : undefined;
+        if (fieldData !== undefined) cf.fieldData = fieldData;
         const beginFieldLock = attrBool(
           findChild(state.beginRunEl ?? run, "w:fldChar"),
           "w:fldLock",
@@ -1278,6 +1564,8 @@ function feedFieldRun(
         if (beginRsid) cf.additionRsid = beginRsid;
         const beginRunPropertiesRsid = attr(state.beginRunEl ?? run, "w:rsidRPr");
         if (beginRunPropertiesRsid) cf.runPropertiesRsid = beginRunPropertiesRsid;
+        const beginDeletionRsid = attr(state.beginRunEl ?? run, "w:rsidDel");
+        if (beginDeletionRsid) cf.deletionRsid = beginDeletionRsid;
         const instructionRun = state.instrRunEls.find(
           (el) => findChild(el, "w:instrText") ?? findChild(el, "w:delInstrText"),
         );
@@ -1288,6 +1576,10 @@ function feedFieldRun(
         if (instructionRsid) cf.instructionAdditionRsid = instructionRsid;
         if (instructionRunPropertiesRsid)
           cf.instructionRunPropertiesRsid = instructionRunPropertiesRsid;
+        const instructionDeletionRsid = instructionRun
+          ? attr(instructionRun, "w:rsidDel")
+          : undefined;
+        if (instructionDeletionRsid) cf.instructionDeletionRsid = instructionDeletionRsid;
         cf.instructionRPrXml = instructionRun ? runRPrXml(instructionRun) : undefined;
         const separatorRsid = state.separatorRunEl
           ? attr(state.separatorRunEl, "w:rsidR")
@@ -1297,11 +1589,16 @@ function feedFieldRun(
           : undefined;
         if (separatorRsid) cf.separatorAdditionRsid = separatorRsid;
         if (separatorRunPropertiesRsid) cf.separatorRunPropertiesRsid = separatorRunPropertiesRsid;
+        const separatorDeletionRsid = state.separatorRunEl
+          ? attr(state.separatorRunEl, "w:rsidDel")
+          : undefined;
+        if (separatorDeletionRsid) cf.separatorDeletionRsid = separatorDeletionRsid;
         cf.separatorRPrXml = state.separatorRunEl
           ? (runRPrXml(state.separatorRunEl) ?? "")
           : undefined;
         // Mark the result present when the field carried any result run — an
         // empty-text result still round-trips its separate marker.
+        cf.hasResult = state.separatorRunEl !== undefined;
         if (state.resultRunEls.length > 0) cf.result = state.pendingResult;
         cf.instructionPreserveSpace = state.instructionPreserveSpace;
         cf.resultPreserveSpace = state.resultPreserveSpace;
@@ -1312,6 +1609,8 @@ function feedFieldRun(
         const resultRPrRsid = plainResultRun ? attr(plainResultRun, "w:rsidRPr") : undefined;
         if (resultRsid) cf.resultAdditionRsid = resultRsid;
         if (resultRPrRsid) cf.resultRunPropertiesRsid = resultRPrRsid;
+        const resultDeletionRsid = plainResultRun ? attr(plainResultRun, "w:rsidDel") : undefined;
+        if (resultDeletionRsid) cf.resultDeletionRsid = resultDeletionRsid;
         // Word styles the end run like the result (not like the controls).
         const endRPr = runRPrXml(run);
         cf.endRPrXml = endRPr ?? "";
@@ -1319,10 +1618,14 @@ function feedFieldRun(
         const endRunPropertiesRsid = attr(run, "w:rsidRPr");
         if (endRsid) cf.endAdditionRsid = endRsid;
         if (endRunPropertiesRsid) cf.endRunPropertiesRsid = endRunPropertiesRsid;
-        const hasInstructionMarkers = state.instructionMembers.some(
-          (member) =>
-            "simpleField" in member || "bookmarkStart" in member || "bookmarkEnd" in member,
-        );
+        const endDeletionRsid = attr(run, "w:rsidDel");
+        if (endDeletionRsid) cf.endDeletionRsid = endDeletionRsid;
+        const endFldChar = findChild(run, "w:fldChar");
+        const endNumberingChangeEl = endFldChar && findChild(endFldChar, "w:numberingChange");
+        const endNumberingChange = endNumberingChangeEl
+          ? parseNumberingChange(endNumberingChangeEl)
+          : undefined;
+        const hasInstructionMarkers = state.instructionMembers.some((member) => !("run" in member));
         if (hasInstructionMarkers) {
           cf.instructionMembers = state.instructionMembers;
         } else if (
@@ -1332,11 +1635,14 @@ function feedFieldRun(
         }
         // The plain result template pairs the result rPr (defaulting to the
         // control rPr) with a single text run — anything else goes verbatim.
-        const hasResultMarkers = state.resultMembers.some(
-          (member) =>
-            "simpleField" in member || "bookmarkStart" in member || "bookmarkEnd" in member,
-        );
+        const hasResultMarkers = state.resultMembers.some((member) => !("run" in member));
         if (hasResultMarkers) cf.resultMembers = state.resultMembers;
+        if (state.compoundRunXml) {
+          cf.compoundRunXml = state.compoundRunXml;
+          cf.compoundEndRunXml = state.compoundEndRunXml;
+        }
+        if (state.beginNumberingChange) cf.beginNumberingChange = state.beginNumberingChange;
+        if (endNumberingChange) cf.endNumberingChange = endNumberingChange;
         if (
           !isPlainFieldRuns(state.resultRunEls, state.resultRPr ?? state.controlRPr, [
             "w:t",
@@ -1350,9 +1656,14 @@ function feedFieldRun(
       state.kind = null;
       state.depth = 0;
       state.pendingFormField = null;
+      state.pendingFormFieldFieldLock = undefined;
       state.collectingResult = false;
       state.instrRunEls = [];
       state.resultRunEls = [];
+      state.compoundRunXml = undefined;
+      state.compoundEndRunXml = undefined;
+      state.beginNumberingChange = undefined;
+      state.nested = undefined;
       return { consumed: true, child };
     }
     // An end (or separate) marker with no open field is the tail of a
@@ -1362,19 +1673,26 @@ function feedFieldRun(
     // is lost.
     if (!state.kind) {
       // Only a run carrying real content beyond the marker (e.g. a pagination
-      // hint) needs the verbatim channel — a bare or rPr-only end run is
-      // re-created by the field's own emit path.
+      // hint) needs the verbatim channel. Separate/end markers are also kept:
+      // in a non-TOC accumulator they belong to a field opened elsewhere, and
+      // dropping the marker would move the field boundary.
       const extras = (run.elements ?? []).filter(
         (c) => c.type === "element" && c.name !== "w:fldChar" && c.name !== "w:rPr",
       );
+      const preserveMarker =
+        state.preserveOrphanMarkers !== false && (fctype === "separate" || fctype === "end");
       if (extras.length > 0) {
         return { consumed: true, child: { rawXml: stringifyElement(run) } };
+      }
+      if (preserveMarker) {
+        return { consumed: true, child: { fieldMarker: parseFieldMarkerRun(run, fctype) } };
       }
     }
     return { consumed: true };
   }
   if (state.kind) {
     if (state.kind === "complex") {
+      if (state.nested) return feedFieldRun(run, state.nested, ctx);
       if (state.collectingResult) {
         // Capture the first result run's rPr for round-trip.
         if (state.resultRPr === undefined) state.resultRPr = runRPrXml(run);
@@ -1402,6 +1720,7 @@ function feedFieldRun(
         });
       }
     } else if (state.kind === "form") {
+      if (state.nested) return feedFieldRun(run, state.nested, ctx);
       if (state.collectingResult) {
         // Capture a textInput's current value; checkbox/dropdown results are
         // discarded (their state is in w:ffData), but all result runs stay in
@@ -1414,8 +1733,14 @@ function feedFieldRun(
           }
         }
         state.resultRunEls.push(run);
+        state.resultMembers.push({
+          run: parsedRunToOptions(parseRun(run, ctx)) as RunOptions,
+        });
       } else {
         state.instrRunEls.push(run);
+        state.instructionMembers.push({
+          run: parsedRunToOptions(parseRun(run, ctx)) as RunOptions,
+        });
       }
     }
     return { consumed: true };
@@ -1424,14 +1749,45 @@ function feedFieldRun(
 }
 
 /**
- * Parse a w:r that carries a drawing — direct w:drawing child OR wrapped in
- * mc:AlternateContent > mc:Choice (DrawingML shapes wpg/wps use this wrapper;
- * the Fallback holds the VML equivalent). Resolves either and, when an
- * AlternateContent wrapper is present, carries the Fallback as raw XML so the
- * full mc:AlternateContent round-trips verbatim. Returns undefined when the
- * run has no drawing (caller falls back to the plain-run path).
+ * Parse every drawing-shaped member of a w:r in source order. DrawingML can
+ * occur directly or inside MCE Choice wrappers, and a run may carry several
+ * shapes. Mixed or repeated members stay separate instead of collapsing to
+ * the first shape.
  */
-function parseDrawingRunChild(child: Element, ctx: DocxReadContext): ParagraphChild | undefined {
+function parseDrawingRunChildren(child: Element, ctx: DocxReadContext): ParagraphChild[] {
+  const innerContent = (child.elements ?? []).filter(
+    (element) =>
+      element.type === "element" &&
+      element.name !== "w:rPr" &&
+      element.name !== "w:lastRenderedPageBreak",
+  );
+  const drawingElements = innerContent.filter((element) => element.name === "w:drawing");
+  const alternateElements = innerContent.filter(
+    (element) => element.name === "mc:AlternateContent",
+  );
+  const drawingOnly = innerContent.every(
+    (element) => element.name === "w:drawing" || element.name === "mc:AlternateContent",
+  );
+  if (
+    !drawingOnly ||
+    drawingElements.length > 1 ||
+    alternateElements.length > 1 ||
+    (drawingElements.length === 1 && innerContent.length > 1)
+  ) {
+    return [parsedRunToOptions(parseRun(child, ctx))];
+  }
+  const single = parseSingleDrawingRunChild(child, ctx);
+  return single ? [single] : [];
+}
+
+/**
+ * Parse one direct w:drawing or one MCE-wrapped drawing. MCE Fallbacks remain
+ * attached to the structured Choice so both representations round-trip.
+ */
+function parseSingleDrawingRunChild(
+  child: Element,
+  ctx: DocxReadContext,
+): ParagraphChild | undefined {
   const innerContent = (child.elements ?? []).filter(
     (element) =>
       element.type === "element" &&
@@ -1618,9 +1974,9 @@ function parseTrackChangeRuns(el: Element, ctx: DocxReadContext): TrackChangeChi
         if (fed.child) out.push(fed.child as TrackChangeChild);
         continue;
       }
-      const drawingChild = parseDrawingRunChild(sub, ctx);
-      if (drawingChild) {
-        out.push(drawingChild as TrackChangeChild);
+      const drawingChildren = parseDrawingRunChildren(sub, ctx);
+      if (drawingChildren.length > 0) {
+        out.push(...(drawingChildren as TrackChangeChild[]));
         continue;
       }
       const parsed = parseRun(sub, ctx);
@@ -1645,6 +2001,17 @@ function parseTrackChangeRuns(el: Element, ctx: DocxReadContext): TrackChangeChi
     } else if (sub.name === "w:commentRangeEnd") {
       const m = parseMarkupRangeOptions(sub);
       if (m) out.push({ commentRangeEnd: m });
+    } else if (sub.name === "w:bookmarkStart" || sub.name === "w:bookmarkEnd") {
+      const marker =
+        sub.name === "w:bookmarkStart"
+          ? parseBookmarkStartOptions(sub)
+          : parseBookmarkEndOptions(sub);
+      if (marker)
+        out.push(
+          sub.name === "w:bookmarkStart"
+            ? ({ bookmarkStart: marker } as TrackChangeChild)
+            : { bookmarkEnd: marker },
+        );
     } else if (sub.name === "w:proofErr") {
       // Spell/grammar markers can sit inside the wrapper (CT_RunTrackChange
       // accepts the full range-markup group).
@@ -1655,8 +2022,31 @@ function parseTrackChangeRuns(el: Element, ctx: DocxReadContext): TrackChangeChi
         type === "gramStart" ||
         type === "gramEnd"
       ) {
-        out.push({ proofErr: type });
+        const stage = activeFieldState(fieldState);
+        const members = stage.collectingResult ? stage.resultMembers : stage.instructionMembers;
+        if (stage.kind) members.push({ proofErr: type });
+        else out.push({ proofErr: type });
       }
+    } else if (sub.name === "w:hyperlink") {
+      const nested = parseHyperlinkChild(sub, ctx);
+      if (nested && "hyperlink" in nested) out.push(nested as TrackChangeChild);
+    } else if (sub.name === "w:sdt") {
+      const sdtPr = findChild(sub, "w:sdtPr");
+      const properties = sdtPr
+        ? { ...parseSdtProperties(sdtPr, ctx), propertiesPresent: true }
+        : { propertiesPresent: false };
+      const sdtEndPr = findChild(sub, "w:sdtEndPr");
+      const endRPr = sdtEndPr ? findChild(sdtEndPr, "w:rPr") : undefined;
+      const sdt: SdtRunOptions = { properties };
+      const children = parseRunLevelChildren(findChild(sub, "w:sdtContent")?.elements, ctx, {
+        incompleteFields: "raw",
+      });
+      if (children.length > 0) sdt.children = children;
+      if (sdtEndPr) {
+        const endProperties = endRPr ? parseRunProperties(endRPr) : {};
+        sdt.endProperties = endProperties;
+      }
+      out.push({ sdt });
     } else if (sub.name === "w:ins" || sub.name === "w:del") {
       // Nested wrappers (w:ins > w:del) — recurse with the same shape.
       const nested = parseTrackChangeRuns(sub, ctx);
@@ -1674,7 +2064,7 @@ function parseTrackChangeRuns(el: Element, ctx: DocxReadContext): TrackChangeChi
       }
     }
   }
-  return out;
+  return [...out, ...incompleteTrackChangeFieldChildren(fieldState)];
 }
 
 function collectRunText(el: Element): string {
@@ -1718,6 +2108,74 @@ function parseContainerChildren(el: Element, ctx: DocxReadContext): ParagraphChi
       case "w:customXml": {
         const customXml = parseCustomXmlInline(sub, ctx);
         if (customXml) children.push({ customXml });
+        break;
+      }
+      case "w:dir":
+      case "w:bdo": {
+        const val = attr(sub, "w:val");
+        if (val !== "ltr" && val !== "rtl") break;
+        const container: DirInlineOptions = { val };
+        const nested = parseContainerChildren(sub, ctx);
+        if (nested.length > 0) container.children = nested;
+        children.push(sub.name === "w:dir" ? { dir: container } : { bdo: container });
+        break;
+      }
+      case "w:hyperlink": {
+        const child = parseHyperlinkChild(sub, ctx);
+        if (child && isHyperlinkChild(child)) children.push(child);
+        break;
+      }
+      case "w:proofErr": {
+        const type = attr(sub, "w:type");
+        if (
+          type === "spellStart" ||
+          type === "spellEnd" ||
+          type === "gramStart" ||
+          type === "gramEnd"
+        )
+          children.push({ proofErr: type });
+        break;
+      }
+      case "w:bookmarkStart": {
+        const marker = parseBookmarkStartOptions(sub);
+        if (marker) children.push({ bookmarkStart: marker });
+        break;
+      }
+      case "w:bookmarkEnd": {
+        const marker = parseBookmarkEndOptions(sub);
+        if (marker) children.push({ bookmarkEnd: marker });
+        break;
+      }
+      case "w:commentRangeStart": {
+        const marker = parseMarkupRangeOptions(sub);
+        if (marker) children.push({ commentRangeStart: marker });
+        break;
+      }
+      case "w:commentRangeEnd": {
+        const marker = parseMarkupRangeOptions(sub);
+        if (marker) children.push({ commentRangeEnd: marker });
+        break;
+      }
+      case "w:permStart": {
+        const id = attrNum(sub, "w:id");
+        if (id === undefined) break;
+        const start: Extract<ParagraphChild, { permStart: unknown }>["permStart"] = { id };
+        const editor = attr(sub, "w:ed");
+        if (editor !== undefined) start.editor = editor;
+        const editGroup = attr(sub, "w:edGrp");
+        if (editGroup !== undefined) {
+          start.editGroup = editGroup as typeof start.editGroup;
+        }
+        const colFirst = attrNum(sub, "w:colFirst");
+        if (colFirst !== undefined) start.colFirst = colFirst;
+        const colLast = attrNum(sub, "w:colLast");
+        if (colLast !== undefined) start.colLast = colLast;
+        children.push({ permStart: start });
+        break;
+      }
+      case "w:permEnd": {
+        const id = attrNum(sub, "w:id");
+        if (id !== undefined) children.push({ permEnd: id });
         break;
       }
       default:
@@ -1865,25 +2323,23 @@ export function parseBookmarkEndOptions(el: Element): MarkupRangeOptions | undef
 function parseHyperlinkChild(child: Element, ctx: DocxReadContext): ParagraphChild | null {
   const hl: Partial<HyperlinkInlineOptions> = {};
   const rId = attr(child, "r:id");
-  if (rId) {
+  if (rId !== undefined) {
     // rId numbering is per-part: a hyperlink inside a footnote/header
     // resolves against that part's own rels first, then document.xml's.
     const target =
       ctx.docx.partRefs.partHyperlinks.get(ctx.currentPart)?.get(rId) ??
       ctx.docx.partRefs.hyperlinks.get(rId);
     if (target) hl.url = target;
-    const sourceRelationshipId = /^rId(\d+)$/.exec(rId)?.[1];
-    if (target && sourceRelationshipId !== undefined)
-      hl.sourceRelationshipId = Number(sourceRelationshipId);
+    if (target) hl.sourceRelationshipId = rId;
   }
   const anchor = attr(child, "w:anchor");
-  if (anchor) hl.anchor = anchor;
+  if (anchor !== undefined) hl.anchor = anchor;
   const tooltip = attr(child, "w:tooltip");
-  if (tooltip) hl.tooltip = tooltip;
+  if (tooltip !== undefined) hl.tooltip = tooltip;
   const tgtFrame = attr(child, "w:tgtFrame");
-  if (tgtFrame) hl.targetFrame = tgtFrame;
+  if (tgtFrame !== undefined) hl.targetFrame = tgtFrame;
   const docLocation = attr(child, "w:docLocation");
-  if (docLocation) hl.docLocation = docLocation;
+  if (docLocation !== undefined) hl.docLocation = docLocation;
   const history = attrBool(child, "w:history");
   if (history !== undefined) hl.history = history;
 
@@ -1901,17 +2357,40 @@ function parseHyperlinkChild(child: Element, ctx: DocxReadContext): ParagraphChi
       }
       // Drawing runs inside hyperlinks (image links) resolve through the
       // same paragraph-child extraction — parseRun skips w:drawing.
-      const drawingChild = parseDrawingRunChild(sub, ctx);
-      if (drawingChild) {
-        linkRuns.push(drawingChild);
+      const drawingChildren = parseDrawingRunChildren(sub, ctx);
+      if (drawingChildren.length > 0) {
+        linkRuns.push(...drawingChildren);
         continue;
       }
       const parsed = parseRun(sub, ctx);
       const runOpts = parsedRunToOptions(parsed);
       // parsedRunToOptions returns { commentReference } for pure
       // comment-reference runs; hyperlink children are runs, so skip it.
-      if (!("commentReference" in runOpts)) {
-        linkRuns.push(runOpts);
+      if (Object.keys(runOpts).length > 0) linkRuns.push(runOpts);
+    } else if (sub.name === "w:commentRangeStart" || sub.name === "w:commentRangeEnd") {
+      const marker =
+        sub.name === "w:commentRangeStart"
+          ? parseMarkupRangeOptions(sub)
+          : parseMarkupRangeOptions(sub);
+      if (marker)
+        linkRuns.push(
+          sub.name === "w:commentRangeStart"
+            ? { commentRangeStart: marker }
+            : { commentRangeEnd: marker },
+        );
+    } else if (sub.name === "w:ins" || sub.name === "w:del") {
+      const nested = parseTrackChangeRuns(sub, ctx);
+      if (nested.length > 0) {
+        const revision = {
+          id: attrNum(sub, "w:id") ?? 0,
+          author: attr(sub, "w:author") ?? "",
+          date: attr(sub, "w:date"),
+        };
+        linkRuns.push(
+          sub.name === "w:ins"
+            ? { insertion: { ...revision, children: nested } }
+            : { deletion: { ...revision, children: nested } },
+        );
       }
     } else if (sub.name === "w:hyperlink") {
       const nested = parseHyperlinkChild(sub, ctx);
@@ -1920,16 +2399,35 @@ function parseHyperlinkChild(child: Element, ctx: DocxReadContext): ParagraphChi
       // Bookmarks may open inside link content (Word parks _GoBack on the
       // last edit position, often an image link run).
       const bookmarkStart = parseBookmarkStartOptions(sub);
-      if (bookmarkStart) linkRuns.push({ bookmarkStart });
+      if (bookmarkStart) {
+        const stage = activeFieldState(fieldState);
+        const members = stage.collectingResult ? stage.resultMembers : stage.instructionMembers;
+        if (stage.kind) members.push({ bookmarkStart });
+        else linkRuns.push({ bookmarkStart });
+      }
     } else if (sub.name === "w:bookmarkEnd") {
       const bookmarkEnd = parseBookmarkEndOptions(sub);
-      if (bookmarkEnd) linkRuns.push({ bookmarkEnd });
+      if (bookmarkEnd) {
+        const stage = activeFieldState(fieldState);
+        const members = stage.collectingResult ? stage.resultMembers : stage.instructionMembers;
+        if (stage.kind) members.push({ bookmarkEnd });
+        else linkRuns.push({ bookmarkEnd });
+      }
     } else if (sub.name === "w:proofErr") {
       const type = attr(sub, "w:type");
-      if (type) linkRuns.push({ proofErr: type } as ParagraphChild);
+      const proofType =
+        type === "spellStart" || type === "spellEnd" || type === "gramStart" || type === "gramEnd"
+          ? type
+          : undefined;
+      if (proofType) {
+        const stage = activeFieldState(fieldState);
+        const member = { proofErr: proofType } as const;
+        const members = stage.collectingResult ? stage.resultMembers : stage.instructionMembers;
+        if (stage.kind) members.push(member);
+        else linkRuns.push({ proofErr: type } as ParagraphChild);
+      }
     }
   }
-  if (linkRuns.length === 0) return null;
   hl.children = linkRuns;
   return { hyperlink: hl };
 }
@@ -1942,12 +2440,14 @@ function parseHyperlinkChild(child: Element, ctx: DocxReadContext): ParagraphChi
 function parseRunLevelChildren(
   elements: Element[] | undefined,
   ctx: DocxReadContext,
+  options: { incompleteFields?: "raw" | "defer"; preserveOrphanMarkers?: boolean } = {},
 ): ParagraphChild[] {
   const childList: ParagraphChild[] = [];
 
   // Field accumulator — see feedFieldRun. The whole field collapses to a
   // single child.
   const fieldState = initialFieldRunState();
+  fieldState.preserveOrphanMarkers = options.preserveOrphanMarkers !== false;
 
   for (const child of elements ?? []) {
     switch (child.name) {
@@ -1961,9 +2461,9 @@ function parseRunLevelChildren(
           break;
         }
 
-        const drawingChild = parseDrawingRunChild(child, ctx);
-        if (drawingChild) {
-          childList.push(drawingChild);
+        const drawingChildren = parseDrawingRunChildren(child, ctx);
+        if (drawingChildren.length > 0) {
+          childList.push(...drawingChildren);
           break;
         }
         const parsed = parseRun(child, ctx);
@@ -1972,7 +2472,13 @@ function parseRunLevelChildren(
       }
       case "w:hyperlink": {
         const hlChild = parseHyperlinkChild(child, ctx);
-        if (hlChild) childList.push(hlChild);
+        if (!hlChild || !isHyperlinkChild(hlChild)) break;
+        if (fieldState.kind) {
+          const stage = activeFieldState(fieldState);
+          (stage.collectingResult ? stage.resultMembers : stage.instructionMembers).push(hlChild);
+        } else {
+          childList.push(hlChild);
+        }
         break;
       }
       case "w:subDoc": {
@@ -1984,10 +2490,9 @@ function parseRunLevelChildren(
       case "w:bookmarkStart": {
         const bookmarkStart = parseBookmarkStartOptions(child);
         if (bookmarkStart) {
-          const members = fieldState.collectingResult
-            ? fieldState.resultMembers
-            : fieldState.instructionMembers;
-          if (fieldState.kind === "complex") members.push({ bookmarkStart });
+          const stage = activeFieldState(fieldState);
+          const members = stage.collectingResult ? stage.resultMembers : stage.instructionMembers;
+          if (stage.kind) members.push({ bookmarkStart });
           else childList.push({ bookmarkStart });
         }
         break;
@@ -1995,10 +2500,9 @@ function parseRunLevelChildren(
       case "w:bookmarkEnd": {
         const bookmarkEnd = parseBookmarkEndOptions(child);
         if (bookmarkEnd) {
-          const members = fieldState.collectingResult
-            ? fieldState.resultMembers
-            : fieldState.instructionMembers;
-          if (fieldState.kind === "complex") members.push({ bookmarkEnd });
+          const stage = activeFieldState(fieldState);
+          const members = stage.collectingResult ? stage.resultMembers : stage.instructionMembers;
+          if (stage.kind) members.push({ bookmarkEnd });
           else childList.push({ bookmarkEnd });
         }
         break;
@@ -2028,57 +2532,129 @@ function parseRunLevelChildren(
       }
       case "w:ins": {
         const children = parseTrackChangeRuns(child, ctx);
-        if (children.length > 0) {
-          childList.push({
-            insertion: {
-              id: attrNum(child, "w:id") ?? 0,
-              author: attr(child, "w:author") ?? "",
-              date: attr(child, "w:date"),
-              children,
-            },
-          });
+        const revision = {
+          insertion: {
+            id: attrNum(child, "w:id") ?? 0,
+            author: attr(child, "w:author") ?? "",
+            date: attr(child, "w:date"),
+            children,
+          },
+        };
+        const stage = activeFieldState(fieldState);
+        const members = stage.collectingResult ? stage.resultMembers : stage.instructionMembers;
+        if (stage.kind) {
+          const memberCount = members.length;
+          members.push(revision);
+          const wrapperState = initialFieldRunState();
+          wrapperState.preserveOrphanMarkers = true;
+          for (const run of (child.elements ?? []).filter((item) => item.name === "w:r")) {
+            feedFieldRun(run, wrapperState, ctx);
+          }
+          if (wrapperState.kind) {
+            for (const run of (child.elements ?? []).filter((item) => item.name === "w:r")) {
+              feedFieldRun(run, stage, ctx);
+            }
+          }
+          const trackedRun = members.at(-1);
+          if (members.length > memberCount && trackedRun && "run" in trackedRun) members.pop();
+        } else if (children.length > 0) {
+          childList.push(revision);
         }
         break;
       }
       case "w:del": {
         const children = parseTrackChangeRuns(child, ctx);
-        if (children.length > 0) {
-          childList.push({
-            deletion: {
-              id: attrNum(child, "w:id") ?? 0,
-              author: attr(child, "w:author") ?? "",
-              date: attr(child, "w:date"),
-              children,
-            },
-          });
+        const revision = {
+          deletion: {
+            id: attrNum(child, "w:id") ?? 0,
+            author: attr(child, "w:author") ?? "",
+            date: attr(child, "w:date"),
+            children,
+          },
+        };
+        const stage = activeFieldState(fieldState);
+        const members = stage.collectingResult ? stage.resultMembers : stage.instructionMembers;
+        if (stage.kind) {
+          const memberCount = members.length;
+          members.push(revision);
+          const wrapperState = initialFieldRunState();
+          wrapperState.preserveOrphanMarkers = true;
+          for (const run of (child.elements ?? []).filter((item) => item.name === "w:r")) {
+            feedFieldRun(run, wrapperState, ctx);
+          }
+          if (wrapperState.kind) {
+            for (const run of (child.elements ?? []).filter((item) => item.name === "w:r")) {
+              feedFieldRun(run, stage, ctx);
+            }
+          }
+          const trackedRun = members.at(-1);
+          if (members.length > memberCount && trackedRun && "run" in trackedRun) members.pop();
+        } else if (children.length > 0) {
+          childList.push(revision);
         }
         break;
       }
       case "w:moveFrom": {
         const children = parseTrackChangeRuns(child, ctx);
-        if (children.length > 0) {
-          childList.push({
-            movedFrom: {
-              id: attrNum(child, "w:id") ?? 0,
-              author: attr(child, "w:author") ?? "",
-              date: attr(child, "w:date"),
-              children,
-            },
-          });
+        const revision = {
+          movedFrom: {
+            id: attrNum(child, "w:id") ?? 0,
+            author: attr(child, "w:author") ?? "",
+            date: attr(child, "w:date"),
+            children,
+          },
+        };
+        const stage = activeFieldState(fieldState);
+        const members = stage.collectingResult ? stage.resultMembers : stage.instructionMembers;
+        if (stage.kind) {
+          const memberCount = members.length;
+          members.push(revision);
+          const wrapperState = initialFieldRunState();
+          wrapperState.preserveOrphanMarkers = true;
+          for (const run of (child.elements ?? []).filter((item) => item.name === "w:r")) {
+            feedFieldRun(run, wrapperState, ctx);
+          }
+          if (wrapperState.kind) {
+            for (const run of (child.elements ?? []).filter((item) => item.name === "w:r")) {
+              feedFieldRun(run, stage, ctx);
+            }
+          }
+          const trackedRun = members.at(-1);
+          if (members.length > memberCount && trackedRun && "run" in trackedRun) members.pop();
+        } else if (children.length > 0) {
+          childList.push(revision);
         }
         break;
       }
       case "w:moveTo": {
         const children = parseTrackChangeRuns(child, ctx);
-        if (children.length > 0) {
-          childList.push({
-            movedTo: {
-              id: attrNum(child, "w:id") ?? 0,
-              author: attr(child, "w:author") ?? "",
-              date: attr(child, "w:date"),
-              children,
-            },
-          });
+        const revision = {
+          movedTo: {
+            id: attrNum(child, "w:id") ?? 0,
+            author: attr(child, "w:author") ?? "",
+            date: attr(child, "w:date"),
+            children,
+          },
+        };
+        const stage = activeFieldState(fieldState);
+        const members = stage.collectingResult ? stage.resultMembers : stage.instructionMembers;
+        if (stage.kind) {
+          const memberCount = members.length;
+          members.push(revision);
+          const wrapperState = initialFieldRunState();
+          wrapperState.preserveOrphanMarkers = true;
+          for (const run of (child.elements ?? []).filter((item) => item.name === "w:r")) {
+            feedFieldRun(run, wrapperState, ctx);
+          }
+          if (wrapperState.kind) {
+            for (const run of (child.elements ?? []).filter((item) => item.name === "w:r")) {
+              feedFieldRun(run, stage, ctx);
+            }
+          }
+          const trackedRun = members.at(-1);
+          if (members.length > memberCount && trackedRun && "run" in trackedRun) members.pop();
+        } else if (children.length > 0) {
+          childList.push(revision);
         }
         break;
       }
@@ -2126,20 +2702,37 @@ function parseRunLevelChildren(
           // Mark the cached value present when any run sat inside the field —
           // empty-text results still round-trip their run.
           if (cachedRunEls.length > 0) sf.cachedValue = cachedValue;
-          if (cachedInstructionText) {
+          const instructionRunEl =
+            cachedRunEls.length === 1
+              ? (findChild(cachedRunEls[0]!, "w:instrText") ??
+                findChild(cachedRunEls[0]!, "w:delInstrText"))
+              : undefined;
+          const plainInstructionRun =
+            instructionRunEl !== undefined &&
+            attr(cachedRunEls[0]!, "w:rsidR") === undefined &&
+            attr(cachedRunEls[0]!, "w:rsidRPr") === undefined &&
+            attr(cachedRunEls[0]!, "w:rsidDel") === undefined;
+          const cachedRunHasIdentity = cachedRunEls.some(
+            (run) =>
+              attr(run, "w:rsidR") !== undefined ||
+              attr(run, "w:rsidRPr") !== undefined ||
+              attr(run, "w:rsidDel") !== undefined,
+          );
+          if (plainInstructionRun) {
             sf.cachedInstructionText = cachedInstructionText;
             sf.cachedInstructionTextPreserveSpace = cachedInstructionTextPreserveSpace;
             const instructionRPrXml = runRPrXml(cachedRunEls[0]!);
             if (instructionRPrXml) sf.cachedInstructionRPrXml = instructionRPrXml;
           }
           sf.cachedValuePreserveSpace = cachedValuePreserveSpace;
-          // The plain template emits one bare text run — cached runs carrying
-          // rPr (Word marks field results w:noProof) go through verbatim.
+          // A plain template emits one bare text run or one instruction run.
+          // Nested fldChar fields, per-run rsids, rPr, and mixed cached runs
+          // must remain typed children instead of collapsing to cachedValue.
           if (
-            !cachedInstructionText &&
-            !isPlainFieldRuns(cachedRunEls, undefined, ["w:t", "w:instrText"])
+            !plainInstructionRun &&
+            (cachedRunHasIdentity || !isPlainFieldRuns(cachedRunEls, undefined, ["w:t"]))
           ) {
-            sf.cachedRuns = cachedRunEls.map((el) => parsedRunToOptions(parseRun(el, ctx)));
+            sf.cachedRuns = parseRunLevelChildren(child.elements, ctx);
           }
           const sfLock = attrBool(child, "w:fldLock");
           if (sfLock !== undefined) sf.fieldLock = sfLock;
@@ -2197,7 +2790,11 @@ function parseRunLevelChildren(
           type === "gramStart" ||
           type === "gramEnd"
         ) {
-          childList.push({ proofErr: type });
+          const members = fieldState.collectingResult
+            ? fieldState.resultMembers
+            : fieldState.instructionMembers;
+          if (fieldState.kind) members.push({ proofErr: type });
+          else childList.push({ proofErr: type });
         }
         break;
       }
@@ -2349,17 +2946,25 @@ function parseRunLevelChildren(
       }
       case "w:sdt": {
         const sdtPr = findChild(child, "w:sdtPr");
-        const properties = sdtPr ? parseSdtProperties(sdtPr) : {};
+        const properties = sdtPr
+          ? { ...parseSdtProperties(sdtPr, ctx), propertiesPresent: true }
+          : { propertiesPresent: false };
         // CT_SdtEndPr wraps its run properties in a w:rPr child
         const sdtEndPr = findChild(child, "w:sdtEndPr");
         const endRPr = sdtEndPr ? findChild(sdtEndPr, "w:rPr") : undefined;
         const endProperties = sdtEndPr ? (endRPr ? parseRunProperties(endRPr) : {}) : undefined;
         const sdtContent = findChild(child, "w:sdtContent");
-        const sdtChildren = parseRunLevelChildren(sdtContent?.elements, ctx);
+        const sdtChildren = parseRunLevelChildren(sdtContent?.elements, ctx, {
+          incompleteFields: "raw",
+        });
         const sdt: SdtRunOptions = { properties };
         if (sdtChildren.length > 0) sdt.children = sdtChildren;
         if (endProperties) sdt.endProperties = endProperties;
-        childList.push({ sdt });
+        const sdtChild = { sdt };
+        const stage = activeFieldState(fieldState);
+        const members = stage.collectingResult ? stage.resultMembers : stage.instructionMembers;
+        if (stage.kind) members.push(sdtChild);
+        else childList.push(sdtChild);
         break;
       }
       default:
@@ -2374,23 +2979,18 @@ function parseRunLevelChildren(
   // (a PAGEREF page number) re-parses through the sub accumulator. The head
   // runs stay unreleased: re-emitting them here would duplicate the chain the
   // emit path injects.
-  if (fieldState.kind === "complex" && fieldState.resultRunEls.length > 0) {
-    const sub = initialFieldRunState();
-    for (const el of fieldState.resultRunEls) {
-      const fed = feedFieldRun(el, sub, ctx);
-      if (fed.consumed) {
-        if (fed.child) childList.push(fed.child);
-        continue;
-      }
-      const drawingChild = parseDrawingRunChild(el, ctx);
-      if (drawingChild) {
-        childList.push(drawingChild);
-        continue;
-      }
-      const parsed = parseRun(el, ctx);
-      childList.push(parsedRunToOptions(parsed));
+  const incompleteField =
+    options.incompleteFields === "defer" ? undefined : flushIncompleteFieldRunState(fieldState);
+  if (
+    options.incompleteFields === "defer" &&
+    fieldState.kind === "complex" &&
+    (fieldState.resultRunEls.length > 0 || fieldState.resultMembers.length > 0)
+  ) {
+    for (const member of fieldState.resultMembers) {
+      childList.push("run" in member ? member.run : member);
     }
   }
+  if (incompleteField) childList.push(incompleteField);
 
   return childList;
 }
@@ -2400,7 +3000,11 @@ function isTextOnlyRun(c: unknown): c is { text: string } {
   return typeof c === "object" && c !== null && "text" in c && Object.keys(c).length === 1;
 }
 
-export function parseParagraph(el: Element, ctx: DocxReadContext): ParagraphOptions {
+export function parseParagraph(
+  el: Element,
+  ctx: DocxReadContext,
+  options: { incompleteFields?: "raw" | "defer"; preserveOrphanMarkers?: boolean } = {},
+): ParagraphOptions {
   const opts: Partial<ParagraphOptions> = {};
 
   // w:p element attributes: rsid family + w14:paraId/textId (hex string verbatim)
@@ -2430,7 +3034,7 @@ export function parseParagraph(el: Element, ctx: DocxReadContext): ParagraphOpti
     Object.assign(opts, parseParagraphProperties(pPr, ctx));
   }
 
-  const childList = parseRunLevelChildren(el.elements, ctx);
+  const childList = parseRunLevelChildren(el.elements, ctx, options);
 
   // Simple text optimization: a single text-only run collapses into opts.text
   // (the canonical ParagraphOptions form). Multiple runs stay a children

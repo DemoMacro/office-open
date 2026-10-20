@@ -2,6 +2,7 @@ import type {
   DataType,
   NonVisualDrawingPropertiesOptions,
   PictureLockingOptions,
+  SourceRectangleOptions,
   UniversalMeasure,
 } from "@office-open/core";
 import type { MediaData } from "@shared/media/data";
@@ -39,6 +40,24 @@ export interface MediaFrameBaseOptions extends NonVisualDrawingPropertiesOptions
    * undefined = no trim child.
    */
   trim?: MediaTrimOptions;
+  /** Player settings carried by ODF `draw:param`; OOXML writers ignore unsupported values. */
+  playback?: MediaPlaybackOptions;
+  /** Bare `<a:stretch/>` (no a:fillRect child) on the blip fill — round-trip. */
+  stretchBare?: boolean;
+  /** Rotate image fill with the shape frame (p:blipFill @rotWithShape). */
+  rotWithShape?: boolean;
+  /** Crop rectangle (p:blipFill/a:srcRect), integer percent. */
+  sourceRectangle?: SourceRectangleOptions;
+}
+
+/** Media player settings expressible by ODF draw:param. */
+export interface MediaPlaybackOptions {
+  loop?: boolean;
+  mute?: boolean;
+  /** Playback volume in decibels (0 = full scale). */
+  volume?: number;
+  /** ODF zoom setting: a percentage such as "100%" or "fit". */
+  zoom?: string;
 }
 
 /** Play window trim (p14:trim @st/@end, seconds). */

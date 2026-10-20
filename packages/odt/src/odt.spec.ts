@@ -1,7 +1,8 @@
+import { unzipSync } from "@office-open/core";
+import type { FormControlOptions, OfficeFormsOptions } from "@office-open/core";
 import type { DocumentOptions } from "@office-open/docx";
 import type { ParagraphOptions } from "@office-open/docx";
 import { generateOcf, ODF_NAMESPACES } from "@office-open/odf";
-import { unzipSync } from "fflate";
 import { describe, expect, it } from "vite-plus/test";
 
 import { generateDocument, OdtParseError, parseDocument } from "./index";
@@ -10,6 +11,23 @@ const FORM_NAMESPACE = 'xmlns:form="urn:oasis:names:tc:opendocument:xmlns:form:1
 
 function projection(value: unknown): unknown {
   return JSON.parse(JSON.stringify(value));
+}
+
+type SectionBodyChild = NonNullable<
+  NonNullable<DocumentOptions["sections"]>[number]["children"]
+>[number];
+
+type ParagraphRun = NonNullable<ParagraphOptions["children"]>[number];
+type RunLikeChild = Extract<ParagraphRun, { children?: unknown }>;
+
+function sectionParagraph(child: SectionBodyChild | undefined): ParagraphOptions | undefined {
+  return child && "paragraph" in child && typeof child.paragraph !== "string"
+    ? child.paragraph
+    : undefined;
+}
+
+function sectionRun(child: ParagraphRun | undefined): RunLikeChild | undefined {
+  return typeof child === "object" && child !== null && "children" in child ? child : undefined;
 }
 
 function odtPackage(body: string): Uint8Array {
@@ -26,9 +44,9 @@ function odtStyledPackage(styles: string, body: string): Uint8Array {
   });
 }
 
-function parseBodyError(body: string, name: string, reason?: string): OdtParseError {
+async function parseBodyError(body: string, name: string, reason?: string): Promise<OdtParseError> {
   try {
-    parseDocument(odtPackage(body));
+    await parseDocument(odtPackage(body));
   } catch (cause) {
     expect(cause).toBeInstanceOf(OdtParseError);
     const error = cause as OdtParseError;
@@ -41,15 +59,15 @@ function parseBodyError(body: string, name: string, reason?: string): OdtParseEr
 }
 
 describe("ODT canonical projection", () => {
-  it("projects a minimal document without hidden root fields", () => {
-    const parsed = parseDocument(
-      generateDocument({ sections: [{ children: [{ paragraph: "ODT" }] }] }),
+  it("projects a minimal document without hidden root fields", async () => {
+    const parsed = await parseDocument(
+      await generateDocument({ sections: [{ children: [{ paragraph: "ODT" }] }] }),
     );
     expect(Object.keys(parsed).sort()).toEqual(["sections"]);
     expect(projection(parsed.sections[0]?.children)).toEqual([{ paragraph: { text: "ODT" } }]);
   });
 
-  it("round-trips common style identity, relationships, indents, and spacing", () => {
+  it("round-trips common style identity, relationships, indents, and spacing", async () => {
     const options: DocumentOptions = {
       sections: [],
       styles: {
@@ -68,20 +86,49 @@ describe("ODT canonical projection", () => {
         ],
       },
     };
-    const parsed = parseDocument(generateDocument(options));
+    const parsed = await parseDocument(await generateDocument(options));
     expect(parsed.styles?.paragraphStyles?.[0]).toEqual(options.styles?.paragraphStyles?.[0]);
   });
 
-  it("rejects invalid packages with a structured error", () => {
-    expect(() => parseDocument(new Uint8Array([1, 2, 3]))).toThrow(OdtParseError);
+  it("rejects invalid packages with a structured error", async () => {
+    await expect(parseDocument(new Uint8Array([1, 2, 3]))).rejects.toThrow(OdtParseError);
   });
 
-  it("round-trips mixed canonical and overlay paragraph styles", () => {
+  it("round-trips ODF form-control shapes with typed references", async () => {
+    const parsed = await parseDocument(
+      odtPackage(
+        `<draw:control draw:control="control1" svg:x="1cm" svg:y="2cm" svg:width="3cm" svg:height="4cm"/>`,
+      ),
+    );
+    expect(parsed.sections[0]?.children[0]).toMatchObject({
+      paragraph: { children: [{ wpsShape: { odfControlId: "control1", geometry: "rect" } }] },
+    });
+    const regenerated = await generateDocument(parsed);
+    expect(Buffer.from(unzipSync(regenerated)["content.xml"]!).toString()).toContain(
+      'draw:control="control1"',
+    );
+    expect((await parseDocument(regenerated)).sections[0]?.children).toEqual(
+      parsed.sections[0]?.children,
+    );
+  });
+
+  it("parses compact LibreOffice time control values", async () => {
+    const parsed = await parseDocument(
+      odtPackage(
+        '<office:forms><form:form><form:time xml:id="time" form:current-value="12120000"/></form:form></office:forms>',
+      ),
+    );
+    expect(parsed.forms).toMatchObject({
+      containers: [{ controls: [{ control: "time", xmlId: "time", currentValue: "12120000" }] }],
+    });
+  });
+
+  it("round-trips mixed canonical and overlay paragraph styles", async () => {
     const source = odtStyledPackage(
       '<style:style style:name="P1" style:family="paragraph"><style:paragraph-properties fo:text-align="center" style:contextual-spacing="true"/></style:style>',
       '<text:p text:style-name="P1">Styled</text:p>',
     );
-    const parsed = parseDocument(source);
+    const parsed = await parseDocument(source);
     expect(parsed.sections[0]?.children?.[0]).toMatchObject({
       paragraph: { text: "Styled", style: "P1", alignment: "center" },
     });
@@ -98,38 +145,87 @@ describe("ODT canonical projection", () => {
       },
     ]);
 
-    expect(parseDocument(generateDocument(parsed)).sections[0]?.children?.[0]).toMatchObject({
+    expect(
+      (await parseDocument(await generateDocument(parsed))).sections[0]?.children?.[0],
+    ).toMatchObject({
       paragraph: { text: "Styled", style: "P1", alignment: "center" },
     });
   });
 
-  it("round-trips LibreOffice graphic-properties overlays", () => {
+  it("round-trips LibreOffice graphic-properties overlays", async () => {
     const source = odtStyledPackage(
       '<style:style style:name="P1" style:family="paragraph"><loext:graphic-properties draw:fill="none"/><style:paragraph-properties fo:text-align="center"/></style:style>',
       '<text:p text:style-name="P1">Styled</text:p>',
     );
-    const parsed = parseDocument(source);
+    const parsed = await parseDocument(source);
     expect(parsed.styleOverlays?.[0]?.properties[0]?.name).toBe("loext:graphic-properties");
-    const reread = parseDocument(generateDocument(parsed));
+    const reread = await parseDocument(await generateDocument(parsed));
     expect(reread.styleOverlays).toEqual(parsed.styleOverlays);
   });
 
-  it("round-trips mixed canonical and overlay run styles", () => {
+  it("round-trips mixed canonical and overlay run styles", async () => {
     const source = odtStyledPackage(
       '<style:style style:name="C1" style:family="text"><style:text-properties fo:font-weight="bold" fo:background-color="#00ff00"/></style:style>',
       '<text:p><text:span text:style-name="C1">Styled</text:span></text:p>',
     );
-    const parsed = parseDocument(source);
+    const parsed = await parseDocument(source);
     expect(parsed.sections[0]?.children?.[0]).toMatchObject({
       paragraph: { children: [{ text: "Styled", bold: true, style: "C1" }] },
     });
 
-    expect(parseDocument(generateDocument(parsed)).sections[0]?.children?.[0]).toMatchObject({
+    expect(
+      (await parseDocument(await generateDocument(parsed))).sections[0]?.children?.[0],
+    ).toMatchObject({
       paragraph: { children: [{ text: "Styled", bold: true, style: "C1" }] },
     });
   });
 
-  it("round-trips a linked picture with a parent-relative URL", () => {
+  it("round-trips ruby annotations with ruby and content styles", async () => {
+    const source = odtStyledPackage(
+      '<style:style style:name="R1" style:family="ruby"><style:ruby-properties style:ruby-align="distribute-letter"/></style:style>' +
+        '<style:style style:name="C1" style:family="text"><style:text-properties fo:font-size="12pt"/></style:style>' +
+        '<style:style style:name="C2" style:family="text"><style:text-properties fo:font-size="8pt" fo:language="ja" fo:country="JP"/></style:style>',
+      '<text:p><text:ruby text:style-name="R1">' +
+        '<text:ruby-base><text:span text:style-name="C1">漢字</text:span></text:ruby-base>' +
+        '<text:ruby-text text:style-name="C2">かんじ</text:ruby-text>' +
+        "</text:ruby></text:p>",
+    );
+    const parsed = await parseDocument(source);
+    const child = parsed.sections[0]?.children?.[0];
+    const paragraph = sectionParagraph(child);
+    const run = paragraph?.children?.[0];
+    const ruby = sectionRun(run)?.children?.[0];
+    expect(ruby).toMatchObject({
+      ruby: {
+        properties: {
+          alignment: "distributeLetter",
+          fontSize: 8,
+          baseFontSize: 12,
+          languageId: "ja-JP",
+        },
+        style: "R1",
+        base: { children: [{ text: "漢字", style: "C1" }] },
+        text: { children: [{ text: "かんじ", style: "C2" }] },
+      },
+    });
+    expect(parsed.styleOverlays?.some((overlay) => overlay.name === "R1")).toBe(true);
+
+    const reread = await parseDocument(await generateDocument(parsed));
+    expect(reread.styleOverlays?.some((overlay) => overlay.name === "R1")).toBe(true);
+    const rereadChild = reread.sections[0]?.children?.[0];
+    const rereadParagraph = sectionParagraph(rereadChild);
+    const rereadRun = rereadParagraph?.children?.[0];
+    const rereadRuby = sectionRun(rereadRun)?.children?.[0];
+    expect(rereadRuby).toMatchObject({
+      ruby: {
+        style: "R1",
+        base: { children: [{ text: "漢字", style: "C1" }] },
+        text: { children: [{ text: "かんじ", style: "C2" }] },
+      },
+    });
+  });
+
+  it("round-trips a linked picture with a parent-relative URL", async () => {
     const options: DocumentOptions = {
       sections: [
         {
@@ -151,7 +247,7 @@ describe("ODT canonical projection", () => {
         },
       ],
     };
-    const parsed = parseDocument(generateDocument(options));
+    const parsed = await parseDocument(await generateDocument(options));
     expect(parsed.sections[0]?.children?.[0]).toMatchObject({
       paragraph: {
         children: [
@@ -167,7 +263,51 @@ describe("ODT canonical projection", () => {
     });
   });
 
-  it("preserves a standalone embedded object through a typed overlay", () => {
+  it("round-trips a missing package image as a linked-only picture", async () => {
+    const parsed = await parseDocument(
+      odtPackage(
+        '<text:p><draw:frame svg:width="4cm" svg:height="3cm" draw:name="Logo"><draw:image xlink:href="Pictures/missing.png"/></draw:frame></text:p>',
+      ),
+    );
+    expect(parsed.sections[0]?.children?.[0]).toMatchObject({
+      paragraph: {
+        children: [
+          {
+            picture: {
+              type: "png",
+              sourceUrl: "Pictures/missing.png",
+              transformation: { width: 1440000, height: 1080000 },
+            },
+          },
+        ],
+      },
+    });
+    expect(
+      (await parseDocument(await generateDocument(parsed))).sections[0]?.children?.[0],
+    ).toEqual(parsed.sections[0]?.children?.[0]);
+  });
+
+  it("round-trips sender fields", async () => {
+    const source = odtPackage(
+      "<text:p><text:sender-initials>AI</text:sender-initials><text:sender-city>City</text:sender-city><text:sender-state-or-province>State</text:sender-state-or-province></text:p>",
+    );
+    const parsed = await parseDocument(source);
+    const expected = {
+      paragraph: {
+        children: [
+          { simpleField: { instruction: "AUTHOR \\initials", cachedValue: "AI" } },
+          { simpleField: { instruction: "AUTHOR \\city", cachedValue: "City" } },
+          { simpleField: { instruction: "AUTHOR \\state-or-province", cachedValue: "State" } },
+        ],
+      },
+    };
+    expect(parsed.sections[0]?.children?.[0]).toEqual(expected);
+    expect(
+      (await parseDocument(await generateDocument(parsed))).sections[0]?.children?.[0],
+    ).toEqual(expected);
+  });
+
+  it("preserves a standalone embedded object through a typed overlay", async () => {
     const source = generateOcf(
       "application/vnd.oasis.opendocument.text",
       {
@@ -183,15 +323,16 @@ describe("ODT canonical projection", () => {
           { fullPath: "/", version: "1.3", mediaType: "application/vnd.oasis.opendocument.text" },
           { fullPath: "content.xml", mediaType: "text/xml" },
           { fullPath: "styles.xml", mediaType: "text/xml" },
-          { fullPath: "Object 1/", mediaType: "application/vnd.oasis.opendocument.presentation" },
+          { fullPath: "Object 1/", mediaType: "application/vnd.oasis.opendocument.formula" },
+          { fullPath: "Object 1/content.xml", mediaType: "text/xml" },
         ],
       },
     );
-    const parsed = parseDocument(source);
+    const parsed = await parseDocument(source);
     expect(parsed.embeddedObjects).toEqual([
       {
         path: "Object 1",
-        mediaType: "application/vnd.oasis.opendocument.presentation",
+        mediaType: "application/vnd.oasis.opendocument.formula",
         members: [
           {
             path: "Object 1/content.xml",
@@ -203,18 +344,20 @@ describe("ODT canonical projection", () => {
       },
     ]);
 
-    const reread = parseDocument(generateDocument(parsed));
+    const reread = await parseDocument(await generateDocument(parsed));
     expect(reread.embeddedObjects).toEqual(parsed.embeddedObjects);
     const manifest = new TextDecoder().decode(
-      unzipSync(generateDocument(parsed))["META-INF/manifest.xml"],
+      unzipSync(await generateDocument(parsed))["META-INF/manifest.xml"],
     );
-    const content = new TextDecoder().decode(unzipSync(generateDocument(parsed))["content.xml"]);
+    const content = new TextDecoder().decode(
+      unzipSync(await generateDocument(parsed))["content.xml"],
+    );
     expect(content.match(/xlink:href="\.\/Object 1"/g)).toHaveLength(2);
     expect(manifest).toContain('manifest:full-path="Object 1/"');
-    expect(manifest).toContain("application/vnd.oasis.opendocument.presentation");
+    expect(manifest).toContain("application/vnd.oasis.opendocument.formula");
   });
 
-  it("round-trips a body-anchored non-chart object frame", () => {
+  it("round-trips a body-anchored non-chart object frame", async () => {
     const source = generateOcf(
       "application/vnd.oasis.opendocument.text",
       {
@@ -234,7 +377,7 @@ describe("ODT canonical projection", () => {
         ],
       },
     );
-    const parsed = parseDocument(source);
+    const parsed = await parseDocument(source);
     expect(parsed.embeddedObjects).toEqual([
       expect.objectContaining({
         path: "Object 1",
@@ -262,20 +405,20 @@ describe("ODT canonical projection", () => {
       },
     });
 
-    const generated = generateDocument(parsed);
+    const generated = await generateDocument(parsed);
     const content = new TextDecoder().decode(unzipSync(generated)["content.xml"]);
     expect(content).toContain(
       '<draw:frame text:anchor-type="char" draw:style-name="gr1" svg:x="1cm" svg:y="2cm" svg:width="4cm" svg:height="3cm" draw:name="Formula object"><draw:object xlink:href="./Object 1" xlink:type="simple"/></draw:frame>',
     );
 
-    const reread = parseDocument(generated);
+    const reread = await parseDocument(generated);
     expect(reread.embeddedObjects).toEqual(parsed.embeddedObjects);
     expect(projection(reread.sections[0]?.children?.[0])).toEqual(
       projection(parsed.sections[0]?.children?.[0]),
     );
   });
 
-  it("preserves source-only package members and omits stale overlays", () => {
+  it("preserves source-only package members and omits stale overlays", async () => {
     const source = generateOcf(
       "application/vnd.oasis.opendocument.text",
       {
@@ -296,7 +439,7 @@ describe("ODT canonical projection", () => {
         ],
       },
     );
-    const parsed = parseDocument(source);
+    const parsed = await parseDocument(source);
     expect(parsed.packageMembers).toEqual([
       { path: "audit.bin", mediaType: "application/octet-stream", data: new Uint8Array([7, 9]) },
       {
@@ -306,11 +449,11 @@ describe("ODT canonical projection", () => {
       },
     ]);
 
-    const generated = generateDocument(parsed);
+    const generated = await generateDocument(parsed);
     const entries = unzipSync(generated);
     expect(new TextDecoder().decode(entries["manifest.rdf"])).toContain("<rdf:RDF");
     expect(entries["audit.bin"]).toEqual(new Uint8Array([7, 9]));
-    expect(parseDocument(generated)).toMatchObject({
+    expect(await parseDocument(generated)).toMatchObject({
       packageMembers: parsed.packageMembers,
     });
 
@@ -325,7 +468,7 @@ describe("ODT canonical projection", () => {
         ],
       },
     };
-    const regenerated = generateDocument(stale);
+    const regenerated = await generateDocument(stale);
     const regeneratedEntries = unzipSync(regenerated);
     expect(Object.keys(regeneratedEntries)).not.toContain("manifest.rdf");
     expect(new TextDecoder().decode(regeneratedEntries["META-INF/manifest.xml"])).not.toContain(
@@ -333,7 +476,7 @@ describe("ODT canonical projection", () => {
     );
   });
 
-  it("rejects a standalone object without content.xml", () => {
+  it("rejects a standalone object without content.xml", async () => {
     const source = generateOcf(
       "application/vnd.oasis.opendocument.text",
       {
@@ -355,7 +498,7 @@ describe("ODT canonical projection", () => {
     );
     let error: unknown;
     try {
-      parseDocument(source);
+      await parseDocument(source);
     } catch (cause) {
       error = cause;
     }
@@ -367,7 +510,7 @@ describe("ODT canonical projection", () => {
     });
   });
 
-  it("round-trips revisions through canonical insertion and deletion children", () => {
+  it("round-trips revisions through canonical insertion and deletion children", async () => {
     const options: DocumentOptions = {
       sections: [
         {
@@ -391,6 +534,14 @@ describe("ODT canonical projection", () => {
                       children: ["removed"],
                     },
                   },
+                  {
+                    text: "formatted",
+                    revision: {
+                      id: 3,
+                      author: "Author",
+                      date: "2026-01-01T00:00:00Z",
+                    },
+                  },
                 ],
               },
             },
@@ -398,27 +549,119 @@ describe("ODT canonical projection", () => {
         },
       ],
     };
-    const parsed = parseDocument(generateDocument(options));
+    const parsed = await parseDocument(await generateDocument(options));
     expect(Object.keys(parsed).sort()).toEqual(["sections", "settings"]);
     expect(parsed.settings).toEqual({ trackRevisions: true });
     expect(projection(parsed.sections[0]?.children)).toEqual(options.sections[0]?.children);
   });
 
-  it("round-trips a simple form control through a canonical form field", () => {
+  it("round-trips a simple form control through a canonical form field", async () => {
     const field = {
-      formField: { name: "Name", textInput: { value: "Value" } },
+      formField: { name: "", textInput: { value: "Value" } },
     };
     const options: DocumentOptions = {
       sections: [{ children: [{ paragraph: { children: [field] } }] }],
     };
-    const parsed = parseDocument(generateDocument(options));
+    const parsed = await parseDocument(await generateDocument(options));
     expect(Object.keys(parsed).sort()).toEqual(["forms", "sections"]);
-    expect(parsed.forms).toEqual([
-      { controls: [{ control: "text", name: "Name", value: "Value" }] },
-    ]);
+    expect(parsed.forms).toEqual({
+      containers: [
+        {
+          controls: [
+            {
+              control: "text",
+              name: "",
+              currentValue: "Value",
+              xmlId: "form-control-1",
+            },
+          ],
+        },
+      ],
+    });
   });
 
-  it("round-trips bookmarks, references, variables, sequences, and hidden text", () => {
+  it("round-trips every ODF form control through the document form root", async () => {
+    const controls: FormControlOptions[] = [
+      { control: "text", id: "text", xmlId: "text", value: "", currentValue: "", maxLength: 0 },
+      { control: "textArea", id: "textArea", xmlId: "textArea", paragraphs: ["Line"] },
+      {
+        control: "formattedText",
+        id: "formattedText",
+        xmlId: "formattedText",
+        minValue: "0",
+        maxValue: "9",
+        validation: false,
+      },
+      {
+        control: "number",
+        id: "number",
+        xmlId: "number",
+        value: 0,
+        currentValue: 1,
+        minValue: 0,
+        maxValue: 9,
+      },
+      { control: "date", id: "date", xmlId: "date", value: "2026-01-31" },
+      { control: "time", id: "time", xmlId: "time", value: "01:02:03" },
+      { control: "comboBox", id: "comboBox", xmlId: "comboBox", items: [{ label: "" }] },
+      {
+        control: "listBox",
+        id: "listBox",
+        xmlId: "listBox",
+        options: [{ label: "", currentSelected: false, selected: false, value: "" }],
+      },
+      {
+        control: "checkbox",
+        id: "checkbox",
+        xmlId: "checkbox",
+        currentState: "unknown",
+        state: "unknown",
+        triState: true,
+      },
+      { control: "password", id: "password", xmlId: "password", echoChar: "*" },
+      { control: "file", id: "file", xmlId: "file", currentValue: "a.odt" },
+      { control: "fixedText", id: "fixedText", xmlId: "fixedText", label: "", multiLine: true },
+      {
+        control: "button",
+        id: "button",
+        xmlId: "button",
+        buttonType: "push",
+        defaultButton: false,
+        toggle: false,
+        focusOnClick: false,
+      },
+      { control: "image", id: "image", xmlId: "image", buttonType: "url", href: "logo.png" },
+      { control: "radio", id: "radio", xmlId: "radio", currentSelected: false, selected: false },
+      { control: "frame", id: "frame", xmlId: "frame", label: "Frame" },
+      { control: "imageFrame", id: "imageFrame", xmlId: "imageFrame", imageData: "logo.png" },
+      { control: "hidden", id: "hidden", xmlId: "hidden", value: "" },
+      {
+        control: "grid",
+        id: "grid",
+        xmlId: "grid",
+        columns: [{ name: "title", controls: [{ control: "text", id: "title", xmlId: "title" }] }],
+      },
+      {
+        control: "valueRange",
+        id: "valueRange",
+        xmlId: "valueRange",
+        minValue: 0,
+        maxValue: 100,
+        stepSize: 1,
+        pageStepSize: 10,
+      },
+      { control: "genericControl", id: "genericControl", xmlId: "genericControl" },
+    ];
+    const forms: OfficeFormsOptions = { containers: [{ name: "Library", controls }] };
+    const options: DocumentOptions = {
+      forms,
+      sections: [{ children: [{ paragraph: { children: [{ text: "Form" }] } }] }],
+    };
+    const parsed = await parseDocument(await generateDocument(options));
+    expect(parsed.forms).toEqual(forms);
+  });
+
+  it("round-trips bookmarks, references, variables, sequences, and hidden text", async () => {
     const options: DocumentOptions = {
       sections: [
         {
@@ -456,7 +699,7 @@ describe("ODT canonical projection", () => {
         },
       ],
     };
-    const parsed = parseDocument(generateDocument(options));
+    const parsed = await parseDocument(await generateDocument(options));
     expect(Object.keys(parsed).sort()).toEqual([
       "sections",
       "sequenceDeclarations",
@@ -465,8 +708,8 @@ describe("ODT canonical projection", () => {
     expect(projection(parsed.sections[0]?.children)).toEqual(options.sections[0]?.children);
   });
 
-  it("round-trips paired inline bookmark and reference markers", () => {
-    const parsed = parseDocument(
+  it("round-trips paired inline bookmark and reference markers", async () => {
+    const parsed = await parseDocument(
       odtPackage(
         "<text:p>" +
           "<text:bookmark-start xml:id='bookmark-7' text:name='inline target'/>" +
@@ -489,12 +732,12 @@ describe("ODT canonical projection", () => {
         ],
       },
     });
-    expect(projection(parseDocument(generateDocument(parsed)).sections[0]?.children)).toEqual(
-      projection(parsed.sections[0]?.children),
-    );
+    expect(
+      projection((await parseDocument(await generateDocument(parsed))).sections[0]?.children),
+    ).toEqual(projection(parsed.sections[0]?.children));
   });
 
-  it("round-trips annotations, indexes, bibliography, and shapes", () => {
+  it("round-trips annotations, indexes, bibliography, and shapes", async () => {
     const options: DocumentOptions = {
       sections: [
         {
@@ -542,72 +785,72 @@ describe("ODT canonical projection", () => {
         },
       ],
     };
-    const parsed = parseDocument(generateDocument(options));
+    const parsed = await parseDocument(await generateDocument(options));
     expect(Object.keys(parsed).sort()).toEqual(["sections"]);
     expect(projection(parsed.sections[0]?.children)).toEqual(options.sections[0]?.children);
   });
 
-  it("rejects mapped constructs that have no canonical equivalent", () => {
-    const tracked =
-      '<text:tracked-changes><text:changed-region text:id="r1"><text:format-change><office:change-info><dc:creator>Author</dc:creator><dc:date>2026-01-01T00:00:00Z</dc:date></office:change-info></text:format-change></text:changed-region></text:tracked-changes>';
+  it("rejects mapped constructs that have no canonical equivalent", async () => {
     expect(
-      parseBodyError(
-        "<office:forms><form:form><form:button form:id='field1'/></form:form></office:forms>",
-        "form:button",
+      (
+        await parseBodyError(
+          "<office:forms><form:form><form:button form:id='field1' form:unknown='x'/></form:form></office:forms>",
+          "form:unknown",
+        )
+      ).reason,
+    ).toContain("not allowed");
+    expect(
+      (
+        await parseBodyError(
+          "<text:bookmark-start text:name='same'/><text:bookmark-start text:name='same'/>",
+          "text:bookmark-start",
+        )
       ).reason,
     ).toContain("no canonical");
     expect(
-      parseBodyError(
-        "<text:bookmark-start text:name='same'/><text:bookmark-start text:name='same'/>",
-        "text:bookmark-start",
-      ).reason,
-    ).toContain("no canonical");
-    expect(
-      parseBodyError("<text:bookmark-end text:name='missing'/>", "text:bookmark-end").reason,
-    ).toContain("no canonical");
-    expect(
-      parseBodyError("<text:p><text:page-number>1</text:page-number></text:p>", "text:page-number")
+      (await parseBodyError("<text:bookmark-end text:name='missing'/>", "text:bookmark-end"))
         .reason,
     ).toContain("no canonical");
-    expect(parseBodyError(tracked, "text:format-change").reason).toContain("no canonical");
     expect(
-      parseBodyError(
-        "<text:sequence-decls><text:sequence-decl text:name='Figure' text:unknown='true'/></text:sequence-decls>",
-        "text:sequence-decl",
+      (
+        await parseBodyError(
+          "<text:sequence-decls><text:sequence-decl text:name='Figure' text:unknown='true'/></text:sequence-decls>",
+          "text:sequence-decl",
+        )
       ).reason,
     ).toContain("attribute has no canonical");
     expect(
-      parseBodyError(
-        "<text:p><office:annotation office:display='true'><text:p>shown</text:p></office:annotation></text:p>",
-        "office:annotation",
+      (
+        await parseBodyError(
+          "<text:p><office:annotation office:display='true'><text:p>shown</text:p></office:annotation></text:p>",
+          "office:annotation",
+        )
       ).reason,
     ).toContain("no canonical");
     expect(
-      parseBodyError(
-        "<text:p><text:hidden-text text:condition='0' text:is-fixed='true'>secret</text:hidden-text></text:p>",
-        "text:hidden-text",
+      (
+        await parseBodyError(
+          "<text:p><text:hidden-text text:condition='0' text:is-fixed='true'>secret</text:hidden-text></text:p>",
+          "text:hidden-text",
+        )
       ).reason,
     ).toContain("no canonical");
     expect(
-      parseBodyError(
-        "<text:illustration-index><text:illustration-index-source text:index-scope='chapter'/><text:index-body/></text:illustration-index>",
-        "text:illustration-index",
-      ).reason,
-    ).toContain("no canonical");
-    expect(
-      parseBodyError(
-        "<text:p><draw:circle svg:width='1cm' svg:height='1cm'/></text:p>",
-        "draw:circle",
+      (
+        await parseBodyError(
+          "<text:illustration-index><text:illustration-index-source text:index-scope='chapter'/><text:index-body/></text:illustration-index>",
+          "text:illustration-index",
+        )
       ).reason,
     ).toContain("no canonical");
   });
 
-  it("rejects canonical field instructions without ODF representations", () => {
+  it("rejects canonical field instructions without ODF representations", async () => {
     const section = (children: NonNullable<ParagraphOptions["children"]>): DocumentOptions => ({
       sections: [{ children: [{ paragraph: { children } }] }],
     });
     try {
-      generateDocument(section([{ simpleField: { instruction: "DOCPROPERTY Unknown" } }]));
+      await generateDocument(section([{ simpleField: { instruction: "DOCPROPERTY Unknown" } }]));
     } catch (cause) {
       expect(cause).toBeInstanceOf(OdtParseError);
       const error = cause as OdtParseError;
@@ -616,7 +859,7 @@ describe("ODT canonical projection", () => {
       expect(error.reason).toBe("unsupported field instruction");
     }
     try {
-      generateDocument(section([{ bookmarkEnd: { id: 7 } }]));
+      await generateDocument(section([{ bookmarkEnd: { id: 7 } }]));
     } catch (cause) {
       expect(cause).toBeInstanceOf(OdtParseError);
       const error = cause as OdtParseError;
@@ -627,8 +870,8 @@ describe("ODT canonical projection", () => {
     throw new Error("Expected canonical input without ODF representation to reject generation");
   });
 
-  it("reports unknown body elements with structured errors", () => {
-    const error = parseBodyError("<text:unknown/>", "text:unknown");
+  it("reports unknown body elements with structured errors", async () => {
+    const error = await parseBodyError("<text:unknown/>", "text:unknown");
     expect(error.path).toBe("/office:document-content/office:body/office:text/text:unknown");
     expect(error.reason).toBe("no canonical DocumentOptions mapping");
   });

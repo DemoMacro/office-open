@@ -33,7 +33,7 @@ export async function odtMissingEmbeddedObject(): Promise<void> {
   );
   let error: unknown;
   try {
-    parseOdtDocument(source);
+    await parseOdtDocument(source);
   } catch (cause) {
     error = cause;
   }

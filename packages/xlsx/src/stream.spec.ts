@@ -1,4 +1,4 @@
-import { unzipSync } from "@office-open/core";
+import { unzipSync } from "@office-open/core/opc";
 /**
  * Streaming path tests: the constant-memory output must be a valid XLSX that
  * parses back to the same data, and the feature gate must fall back (not

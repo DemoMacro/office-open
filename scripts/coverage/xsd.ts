@@ -557,6 +557,10 @@ export function extractUsedElements(
       while ((m = quotedPrefixedRe.exec(src)) !== null) {
         found.add(m[2]);
       }
+      const templatePrefixedRe = /:([a-zA-Z][a-zA-Z0-9]*)`/g;
+      while ((m = templatePrefixedRe.exec(src)) !== null) {
+        found.add(m[1]);
+      }
 
       // Pattern 10: generic runtime XML nodes — `{ name: "calculatedItem", ... }`.
       const runtimeNodeRe = /\bname:\s*"([a-z][a-z0-9]*:)?([a-zA-Z][a-zA-Z0-9]+)"/g;
@@ -725,10 +729,12 @@ export function extractUsedAttributes(
         found.add(m[1]);
       }
 
-      // Pattern 10: pure string-array constants — key lists driving dynamic
-      // serialization (locking key arrays) and mapping tables. Over-extraction
-      // is harmless: found is intersected with the XSD attribute list.
-      const stringArrayRe = /=\s*\[((?:\s*"[^"]+"\s*,?)+)\s*\]/g;
+      // Pattern 10: string-array constants — key lists driving dynamic
+      // serialization (locking key arrays) and mapping tables. Type annotations
+      // and spread members are allowed so typed key registries are visible.
+      // Over-extraction is harmless: found is intersected with the XSD
+      // attribute list.
+      const stringArrayRe = /\[((?:\s*(?:"[^"]+"|'[^']+'|\.\.\.[A-Za-z_$][\w$]*)\s*,?)+)\s*\]/g;
       while ((m = stringArrayRe.exec(src)) !== null) {
         const strRe = /"([^"]+)"/g;
         let s: RegExpExecArray | null;

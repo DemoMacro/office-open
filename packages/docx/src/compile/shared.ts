@@ -7,13 +7,12 @@
  */
 
 import {
-  RELATIONSHIP_TYPES,
-  type RelationshipType,
-  type Relationships,
   findAndReplaceImagePlaceholders,
-  relativePartTarget,
+  Relationships,
   replaceAllPlaceholders,
+  type RelationshipType,
 } from "@office-open/core";
+import { RELATIONSHIP_TYPES, relativePartTarget } from "@office-open/core/opc";
 import { OOXML_XML_DECLARATION } from "@office-open/xml";
 import type { EmbeddingCollection } from "@shared/embeddings/embeddings";
 
@@ -21,6 +20,50 @@ import type { DocxWriteContext } from "../context";
 
 /** XML declaration prepended to every OOXML part. */
 export const XML_DECL = OOXML_XML_DECLARATION;
+
+/** Source relationships owned by one part, preserved verbatim for a rebuilt
+ * part whose rels the compiler re-emits. */
+export function sourceOwnedRels(ctx: DocxWriteContext, sourcePath: string): Relationships {
+  const rels = new Relationships();
+  for (const rel of ctx._options.passthroughRelationships ?? []) {
+    if (rel.source === sourcePath) rels.claimSourceRel(rel);
+  }
+  return rels;
+}
+
+/** {fileName → source rId} for media rels owned by one part. */
+export function sourceOwnedMediaRids(ctx: DocxWriteContext, partPath: string): Map<string, string> {
+  const sourceRids = new Map<string, string>();
+  for (const rel of ctx._options.passthroughRelationships ?? []) {
+    if (rel.source !== partPath) continue;
+    const match = /(?:^|\/)media\/([^/]+)$/.exec(rel.target);
+    if (match) sourceRids.set(match[1]!, rel.rId);
+  }
+  return sourceRids;
+}
+
+/** Serialize numbering media while preserving unused source-owned rels. */
+export function resolveNumberingMedia(
+  xml: string,
+  ctx: DocxWriteContext,
+  ownerPath = "word/numbering.xml",
+): { xml: string; rels: Relationships } {
+  const rels = sourceOwnedRels(ctx, ownerPath);
+  const media = findAndReplaceImagePlaceholders(
+    xml,
+    ctx.media.array,
+    1,
+    "rId",
+    sourceOwnedMediaRids(ctx, ownerPath),
+  );
+  for (const ref of media.referenced) {
+    const target = relativePartTarget(ownerPath, `word/media/${ref.fileName}`);
+    if (!rels.hasRelationship(RELATIONSHIP_TYPES.image, target)) {
+      rels.add(RELATIONSHIP_TYPES.image, target);
+    }
+  }
+  return { xml: media.xml, rels };
+}
 
 /** Relationship type for OLE embedding parts (word|ppt/embeddings/*). */
 const OLE_OBJECT_RELATIONSHIP = RELATIONSHIP_TYPES.oleObject;
@@ -38,6 +81,11 @@ export const embeddingRelationship = (
   embeddings.array.find((e) => e.fileName === fileName)?.relationshipType === "package"
     ? PACKAGE_RELATIONSHIP
     : OLE_OBJECT_RELATIONSHIP;
+
+/** Resolve a source embedding relationship kind while defaulting fresh authoring. */
+export const embeddingRelationshipType = (
+  kind: "oleObject" | "package" | undefined,
+): RelationshipType => (kind === "oleObject" ? OLE_OBJECT_RELATIONSHIP : PACKAGE_RELATIONSHIP);
 
 /** Relative relationship target from one package part to another. */
 export { relativePartTarget };

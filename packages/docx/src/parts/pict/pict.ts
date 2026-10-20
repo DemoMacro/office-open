@@ -1,3 +1,5 @@
+import { parseVmlShapeChild, stringifyVmlShapeChild } from "@office-open/core";
+import type { VmlBaseShapeFields, VmlShapeChild } from "@office-open/core";
 /**
  * VML picture element — w:pict.
  *
@@ -11,13 +13,8 @@
  *
  * @module
  */
-import {
-  RELATIONSHIP_TYPES,
-  stringifyVmlShapeChild,
-  parseVmlShapeChild,
-  TargetModeType,
-} from "@office-open/core";
-import type { VmlBaseShapeFields, VmlShapeChild } from "@office-open/core";
+import { RELATIONSHIP_TYPES, TargetModeType } from "@office-open/core/opc";
+import { attr, escapeXml, findChild } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import type { MediaData } from "@shared/media";
 
@@ -46,6 +43,18 @@ export interface PictLinkedMediaOptions {
   sourceUrl: string;
 }
 
+/** ActiveX control anchored by `w:pict/w:control` (CT_Control). */
+export interface PictControlOptions {
+  /** Source document relationship id; round-trip only. */
+  relationshipId: string;
+  /** Control name (`@w:name`). */
+  name?: string;
+  /** Linked VML shape id (`@w:shapeid`). */
+  shapeId?: string;
+  /** Source control part path; rebuilt as the document-relative target. */
+  sourceTarget?: string;
+}
+
 export interface PictOptions {
   /** Ordered shape elements — shapetype preambles, shapes, groups, … */
   children?: VmlShapeChild[];
@@ -57,6 +66,8 @@ export interface PictOptions {
   /** Externally linked imagedata sources (round-trip; authoring supplies
    *  entries and matching r:id references). */
   linkedMedia?: PictLinkedMediaOptions[];
+  /** ActiveX control carried directly by the pict (round-trip). */
+  control?: PictControlOptions;
   /** Serialized mc:Fallback element carried when the source wrapped this pict
    *  in mc:AlternateContent. Round-trips verbatim (wrapper rebuilt on
    *  stringify); round-trip only — do not hand-author. */
@@ -131,7 +142,29 @@ export function stringifyPict(opts: PictOptions, ctx: Pick<BodyContext, "file">)
   }
   const anchor = opts.w14AnchorId !== undefined ? ` w14:anchorId="${opts.w14AnchorId}"` : "";
   const inner = children.map(stringifyVmlShapeChild).join("");
-  const pictXml = inner !== "" ? `<w:pict${anchor}>${inner}</w:pict>` : `<w:pict${anchor}/>`;
+  const control = opts.control;
+  const controlXml = control
+    ? (() => {
+        const relationships = ctx.file?.document?.relationships;
+        const target =
+          control.sourceTarget?.startsWith("word/") && control.sourceTarget.length > "word/".length
+            ? control.sourceTarget.slice("word/".length)
+            : control.sourceTarget;
+        if (relationships !== undefined && target) {
+          relationships.addRelationship(control.relationshipId, RELATIONSHIP_TYPES.control, target);
+        }
+        const attrs = [
+          ` r:id="${escapeXml(control.relationshipId)}"`,
+          control.name ? ` w:name="${escapeXml(control.name)}"` : "",
+          control.shapeId ? ` w:shapeid="${escapeXml(control.shapeId)}"` : "",
+        ].join("");
+        return `<w:control${attrs}/>`;
+      })()
+    : "";
+  const pictXml =
+    inner !== "" || controlXml
+      ? `<w:pict${anchor}>${inner}${controlXml}</w:pict>`
+      : `<w:pict${anchor}/>`;
   if (vmlFallback !== undefined) {
     return `<mc:AlternateContent><mc:Choice Requires="${opts.mcChoiceRequires ?? "w14"}">${pictXml}</mc:Choice>${vmlFallback}</mc:AlternateContent>`;
   }
@@ -142,6 +175,7 @@ export function stringifyPict(opts: PictOptions, ctx: Pick<BodyContext, "file">)
 function remapPlaceholders(children: VmlShapeChild[], renames: Map<string, string>): void {
   for (const child of children) {
     const fields = shapeFieldsOf(child);
+    if (fields === undefined) continue;
     if (fields.sourceXml !== undefined) {
       fields.sourceXml = remapRawPlaceholders(fields.sourceXml, renames);
     }
@@ -178,6 +212,20 @@ export function parsePict(el: Element, ctx: DocxReadContext): PictOptions {
   }
   const media: PictMediaOptions[] = [];
   const linkedMedia: PictLinkedMediaOptions[] = [];
+  const controlEl = findChild(el, "w:control");
+  const controlRelationshipId = controlEl ? attr(controlEl, "r:id") : undefined;
+  const controlTarget = controlRelationshipId
+    ? ctx.resolveRelationship(controlRelationshipId)
+    : undefined;
+  const control =
+    controlEl && controlRelationshipId
+      ? {
+          relationshipId: controlRelationshipId,
+          ...(attr(controlEl, "w:name") ? { name: attr(controlEl, "w:name") } : {}),
+          ...(attr(controlEl, "w:shapeid") ? { shapeId: attr(controlEl, "w:shapeid") } : {}),
+          ...(controlTarget ? { sourceTarget: controlTarget } : {}),
+        }
+      : undefined;
   bridgeImagedata(children, ctx, media, linkedMedia);
   bridgeTxbxContent(children, ctx, media);
   const anchorId = el.attributes?.["w14:anchorId"];
@@ -185,6 +233,7 @@ export function parsePict(el: Element, ctx: DocxReadContext): PictOptions {
     ...(children.length > 0 ? { children } : {}),
     ...(media.length > 0 ? { media } : {}),
     ...(linkedMedia.length > 0 ? { linkedMedia } : {}),
+    ...(control ? { control } : {}),
     ...(anchorId !== undefined ? { w14AnchorId: String(anchorId) } : {}),
     ...(el.attributes?.["w:rsidR"] !== undefined
       ? { runAdditionRsid: String(el.attributes["w:rsidR"]) }
@@ -250,6 +299,7 @@ function bridgeImagedata(
 ): void {
   for (const child of children) {
     const fields = shapeFieldsOf(child);
+    if (fields === undefined) continue;
     const img = fields.imagedata;
     const rid = img?.relationshipId;
     const hrefRid = img?.hrefRelationshipId;
@@ -296,7 +346,7 @@ function uniqueFileName(media: PictMediaOptions[], fileName: string): string {
 }
 
 /** The shape payload of a wrapper — every variant extends VmlBaseShapeFields. */
-function shapeFieldsOf(child: VmlShapeChild): VmlBaseShapeFields {
+function shapeFieldsOf(child: VmlShapeChild): VmlBaseShapeFields | undefined {
   if ("shape" in child) return child.shape;
   if ("shapetype" in child) return child.shapetype;
   if ("group" in child) return child.group;
@@ -307,7 +357,8 @@ function shapeFieldsOf(child: VmlShapeChild): VmlBaseShapeFields {
   if ("oval" in child) return child.oval;
   if ("polyline" in child) return child.polyline;
   if ("rect" in child) return child.rect;
-  return child.roundrect;
+  if ("roundrect" in child) return child.roundrect;
+  return undefined;
 }
 
 /** Extract the file extension from a part path ("" when absent). */

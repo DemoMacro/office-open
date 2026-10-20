@@ -1,19 +1,21 @@
 import { parseArchive, ParsedArchive } from "@office-open/core";
 import type { DataType } from "@office-open/core";
 import {
-  collectPassthroughParts,
   decodeUriPath,
-  isEncryptedContainer,
-  opaquePassthroughPolicy,
   imageTypeFromPath,
-  partPathToRelsPath,
-  resolveRelationshipTarget,
+  parseVmlBackground,
   toUint8Array,
   toUint8ArrayAsync,
-  parseVmlBackground,
 } from "@office-open/core";
 import type { ThemeColor } from "@office-open/core";
-import { contentTypesDesc } from "@office-open/core";
+import {
+  collectPassthroughParts,
+  isEncryptedContainer,
+  opaquePassthroughPolicy,
+  partPathToRelsPath,
+  resolveRelationshipTarget,
+} from "@office-open/core/opc";
+import { contentTypesDesc } from "@office-open/core/opc";
 import { themeDesc } from "@office-open/core/theme";
 import { findChild } from "@office-open/xml";
 import { attr } from "@office-open/xml";
@@ -53,6 +55,7 @@ import { parseParagraphProperties } from "./body";
 import { DocxReadContext } from "./context";
 import { DocxParseError } from "./errors";
 import { parseBody, parseSectionChild } from "./parse/body";
+import { collectRawXmlRelationshipIds } from "./util/raw-relationship-ids";
 
 export { parseArchive };
 
@@ -194,6 +197,14 @@ function resolveEmbeddedFontData(
   fontTablePath = "word/fontTable.xml",
 ): void {
   const relsEl = doc.get(partPathToRelsPath(fontTablePath));
+  if (!relsEl && fonts.some((font) => embeddedFontParts(font).some(([, part]) => part.embedRid))) {
+    throw new DocxParseError(
+      "Embedded font relationship part is missing",
+      fontTablePath,
+      `/${fontTablePath}/w:fonts/w:font`,
+      "missing-package-part",
+    );
+  }
   if (!relsEl) return;
   const ridToPath = new Map<string, string>();
   for (const child of relsEl.elements ?? []) {
@@ -208,17 +219,31 @@ function resolveEmbeddedFontData(
     for (const [, part] of embeddedFontParts(font)) {
       if (!part.embedRid) continue;
       const odttfPath = ridToPath.get(part.embedRid);
-      if (!odttfPath) continue;
+      if (!odttfPath) {
+        throw new DocxParseError(
+          `Embedded font relationship is missing: ${part.embedRid}`,
+          fontTablePath,
+          `/${fontTablePath}/w:fonts/w:font`,
+          "missing-package-part",
+        );
+      }
       // The Target is a URI (escaped); the ZIP entry may carry the raw name.
       // Look up both forms and store the decoded path so compileDocument
       // re-escapes it exactly once.
       const decoded = decodeUriPath(odttfPath);
+      part.odttfPath = decoded;
       const bytes = doc.getRaw(odttfPath) ?? doc.getRaw(decoded);
-      if (bytes) {
-        part.data = Buffer.from(bytes);
-        part.rawOdttf = true;
-        part.odttfPath = decoded;
+      if (!bytes) {
+        throw new DocxParseError(
+          `Embedded font part is missing: ${part.embedRid}`,
+          fontTablePath,
+          `/${fontTablePath}/w:fonts/w:font`,
+          "missing-package-part",
+        );
       }
+      part.data = Buffer.from(bytes);
+      part.rawOdttf = true;
+      part.odttfPath = decoded;
     }
   }
 }
@@ -530,6 +555,9 @@ function parseDocumentFromDocx(docx: DocxDocument): DocumentOptions {
   if (docx.primaryPartPath !== "word/document.xml") {
     opts.primaryPartPath = docx.primaryPartPath;
   }
+  if (docx.coreProps && docx.coreProps !== "docProps/core.xml") {
+    opts.corePropertiesPath = docx.coreProps;
+  }
   if (
     docx.documentRoot.attributes?.["xmlns:w"] === "http://purl.oclc.org/ooxml/wordprocessingml/main"
   ) {
@@ -746,7 +774,11 @@ function parseDocumentFromDocx(docx: DocxDocument): DocumentOptions {
       );
       const footnotes: NonNullable<DocumentOptions["footnotes"]> = [];
       for (const [id, paragraphs] of fnResult.notes) {
-        footnotes.push({ id, children: paragraphs });
+        footnotes.push({
+          id,
+          children: paragraphs,
+          ...(fnResult.autoReferenceMarks?.get(id) === false ? { autoReferenceMark: false } : {}),
+        });
       }
       if (footnotes.length > 0) opts.footnotes = footnotes;
       // Preserve the parsed separator state so the generated ids stay consistent
@@ -772,7 +804,11 @@ function parseDocumentFromDocx(docx: DocxDocument): DocumentOptions {
       );
       const endnotes: NonNullable<DocumentOptions["endnotes"]> = [];
       for (const [id, paragraphs] of enResult.notes) {
-        endnotes.push({ id, children: paragraphs });
+        endnotes.push({
+          id,
+          children: paragraphs,
+          ...(enResult.autoReferenceMarks?.get(id) === false ? { autoReferenceMark: false } : {}),
+        });
       }
       if (endnotes.length > 0) opts.endnotes = endnotes;
       // Same null-for-absence contract as the footnote separators.
@@ -916,7 +952,13 @@ function parseDocumentFromDocx(docx: DocxDocument): DocumentOptions {
           const fnResult = ctx.withPart(footnotesPath, () => footnotesDesc.parse(footnotesEl, ctx));
           const glossaryFootnotes: NonNullable<DocumentOptions["footnotes"]> = [];
           for (const [id, paragraphs] of fnResult.notes) {
-            glossaryFootnotes.push({ id, children: paragraphs });
+            glossaryFootnotes.push({
+              id,
+              children: paragraphs,
+              ...(fnResult.autoReferenceMarks?.get(id) === false
+                ? { autoReferenceMark: false }
+                : {}),
+            });
           }
           if (glossaryFootnotes.length > 0) glossaryResult.footnotes = glossaryFootnotes;
           glossaryResult.footnoteSeparators = {
@@ -933,7 +975,13 @@ function parseDocumentFromDocx(docx: DocxDocument): DocumentOptions {
           const enResult = ctx.withPart(endnotesPath, () => endnotesDesc.parse(endnotesEl, ctx));
           const glossaryEndnotes: NonNullable<DocumentOptions["endnotes"]> = [];
           for (const [id, paragraphs] of enResult.notes) {
-            glossaryEndnotes.push({ id, children: paragraphs });
+            glossaryEndnotes.push({
+              id,
+              children: paragraphs,
+              ...(enResult.autoReferenceMarks?.get(id) === false
+                ? { autoReferenceMark: false }
+                : {}),
+            });
           }
           if (glossaryEndnotes.length > 0) glossaryResult.endnotes = glossaryEndnotes;
           glossaryResult.endnoteSeparators = {
@@ -1085,6 +1133,7 @@ function parseDocumentFromDocx(docx: DocxDocument): DocumentOptions {
     }
     return ids;
   };
+  const rawReferenceIds = collectRawRelationshipIds(opts.sections);
   for (const partPath of [
     "word/document.xml",
     "word/settings.xml",
@@ -1108,7 +1157,14 @@ function parseDocumentFromDocx(docx: DocxDocument): DocumentOptions {
       const target = attr(rel, "Target");
       const preservesReferencedExternal =
         partPath === "word/settings.xml" && attr(rel, "TargetMode") === "External";
-      if (!rId || !type || !target || (!preservesReferencedExternal && referenced.has(rId)))
+      const preservesRawReferencedAlias =
+        rId !== undefined && rawReferenceIds.has(rId) && attr(rel, "TargetMode") === "External";
+      if (
+        !rId ||
+        !type ||
+        !target ||
+        (!preservesReferencedExternal && !preservesRawReferencedAlias && referenced.has(rId))
+      )
         continue;
       if (attr(rel, "TargetMode") !== "External") continue;
       if (passthroughRels.some((existing) => existing.source === partPath && existing.rId === rId))
@@ -1136,6 +1192,8 @@ function parseDocumentFromDocx(docx: DocxDocument): DocumentOptions {
 
   return opts as DocumentOptions;
 }
+
+const collectRawRelationshipIds = collectRawXmlRelationshipIds;
 
 export function parseDocx(data: DataType): DocxDocument {
   return parseDocxArchive(parseArchive(toUint8Array(data)));

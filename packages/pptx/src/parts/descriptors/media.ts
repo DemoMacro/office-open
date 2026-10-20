@@ -10,10 +10,11 @@
  * @module
  */
 
-import { toUint8Array } from "@office-open/core";
+import { parseOnOff, toUint8Array } from "@office-open/core";
 import type { DataType } from "@office-open/core";
 import type { PictureLockingOptions } from "@office-open/core";
 import type { CustomDescriptor, ReadContext, WriteContext } from "@office-open/core/descriptor";
+import { createSourceRectangle } from "@office-open/core/drawing";
 import {
   shapePropertiesDesc,
   stringifyNonVisualDrawingProperties,
@@ -129,7 +130,7 @@ function stringifyAudioFile(
   linkReference = `audio:${mediaFileName}`,
 ): string {
   const contentType = opts.contentType ? ` contentType="${escapeXml(opts.contentType)}"` : "";
-  if (type === "wav") {
+  if (type === "wav" && opts.embeddedMedia !== true) {
     // Embedded WAV: r:embed + optional original file name.
     const name = opts.audioFileName ? ` name="${escapeXml(opts.audioFileName)}"` : "";
     return `<a:wavAudioFile r:embed="{audio:${mediaFileName}}"${name}/>`;
@@ -158,15 +159,19 @@ export const videoDesc: CustomDescriptor<VideoFrameOptions> = {
 
     // p:nvPicPr
     const contentType = opts.contentType ? ` contentType="${escapeXml(opts.contentType)}"` : "";
-    const mediaEl = mediaFileName
-      ? `<a:videoFile r:link="{video:${mediaFileName}}"${contentType}/>`
-      : "";
+    const mediaEl = opts.sourceUrl
+      ? `<a:videoFile r:link="{video-link:${pptx.addVideoLink(opts.sourceUrl)}}"${contentType}/>`
+      : mediaFileName
+        ? `<a:videoFile r:link="{video:${mediaFileName}}"${contentType}/>`
+        : "";
     const hlinkXml = opts.mediaAction ? '<a:hlinkClick r:id="" action="ppaction://media"/>' : "";
     parts.push(
       `<p:nvPicPr>${stringifyNonVisualDrawingProperties("p:cNvPr", id, opts, name, hlinkXml)}` +
         `<p:cNvPicPr>${stringifyMediaLocking(opts, ctx)}</p:cNvPicPr>` +
         `<p:nvPr>${mediaEl}` +
-        (mediaFileName ? stringifyP14Media(mediaFileName, opts.trim) : "") +
+        (mediaFileName && opts.embeddedMedia !== false
+          ? stringifyP14Media(mediaFileName, opts.trim)
+          : "") +
         `</p:nvPr></p:nvPicPr>`,
     );
 
@@ -181,7 +186,9 @@ export const videoDesc: CustomDescriptor<VideoFrameOptions> = {
       );
       if (posterFileName) posterAttr = stringifyPosterBlip(opts, posterFileName);
     }
-    parts.push(`<p:blipFill>${posterAttr}<a:stretch><a:fillRect/></a:stretch></p:blipFill>`);
+    parts.push(
+      `<p:blipFill${opts.rotWithShape ? ' rotWithShape="1"' : ""}>${posterAttr}${opts.sourceRectangle ? createSourceRectangle(opts.sourceRectangle) : ""}${opts.stretchBare ? "<a:stretch/>" : "<a:stretch><a:fillRect/></a:stretch>"}</p:blipFill>`,
+    );
 
     // p:spPr
     parts.push(stringifyMediaSpPr(opts, ctx));
@@ -203,6 +210,27 @@ export const videoDesc: CustomDescriptor<VideoFrameOptions> = {
     Object.assign(result, readCnvPr(el, "p:nvPicPr"));
     readMediaPicProperties(el, _ctx, result);
     readMediaAction(el, result);
+    const blipFillEl = findChild(el, "p:blipFill");
+    if (blipFillEl) {
+      if (parseOnOff(blipFillEl.attributes?.["rotWithShape"])) result.rotWithShape = true;
+      const srcRectEl = findChild(blipFillEl, "a:srcRect");
+      if (srcRectEl) {
+        const rect: NonNullable<VideoFrameOptions["sourceRectangle"]> = {};
+        const l = attrNum(srcRectEl, "l");
+        if (l !== undefined) rect.left = l / 1000;
+        const t = attrNum(srcRectEl, "t");
+        if (t !== undefined) rect.top = t / 1000;
+        const r = attrNum(srcRectEl, "r");
+        if (r !== undefined) rect.right = r / 1000;
+        const b = attrNum(srcRectEl, "b");
+        if (b !== undefined) rect.bottom = b / 1000;
+        result.sourceRectangle = rect;
+      }
+      const stretchEl = findChild(blipFillEl, "a:stretch");
+      if (stretchEl && findChild(stretchEl, "a:fillRect") === undefined) {
+        result.stretchBare = true;
+      }
+    }
 
     // Media data from a:videoFile (r:link) or p14:media (r:embed)
     const quickTimeEl = findFirst(el, "a:quickTimeFile");
@@ -213,6 +241,7 @@ export const videoDesc: CustomDescriptor<VideoFrameOptions> = {
     // bytes under r:embed here, so it is always read.
     const p14media = findFirst(el, "p14:media");
     const rEmbed = p14media ? attr(p14media, "r:embed") : undefined;
+    result.embeddedMedia = p14media !== undefined;
     if (p14media) {
       const trim = readMediaTrim(p14media);
       if (trim) result.trim = trim;
@@ -220,6 +249,9 @@ export const videoDesc: CustomDescriptor<VideoFrameOptions> = {
     const mediaRef = rLink ?? rEmbed;
     if (mediaRef) {
       const mediaPath = _ctx.resolveRelationship(mediaRef);
+      if (mediaPath && (_ctx as PptxReadContext).isExternalRelationship?.(mediaRef)) {
+        result.sourceUrl = mediaPath;
+      }
       let data: Uint8Array | undefined;
       let resolvedPath = mediaPath;
       if (mediaPath) data = _ctx.getRaw(mediaPath);
@@ -263,6 +295,7 @@ export const audioDesc: CustomDescriptor<AudioFrameOptions> = {
     const name = opts.name ?? `Audio ${id}`;
     const pptx = ctx as PptxWriteContext;
     pptx.registerShapeId(name, id);
+    const legacyWav = opts.type === "wav" && opts.embeddedMedia !== true;
     const mediaFileName =
       opts.data !== undefined
         ? registerMediaFile(
@@ -275,13 +308,13 @@ export const audioDesc: CustomDescriptor<AudioFrameOptions> = {
 
     const parts: string[] = [];
 
-    // p:nvPicPr — EG_Media choice, then the p14:media extension. Embedded WAV
-    // carries no media extension (pre-2010 form); linked audio does.
+    // p:nvPicPr — EG_Media choice, then the p14:media extension. A WAV that
+    // omits embeddedMedia is the legacy form; modern embedded WAV is dual-ref.
     let mediaEl: string;
     if (opts.audioCd) {
       mediaEl = stringifyAudioCd(opts.audioCd);
     } else if (mediaFileName || opts.sourceUrl) {
-      const audioType = opts.embeddedMedia && opts.type === "wav" ? "mp3" : (opts.type ?? "mp3");
+      const audioType = legacyWav ? "wav" : (opts.type ?? "mp3");
       const linkKey = opts.sourceUrl
         ? `audio-link:${pptx.addAudioLink(opts.sourceUrl)}`
         : undefined;
@@ -289,8 +322,7 @@ export const audioDesc: CustomDescriptor<AudioFrameOptions> = {
     } else {
       mediaEl = "";
     }
-    const emitExt =
-      mediaFileName !== undefined && (opts.embeddedMedia || (opts.type ?? "mp3") !== "wav");
+    const emitExt = mediaFileName !== undefined && !legacyWav && opts.embeddedMedia !== false;
     const hlinkXml = opts.mediaAction ? '<a:hlinkClick r:id="" action="ppaction://media"/>' : "";
     parts.push(
       `<p:nvPicPr>${stringifyNonVisualDrawingProperties("p:cNvPr", id, opts, name, hlinkXml)}` +
@@ -311,7 +343,9 @@ export const audioDesc: CustomDescriptor<AudioFrameOptions> = {
       );
       if (posterFileName) posterAttr = stringifyPosterBlip(opts, posterFileName);
     }
-    parts.push(`<p:blipFill>${posterAttr}<a:stretch><a:fillRect/></a:stretch></p:blipFill>`);
+    parts.push(
+      `<p:blipFill${opts.rotWithShape ? ' rotWithShape="1"' : ""}>${posterAttr}${opts.sourceRectangle ? createSourceRectangle(opts.sourceRectangle) : ""}${opts.stretchBare ? "<a:stretch/>" : "<a:stretch><a:fillRect/></a:stretch>"}</p:blipFill>`,
+    );
 
     // p:spPr
     parts.push(stringifyMediaSpPr(opts, ctx));
@@ -333,6 +367,27 @@ export const audioDesc: CustomDescriptor<AudioFrameOptions> = {
     Object.assign(result, readCnvPr(el, "p:nvPicPr"));
     readMediaPicProperties(el, _ctx, result);
     readMediaAction(el, result);
+    const blipFillEl = findChild(el, "p:blipFill");
+    if (blipFillEl) {
+      if (parseOnOff(blipFillEl.attributes?.["rotWithShape"])) result.rotWithShape = true;
+      const srcRectEl = findChild(blipFillEl, "a:srcRect");
+      if (srcRectEl) {
+        const rect: NonNullable<AudioFrameOptions["sourceRectangle"]> = {};
+        const l = attrNum(srcRectEl, "l");
+        if (l !== undefined) rect.left = l / 1000;
+        const t = attrNum(srcRectEl, "t");
+        if (t !== undefined) rect.top = t / 1000;
+        const r = attrNum(srcRectEl, "r");
+        if (r !== undefined) rect.right = r / 1000;
+        const b = attrNum(srcRectEl, "b");
+        if (b !== undefined) rect.bottom = b / 1000;
+        result.sourceRectangle = rect;
+      }
+      const stretchEl = findChild(blipFillEl, "a:stretch");
+      if (stretchEl && findChild(stretchEl, "a:fillRect") === undefined) {
+        result.stretchBare = true;
+      }
+    }
 
     // CD audio (a:audioCd) — track/time, no media file
     const audioCdEl = findFirst(el, "a:audioCd");
@@ -365,8 +420,8 @@ export const audioDesc: CustomDescriptor<AudioFrameOptions> = {
     if (p14media) {
       const trim = readMediaTrim(p14media);
       if (trim) result.trim = trim;
-      result.embeddedMedia = true;
     }
+    result.embeddedMedia = p14media !== undefined;
     const mediaRef = rLink ?? rEmbedAttr ?? rEmbedExt;
     if (mediaRef) {
       const mediaPath = _ctx.resolveRelationship(mediaRef);

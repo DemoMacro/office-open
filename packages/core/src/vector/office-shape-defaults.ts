@@ -61,6 +61,8 @@ export interface VmlShapeDefaultsOptions extends VmlExtAttribute {
   strokecolor?: VmlColor;
   /** form="qualified" — serialized as `o:allowincell`. */
   allowincell?: VmlTrueFalse;
+  /** form="qualified" — serialized as `o:allowoverlap`. */
+  allowoverlap?: VmlTrueFalse;
   // xsd:all children, each at most once
   fillElement?: VmlFillOptions;
   strokeElement?: VmlStrokeOptions;
@@ -83,6 +85,7 @@ const SHAPEDEFAULTS_ATTRS: readonly VmlAttrSpec[] = [
   { field: "stroke", attr: "stroke", kind: "trueFalse" },
   { field: "strokecolor", attr: "strokecolor", kind: "string" },
   { field: "allowincell", attr: "o:allowincell", kind: "trueFalse" },
+  { field: "allowoverlap", attr: "o:allowoverlap", kind: "trueFalse" },
 ];
 
 /** Serialize o:shapedefaults. */

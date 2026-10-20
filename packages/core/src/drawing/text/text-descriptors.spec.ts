@@ -332,6 +332,23 @@ describe("paragraphDesc round-trip", () => {
     expect(r.properties?.lineSpacingPercent).toBe(150);
   });
 
+  it("parses percent-literal line and paragraph spacing", () => {
+    const xml =
+      "<a:p><a:pPr>" +
+      '<a:lnSpc><a:spcPct val="90%"/></a:lnSpc>' +
+      '<a:spcBef><a:spcPct val="12.5%"/></a:spcBef>' +
+      '<a:spcAft><a:spcPct val="150000"/></a:spcAft>' +
+      "</a:pPr><a:r><a:t>x</a:t></a:r></a:p>";
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("no root");
+    const result = paragraphDesc.parse(el, readCtx);
+    expect(result.properties).toMatchObject({
+      lineSpacingPercent: 90,
+      spaceBeforePercent: 12.5,
+      spaceAfterPercent: 150,
+    });
+  });
+
   it("round-trips the extended alignment tokens", () => {
     // ST_TextAlignType beyond left/center/right/justify: full-word API values
     // map to the XSD tokens justLow/dist/thaiDist.
@@ -514,6 +531,20 @@ describe("bodyPropertiesDesc round-trip", () => {
     expect(r.rIns).toBe(400);
   });
 
+  it("preserves an omitted text-warp adjustment list", () => {
+    const xml = bodyPropertiesDesc.stringify(
+      { prstTxWarp: { preset: "textCircle", avLstOmitted: true } },
+      writeCtx,
+    );
+    if (!xml) throw new Error("no XML");
+    expect(xml).toContain('<a:prstTxWarp prst="textCircle"/>');
+    expect(xml).not.toContain("<a:avLst");
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("no root");
+    const parsed = bodyPropertiesDesc.parse(el, readCtx);
+    expect(parsed.prstTxWarp).toEqual({ preset: "textCircle", avLstOmitted: true });
+  });
+
   it("round-trips autofit variants", () => {
     const norm = roundTrip({ normAutofit: { fontScale: 80000 } });
     expect(norm.normAutofit?.fontScale).toBe(80000);
@@ -558,10 +589,10 @@ describe("textBodyDesc round-trip", () => {
     expect((r.paragraphs?.[0] as { text?: string })?.text).toBe("Hi");
   });
 
-  it("emits empty bodyPr/lstStyle and one a:p when bare", () => {
+  it("emits required bodyPr and paragraph, but omits optional list style", () => {
     const inner = textBodyDesc.stringify({}, writeCtx)!;
     expect(inner).toContain("<a:bodyPr");
-    expect(inner).toContain("<a:lstStyle");
+    expect(inner).not.toContain("<a:lstStyle");
     expect(inner).toContain("<a:p");
   });
 
@@ -588,6 +619,48 @@ describe("textBodyDesc round-trip", () => {
       children: [{ content }],
       endParagraphProperties: { lang: "en-US" },
     });
+  });
+
+  it("parses compatibility-wrapped A14 math from its Choice branch", () => {
+    const content = '<m:oMathPara xmlns:m="urn:m"><m:oMath/></m:oMathPara>';
+    const el = parseXml(
+      `<a:p xmlns:a="urn:a" xmlns:mc="urn:mc">` +
+        `<mc:AlternateContent><mc:Choice Requires="a14">` +
+        `<a14:m xmlns:a14="http://schemas.microsoft.com/office/drawing/2010/main">${content}</a14:m>` +
+        `</mc:Choice></mc:AlternateContent></a:p>`,
+    ).elements?.[0];
+    if (!el) throw new Error("no root");
+    expect((paragraphDesc.parse(el, readCtx) as { children?: unknown }).children).toEqual([
+      { content },
+    ]);
+  });
+
+  it("preserves an empty text-field run property element", () => {
+    const el = parseXml(
+      '<a:p xmlns:a="urn:a"><a:fld type="slidenum"><a:rPr/><a:t>1</a:t></a:fld></a:p>',
+    ).elements?.[0];
+    if (!el) throw new Error("no root");
+    const parsed = paragraphDesc.parse(el, readCtx);
+    const child = (parsed.children as { type?: string; emptyProperties?: boolean }[])?.[0];
+    expect(child).toEqual({ type: "slidenum", emptyProperties: true, text: "1" });
+
+    const xml = paragraphDesc.stringify(parsed as ParagraphDescriptorOptions, writeCtx)!;
+    expect(xml).toContain("<a:rPr/>");
+  });
+
+  it("preserves fractional bullet-size scalars", () => {
+    const xml = paragraphDesc.stringify(
+      { properties: { bulletStyle: { size: 46.999 } } },
+      writeCtx,
+    )!;
+    expect(xml).toContain('<a:buSzPct val="46.999%"/>');
+
+    const el = parseXml(
+      '<a:p xmlns:a="urn:a"><a:pPr><a:buSzPct val="46999"/></a:pPr><a:r><a:t>A</a:t></a:r></a:p>',
+    ).elements?.[0];
+    if (!el) throw new Error("no root");
+    const parsed = paragraphDesc.parse(el, readCtx);
+    expect(parsed.properties?.bulletStyle?.size).toBe(46.999);
   });
 });
 

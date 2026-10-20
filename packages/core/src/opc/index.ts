@@ -92,7 +92,7 @@ export {
   type ZipPartSink,
 } from "./packer";
 export type { Zippable, ZipOptions } from "./packer";
-export { strFromU8, unzipSync, zipSync } from "./packer";
+export { strFromU8, strToU8, unzipSync, zipSync } from "./packer";
 export { decodeBase64, encodeBase64 } from "../util/base64";
 
 // Archive parser

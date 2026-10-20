@@ -77,15 +77,17 @@ function writeMetadata(options: DocumentOptions): string {
   ];
   const appEntries = appCounts
     .map(([field, word]) => {
+      const key = String(field);
       const value = appProperties[field];
       if (value === undefined) return "";
       if (typeof value !== "number" || !Number.isInteger(value) || value < 0) {
         reject(
           "app-properties",
-          `appProperties.${field}`,
-          JSON.stringify(value) ?? "",
+          `appProperties.${key}`,
+          typeof value === "symbol" ? String(value) : (JSON.stringify(value) ?? ""),
           "RTF requires a count",
         );
+        return "";
       }
       return `{\\${word}${value}}`;
     })

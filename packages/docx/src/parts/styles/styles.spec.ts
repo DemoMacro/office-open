@@ -6,6 +6,7 @@ import { parseParagraphProperties } from "../../body";
 import type { DocxReadContext } from "../../context";
 import { generateDocumentSync } from "../../generate";
 import { parseDocumentSync } from "../../parse";
+import { stringifyParagraphProperties } from "../paragraph/stringify";
 import { DefaultStylesFactory, stringifyDocDefaults } from "./factory";
 import { parseStyleDefinitions, Styles } from "./styles";
 
@@ -14,6 +15,99 @@ import { parseStyleDefinitions, Styles } from "./styles";
 const ctx = {} as unknown as DocxReadContext;
 
 describe("parseStyleDefinitions (round-trip)", () => {
+  it("preserves empty style IDs and explicit qFormat lexical values", () => {
+    const root = parseXml(
+      '<?xml version="1.0"?><w:styles>' +
+        '<w:style w:type="character" w:styleId=""><w:name w:val="Empty ID"/>' +
+        '<w:qFormat w:val="1"/></w:style></w:styles>',
+    ).elements?.[0];
+    if (!root) throw new Error("parsed styles has no root element");
+    const parsed = parseStyleDefinitions(root, parseParagraphProperties, ctx);
+    const style = parsed?.characterStyles?.[0];
+    expect(style).toMatchObject({ id: "", quickFormat: true, quickFormatRaw: "1" });
+
+    const output = new Styles({ characterStyles: parsed?.characterStyles }).serialize();
+    expect(output).toContain('w:styleId=""');
+    expect(output).toContain('<w:qFormat w:val="1"/>');
+  });
+
+  it("keeps the same style ID in paragraph and character namespaces", () => {
+    const root = parseXml(
+      '<?xml version="1.0"?><w:styles>' +
+        '<w:style w:type="paragraph" w:styleId="Shared"><w:name w:val="Paragraph"/></w:style>' +
+        '<w:style w:type="character" w:styleId="Shared"><w:name w:val="Character"/></w:style>' +
+        "</w:styles>",
+    ).elements?.[0];
+    if (!root) throw new Error("parsed styles has no root element");
+    const parsed = parseStyleDefinitions(root, parseParagraphProperties, ctx);
+    expect(parsed?.styleOrder).toEqual(["paragraph:Shared", "character:Shared"]);
+
+    const output = new Styles({
+      paragraphStyles: parsed?.paragraphStyles,
+      characterStyles: parsed?.characterStyles,
+      styleOrder: parsed?.styleOrder,
+    }).serialize();
+    expect(output.match(/w:styleId="Shared"/g)).toHaveLength(2);
+    expect(output.indexOf("Paragraph")).toBeLessThan(output.indexOf("Character"));
+  });
+
+  it("preserves explicit style on/off lexical attributes", () => {
+    const root = parseXml(
+      '<?xml version="1.0"?><w:styles>' +
+        '<w:style w:type="paragraph" w:styleId="Explicit" w:default="0" w:customStyle="1">' +
+        '<w:name w:val="Explicit"/></w:style></w:styles>',
+    ).elements?.[0];
+    if (!root) throw new Error("parsed styles has no root element");
+    const parsed = parseStyleDefinitions(root, parseParagraphProperties, ctx);
+    expect(parsed?.paragraphStyles?.[0]).toMatchObject({
+      default: false,
+      defaultRaw: "0",
+      customStyle: true,
+      customStyleRaw: "1",
+    });
+    const output = new Styles({ paragraphStyles: parsed?.paragraphStyles }).serialize();
+    expect(output).toContain('w:default="0"');
+    expect(output).toContain('w:customStyle="1"');
+  });
+
+  it("keeps an empty style ID while applying explicit style order", () => {
+    const root = parseXml(
+      '<?xml version="1.0"?><w:styles>' +
+        '<w:style w:type="paragraph" w:styleId="First"><w:name w:val="First"/></w:style>' +
+        '<w:style w:type="character" w:styleId=""><w:name w:val="Empty"/></w:style>' +
+        "</w:styles>",
+    ).elements?.[0];
+    if (!root) throw new Error("parsed styles has no root element");
+    const parsed = parseStyleDefinitions(root, parseParagraphProperties, ctx);
+    expect(parsed?.styleOrder).toEqual(["paragraph:First", "character:"]);
+
+    const output = new Styles({
+      paragraphStyles: parsed?.paragraphStyles,
+      characterStyles: parsed?.characterStyles,
+      styleOrder: parsed?.styleOrder,
+    }).serialize();
+    expect(output.indexOf("First")).toBeLessThan(output.indexOf("Empty"));
+    expect(output).toContain('w:styleId=""');
+  });
+
+  it("normalizes a qFormat misplaced in style pPr", () => {
+    const root = parseXml(
+      '<?xml version="1.0"?><w:styles>' +
+        '<w:style w:type="paragraph" w:styleId="Misplaced"><w:name w:val="Misplaced"/>' +
+        '<w:pPr><w:qFormat w:val="1"/></w:pPr></w:style></w:styles>',
+    ).elements?.[0];
+    if (!root) throw new Error("parsed styles has no root element");
+    const parsed = parseStyleDefinitions(root, parseParagraphProperties, ctx);
+    expect(parsed?.paragraphStyles?.[0]).toMatchObject({
+      quickFormat: true,
+      quickFormatRaw: "1",
+      paragraph: {},
+    });
+    expect(new Styles({ paragraphStyles: parsed?.paragraphStyles }).serialize()).toContain(
+      '<w:qFormat w:val="1"/>',
+    );
+  });
+
   it("reads universal-measure tab positions as twips", () => {
     const el = parseXml(
       '<w:pPr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
@@ -23,6 +117,36 @@ describe("parseStyleDefinitions (round-trip)", () => {
     expect(parseParagraphProperties(el, ctx).tabStops).toEqual([
       { type: "center", position: "234pt" },
     ]);
+  });
+
+  it("preserves an explicit empty tabs container", () => {
+    const el = parseXml(
+      '<w:pPr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+        "<w:tabs/></w:pPr>",
+    ).elements?.[0];
+    if (!el) throw new Error("parsed pPr has no root element");
+    const parsed = parseParagraphProperties(el, ctx);
+    expect(parsed.tabStops).toEqual([]);
+    expect(stringifyParagraphProperties(parsed).xml).toContain("<w:tabs></w:tabs>");
+  });
+
+  it("round-trips vendor hyphenation line count", () => {
+    const el = parseXml(
+      '<w:pPr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+        '<w:hyphenationLines w:val="0"/></w:pPr>',
+    ).elements?.[0];
+    if (!el) throw new Error("parsed pPr has no root element");
+
+    const parsed = parseParagraphProperties(el, ctx);
+    expect(parsed.hyphenationLines).toBe(0);
+
+    const xml = stringifyParagraphProperties(parsed).xml;
+    if (xml === undefined) throw new Error("stringified pPr has no XML");
+    expect(xml).toContain('<w:hyphenationLines w:val="0"/>');
+
+    const reparsed = parseXml(xml).elements?.[0];
+    if (!reparsed) throw new Error("stringified pPr has no root element");
+    expect(parseParagraphProperties(reparsed, ctx).hyphenationLines).toBe(0);
   });
 
   it("reads back custom paragraph style fields", () => {

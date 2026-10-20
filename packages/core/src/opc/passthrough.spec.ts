@@ -95,26 +95,29 @@ describe("collectPassthroughParts", () => {
   it("omits contentType when the source declared neither Override nor Default", () => {
     const files = basePackage();
     files["mystery.part"] = new Uint8Array([9]);
-    const result = collectPassthroughParts(archiveOf(files), ["word/document.xml"]);
+    const result = collectPassthroughParts(archiveOf(files), [
+      "word/document.xml",
+      "xl/workbook.xml",
+    ]);
     const mystery = result.parts.find((p) => p.path === "mystery.part");
     expect(mystery).toBeDefined();
     expect(mystery && "contentType" in mystery).toBe(false);
   });
 
-  it("captures internal passthrough targets and drops rebuilt-owner external targets", () => {
+  it("captures internal passthrough targets and owner external targets", () => {
     const result = collectPassthroughParts(archiveOf(basePackage()), ["word/document.xml"]);
     const docRels = result.relationships.filter((r) => r.source === "word/document.xml");
     expect(
       docRels
         .map((r) => r.relationshipType.split("/").pop() ?? "")
         .sort((a, b) => a.localeCompare(b)),
-    ).toEqual(["customXml", "image", "theme"]);
+    ).toEqual(["customXml", "hyperlink", "image", "theme"]);
     // Targets stay in source-relative form.
     const theme = docRels.find((r) => r.relationshipType.endsWith("/theme"));
     expect(theme?.target).toBe("theme/theme1.xml");
     const customXml = docRels.find((r) => r.relationshipType.endsWith("/customXml"));
     expect(customXml?.target).toBe("../customXml/item1.xml");
-    expect(docRels.some((r) => r.targetMode === "External")).toBe(false);
+    expect(docRels.filter((r) => r.targetMode === "External")).toHaveLength(1);
   });
 
   it("captures internal and external package-root relationships", () => {
@@ -168,6 +171,28 @@ describe("collectPassthroughParts", () => {
         sourceTargetMissing: true,
       },
     ]);
+  });
+
+  it("captures a dangling owner relationship for source fidelity", () => {
+    const files = basePackage();
+    files["xl/_rels/workbook.xml.rels"] =
+      `<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">` +
+      `<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>` +
+      `<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/connections" Target="connections.xml"/>` +
+      `</Relationships>`;
+
+    const result = collectPassthroughParts(archiveOf(files), [
+      "word/document.xml",
+      "xl/workbook.xml",
+    ]);
+    const connection = result.relationships.find(
+      (r) => r.source === "xl/workbook.xml" && r.rId === "rId2",
+    );
+    expect(connection).toMatchObject({
+      source: "xl/workbook.xml",
+      target: "connections.xml",
+      sourceTargetMissing: true,
+    });
   });
 
   it("keeps a rebuilt-target relationship captured for source-id pre-claim", () => {
@@ -403,6 +428,30 @@ describe("dropDanglingPassthroughRels", () => {
     ]);
     expect(dropped).toBe(0);
     expect(decoder.decode(files["_rels/.rels"])).toContain('Target="docProps/core.xml"');
+  });
+
+  it("keeps a source-declared dangling owner relationship", () => {
+    const files = assembled();
+    files["xl/_rels/workbook.xml.rels"] = encoder.encode(
+      `<Relationships>` +
+        `<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>` +
+        `<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/connections" Target="connections.xml"/>` +
+        `</Relationships>`,
+    );
+    const dropped = dropDanglingPassthroughRels(files, [
+      {
+        source: "xl/workbook.xml",
+        relationshipType:
+          "http://schemas.openxmlformats.org/officeDocument/2006/relationships/connections",
+        target: "connections.xml",
+        rId: "rId2",
+        sourceTargetMissing: true,
+      },
+    ]);
+    expect(dropped).toBe(0);
+    expect(decoder.decode(files["xl/_rels/workbook.xml.rels"])).toContain(
+      'Target="connections.xml"',
+    );
   });
 
   it("resolves targets case-insensitively (OPC part-name matching)", () => {

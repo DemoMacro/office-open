@@ -8,6 +8,7 @@ export {
   emuToLength,
   isExternalOdfUrl,
   lengthToEmu,
+  odfLengthToEmu,
   spreadsheetColumnName,
   spreadsheetColumnNumber,
   textOf,
@@ -45,6 +46,7 @@ export {
   hasOcfManifestOverlay,
   manifestXml,
   readOcf,
+  readOcfSync,
   readXml,
   type OdfFileContent,
   type OdfFiles,
@@ -75,16 +77,19 @@ export {
   type OcfEntrySemanticDigest,
   type OcfSemanticDigest,
 } from "./container/digest";
-export { metaXml, ODF_NAMESPACES, parseMeta } from "./meta/core-properties";
+export { metaXml, ODF_NAMESPACES, parseMeta } from "./meta";
+export { OdfChartStyleOverlayError } from "@office-open/core";
 export {
   CHART_MIME,
   chartBodyXml,
+  chartSubdocumentFiles,
   generateChartDocument,
   parseChartBody,
   parseChartDocument,
   parseEmbeddedCharts,
+  resolveEmbeddedChart,
   type ChartDocumentOptions,
-} from "./chart/chart";
+} from "./chart";
 export {
   DATABASE_ATTRIBUTE_NAMES,
   DATABASE_ELEMENT_NAMES,
@@ -97,30 +102,14 @@ export {
   type DatabaseDocumentOptions,
   type DatabaseElementName,
   type OdfDatabaseElement,
-} from "./database/database";
+} from "./database";
 export {
-  FORM_ATTRIBUTE_NAMES,
-  FORM_ELEMENT_NAMES,
   FORM_SCHEMA_ELEMENTS,
-  canonicalFormControlXml,
-  canonicalOfficeFormsXml,
   formsXml,
   officeFormsXml,
-  parseCanonicalFormControl,
   parseOfficeForms,
   parseXFormsModel,
-  type FormAttributeName,
-  type FormAttributes,
-  type FormAttributeValue,
-  type FormElementName,
-  type FormEventOptions,
-  type FormControlOptions,
-  type FormControlName,
-  type FormPropertyValueOptions,
-  type OdfFormOptions,
-  type OfficeFormsOptions,
-  type XFormsModelOptions,
-} from "./forms/forms";
+} from "./forms";
 export {
   graphicFill,
   graphicOutline,

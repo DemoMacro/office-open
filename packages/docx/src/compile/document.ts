@@ -12,16 +12,19 @@
  */
 
 import {
-  RELATIONSHIP_TYPES,
-  type XmlifyedFile,
   addSmartArtRelationships,
   findAndReplaceImagePlaceholders,
   formatId,
   hasPlaceholders,
-  partPathToRelsPath,
   replaceAllPlaceholders,
   replaceNumberingPlaceholders,
 } from "@office-open/core";
+import {
+  partPathToRelsPath,
+  RELATIONSHIP_TYPES,
+  resolveRelationshipTarget,
+  type XmlifyedFile,
+} from "@office-open/core/opc";
 
 import type { DocxWriteContext } from "../context";
 import { XML_DECL, embeddingRelationship } from "./shared";
@@ -47,7 +50,8 @@ function sourceRidFor(
     if (
       rel.source === ownerSource &&
       rel.relationshipType.split("/").pop() === kind &&
-      (rel.target === target || rel.target === `/${target}`)
+      resolveRelationshipTarget(ownerSource, rel.target) ===
+        resolveRelationshipTarget(ownerSource, target)
     ) {
       const m = /^rId(\d+)$/.exec(rel.rId);
       if (m) return Number(m[1]);
@@ -56,9 +60,30 @@ function sourceRidFor(
   return undefined;
 }
 
+function sourceRidForPath(
+  passthroughRelationships: readonly { source: string; target: string; rId: string }[] | undefined,
+  ownerSource: string,
+  target: string,
+): number | undefined {
+  const source = passthroughRelationships?.find(
+    (rel) =>
+      rel.source === ownerSource &&
+      resolveRelationshipTarget(ownerSource, rel.target) ===
+        resolveRelationshipTarget(ownerSource, target),
+  );
+  const match = source ? /^rId(\d+)$/.exec(source.rId) : undefined;
+  return match ? Number(match[1]) : undefined;
+}
+
 function sourceRelationshipFor(
   passthroughRelationships:
-    | readonly { source: string; relationshipType: string; target: string; rId: string }[]
+    | readonly {
+        source: string;
+        relationshipType: string;
+        target: string;
+        rId: string;
+        targetMode?: "External";
+      }[]
     | undefined,
   ownerSource: string,
   relationshipType: string,
@@ -70,7 +95,29 @@ function sourceRelationshipFor(
     (rel) =>
       rel.source === ownerSource &&
       rel.relationshipType.split("/").pop() === kind &&
-      (rel.target === target || rel.target === `/${target}`),
+      resolveRelationshipTarget(ownerSource, rel.target) ===
+        resolveRelationshipTarget(ownerSource, target),
+  );
+}
+
+function sourceRelationshipForPath(
+  passthroughRelationships:
+    | readonly {
+        source: string;
+        relationshipType: string;
+        target: string;
+        rId: string;
+        targetMode?: "External";
+      }[]
+    | undefined,
+  ownerSource: string,
+  target: string,
+) {
+  return passthroughRelationships?.find(
+    (rel) =>
+      rel.source === ownerSource &&
+      resolveRelationshipTarget(ownerSource, rel.target) ===
+        resolveRelationshipTarget(ownerSource, target),
   );
 }
 
@@ -100,15 +147,20 @@ function documentRelationshipTarget(partPath: string, ownerPath: string): string
  */
 function documentSourceRids(
   ctx: DocxWriteContext,
-  dir: "media" | "embeddings",
+  parts: readonly { fileName: string; partPath?: string }[],
+  fallbackDirectory: "media" | "embeddings",
 ): ReadonlyMap<string, string> {
   const map = new Map<string, string>();
-  const prefix = `${dir}/`;
+  const targets = new Map(
+    parts.map((part) => [
+      part.partPath ?? `word/${fallbackDirectory}/${part.fileName}`,
+      part.fileName,
+    ]),
+  );
   for (const rel of ctx._options.passthroughRelationships ?? []) {
     if (rel.source !== ctx.primaryDocumentPath) continue;
-    const normalizedTarget = rel.target.startsWith("/") ? rel.target.slice(1) : rel.target;
-    if (!normalizedTarget.startsWith(prefix)) continue;
-    map.set(normalizedTarget.slice(prefix.length), rel.rId);
+    const fileName = targets.get(resolveRelationshipTarget(rel.source, rel.target));
+    if (fileName !== undefined && !map.has(fileName)) map.set(fileName, rel.rId);
   }
   return map;
 }
@@ -128,7 +180,7 @@ export function compileDocumentEntries(
     ctx.media.array,
     documentRelationshipCount,
     "rId",
-    documentSourceRids(ctx, "media"),
+    documentSourceRids(ctx, ctx.media.array, "media"),
   );
   // OLE embeddings reuse the same {fileName} placeholder bridge as images; run
   // after media so {oleObjectN.bin} placeholders resolve against the embedding array.
@@ -138,7 +190,7 @@ export function compileDocumentEntries(
     ctx.embeddings.array,
     documentEmbeddingOffset,
     "rId",
-    documentSourceRids(ctx, "embeddings"),
+    documentSourceRids(ctx, ctx.embeddings.array, "embeddings"),
   );
 
   return {
@@ -179,10 +231,9 @@ export function compileDocumentEntries(
               ctx.chartExes.array[i]?.sourcePath ?? `word/charts/chartEx${i + 1}.xml`,
               documentPath,
             );
-            const sourceRid = sourceRidFor(
+            const sourceRid = sourceRidForPath(
               ctx._options.passthroughRelationships,
               documentPath,
-              RELATIONSHIP_TYPES.chartEx,
               chartExTarget,
             );
             entries.push({
@@ -193,12 +244,34 @@ export function compileDocumentEntries(
             });
           }
           const saPrefixes = ["smartart:", "smartart-lo:", "smartart-qs:", "smartart-cs:"];
+          const saRelationshipTypes = [
+            RELATIONSHIP_TYPES.diagramData,
+            RELATIONSHIP_TYPES.diagramLayout,
+            RELATIONSHIP_TYPES.diagramQuickStyle,
+            RELATIONSHIP_TYPES.diagramColors,
+          ];
           for (const [i, key] of smartArtKeys.entries()) {
             for (let p = 0; p < saPrefixes.length; p++) {
+              const smartArt = ctx.smartArts.array[i];
+              const sourcePath =
+                smartArt?.sourcePaths?.[
+                  p === 1 ? "layout" : p === 2 ? "quickStyle" : p === 3 ? "colors" : "data"
+                ];
+              const sourceRid = sourcePath
+                ? sourceRidFor(
+                    ctx._options.passthroughRelationships,
+                    documentPath,
+                    saRelationshipTypes[p]!,
+                    documentRelationshipTarget(sourcePath, documentPath),
+                  )
+                : undefined;
               entries.push({
                 prefix: saPrefixes[p],
                 key,
-                value: formatId(smartArtOffset + p * smartArtKeys.length, i, "rId"),
+                value:
+                  sourceRid !== undefined
+                    ? `rId${sourceRid}`
+                    : formatId(smartArtOffset + p * smartArtKeys.length, i, "rId"),
               });
             }
           }
@@ -216,7 +289,10 @@ export function compileDocumentEntries(
     Relationships: {
       data: (() => {
         for (const [i, ref] of documentMedia.referenced.entries()) {
-          const target = `media/${ref.fileName}`;
+          const partPath =
+            ctx.media.array.find((media) => media.fileName === ref.fileName)?.partPath ??
+            `word/media/${ref.fileName}`;
+          const target = documentRelationshipTarget(partPath, documentPath);
           const sourceRel = sourceRelationshipFor(
             ctx._options.passthroughRelationships,
             documentPath,
@@ -225,22 +301,27 @@ export function compileDocumentEntries(
           );
           ctx.document.relationships.addRelationship(
             sourceRel?.rId ?? documentRelationshipCount + i,
-            RELATIONSHIP_TYPES.image,
+            sourceRel?.relationshipType ?? RELATIONSHIP_TYPES.image,
             sourceRel?.target ?? target,
+            sourceRel?.targetMode,
           );
         }
         for (const [i, ref] of documentEmbeddings.referenced.entries()) {
-          const target = `embeddings/${ref.fileName}`;
-          const sourceRid = sourceRidFor(
+          const target = documentRelationshipTarget(
+            `word/embeddings/${ref.fileName}`,
+            documentPath,
+          );
+          const sourceRel = sourceRelationshipFor(
             ctx._options.passthroughRelationships,
             documentPath,
             embeddingRelationship(ctx.embeddings, ref.fileName),
             target,
           );
           ctx.document.relationships.addRelationship(
-            sourceRid ?? documentEmbeddingOffset + i,
-            embeddingRelationship(ctx.embeddings, ref.fileName),
-            target,
+            sourceRel?.rId ?? documentEmbeddingOffset + i,
+            sourceRel?.relationshipType ?? embeddingRelationship(ctx.embeddings, ref.fileName),
+            sourceRel?.target ?? target,
+            sourceRel?.targetMode,
           );
         }
 
@@ -253,16 +334,17 @@ export function compileDocumentEntries(
             ctx.charts.array[i]?.sourcePath ?? `word/charts/chart${i + 1}.xml`,
             documentPath,
           );
-          const sourceRid = sourceRidFor(
+          const sourceRel = sourceRelationshipFor(
             ctx._options.passthroughRelationships,
             documentPath,
             RELATIONSHIP_TYPES.chart,
             target,
           );
           ctx.document.relationships.addRelationship(
-            sourceRid ?? chartOffset + i,
-            RELATIONSHIP_TYPES.chart,
-            target,
+            sourceRel?.rId ?? chartOffset + i,
+            sourceRel?.relationshipType ?? RELATIONSHIP_TYPES.chart,
+            sourceRel?.target ?? target,
+            sourceRel?.targetMode,
           );
         }
 
@@ -276,23 +358,34 @@ export function compileDocumentEntries(
             ctx.chartExes.array[i]?.sourcePath ?? `word/charts/chartEx${i + 1}.xml`,
             documentPath,
           );
-          const sourceRid = sourceRidFor(
+          const sourceRel = sourceRelationshipForPath(
             ctx._options.passthroughRelationships,
             documentPath,
-            RELATIONSHIP_TYPES.chartEx,
             target,
           );
           ctx.document.relationships.addRelationship(
-            sourceRid ?? chartExOffset + i,
-            RELATIONSHIP_TYPES.chartEx,
-            target,
+            sourceRel?.rId ?? chartExOffset + i,
+            sourceRel?.relationshipType ?? RELATIONSHIP_TYPES.chartEx,
+            sourceRel?.target ?? target,
+            sourceRel?.targetMode,
           );
         }
 
         addSmartArtRelationships(
           ctx.smartArts.array.map((s) => s.key),
           (id, type, target) => {
-            ctx.document.relationships.addRelationship(id, type, target);
+            const sourceRel = sourceRelationshipFor(
+              ctx._options.passthroughRelationships,
+              documentPath,
+              type,
+              target,
+            );
+            ctx.document.relationships.addRelationship(
+              sourceRel?.rId ?? id,
+              sourceRel?.relationshipType ?? type,
+              sourceRel?.target ?? target,
+              sourceRel?.targetMode,
+            );
           },
           documentRelationshipCount +
             documentMedia.referenced.length +

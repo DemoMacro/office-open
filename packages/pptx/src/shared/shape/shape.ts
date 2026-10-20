@@ -75,6 +75,8 @@ export interface ShapeStyleOptions {
 
 export interface ShapeOptions extends NonVisualDrawingPropertiesOptions, Transform2DOptions {
   id?: number;
+  /** ODF-only `draw:control` reference; absent for ordinary presentation shapes. */
+  odfControlId?: string;
   /**
    * Shape properties (a:spPr children): geometry/fill/outline/effects/3D and
    * the spPr extension list. Transform fields stay top-level on the shape.
@@ -86,7 +88,7 @@ export interface ShapeOptions extends NonVisualDrawingPropertiesOptions, Transfo
   textBody?: TextBodyOptions;
   locking?: ShapeLockingOptions;
   /** CT_Placeholder `@type` — ST_PlaceholderType. */
-  placeholder?: PlaceholderType;
+  placeholder?: PlaceholderType | true;
   placeholderIndex?: number;
   /** CT_Placeholder `@sz` — sizing hint (default "full"). */
   placeholderSize?: "full" | "half" | "quarter";
@@ -98,7 +100,12 @@ export interface ShapeOptions extends NonVisualDrawingPropertiesOptions, Transfo
   hasCustomPrompt?: boolean;
   /** Customer-data references (`p:nvPr/p:custDataLst`), including `p:tags`. */
   customerData?: SlideCustomerDataReferenceOptions[];
-  /** Text-box marker (p:cNvSpPr @txBox). */
+  /** Application non-visual drawing extensions (`p:nvPr/p:extLst/p:ext`). */
+  nvPrExtensions?: NvPrExtensionOptions[];
+  /**
+   * Text-box marker (`p:cNvSpPr/@txBox`); omit for fresh authoring, set
+   * `false` only to preserve an explicit source marker.
+   */
   textBox?: boolean;
   style?: ShapeStyleOptions;
   /**
@@ -111,6 +118,14 @@ export interface ShapeOptions extends NonVisualDrawingPropertiesOptions, Transfo
    * jump to a URL or another slide when the shape is clicked.
    */
   hyperlink?: TextHyperlinkOptions;
+}
+
+/** One application extension (`p:ext`) inside `p:nvPr/p:extLst`. */
+export interface NvPrExtensionOptions {
+  /** Extension URI (`p:ext/@uri`). */
+  uri: string;
+  /** Foreign-namespace extension content. */
+  content?: string;
 }
 
 /**

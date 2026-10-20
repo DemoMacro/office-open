@@ -1,5 +1,5 @@
+import { strFromU8, unzipSync } from "@office-open/core";
 import { parse, type Element } from "@office-open/xml";
-import { strFromU8, unzipSync } from "fflate";
 
 import { OcfManifestError } from "../errors";
 import { parseManifestOptions } from "./manifest";

@@ -56,7 +56,10 @@ function stringifyFilterColumn(fc: FilterColumnOptions): string {
     const filtersAttrs: Record<string, string | number | boolean | undefined> = {};
     if (fc.filters.blank) filtersAttrs.blank = 1;
     if (fc.filters.calendarType) filtersAttrs.calendarType = fc.filters.calendarType;
-    const valParts = (fc.filters.values ?? []).map((v) => `<filter val="${escapeXml(v)}"/>`);
+    const valParts = (fc.filters.values ?? []).map((v) => ({
+      kind: "value" as const,
+      xml: `<filter val="${escapeXml(v)}"/>`,
+    }));
     const dgParts = (fc.filters.dateGroupItems ?? []).map((dg) => {
       const dgAttrs: Record<string, string | number | boolean | undefined> = {
         dateTimeGrouping: dg.dateTimeGrouping,
@@ -67,9 +70,20 @@ function stringifyFilterColumn(fc: FilterColumnOptions): string {
       if (dg.hour !== undefined) dgAttrs.hour = dg.hour;
       if (dg.minute !== undefined) dgAttrs.minute = dg.minute;
       if (dg.second !== undefined) dgAttrs.second = dg.second;
-      return `<dateGroupItem${attrs(dgAttrs)}/>`;
+      return { kind: "dateGroupItem" as const, xml: `<dateGroupItem${attrs(dgAttrs)}/>` };
     });
-    inner = `<filters${attrs(filtersAttrs)}>${valParts.join("")}${dgParts.join("")}</filters>`;
+    const entries = [...valParts, ...dgParts];
+    const order = fc.filters.entryOrder;
+    const ordered = order
+      ? entries
+          .slice()
+          .sort(
+            (left, right) =>
+              order.indexOf(left.kind) - order.indexOf(right.kind) ||
+              entries.indexOf(left) - entries.indexOf(right),
+          )
+      : entries;
+    inner = `<filters${attrs(filtersAttrs)}>${ordered.map((entry) => entry.xml).join("")}</filters>`;
   } else if (fc.colorFilter) {
     const cfAttrs: Record<string, string | number | boolean | undefined> = {};
     if (fc.colorFilter.dxfId !== undefined) cfAttrs.dxfId = fc.colorFilter.dxfId;
@@ -177,10 +191,14 @@ function parseFiltersEl(fc: XmlElement): FilterItemsOptions {
   if (cal) fi.calendarType = cal as FilterItemsOptions["calendarType"];
   const values: string[] = [];
   const dateGroupItems: DateGroupFilterOptions[] = [];
+  const entryOrder: ("value" | "dateGroupItem")[] = [];
   for (const f of fc.elements ?? []) {
     if (f.name === "filter") {
       const v = attr(f, "val");
-      if (v !== undefined) values.push(v);
+      if (v !== undefined) {
+        values.push(v);
+        entryOrder.push("value");
+      }
     } else if (f.name === "dateGroupItem") {
       const dg: DateGroupFilterOptions = {
         dateTimeGrouping: attr(f, "dateTimeGrouping") as DateGroupFilterOptions["dateTimeGrouping"],
@@ -198,10 +216,16 @@ function parseFiltersEl(fc: XmlElement): FilterItemsOptions {
       const s = attrNum(f, "second");
       if (s !== undefined) dg.second = s;
       dateGroupItems.push(dg);
+      entryOrder.push("dateGroupItem");
     }
   }
   if (values.length > 0) fi.values = values;
   if (dateGroupItems.length > 0) fi.dateGroupItems = dateGroupItems;
+  const xsdOrder = [
+    ...values.map(() => "value" as const),
+    ...dateGroupItems.map(() => "dateGroupItem" as const),
+  ];
+  if (entryOrder.some((entry, index) => entry !== xsdOrder[index])) fi.entryOrder = entryOrder;
   return fi;
 }
 

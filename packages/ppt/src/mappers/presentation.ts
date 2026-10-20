@@ -1,4 +1,4 @@
-import { CompoundFileReader } from "@office-open/core";
+import { CompoundFileReader } from "@office-open/core/cfb";
 import type { PresentationOptions } from "@office-open/pptx";
 
 import { PptParseError } from "../errors";

@@ -4,10 +4,11 @@
  * @module
  */
 
-import { EmbeddingCollection, Media } from "@office-open/core";
-import type { BaseMediaEntry, EmbeddingData } from "@office-open/core";
+import type { BaseMediaEntry } from "@office-open/core";
+import { Media } from "@office-open/core";
 import type { ChartSourceRelationship, ChartThemeOverrideData } from "@office-open/core/chart";
 import type { HyperlinkTarget, ReadContext, WriteContext } from "@office-open/core/descriptor";
+import { EmbeddingCollection, type EmbeddingData } from "@office-open/core/opc";
 import type {
   ColorDefinitionOptions,
   LayoutDefinitionOptions,
@@ -15,6 +16,7 @@ import type {
   SmartArtRawParts,
 } from "@office-open/core/smartart";
 import type { ReproducibleScope } from "@office-open/core/util";
+import type { SmartArtDataRelationshipOptions } from "@parts/smartart";
 
 import type { PptxDocument } from "./parse";
 
@@ -54,6 +56,8 @@ export interface ChartEntry {
     xml: string;
     /** Source user-shapes package path; round-trip only. */
     path?: string;
+    /** Source relationship target; preserved so producers keep relative spelling. */
+    sourceTarget?: string;
   };
 
   /** Chart-owned themeOverride part; the body is typed, its rel stays source-ordered. */
@@ -71,6 +75,12 @@ export interface SmartArtEntry {
   color: string | ColorDefinitionOptions;
   /** Verbatim source parts retained by round-trip parsing. */
   raw?: SmartArtRawParts;
+  /** Source data-part relationships retained by round-trip parsing. */
+  sourceDataRelationships?: SmartArtDataRelationshipOptions[];
+  /** Source dgm:relIds relationship Ids (r:dm/r:lo/r:qs/r:cs). Round-trip only. */
+  sourceRelIds?: { dm?: string; lo?: string; qs?: string; cs?: string };
+  /** Source diagram part paths relative to the package root. Round-trip only. */
+  sourcePaths?: { data?: string; layout?: string; quickStyle?: string; colors?: string };
 }
 
 export interface HyperlinkEntry {
@@ -94,6 +104,12 @@ export interface OleLinkEntry {
 
 /** An externally linked audio source (a:audioFile @r:link). */
 export interface AudioLinkEntry {
+  key: string;
+  url: string;
+}
+
+/** An externally linked video source (a:videoFile @r:link). */
+export interface VideoLinkEntry {
   key: string;
   url: string;
 }
@@ -127,6 +143,9 @@ export class PptxWriteContext implements WriteContext {
   private _audioLinks = new Map<string, AudioLinkEntry>();
   private _audioLinkKeys = new Map<string, string>();
   private _nextAudioLinkId = 1;
+  private _videoLinks = new Map<string, VideoLinkEntry>();
+  private _videoLinkKeys = new Map<string, string>();
+  private _nextVideoLinkId = 1;
   private _nextRelId = 1;
   /** cNvPr name → id for the part being serialized (cleared per slide/layout/master). */
   private _shapeIds = new Map<string, number>();
@@ -245,6 +264,15 @@ export class PptxWriteContext implements WriteContext {
     return key;
   }
 
+  public addVideoLink(url: string): string {
+    const existingKey = this._videoLinkKeys.get(url);
+    if (existingKey !== undefined) return existingKey;
+    const key = `video-link_${this._nextVideoLinkId++}`;
+    this._videoLinks.set(key, { key, url });
+    this._videoLinkKeys.set(url, key);
+    return key;
+  }
+
   public nextChartKey(): string {
     return `chart_${this._nextChartId++}`;
   }
@@ -340,6 +368,10 @@ export class PptxWriteContext implements WriteContext {
   public get audioLinks(): AudioLinkEntry[] {
     return [...this._audioLinks.values()];
   }
+
+  public get videoLinks(): VideoLinkEntry[] {
+    return [...this._videoLinks.values()];
+  }
 }
 
 // ── Read context ──
@@ -352,6 +384,17 @@ export class PptxWriteContext implements WriteContext {
  */
 export class PptxReadContext implements ReadContext {
   constructor(private _parseCtx: ParseContext) {}
+
+  public withRelationships(slideRels: Map<string, string>): PptxReadContext {
+    return new PptxReadContext(
+      new ParseContext(
+        this._parseCtx.pptx,
+        slideRels,
+        this._parseCtx.externalRelIds,
+        this._parseCtx.embeddingTypes,
+      ),
+    );
+  }
 
   public get slideRelationships(): ReadonlyMap<string, string> {
     return this._parseCtx.slideRels;

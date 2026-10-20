@@ -12,6 +12,7 @@ const writeCtx = {
   addMedia: () => "",
   addImage: (_key: string, entry: { fileName: string }) => entry,
   addAudioLink: () => "audio-link_1",
+  addVideoLink: () => "video-link_1",
 } as unknown as WriteContext;
 
 const readCtx = {
@@ -113,6 +114,26 @@ describe("videoDesc round-trip", () => {
     expect(result.type).toBe("mov");
   });
 
+  it("preserves legacy video without the p14 media extension", () => {
+    const el = parseRoot(
+      `<p:pic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" ` +
+        `xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" ` +
+        `xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">` +
+        `<p:nvPicPr><p:cNvPr id="5" name="Video"/><p:cNvPicPr/><p:nvPr>` +
+        `<a:videoFile r:link="rId1"/></p:nvPr></p:nvPicPr></p:pic>`,
+    );
+    const parsed = videoDesc.parse(el, readCtx);
+    expect(parsed.embeddedMedia).toBe(false);
+
+    const xml = videoDesc.stringify(
+      { id: 5, name: "Video", type: "avi", data: "dummy", embeddedMedia: false },
+      writeCtx,
+    );
+    expect(xml).toContain('<a:videoFile r:link="{video:');
+    expect(xml).not.toContain("<p:extLst>");
+    expect(xml).not.toContain("<p14:media");
+  });
+
   // Note: data/poster are not round-tripped because the read context
   // cannot resolve media relationships in this test setup.
 });
@@ -194,6 +215,44 @@ describe("audioDesc round-trip", () => {
     expect(result.sourceUrl).toBe("https://example.com/audio.mp3");
   });
 
+  it("preserves external video references", () => {
+    const xml = videoDesc.stringify(
+      { id: 212, type: "wmv", sourceUrl: "file:///C:/video.wmv" },
+      writeCtx,
+    );
+    expect(xml).toContain('<a:videoFile r:link="{video-link:video-link_1}"');
+
+    const videoCtx = {
+      resolveRelationship: (rId: string) =>
+        rId === "{video-link:video-link_1}" ? "file:///C:/video.wmv" : undefined,
+      isExternalRelationship: (rId: string) => rId === "{video-link:video-link_1}",
+      getRaw: () => undefined,
+      getPart: () => undefined,
+    } as unknown as Parameters<typeof videoDesc.parse>[1];
+    const result = videoDesc.parse(parseRoot(xml), videoCtx);
+    expect(result.sourceUrl).toBe("file:///C:/video.wmv");
+  });
+
+  it("preserves legacy audio without the p14 media extension", () => {
+    const el = parseRoot(
+      `<p:pic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" ` +
+        `xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" ` +
+        `xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">` +
+        `<p:nvPicPr><p:cNvPr id="6" name="Audio"/><p:cNvPicPr/><p:nvPr>` +
+        `<a:audioFile r:link="rId1"/></p:nvPr></p:nvPicPr></p:pic>`,
+    );
+    const parsed = audioDesc.parse(el, readCtx);
+    expect(parsed.embeddedMedia).toBe(false);
+
+    const xml = audioDesc.stringify(
+      { id: 6, name: "Audio", type: "mp3", data: "dummy", embeddedMedia: false },
+      writeCtx,
+    );
+    expect(xml).toContain('<a:audioFile r:link="{audio:Audio.mp3}"');
+    expect(xml).not.toContain("<p:extLst>");
+    expect(xml).not.toContain("<p14:media");
+  });
+
   it("round-trips audio with default name", () => {
     const opts: AudioFrameOptions = {
       id: 202,
@@ -228,6 +287,20 @@ describe("audioDesc round-trip", () => {
     const result = audioDesc.parse(parseRoot(xml), readCtx);
     expect(result.type).toBe("wav");
     expect(result.audioFileName).toBe("beep.wav");
+  });
+
+  it("round-trips a modern embedded WAV without downgrading its element", () => {
+    const xml = audioDesc.stringify(
+      { id: 207, data: "dummy", type: "wav", name: "Modern", embeddedMedia: true },
+      writeCtx,
+    );
+
+    expect(xml).toContain('<a:audioFile r:link="{audio:Modern.wav}"');
+    expect(xml).toContain("<p14:media");
+
+    const result = audioDesc.parse(parseRoot(xml), readCtx);
+    expect(result.type).toBe("wav");
+    expect(result.embeddedMedia).toBe(true);
   });
 
   it("round-trips CD audio track points", () => {

@@ -1,4 +1,5 @@
 import type { DateTime } from "@office-open/core";
+import type { SectionOptions } from "@shared/section";
 import type { ShadingProperties } from "@shared/shading";
 /**
  * Paragraph properties types for WordprocessingML documents.
@@ -9,6 +10,7 @@ import type { ShadingProperties } from "@shared/shading";
  */
 import type { ChangedProperties } from "@shared/track-revision/track-revision";
 
+import type { SectionPropertiesOptions } from "../document/body/section-properties/section-properties";
 import type { AlignmentType } from "./formatting/alignment";
 import type { BordersOptions } from "./formatting/border";
 import type { CnfConditionalOptions } from "./formatting/cnf-style";
@@ -17,7 +19,20 @@ import type { SpacingProperties } from "./formatting/spacing";
 import type { HeadingLevel } from "./formatting/style";
 import type { TabStopDefinition } from "./formatting/tab-stop";
 import type { FrameOptions } from "./frame/frame-properties";
+import type { OnOffLexicalValue } from "./run/properties";
 import type { ParagraphRunOptions } from "./run/run";
+
+/** Numbering revision metadata shared by numbering properties and fields. */
+export interface NumberingChangeOptions {
+  /** Original numbering value. */
+  original: string;
+  /** Revision ID. */
+  id: string;
+  /** Author of the change. */
+  author: string;
+  /** Date of the change. */
+  date?: DateTime;
+}
 
 /** Numbering applied as a revision (w:numPr/w:ins, CT_TrackChange). */
 export interface NumberingInsertionOptions {
@@ -89,6 +104,8 @@ export interface LevelParagraphStylePropertiesOptions {
   widowControl?: boolean;
   /** Whether to ignore spacing before/after when adjacent paragraphs have the same style */
   contextualSpacing?: boolean;
+  /** Source contextual-spacing toggle lexical form; round-trip only. */
+  contextualSpacingRaw?: OnOffLexicalValue;
   /** Position in twips for a right-aligned tab stop */
   rightTabStop?: number;
   /** Position in twips for a left-aligned tab stop */
@@ -123,6 +140,8 @@ export interface LevelParagraphStylePropertiesOptions {
   suppressOverlap?: boolean;
   /** Whether to disable automatic hyphenation for this paragraph */
   suppressAutoHyphens?: boolean;
+  /** Vendor-defined hyphenation line limit (w:hyphenationLines, round-trip only). */
+  hyphenationLines?: number;
   /** Whether to automatically adjust right indent for document grid */
   adjustRightInd?: boolean;
   /** Whether to snap the current paragraph to the document grid */
@@ -185,6 +204,12 @@ export type ParagraphStylePropertiesOptions = {
         /** Reference ID of the numbering definition to use */
         reference: string;
         /**
+         * Source numeric w:numId for lossless round-trip (round-trip only —
+         * do not hand-author). Set on parse so unknown IDs and definitions
+         * absent from the source package survive verbatim.
+         */
+        sourceNumId?: number;
+        /**
          * Level in the numbering hierarchy (0-8). Omitted when the source
          * w:numPr carried only w:numId (no w:ilvl) — the element then inherits
          * the level instead of pinning one.
@@ -199,16 +224,7 @@ export type ParagraphStylePropertiesOptions = {
          */
         autoStyle?: boolean;
         /** Numbering change tracking (CT_TrackChangeNumbering) */
-        numberingChange?: {
-          /** Original numbering value */
-          original: string;
-          /** Revision ID */
-          id: string;
-          /** Author of the change */
-          author: string;
-          /** Date of the change */
-          date?: DateTime;
-        };
+        numberingChange?: NumberingChangeOptions;
         /** Numbering applied as a revision (w:numPr/w:ins, CT_TrackChange) */
         insertion?: NumberingInsertionOptions;
       }
@@ -232,12 +248,7 @@ export type ParagraphStylePropertiesOptions = {
          */
         revisionOnly: true;
         /** Numbering change tracking (CT_TrackChangeNumbering) */
-        numberingChange?: {
-          original: string;
-          id: string;
-          author: string;
-          date?: DateTime;
-        };
+        numberingChange?: NumberingChangeOptions;
         /** Numbering applied as a revision (w:numPr/w:ins, CT_TrackChange) */
         insertion?: NumberingInsertionOptions;
       }
@@ -264,6 +275,15 @@ export type ParagraphPropertiesOptionsBase = {
    * Run properties to apply to all runs in the paragraph.
    */
   run?: ParagraphRunOptions;
+  /**
+   * Section break hosted by a paragraph inside a block container (TOC or SDT).
+   * Top-level section breaks remain on `SectionOptions.properties`.
+   */
+  sectionProperties?: SectionPropertiesOptions;
+  /** Header content for a section break hosted by a block-container paragraph. */
+  sectionHeaders?: NonNullable<SectionOptions["headers"]>;
+  /** Footer content for a section break hosted by a block-container paragraph. */
+  sectionFooters?: NonNullable<SectionOptions["footers"]>;
 } & ParagraphStylePropertiesOptions;
 
 export type ParagraphPropertiesChangeOptions = ChangedProperties & ParagraphPropertiesOptionsBase;

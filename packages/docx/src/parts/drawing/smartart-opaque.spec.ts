@@ -1,7 +1,7 @@
-import { unzipSync } from "fflate";
+import { unzipSync, zipSync } from "fflate";
 import { describe, expect, it } from "vitest";
 
-import { generateDocument } from "../../generate";
+import { generateDocument, generateDocumentSync } from "../../generate";
 import { parseDocumentSync } from "../../parse";
 
 const XML_DECL = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
@@ -67,6 +67,44 @@ describe("SmartArt opaque part round-trip", () => {
     expect(new TextDecoder().decode(secondFiles["word/diagrams/drawing1.xml"]!)).toBe(DRAWING);
     expect(Array.from(secondFiles["word/media/image1.png"]!)).toEqual(
       Array.from(firstFiles["word/media/image1.png"]!),
+    );
+  });
+
+  it("preserves source SmartArt data rels and embedded rIds", async () => {
+    const generated = await generateDocument(documentWithOpaqueSmartArt(), { type: "uint8array" });
+    const files = unzipSync(generated);
+    const decoder = new TextDecoder();
+    const encoder = new TextEncoder();
+    files["word/diagrams/data1.xml"] = encoder.encode(
+      decoder
+        .decode(files["word/diagrams/data1.xml"]!)
+        .replace(
+          /<dgm:spPr\s*\/>/,
+          '<dgm:spPr><a:blipFill><a:blip r:embed="rId9"/>' +
+            "<a:stretch><a:fillRect/></a:stretch></a:blipFill></dgm:spPr>",
+        ),
+    );
+    files["word/diagrams/_rels/data1.xml.rels"] = encoder.encode(
+      XML_DECL +
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        '<Relationship Id="rId4" Type="http://example.com/relationships/diagramDrawing" ' +
+        'Target="/word/diagrams/drawing1.xml"/>' +
+        '<Relationship Id="rId9" Type="http://example.com/relationships/image" ' +
+        'Target="/word/media/image1.png"/>' +
+        "</Relationships>",
+    );
+
+    const output = unzipSync(
+      generateDocumentSync(parseDocumentSync(zipSync(files)), { type: "uint8array" }),
+    );
+    expect(decoder.decode(output["word/diagrams/data1.xml"]!)).toContain('r:embed="rId9"');
+    const rels = decoder.decode(output["word/diagrams/_rels/data1.xml.rels"]!);
+    expect(rels).toContain(
+      'Id="rId4" Type="http://example.com/relationships/diagramDrawing" ' +
+        'Target="/word/diagrams/drawing1.xml"',
+    );
+    expect(rels).toContain(
+      'Id="rId9" Type="http://example.com/relationships/image" Target="/word/media/image1.png"',
     );
   });
 });

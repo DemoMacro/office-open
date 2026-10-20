@@ -51,7 +51,7 @@ describe("decodeFormula", () => {
 
   it("decodes variable function tokens in argument-first order", () => {
     expect(
-      decodeFormula(Uint8Array.from([0x44, 0, 0, 0, 0x40, 0x41, 1, 4, 0]), {
+      decodeFormula(Uint8Array.from([0x44, 0, 0, 0, 0x40, 0x42, 1, 4, 0]), {
         baseRow: 0,
         baseColumn: 0,
       }).formula,

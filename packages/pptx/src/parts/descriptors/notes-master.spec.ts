@@ -39,8 +39,9 @@ describe("notesMasterDesc", () => {
       '<p:notesMaster xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" ' +
       'xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">' +
       '<p:cSld><p:bg><p:bgRef idx="1002"><a:srgbClr val="4472C4"/></p:bgRef></p:bg>' +
-      '<p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>' +
-      "<p:grpSpPr/></p:spTree></p:cSld>" +
+      '<p:spTree><p:nvGrpSpPr><p:cNvPr id="9" name="Notes Root"/>' +
+      "<p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>" +
+      '<p:grpSpPr bwMode="gray"/></p:spTree></p:cSld>' +
       '<p:clrMap bg1="lt1" tx1="dk1" bg2="lt2" tx2="dk2" accent1="accent1" accent2="accent2" accent3="accent3" accent4="accent4" accent5="accent5" accent6="accent6" hlink="hlink" folHlink="folHlink"/>' +
       '<p:hf dt="1" hdr="0" ftr="1" sldNum="0"/>' +
       '<p:notesStyle><a:lvl1pPr marL="0"><a:defRPr sz="1400"/></a:lvl1pPr>' +
@@ -48,6 +49,10 @@ describe("notesMasterDesc", () => {
       "</p:notesMaster>";
 
     const { opts, xml } = roundTrip(source);
+    expect(opts.shapeTreeId).toBe(9);
+    expect(opts.shapeTreeName).toBe("Notes Root");
+    expect(opts.groupTransformless).toBe(true);
+    expect(opts.shapeTreeBlackWhiteMode).toBe("gray");
     expect(opts.background?.reference).toEqual({ index: 1002, color: { value: "4472C4" } });
     expect(opts.headerFooter).toEqual({
       date: true,
@@ -59,8 +64,20 @@ describe("notesMasterDesc", () => {
     expect(opts.notesStyle?.levels?.[1]?.defaultRunProperties?.size).toBe(12);
     // Regeneration keeps the parsed values (idempotent round-trip).
     expect(xml).toContain('<p:bgRef idx="1002"><a:srgbClr val="4472C4"/></p:bgRef>');
+    expect(xml).toContain('<p:grpSpPr bwMode="gray">');
     expect(xml).toContain('<p:hf dt="1" hdr="0" ftr="1" sldNum="0"/>');
     expect(xml).toContain('<a:lvl1pPr marL="0"><a:defRPr sz="1400"/></a:lvl1pPr>');
+  });
+
+  it("preserves an absent notes-master background", () => {
+    const source =
+      '<p:notesMaster xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">' +
+      '<p:cSld><p:spTree><p:nvGrpSpPr><p:cNvPr id="9" name="Notes Root"/>' +
+      "<p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr/></p:spTree></p:cSld>" +
+      "</p:notesMaster>";
+    const { opts, xml } = roundTrip(source);
+    expect(opts.backgroundPresent).toBe(false);
+    expect(xml).not.toContain("<p:bg>");
   });
 
   it("emits custom spTree children with explicit ids", () => {

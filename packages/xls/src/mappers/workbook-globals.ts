@@ -44,7 +44,10 @@ export function readWorkbookGlobals(stream: Uint8Array): WorkbookState {
   const definedNames: DefinedNameOptions[] = [];
   const externSheetNames = new Map<number, string>();
   const styleTable = new Map<number, XfStyle>();
-  const drawingImages: { data: Uint8Array; type: "png" | "jpg" | "webp" | "wmf" | "emf" }[] = [];
+  const drawingImages: { data: Uint8Array; type: "png" | "jpg" | "wmf" | "emf" }[] = [];
+  let saveExternalLinkValues: boolean | undefined;
+  let refreshAllConnections: boolean | undefined;
+  let builtInGroupCount: number | undefined;
   const pendingSupbooks: Supbook[] = [];
   const pendingExternSheetReferences:
     | ReturnType<typeof parseExternSheet>
@@ -166,6 +169,44 @@ export function readWorkbookGlobals(stream: Uint8Array): WorkbookState {
         palette.push(...parsePalette(record.body));
         break;
       }
+      case RecordCode.FunctionGroupCount: {
+        if (record.body.byteLength < 2)
+          throw new XlsParseError("Invalid legacy XLS file: truncated function group count");
+        builtInGroupCount = new DataView(
+          record.body.buffer,
+          record.body.byteOffset,
+          record.body.byteLength,
+        ).getUint16(0, true);
+        break;
+      }
+      case RecordCode.RefreshAll: {
+        if (record.body.byteLength < 2)
+          throw new XlsParseError("Invalid legacy XLS file: truncated refresh-all flag");
+        refreshAllConnections =
+          (new DataView(
+            record.body.buffer,
+            record.body.byteOffset,
+            record.body.byteLength,
+          ).getUint16(0, true) &
+            1) ===
+          1;
+        break;
+      }
+      case RecordCode.BookBool: {
+        if (record.body.byteLength < 2)
+          throw new XlsParseError("Invalid legacy XLS file: truncated workbook boolean");
+        const value = new DataView(
+          record.body.buffer,
+          record.body.byteOffset,
+          record.body.byteLength,
+        ).getUint16(0, true);
+        if (value !== 0 && value !== 1)
+          throw new XlsParseError("Invalid legacy XLS file: invalid workbook boolean", {
+            ...biffRecordContext(record, "invalid-boolean-value"),
+          });
+        saveExternalLinkValues = value === 1;
+        break;
+      }
       case RecordCode.Supbook: {
         if (workbookVersion === 8)
           pendingSupbooks.push(parseSupbook(record, encodingForCodepage(codepage)));
@@ -279,6 +320,9 @@ export function readWorkbookGlobals(stream: Uint8Array): WorkbookState {
     externSheetNames,
     styleTable,
     drawingImages,
+    saveExternalLinkValues,
+    refreshAllConnections,
+    builtInGroupCount,
     stream,
   };
 }

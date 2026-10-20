@@ -1,4 +1,5 @@
 export * from "./compile";
+export * from "./base64";
 export * from "./converters";
 export * from "./crypto";
 export * from "./data-type";
@@ -8,6 +9,7 @@ export * from "./image-type";
 export * from "./mappings";
 export * from "./placeholder";
 export * from "./reproducible";
+export * from "./stream";
 export * from "./uri-path";
 export * from "./values";
 export * from "./xml-decode";

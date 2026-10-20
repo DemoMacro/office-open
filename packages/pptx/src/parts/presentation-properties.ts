@@ -55,11 +55,21 @@ export interface PrintPropertiesOptions {
 }
 
 /** Web-publishing target (p:htmlPubPr — browser and title for HTML export). */
+export type HtmlPublishSlideScopeOptions =
+  | { kind: "all" }
+  | { kind: "range"; start: number; end: number }
+  | { kind: "customShow"; id: number };
+
 export interface HtmlPublishPropertiesOptions {
   showSpeakerNotes?: boolean;
   target?: string;
   title?: string;
-  rId?: string;
+  /** Publishing relationship target (`r:id`, required by CT_HtmlPublishProperties). */
+  rId: string;
+  /** Required EG_SlideListChoice child: all slides, an index range, or a custom show. */
+  slideScope: HtmlPublishSlideScopeOptions;
+  /** Verbatim inner XML of p:htmlPubPr/p:extLst. */
+  ext?: string;
 }
 
 export interface PresentationPropertiesOptions {
@@ -107,21 +117,31 @@ function buildHtmlPubPrXml(opts: HtmlPublishPropertiesOptions): string {
   if (opts.showSpeakerNotes === false) attrs.push(' showSpeakerNotes="0"');
   if (opts.target) attrs.push(` target="${opts.target}"`);
   if (opts.title) attrs.push(` title="${opts.title}"`);
-  if (opts.rId) attrs.push(` r:id="${opts.rId}"`);
-  return `<p:htmlPubPr${attrs.join("")}><p:sldAll/></p:htmlPubPr>`;
+  attrs.push(` r:id="${opts.rId}"`);
+  const scope = opts.slideScope;
+  const scopeXml =
+    scope.kind === "all"
+      ? "<p:sldAll/>"
+      : scope.kind === "range"
+        ? `<p:sldRg st="${scope.start}" end="${scope.end}"/>`
+        : `<p:custShow id="${scope.id}"/>`;
+  const extensionXml = opts.ext === undefined ? "" : `<p:extLst>${opts.ext}</p:extLst>`;
+  return `<p:htmlPubPr${attrs.join("")}>${scopeXml}${extensionXml}</p:htmlPubPr>`;
 }
 
 function buildShowPrXml(showOptions: ShowOptions): string {
   const showPrAttrs: string[] = [];
-  if (showOptions.loop) showPrAttrs.push(' loop="1"');
+  if (showOptions.loop !== undefined) showPrAttrs.push(` loop="${showOptions.loop ? 1 : 0}"`);
   if (showOptions.showNarration !== undefined)
     showPrAttrs.push(` showNarration="${showOptions.showNarration ? 1 : 0}"`);
   if (showOptions.showAnimation !== undefined)
     showPrAttrs.push(` showAnimation="${showOptions.showAnimation ? 1 : 0}"`);
-  if (showOptions.useTimings) showPrAttrs.push(' useTimings="1"');
+  if (showOptions.useTimings !== undefined)
+    showPrAttrs.push(` useTimings="${showOptions.useTimings ? 1 : 0}"`);
 
-  const showType = showOptions.type ?? "present";
-  let showTypeXml: string;
+  const sourceType = showOptions.type;
+  const showType = sourceType === null ? undefined : (sourceType ?? "present");
+  let showTypeXml = "";
   if (showType === "kiosk") {
     const restartAttr =
       showOptions.restart !== undefined ? ` restart="${showOptions.restart}"` : "";
@@ -129,20 +149,22 @@ function buildShowPrXml(showOptions: ShowOptions): string {
   } else if (showType === "browse") {
     const scrollbarAttr = showOptions.showScrollbar === false ? ' showScrollbar="0"' : "";
     showTypeXml = `<p:browse${scrollbarAttr}/>`;
-  } else {
+  } else if (showType !== undefined) {
     showTypeXml = "<p:present/>";
   }
 
-  let slideListXml = "<p:sldAll/>";
+  let slideListXml = showOptions.slideSelection === null ? "" : "<p:sldAll/>";
   if (showOptions.slideRange) {
     slideListXml = `<p:sldRg st="${showOptions.slideRange.start}" end="${showOptions.slideRange.end}"/>`;
+  } else if (showOptions.customShowId !== undefined) {
+    slideListXml = `<p:custShow id="${showOptions.customShowId}"/>`;
   }
 
   let penClrXml = "";
   if (showOptions.penColor) {
-    const color =
+    const color: SolidFillOptions =
       typeof showOptions.penColor === "string"
-        ? ({ value: showOptions.penColor } as SolidFillOptions)
+        ? { value: showOptions.penColor }
         : showOptions.penColor;
     penClrXml = `<p:penClr>${createColorElement(color)}</p:penClr>`;
   }

@@ -1,83 +1,42 @@
 import { parse as parseXml } from "@office-open/xml";
-import { unzipSync } from "fflate";
 import { describe, expect, it } from "vite-plus/test";
 
 import type { DocxReadContext } from "../context";
-import { generateDocumentSync } from "../generate";
-import { parseDocumentSync } from "../parse";
-import { parseSectionChild } from "./body";
+import { parseBody } from "./body";
 
-const readCtx = {} as unknown as DocxReadContext;
+describe("parseBody", () => {
+  it("preserves tolerated block children after a body-level sectPr", () => {
+    const body = parseXml(
+      '<w:body xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" ' +
+        'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
+        "<w:p><w:r><w:t>before</w:t></w:r></w:p><w:sectPr/>" +
+        '<w:altChunk r:id="rId1"/></w:body>',
+    ).elements?.[0];
+    if (!body) throw new Error("body fixture is missing");
+    const context = {
+      docx: {
+        partRefs: { afChunks: new Map([["rId1", "word/afchunk2.docx"]]) },
+        doc: { getRaw: () => new Uint8Array([1, 2, 3]) },
+      },
+    } as unknown as DocxReadContext;
 
-/** The shape office-open's own textbox stringifier emits: w:p > w:r > w:pict. */
-const TEXTBOX_PICT =
-  '<w:pict><v:shape id="_x0000_s1026" type="#_x0000_t202" style="width:120pt;height:24pt">' +
-  '<v:textbox style="mso-fit-shape-to-text:t" o:insetmode="auto"><w:txbxContent><w:p><w:r><w:t>In box</w:t></w:r></w:p></w:txbxContent></v:textbox>' +
-  "</v:shape></w:pict>";
-
-function parseFirstChild(xml: string) {
-  const el = parseXml(xml).elements?.[0];
-  if (!el) throw new Error("parsed document has no root element");
-  return parseSectionChild(el, readCtx);
-}
-
-describe("parseSectionChild run-wrapped textboxes", () => {
-  it("promotes the run-wrapped pict the textbox stringifier emits", () => {
-    const child = parseFirstChild(
-      `<w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r>${TEXTBOX_PICT}</w:r></w:p>`,
-    );
-    expect("textbox" in (child as object)).toBe(true);
-    expect(JSON.stringify(child)).toContain("In box");
-  });
-
-  it("keeps a bare pict direct child working", () => {
-    const child = parseFirstChild(`<w:p>${TEXTBOX_PICT}</w:p>`);
-    expect("textbox" in (child as object)).toBe(true);
-  });
-
-  it("does not promote a run that mixes text with a pict", () => {
-    const child = parseFirstChild(`<w:p><w:r><w:t>Before</w:t>${TEXTBOX_PICT}</w:r></w:p>`);
-    expect("textbox" in (child as object)).toBe(false);
-    expect(JSON.stringify(child)).toContain("Before");
-  });
-
-  it("keeps a non-canonical textbox pict in its run", () => {
-    const child = parseFirstChild(
-      `<w:p><w:r><w:pict><v:rect type="#_x0000_t202">` +
-        `<v:textbox inset="1pt" o:insetmode="custom"><w:txbxContent>` +
-        `<w:p><w:r><w:t>In box</w:t></w:r></w:p>` +
-        `</w:txbxContent></v:textbox></v:rect></w:pict></w:r></w:p>`,
-    );
-    expect("textbox" in (child as object)).toBe(false);
-    expect(JSON.stringify(child)).toContain('"rect"');
-  });
-
-  it("does not promote a paragraph that carries extra runs", () => {
-    const child = parseFirstChild(
-      `<w:p><w:r><w:t>Caption</w:t></w:r><w:r>${TEXTBOX_PICT}</w:r></w:p>`,
-    );
-    expect("textbox" in (child as object)).toBe(false);
-  });
-});
-
-describe("textbox generate → parse round trip", () => {
-  it("keeps a generated textbox as a textbox on re-parse", () => {
-    const first = generateDocumentSync({
-      sections: [
-        {
-          children: [
-            { textbox: { children: [{ paragraph: { children: [{ text: "In box" }] } }] } },
-          ],
-        },
-      ],
-    });
-    const opts = parseDocumentSync(first);
-    const children = opts.sections?.[0]?.children ?? [];
-    expect(children.some((c) => "textbox" in c)).toBe(true);
-
-    const second = generateDocumentSync(opts);
-    const xml = new TextDecoder().decode(unzipSync(second)["word/document.xml"]!);
-    expect(xml).toContain("v:textbox");
-    expect(xml).toContain("In box");
+    expect(parseBody(body, context)).toEqual([
+      {
+        children: [
+          { paragraph: { text: "before" } },
+          {
+            altChunk: {
+              contentType:
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+              data: new Uint8Array([1, 2, 3]),
+              extension: "docx",
+              sourcePath: "afchunk2.docx",
+              sourceRid: "rId1",
+            },
+          },
+        ],
+        properties: expect.anything(),
+      },
+    ]);
   });
 });

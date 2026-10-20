@@ -53,6 +53,14 @@ describe("sectionPropertiesDesc round-trip", () => {
     expect(result.grid).toBe(false);
   });
 
+  it("round-trips a tolerated explicit-off mirrorMargins marker", () => {
+    const result = roundTrip({ mirrorMargins: false });
+    expect(result.mirrorMargins).toBe(false);
+    expect(sectionPropertiesDesc.stringify(result, writeCtx)).toContain(
+      '<w:mirrorMargins w:val="0"/>',
+    );
+  });
+
   it("round-trips page size", () => {
     const result = roundTrip({
       pageSize: { width: 12240, height: 15840 },
@@ -111,6 +119,12 @@ describe("sectionPropertiesDesc round-trip", () => {
   it("round-trips w15:footnoteColumns", () => {
     const result = roundTrip({ footnoteColumns: 2 });
     expect(result.footnoteColumns).toBe(2);
+  });
+
+  it("preserves an empty page-number element", () => {
+    const result = roundTrip({ pageNumberType: {} });
+    expect(result.pageNumberType).toEqual({});
+    expect(sectionPropertiesDesc.stringify(result, writeCtx)).toContain("<w:pgNumType/>");
   });
 
   it("parses portrait page size without swapping (w = logical width)", () => {
@@ -274,6 +288,15 @@ describe("sectionPropertiesDesc round-trip", () => {
     expect(result.paperSrc).toBeDefined();
     expect(result.paperSrc!.first).toBe(1);
     expect(result.paperSrc!.other).toBe(2);
+  });
+
+  it("round-trips vendor gutter and section marker", () => {
+    const result = roundTrip({
+      tmGutter: 3,
+      tmSection: { height: -2 },
+    });
+    expect(result.tmGutter).toBe(3);
+    expect(result.tmSection).toEqual({ height: -2 });
   });
 
   it("round-trips rsid attributes", () => {

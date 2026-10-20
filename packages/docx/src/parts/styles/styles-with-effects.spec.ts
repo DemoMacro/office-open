@@ -1,4 +1,4 @@
-import { strFromU8, unzipSync, zipSync } from "@office-open/core";
+import { strFromU8, unzipSync, zipSync } from "@office-open/core/opc";
 import { describe, expect, it } from "vitest";
 
 import { generateDocumentSync } from "../../generate";

@@ -6,12 +6,12 @@
  * @module
  */
 
+import { Relationships } from "@office-open/core";
 import {
   RELATIONSHIP_TYPES,
-  Relationships,
   resolveRelationshipTarget,
   type PassthroughRelationship,
-} from "@office-open/core";
+} from "@office-open/core/opc";
 import { OOXML_XML_DECLARATION } from "@office-open/xml";
 import type { WorkbookOptions } from "@parts/file";
 import type { PivotSourceData, SourcePivotTableOptions } from "@parts/pivot";

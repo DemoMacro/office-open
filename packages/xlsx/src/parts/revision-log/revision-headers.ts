@@ -57,7 +57,6 @@ export const revisionHeadersDesc: CustomDescriptor<RevisionHeadersOptions> = {
   kind: "custom",
 
   stringify(opts, _ctx) {
-    if (opts.headers.length === 0) return undefined;
     let attrs = ` xmlns="${S_NS}" xmlns:r="${R_NS}" guid="${escapeXml(opts.guid)}"`;
     if (opts.lastGuid) attrs += ` lastGuid="${escapeXml(opts.lastGuid)}"`;
     if (opts.shared !== undefined) attrs += ` shared="${opts.shared ? 1 : 0}"`;

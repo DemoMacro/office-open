@@ -40,7 +40,9 @@ import { transform2DDesc } from "./transform-descriptors";
  * unknown payloads remain verbatim in `content`. */
 export interface ShapePropertiesExtensionOptions {
   uri: string;
+  hiddenFill?: FillOptions;
   hiddenLine?: OutlineOptions;
+  hiddenEffects?: EffectListOptions;
   content?: string;
 }
 
@@ -59,9 +61,12 @@ export interface ShapePropertiesOptions {
   flipVertical?: boolean;
   /** Rotation angle in degrees (e.g., 45 = 45°). */
   rotation?: number;
+  /** Source `a:xfrm` presence; `true` preserves an explicit empty transform. */
+  transformPresent?: boolean;
   // EG_Geometry (choice: a:custGeom | a:prstGeom). customGeometry wins; a bare
-  // string geometry is shorthand for { preset: "<name>" }.
-  geometry?: ShapeType | PresetGeometryOptions;
+  // string geometry is shorthand for { preset: "<name>" }. Null preserves a
+  // source spPr that omitted geometry.
+  geometry?: ShapeType | PresetGeometryOptions | null;
   customGeometry?: CustomGeometryOptions;
   // EG_FillProperties. `null` marks a source spPr with no fill child — the
   // shape inherits its fill, so stringify emits nothing instead of applying a
@@ -103,7 +108,7 @@ export const shapePropertiesDesc: CustomDescriptor<ShapePropertiesOptions> = {
       opts.flipHorizontal !== undefined ||
       opts.flipVertical !== undefined ||
       opts.rotation !== undefined;
-    if (hasTransform) {
+    if (hasTransform || opts.transformPresent === true) {
       const transformOpts = {
         x: opts.x,
         y: opts.y,
@@ -114,14 +119,14 @@ export const shapePropertiesDesc: CustomDescriptor<ShapePropertiesOptions> = {
         rotation: opts.rotation,
       };
       const xfrm = transform2DDesc.stringify(transformOpts as Transform2DOptions, ctx);
-      if (xfrm) parts.push(xfrm);
+      parts.push(xfrm ?? "<a:xfrm/>");
     }
 
     // EG_Geometry: customGeometry takes precedence (matches pptx/docx).
     if (opts.customGeometry) {
       const g = customGeometryDesc.stringify(opts.customGeometry, ctx);
       if (g) parts.push(g);
-    } else if (opts.geometry !== undefined) {
+    } else if (opts.geometry !== undefined && opts.geometry !== null) {
       const geom: PresetGeometryOptions =
         typeof opts.geometry === "string" ? { preset: opts.geometry } : opts.geometry;
       const g = presetGeometryDesc.stringify(geom, ctx);
@@ -170,6 +175,19 @@ export const shapePropertiesDesc: CustomDescriptor<ShapePropertiesOptions> = {
       const extensions = opts.extensions
         .map((extension) => {
           let content = extension.content ?? "";
+          if (extension.hiddenFill) {
+            const fill = fillDesc.stringify(extension.hiddenFill, ctx) ?? "";
+            const hiddenFillOpen =
+              '<a14:hiddenFill xmlns:a14="http://schemas.microsoft.com/office/drawing/2010/main">';
+            content += fill.endsWith("/>")
+              ? `${fill.replace("<a:", `${hiddenFillOpen}<a:`)}</a14:hiddenFill>`
+              : fill
+                  .replace("<a:", `${hiddenFillOpen}<a:`)
+                  .replace(
+                    /<\/a:(noFill|solidFill|gradFill|blipFill|pattFill|grpFill)>$/,
+                    "</a:$1></a14:hiddenFill>",
+                  );
+          }
           if (extension.hiddenLine) {
             const hiddenLine =
               stringifyLineProperties("a14:hiddenLine", extension.hiddenLine, ctx) ?? "";
@@ -177,6 +195,13 @@ export const shapePropertiesDesc: CustomDescriptor<ShapePropertiesOptions> = {
               "<a14:hiddenLine",
               '<a14:hiddenLine xmlns:a14="http://schemas.microsoft.com/office/drawing/2010/main"',
             );
+          }
+          if (extension.hiddenEffects) {
+            const effects = effectListDesc.stringify(extension.hiddenEffects, ctx) ?? "";
+            content +=
+              `<a14:hiddenEffects xmlns:a14="http://schemas.microsoft.com/office/drawing/2010/main">` +
+              effects +
+              "</a14:hiddenEffects>";
           }
           return `<a:ext uri="${escapeXml(extension.uri)}">${content}</a:ext>`;
         })
@@ -196,7 +221,17 @@ export const shapePropertiesDesc: CustomDescriptor<ShapePropertiesOptions> = {
     // only appear under grpSpPr, which parses through groupShapePropertiesDesc)
     const xfrm = findChild(el, "a:xfrm");
     if (xfrm) {
-      Object.assign(result, transform2DDesc.parse(xfrm, ctx));
+      const transform = transform2DDesc.parse(xfrm, ctx);
+      Object.assign(result, transform);
+      const hasTransformData =
+        transform.x !== undefined ||
+        transform.y !== undefined ||
+        transform.width !== undefined ||
+        transform.height !== undefined ||
+        transform.flipHorizontal !== undefined ||
+        transform.flipVertical !== undefined ||
+        transform.rotation !== undefined;
+      if (!hasTransformData) result.transformPresent = true;
     }
 
     // EG_Geometry
@@ -251,6 +286,12 @@ export const shapePropertiesDesc: CustomDescriptor<ShapePropertiesOptions> = {
           for (const child of extension.elements ?? []) {
             if (child.type === "element" && child.name === "a14:hiddenLine") {
               parsed.hiddenLine = outlineDesc.parse(child, ctx);
+            } else if (child.type === "element" && child.name === "a14:hiddenFill") {
+              const fill = findFillChild(child);
+              if (fill) parsed.hiddenFill = parse(fillDesc, fill, ctx);
+            } else if (child.type === "element" && child.name === "a14:hiddenEffects") {
+              const effects = findChild(child, "a:effectLst");
+              if (effects) parsed.hiddenEffects = effectListDesc.parse(effects, ctx);
             } else {
               unknown.push(stringifyElement(child));
             }
@@ -258,9 +299,16 @@ export const shapePropertiesDesc: CustomDescriptor<ShapePropertiesOptions> = {
           if (unknown.length > 0) parsed.content = unknown.join("");
           return parsed;
         });
-      if (extensions.some((extension) => extension.hiddenLine !== undefined)) {
-        result.extensions = extensions;
-      } else {
+      result.extensions = extensions;
+      if (
+        (extensions.length > 0 || (extLst.elements?.length ?? 0) > 0) &&
+        extensions.every(
+          (extension) =>
+            extension.hiddenFill === undefined &&
+            extension.hiddenLine === undefined &&
+            extension.hiddenEffects === undefined,
+        )
+      ) {
         result.ext = (extLst.elements ?? []).map(stringifyElement).join("");
       }
     }

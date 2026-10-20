@@ -56,8 +56,13 @@ function parseCommonViewProperties(el: XmlElement): CommonViewPropertiesOptions 
 }
 
 /** Parse p:restoredLeft / p:restoredTop (CT_NormalViewPortion). */
+function parsePortionSize(raw: string | undefined): number {
+  if (raw === undefined) return 0;
+  return raw.endsWith("%") ? Number(raw.slice(0, -1)) * 1000 : Number(raw);
+}
+
 function parseNormalViewPortion(el: XmlElement): NormalViewPortionOptions {
-  const portion: NormalViewPortionOptions = { size: attrNum(el, "sz") ?? 0 };
+  const portion: NormalViewPortionOptions = { size: parsePortionSize(attr(el, "sz")) };
   const autoAdjust = attrNum(el, "autoAdjust");
   if (autoAdjust !== undefined) portion.autoAdjust = autoAdjust === 1;
   return portion;
@@ -99,8 +104,10 @@ function parseViewProperties(el: XmlElement): ViewPropertiesOptions {
       const mapped = reverseMap[a["lastView"]];
       if (mapped) result.lastView = mapped as ViewPropertiesOptions["lastView"];
     }
-    if (a["showComments"] !== undefined)
+    if (a["showComments"] !== undefined) {
+      result.showCommentsPresent = true;
       result.showComments = parseOnOff(a["showComments"]) ?? true;
+    }
   }
 
   // p:normalViewPr
@@ -183,6 +190,8 @@ function parseViewProperties(el: XmlElement): ViewPropertiesOptions {
     if (snapToGrid !== undefined) nv.snapToGrid = snapToGrid;
     const snapToObjects = cSld ? parseOnOff(cSld.attributes?.["snapToObjects"]) : undefined;
     if (snapToObjects !== undefined) nv.snapToObjects = snapToObjects;
+    const showGuides = cSld ? parseOnOff(cSld.attributes?.["showGuides"]) : undefined;
+    if (showGuides !== undefined) nv.showGuides = showGuides;
     const cViewPr = cSld ? findChild(cSld, "p:cViewPr") : undefined;
     if (cViewPr) nv.view = parseCommonViewProperties(cViewPr);
     const guideLst = cSld ? findChild(cSld, "p:guideLst") : undefined;

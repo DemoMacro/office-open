@@ -7,12 +7,8 @@
 import { escapeXml } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 
-import {
-  NOOP_WRITE_CONTEXT,
-  type CustomDescriptor,
-  type ReadContext,
-  type WriteContext,
-} from "../../descriptor";
+import type { CustomDescriptor, ReadContext, WriteContext } from "../../descriptor";
+import { NOOP_WRITE_CONTEXT } from "../../descriptor/context";
 import {
   emitAngle,
   emitPercent,
@@ -27,7 +23,11 @@ import {
   createColorTransforms,
   PERCENT_TRANSFORMS,
 } from "./color-transform";
-import type { ColorTransformOptions } from "./color-transform";
+import type {
+  ColorTransformItem,
+  ColorTransformOptions,
+  ValueTransformKey,
+} from "./color-transform";
 import type { HslColorOptions } from "./hsl-color";
 import type { PresetColorOptions } from "./preset-color";
 import { PresetColor } from "./preset-color";
@@ -59,6 +59,10 @@ function parsePercentChannel(raw: string | number | undefined): number {
   return parsePercentAttr(raw) ?? 0;
 }
 
+function isPercentageLiteral(raw: string): raw is Percentage {
+  return /^-?\d+(?:\.\d+)?%$/.test(raw);
+}
+
 function stringifyTransforms(opts: ColorTransformOptions): string {
   // Delegates to createColorTransforms so both paths emit in the caller's key
   // order (XSD transforms compose left to right — order is fidelity).
@@ -68,9 +72,10 @@ function stringifyTransforms(opts: ColorTransformOptions): string {
 function readTransforms(el: XmlElement): ColorTransformOptions | undefined {
   if (!el.elements || el.elements.length === 0) return undefined;
   const result: ColorTransformOptions = {};
+  const sequence: ColorTransformItem[] = [];
   for (const child of el.elements) {
     if (!child.name || !child.name.startsWith("a:")) continue;
-    const key = child.name.slice(2) as keyof ColorTransformOptions & string;
+    const key = child.name.slice(2) as keyof Omit<ColorTransformOptions, "sequence"> & string;
     if (!TRANSFORM_KEYS.has(key)) continue;
     const val = child.attributes?.["val"];
     if (val !== undefined) {
@@ -78,18 +83,21 @@ function readTransforms(el: XmlElement): ColorTransformOptions | undefined {
       // percent literal ("65%") — parsePercentAttr handles both; a plain
       // Number() yields NaN on the literal form. Angles are always plain
       // integers (÷60000).
-      (result as Record<string, unknown>)[key] = PERCENT_TRANSFORMS.has(key)
-        ? typeof val === "string" && val.endsWith("%")
-          ? (val as Percentage)
+      const value = PERCENT_TRANSFORMS.has(key)
+        ? typeof val === "string" && isPercentageLiteral(val)
+          ? val
           : (parsePercentAttr(val) ?? 0)
         : ANGLE_TRANSFORMS.has(key)
           ? parseAngle(Number(val))
           : Number(val);
-    } else {
-      (result as Record<string, unknown>)[key] = true;
+      sequence.push({ type: key as ValueTransformKey, value });
+      Object.assign(result, { [key]: value });
+    } else if (BOOLEAN_TRANSFORMS.has(key)) {
+      sequence.push({ type: key as "comp" | "inv" | "gray" | "gamma" | "invGamma" });
+      Object.assign(result, { [key]: true });
     }
   }
-  return Object.keys(result).length > 0 ? result : undefined;
+  return sequence.length > 0 ? { ...result, sequence } : undefined;
 }
 
 // ── RgbColor descriptor ──

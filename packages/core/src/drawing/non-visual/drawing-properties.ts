@@ -38,6 +38,11 @@ export interface NonVisualDrawingPropertiesOptions {
    */
   creationId?: Guid;
   /**
+   * Verbatim `a:ext` carrying a16:creationId; preserves producer-specific
+   * namespace declarations and attributes that `creationId` alone omits.
+   */
+  creationIdExtension?: string;
+  /**
    * Verbatim `a:extLst` inner XML for extensions beyond creationId (a14
    * picture effects, useLocalDpi, …). Round-trip only: takes precedence over
    * `creationId`, which it subsumes when the source list carries both.
@@ -63,16 +68,19 @@ export function stringifyNonVisualDrawingProperties(
   let attrs = `id="${id}" name="${escapeXml(name)}"`;
   if (opts?.description !== undefined) attrs += ` descr="${escapeXml(opts.description)}"`;
   if (opts?.title !== undefined) attrs += ` title="${escapeXml(opts.title)}"`;
-  if (opts?.hidden) attrs += ` hidden="1"`;
+  if (opts?.hidden !== undefined) attrs += ` hidden="${opts.hidden ? 1 : 0}"`;
   // CT_NonVisualDrawingProps tail: hlinkClick/hover (caller innerXml) → extLst.
   // xmlns:a is declared locally: parts that host docPr without a DrawingML
   // root (comments.xml, notes) never declare the a: prefix themselves.
   const A_NS = 'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"';
-  const extLst = opts?.ext
-    ? `<a:extLst ${A_NS}>${opts.ext}</a:extLst>`
-    : opts?.creationId
-      ? `<a:extLst ${A_NS}><a:ext uri="${CREATION_ID_EXT_URI}"><a16:creationId xmlns:a16="http://schemas.microsoft.com/office/drawing/2014/main" id="${escapeXml(opts.creationId)}"/></a:ext></a:extLst>`
-      : "";
+  const extContent =
+    opts?.ext ??
+    opts?.creationIdExtension ??
+    (opts?.creationId
+      ? `<a:ext uri="${CREATION_ID_EXT_URI}"><a16:creationId xmlns:a16="http://schemas.microsoft.com/office/drawing/2014/main" id="${escapeXml(opts.creationId)}"/></a:ext>`
+      : "");
+  const hasExtList = opts?.ext !== undefined || opts?.creationIdExtension !== undefined;
+  const extLst = hasExtList ? `<a:extLst ${A_NS}>${extContent}</a:extLst>` : "";
   const content = (innerXml ?? "") + extLst;
   return content ? `<${tag} ${attrs}>${content}</${tag}>` : `<${tag} ${attrs}/>`;
 }
@@ -99,20 +107,14 @@ export function parseNonVisualDrawingProperties(
   }
   const extLst = findChild(el, "a:extLst");
   if (extLst) {
-    // Extensions beyond creationId (a14 picture effects, useLocalDpi, …) have
-    // no structured model — keep the whole list verbatim and skip the
-    // creationId extraction so the two channels never double-emit.
-    const hasUnmodeled = (extLst.elements ?? []).some(
-      (ext) => ext.name === "a:ext" && !extUriMatches(attr(ext, "uri"), CREATION_ID_EXT_URI),
-    );
-    if (hasUnmodeled) {
-      const inner = (extLst.elements ?? []).map((e) => stringifyElement(e)).join("");
-      if (inner) result.ext = inner;
-    } else {
-      for (const ext of extLst.elements ?? []) {
-        if (ext.name !== "a:ext" || !extUriMatches(attr(ext, "uri"), CREATION_ID_EXT_URI)) continue;
+    const extensions = (extLst.elements ?? []).filter((element) => element.name === "a:ext");
+    if (extensions.length === 0) result.ext = "";
+    if (extensions.length > 0) {
+      result.ext = extensions.map((element) => stringifyElement(element)).join("");
+      for (const ext of extensions) {
+        if (!extUriMatches(attr(ext, "uri"), CREATION_ID_EXT_URI)) continue;
+        result.creationIdExtension = stringifyElement(ext);
         const creationId = findChild(ext, "a16:creationId");
-        // a16:creationId keys its GUID on @id (p14:creationId uses @val).
         const id = creationId ? attr(creationId, "id") : undefined;
         if (id) result.creationId = id;
       }
@@ -137,6 +139,9 @@ export function pickNonVisualDrawingProperties(
   if (opts.title !== undefined) picked.title = opts.title;
   if (opts.hidden !== undefined) picked.hidden = opts.hidden;
   if (opts.creationId !== undefined) picked.creationId = opts.creationId;
+  if (opts.creationIdExtension !== undefined) {
+    picked.creationIdExtension = opts.creationIdExtension;
+  }
   if (opts.ext !== undefined) picked.ext = opts.ext;
   return picked;
 }

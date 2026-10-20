@@ -214,8 +214,11 @@ export interface LevelsOptions {
   text?: string;
   /** Whether this level emits no text (CT_LevelText `@w:null`). */
   textNull?: boolean;
-  /** Text alignment for the numbering. */
-  alignment?: (typeof AlignmentType)[keyof typeof AlignmentType];
+  /**
+   * Text alignment for the numbering; null preserves a source w:lvl that
+   * omitted w:lvlJc.
+   */
+  alignment?: (typeof AlignmentType)[keyof typeof AlignmentType] | null;
   /** Starting number for this level. */
   start?: number;
   /** Character(s) following the numbering. */

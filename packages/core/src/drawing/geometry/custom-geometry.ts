@@ -173,8 +173,8 @@ export interface PathOptions {
   stroke?: boolean;
   /** Whether extrusion is allowed */
   extrusionOk?: boolean;
-  /** Path commands (moveTo, lineTo, arcTo, etc.) */
-  commands: readonly PathCommand[];
+  /** Path commands (moveTo, lineTo, arcTo, etc.); an empty path may omit them. */
+  commands?: readonly PathCommand[];
 }
 
 const createPath = (options: PathOptions): string => {
@@ -185,7 +185,7 @@ const createPath = (options: PathOptions): string => {
   if (options.stroke !== undefined) attrs.stroke = options.stroke;
   if (options.extrusionOk !== undefined) attrs.extrusionOk = options.extrusionOk;
 
-  return element("a:path", attrs, options.commands.map(createPathCommand));
+  return element("a:path", attrs, (options.commands ?? []).map(createPathCommand));
 };
 
 // ─── Adjust Handle ──────────────────────────────────────────────────────────
@@ -408,7 +408,13 @@ export const createCustomGeometry = (options: CustomGeometryOptions): string => 
   }
 
   // a:pathLst (required, minOccurs=1) — omitting it still emits the empty form
-  children.push(element("a:pathLst", undefined, (options.pathList ?? []).map(createPath)));
+  children.push(
+    element(
+      "a:pathLst",
+      undefined,
+      (options.pathList ?? []).map((path) => createPath({ commands: [], ...path })),
+    ),
+  );
 
   return element("a:custGeom", undefined, children);
 };

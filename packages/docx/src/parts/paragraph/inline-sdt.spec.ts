@@ -60,6 +60,24 @@ describe("inline SDT (CT_SdtRun) parse", () => {
     expect((child!.sdt as Record<string, unknown>).endProperties).toBeDefined();
   });
 
+  it("preserves inline SDT properties presence", () => {
+    const absent = parseParagraphXml(
+      "<w:sdt><w:sdtContent><w:r><w:t>x</w:t></w:r></w:sdtContent></w:sdt>",
+    );
+    expect((findInlineSdt(absent)!.sdt as Record<string, unknown>).properties).toEqual({
+      propertiesPresent: false,
+    });
+    expect(stringifyParagraph(absent as never, writeCtx)).not.toContain("<w:sdtPr");
+
+    const empty = parseParagraphXml(
+      "<w:sdt><w:sdtPr/><w:sdtContent><w:r><w:t>x</w:t></w:r></w:sdtContent></w:sdt>",
+    );
+    expect((findInlineSdt(empty)!.sdt as Record<string, unknown>).properties).toEqual({
+      propertiesPresent: true,
+    });
+    expect(stringifyParagraph(empty as never, writeCtx)).toContain("<w:sdtPr/>");
+  });
+
   it("parses an inline checkbox SDT (w14:checkbox) — sdtContent is a symbol run, not a w:p", () => {
     const opts = parseParagraphXml(
       `<w:sdt><w:sdtPr ${W14}><w:alias w:val="C"/><w14:checkbox>` +
@@ -72,6 +90,21 @@ describe("inline SDT (CT_SdtRun) parse", () => {
       alias: "C",
       checkbox: { checked: true },
     });
+  });
+
+  it("serializes cached inline checkbox SDT children without generated fonts", () => {
+    const opts = parseParagraphXml(
+      `<w:sdt><w:sdtPr ${W14}><w:alias w:val="C"/><w14:checkbox>` +
+        '<w14:checked w14:val="1"/></w14:checkbox></w:sdtPr>' +
+        "<w:sdtContent><w:r><w:rPr></w:rPr></w:r><w:r><w:rPr></w:rPr>" +
+        "<w:t>☒</w:t></w:r></w:sdtContent></w:sdt>",
+    );
+    const sdt = findInlineSdt(opts)!.sdt as { children?: unknown[] };
+    expect(sdt.children).toHaveLength(2);
+    const xml = stringifyParagraph(opts as never, writeCtx);
+    expect(xml).toContain("<w:t>☒</w:t>");
+    expect(xml).not.toContain("MS Gothic");
+    expect(xml).not.toContain("<w:rFonts");
   });
 
   it("parses a nested inline SDT (SDT inside SDT content)", () => {
@@ -106,6 +139,21 @@ describe("inline SDT run identity", () => {
     expect(stringifyParagraph(opts as never, writeCtx)).toContain(
       '<w:r w:rsidR="00112233" w:rsidRPr="AABBCCDD">',
     );
+  });
+
+  it("preserves run properties on empty runs inside sdtContent", () => {
+    const opts = parseParagraphXml(
+      '<w:sdt><w:sdtPr><w:alias w:val="Styled"/></w:sdtPr>' +
+        '<w:sdtContent><w:r><w:rPr><w:lang w:val="de-DE"/></w:rPr></w:r>' +
+        "<w:r><w:t>Jane</w:t></w:r></w:sdtContent></w:sdt>",
+    );
+    const children = (findInlineSdt(opts)!.sdt as Record<string, unknown>).children as Record<
+      string,
+      unknown
+    >[];
+    expect(children).toHaveLength(2);
+    expect(children[0]).toMatchObject({ language: { value: "de-DE" } });
+    expect(stringifyParagraph(opts as never, writeCtx)).toContain('<w:lang w:val="de-DE"/>');
   });
 });
 
@@ -150,6 +198,36 @@ describe("SDT properties fidelity (CT_SdtPr)", () => {
     expect((child!.sdt as Record<string, unknown>).properties).toMatchObject({
       docPartObj: { gallery: "Table of Contents", unique: true },
     });
+  });
+
+  it("round-trips explicit docPartUnique lexical values", () => {
+    const opts = parseParagraphXml(
+      "<w:sdt><w:sdtPr><w:docPartObj>" +
+        '<w:docPartGallery w:val="Table of Contents"/><w:docPartUnique w:val="true"/>' +
+        "</w:docPartObj></w:sdtPr><w:sdtContent><w:r><w:t>x</w:t></w:r></w:sdtContent></w:sdt>",
+    );
+    const child = findInlineSdt(opts);
+    expect((child!.sdt as Record<string, unknown>).properties).toMatchObject({
+      docPartObj: { unique: true, uniqueRaw: "true" },
+    });
+    expect(stringifyParagraph(opts as never, writeCtx)).toContain(
+      '<w:docPartUnique w:val="true"/>',
+    );
+  });
+
+  it("round-trips an empty placeholder and explicit multiline lexical value", () => {
+    const opts = parseParagraphXml(
+      "<w:sdt><w:sdtPr><w:placeholder/>" +
+        '<w:text w:multiLine="0"/></w:sdtPr>' +
+        "<w:sdtContent><w:r><w:t>x</w:t></w:r></w:sdtContent></w:sdt>",
+    );
+    expect((findInlineSdt(opts)!.sdt as Record<string, unknown>).properties).toMatchObject({
+      placeholder: {},
+      text: { multiLine: false, multiLineRaw: "0" },
+    });
+    const xml = stringifyParagraph(opts as never, writeCtx);
+    expect(xml).toContain("<w:placeholder/>");
+    expect(xml).toContain('<w:text w:multiLine="0"/>');
   });
 
   it("round-trips the date SDT dateFormat attribute", () => {

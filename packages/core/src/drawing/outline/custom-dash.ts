@@ -11,6 +11,7 @@
  */
 import { element } from "@office-open/xml";
 
+import { parsePercentAttr } from "../../util/converters";
 import type { PositivePercentage } from "../../util/values";
 
 /**
@@ -38,6 +39,18 @@ export interface DashStop {
   d: PositivePercentage;
   /** Space length as a percentage of line width (e.g., "200%") */
   sp: PositivePercentage;
+}
+
+/**
+ * Reads either XSD percent form: `"200%"` or the transitional OOXML scalar
+ * `200000`; both mean 200%. Returns a `PositivePercentage` option.
+ */
+export function parsePositivePercentage(value: string): PositivePercentage {
+  const percent = parsePercentAttr(value);
+  if (percent === undefined || !Number.isFinite(percent) || percent < 0) {
+    throw new Error(`Invalid custom dash percentage: ${value}`);
+  }
+  return `${percent}%`;
 }
 
 /**

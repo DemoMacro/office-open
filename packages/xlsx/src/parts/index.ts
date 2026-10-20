@@ -13,6 +13,7 @@ export { SharedStrings, sharedStringsDesc, type SharedStringsDocOptions } from "
 export { Styles, stylesDesc, type StylesDocOptions } from "./styles";
 export type {
   StyleOptions,
+  DxfOptions,
   FontOptions,
   CellFillOptions,
   BorderSideOptions,
@@ -30,6 +31,7 @@ export type {
   WorksheetContext,
   RowOptions,
   CellOptions,
+  SelectionOptions,
   ColumnOptions,
   MergeCellOptions,
   FreezePaneOptions,
@@ -72,6 +74,10 @@ export type {
   IgnoredErrorOptions,
   PhoneticPropertiesOptions,
   SheetBackgroundImageOptions,
+  CellRangeSourceOptions,
+  DetectiveHighlightedRangeOptions,
+  DetectiveOperationOptions,
+  TableDetectiveOptions,
 } from "./worksheet";
 export type { IconSetType, CfvoType } from "./worksheet";
 export type { CorePropertiesOptions } from "@office-open/core";

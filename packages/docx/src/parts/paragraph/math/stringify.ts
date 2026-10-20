@@ -146,6 +146,11 @@ function stringifyWordRunChild(
     return mathTextXml(segment.text, segment.preserveSpace);
   }
   if ("tab" in child) return "<w:tab/>";
+  if ("commentReference" in child) {
+    return typeof child.commentReference === "number"
+      ? `<w:commentReference w:id="${child.commentReference}"/>`
+      : "";
+  }
   if ("break" in child || "pageBreak" in child || "columnBreak" in child) {
     if ("break" in child) return breakXml(child.break);
     if ("pageBreak" in child) return '<w:br w:type="page"/>';
@@ -472,6 +477,17 @@ function stringifyMathInputInner(value: MathInput, ctx?: BodyContext): string {
 
 // ── N-ary operator (sum/integral/custom) ──
 
+function mathOnOffXml(
+  tag: string,
+  value: boolean | undefined,
+  raw: string | null | undefined,
+): string {
+  if (raw !== undefined) {
+    return raw === null ? `<${tag}/>` : `<${tag} m:val="${escapeXml(raw)}"/>`;
+  }
+  return value === undefined ? "" : `<${tag} m:val="${onOff(value)}"/>`;
+}
+
 function stringifyNAry(
   opts: {
     children: MathInput[];
@@ -487,12 +503,21 @@ function stringifyNAry(
   const prParts: string[] = [`<m:chr m:val="${character}"/>`];
   if (opts.properties?.limitLocation)
     prParts.push(`<m:limLoc m:val="${opts.properties.limitLocation}"/>`);
-  if (opts.properties?.grow !== undefined)
-    prParts.push(`<m:grow m:val="${onOff(opts.properties.grow)}"/>`);
-  if (opts.properties?.hideSubscript !== undefined || !hasSub)
-    prParts.push(`<m:subHide m:val="${onOff(opts.properties?.hideSubscript ?? true)}"/>`);
-  if (opts.properties?.hideSuperscript !== undefined || !hasSup)
-    prParts.push(`<m:supHide m:val="${onOff(opts.properties?.hideSuperscript ?? true)}"/>`);
+  prParts.push(
+    mathOnOffXml("m:grow", opts.properties?.grow, opts.properties?.growRaw),
+    mathOnOffXml(
+      "m:subHide",
+      opts.properties?.hideSubscript ??
+        (!hasSub && opts.properties === undefined ? true : undefined),
+      opts.properties?.hideSubscriptRaw,
+    ),
+    mathOnOffXml(
+      "m:supHide",
+      opts.properties?.hideSuperscript ??
+        (!hasSup && opts.properties === undefined ? true : undefined),
+      opts.properties?.hideSuperscriptRaw,
+    ),
+  );
   prParts.push(ctrlPrXml(opts.controlProperties));
   const pr = `<m:naryPr>${prParts.join("")}</m:naryPr>`;
   const sub = hasSub ? `<m:sub>${stringifyChildren(opts.subScript!)}</m:sub>` : "<m:sub/>";
@@ -706,7 +731,9 @@ function parseMathRun(el: Element): MathInput {
   const parsedChildren =
     parsedRunOptions !== undefined && "children" in parsedRunOptions
       ? parsedRunOptions.children
-      : undefined;
+      : parsedRunOptions !== undefined && "commentReference" in parsedRunOptions
+        ? [{ commentReference: parsedRunOptions.commentReference }]
+        : undefined;
   const hasMixedWordContent =
     parsedChildren !== undefined ||
     (parsedRunOptions !== undefined && !textEl && "text" in parsedRunOptions);
@@ -766,6 +793,10 @@ function readOnOff(el: Element | undefined): boolean | undefined {
   if (!el) return undefined;
   const v = attr(el, "m:val");
   return parseOnOff(v) ?? true;
+}
+
+function readOnOffRaw(el: Element | undefined): string | null | undefined {
+  return el ? (attr(el, "m:val") ?? null) : undefined;
 }
 
 /** ST_OnOff literal — Word writes on/off in the math domain. */
@@ -902,17 +933,20 @@ function parseMathNAry(el: Element): MathInput {
     }
     const grow = readOnOff(findChild(naryPr, "m:grow"));
     if (grow !== undefined) properties.grow = grow;
+    properties.growRaw = readOnOffRaw(findChild(naryPr, "m:grow"));
     const hideSubscript = readOnOff(findChild(naryPr, "m:subHide"));
     if (hideSubscript !== undefined) properties.hideSubscript = hideSubscript;
+    properties.hideSubscriptRaw = readOnOffRaw(findChild(naryPr, "m:subHide"));
     const hideSuperscript = readOnOff(findChild(naryPr, "m:supHide"));
     if (hideSuperscript !== undefined) properties.hideSuperscript = hideSuperscript;
+    properties.hideSuperscriptRaw = readOnOffRaw(findChild(naryPr, "m:supHide"));
   }
 
   const common = {
     children: baseChildren,
     ...(sub.length > 0 ? { subScript: sub } : {}),
     ...(sup.length > 0 ? { superScript: sup } : {}),
-    ...(Object.keys(properties).length > 0 ? { properties } : {}),
+    properties,
     ...spreadCtrlPr(naryPr),
   };
 

@@ -71,6 +71,23 @@ describe("schemeColorDesc", () => {
     expect(result.value).toBe("accent2");
     expect(result.transforms!.shade).toBe(25);
   });
+
+  it("round-trips repeated color transforms in source order", () => {
+    const result = roundTrip(schemeColorDesc, {
+      value: "accent2",
+      transforms: {
+        sequence: [
+          { type: "shade", value: 42 },
+          { type: "shade", value: 51 },
+        ],
+      },
+    });
+    expect(result.transforms!.shade).toBe(51);
+    expect(result.transforms!.sequence).toEqual([
+      { type: "shade", value: 42 },
+      { type: "shade", value: 51 },
+    ]);
+  });
 });
 
 describe("hslColorDesc", () => {

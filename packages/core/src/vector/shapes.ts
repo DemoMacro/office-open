@@ -318,7 +318,8 @@ export type VmlShapeChild =
   | { oval: VmlOvalOptions }
   | { polyline: VmlPolylineOptions }
   | { rect: VmlRectOptions }
-  | { roundrect: VmlRoundRectOptions };
+  | { roundrect: VmlRoundRectOptions }
+  | { oleObject: string };
 
 /** v:group options (CT_Group) — full attr vocabulary + fill subset + nested shapes. */
 export interface VmlGroupOptions extends VmlBaseShapeFields {
@@ -331,7 +332,16 @@ export interface VmlGroupOptions extends VmlBaseShapeFields {
   /** o:diagram child — legacy org-chart/diagram payload. */
   diagram?: VmlDiagramOptions;
   children?: VmlShapeChild[];
+  /** Source order of nested shapes, modeled shape elements, and diagram. */
+  memberOrder?: VmlGroupMemberOrder[];
 }
+
+/** One ordered member of a `v:group`. */
+export type VmlGroupMemberOrder =
+  | { kind: "child"; index: number }
+  | { kind: "element"; field: VmlShapeElementField }
+  | { kind: "diagram" }
+  | { kind: "raw" };
 
 /** v:background options (CT_Background). */
 export interface VmlBackgroundOptions {
@@ -741,7 +751,8 @@ export function stringifyVmlShapeChild(child: VmlShapeChild): string {
   if ("oval" in child) return stringifyVmlOval(child.oval);
   if ("polyline" in child) return stringifyVmlPolyline(child.polyline);
   if ("rect" in child) return stringifyVmlRect(child.rect);
-  return stringifyVmlRoundRect(child.roundrect);
+  if ("roundrect" in child) return stringifyVmlRoundRect(child.roundrect);
+  return child.oleObject;
 }
 
 /** CT_Group attribute table — AG_AllCoreAttributes + AG_Fill + editas + table props. */
@@ -781,6 +792,8 @@ export function parseVmlShapeChild(el: XmlElement): VmlShapeChild | undefined {
       return { rect: parseVmlRect(el) };
     case "v:roundrect":
       return { roundrect: parseVmlRoundRect(el) };
+    case "o:OLEObject":
+      return { oleObject: stringifyElement(el) };
     default:
       return undefined;
   }
@@ -789,9 +802,29 @@ export function parseVmlShapeChild(el: XmlElement): VmlShapeChild | undefined {
 /** Serialize v:group. */
 export function stringifyVmlGroup(opts: VmlGroupOptions): string {
   if (opts.sourceXml !== undefined) return opts.sourceXml;
-  let children =
-    (opts.children ?? []).map(stringifyVmlShapeChild).join("") + stringifyShapeElements(opts);
-  if (opts.diagram !== undefined) children += stringifyVmlDiagram(opts.diagram);
+  const childXml = (opts.children ?? []).map(stringifyVmlShapeChild);
+  const elementXml = new Map<VmlShapeElementField, string>();
+  for (const field of DEFAULT_SHAPE_ELEMENT_ORDER) {
+    if (opts[field] === undefined) continue;
+    elementXml.set(field, stringifyShapeElements({ [field]: opts[field] } as VmlBaseShapeFields));
+  }
+  if (opts.rawChildrenXml !== undefined) elementXml.set("rawChildrenXml", opts.rawChildrenXml);
+  const diagramXml = opts.diagram !== undefined ? stringifyVmlDiagram(opts.diagram) : "";
+
+  let children: string;
+  if (opts.memberOrder?.length) {
+    children = opts.memberOrder
+      .map((member) => {
+        if (member.kind === "child") return childXml[member.index] ?? "";
+        if (member.kind === "element") return elementXml.get(member.field) ?? "";
+        if (member.kind === "diagram") return diagramXml;
+        return opts.rawChildrenXml ?? "";
+      })
+      .join("");
+  } else {
+    children = childXml.join("") + [...elementXml.values()].join("");
+    if (opts.diagram !== undefined) children += diagramXml;
+  }
   const attrStr = stringifyVmlAttributes(opts as Record<string, unknown>, GROUP_ATTRS);
   const style = opts.style;
   const styleStr = style !== undefined ? ` style="${escapeXml(stringifyVmlStyle(style))}"` : "";
@@ -819,16 +852,62 @@ export function parseVmlGroup(el: XmlElement): VmlGroupOptions {
   parseShapeElements(el, out);
 
   const children: VmlShapeChild[] = [];
+  const childIndexByElement = new Map<XmlElement, number>();
   for (const child of el.elements ?? []) {
     if (child.type !== "element") continue;
     const shapeChild = parseVmlShapeChild(child);
     if (shapeChild !== undefined) {
       children.push(shapeChild);
+      childIndexByElement.set(child, children.length - 1);
     } else if (child.name === "o:diagram") {
       out.diagram = parseVmlDiagram(child);
     }
   }
   if (children.length > 0) out.children = children;
+  const memberOrder: VmlGroupMemberOrder[] = [];
+  let rawSeen = false;
+  for (const child of el.elements ?? []) {
+    if (child.type !== "element") continue;
+    if (child.name !== undefined && NESTED_SHAPE_NAMES.has(child.name)) {
+      const shapeChild = parseVmlShapeChild(child);
+      if (shapeChild === undefined) continue;
+      const index = childIndexByElement.get(child);
+      if (index === undefined) continue;
+      memberOrder.push({ kind: "child", index });
+      continue;
+    }
+    if (child.name === "o:diagram") {
+      memberOrder.push({ kind: "diagram" });
+      continue;
+    }
+    const field = child.name ? SHAPE_ELEMENT_FIELD_BY_NAME.get(child.name) : undefined;
+    if (field && out[field] !== undefined) {
+      memberOrder.push({ kind: "element", field });
+      continue;
+    }
+    if (!rawSeen && out.rawChildrenXml !== undefined) {
+      memberOrder.push({ kind: "raw" });
+      rawSeen = true;
+    }
+  }
+  const canonicalMemberOrder: VmlGroupMemberOrder[] = [
+    ...children.map((_, index) => ({ kind: "child" as const, index })),
+    ...DEFAULT_SHAPE_ELEMENT_ORDER.filter(
+      (field) =>
+        out[field] !== undefined ||
+        (field === "rawChildrenXml" && out.rawChildrenXml !== undefined),
+    ).map((field) => ({ kind: "element" as const, field })),
+    ...(out.diagram !== undefined ? [{ kind: "diagram" as const }] : []),
+  ];
+  if (
+    memberOrder.length > 0 &&
+    (memberOrder.length !== canonicalMemberOrder.length ||
+      memberOrder.some(
+        (member, index) => JSON.stringify(member) !== JSON.stringify(canonicalMemberOrder[index]),
+      ))
+  ) {
+    out.memberOrder = memberOrder;
+  }
   return out as VmlGroupOptions;
 }
 

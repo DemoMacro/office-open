@@ -1,4 +1,5 @@
-import { opaquePassthroughPolicy, unzipSync, zipSync } from "../../../packages/core/dist/index.mjs";
+import { opaquePassthroughPolicy, unzipSync, zipSync } from "@office-open/core/opc";
+
 import { auditCanonicalOptions } from "./raw-audit";
 
 export const ENCODER = new TextEncoder();

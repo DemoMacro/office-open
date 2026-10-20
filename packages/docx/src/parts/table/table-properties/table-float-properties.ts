@@ -66,13 +66,19 @@ export interface TableFloatOptions {
   /** Reference edge for the horizontal position: margin, page, or text column. */
   horizontalAnchor?: (typeof TableAnchorType)[keyof typeof TableAnchorType];
   absoluteHorizontalPosition?: number;
-  /** Horizontal alignment within the anchor: "inside"/"outside" the binding (odd/even page side), or an edge. */
-  relativeHorizontalPosition?: (typeof RelativeHorizontalPosition)[keyof typeof RelativeHorizontalPosition];
+  /** Horizontal alignment within the anchor: "inside"/"outside" the binding (odd/even page side), or an edge.
+   *  The empty string preserves legacy producers that emitted an empty `w:tblpXSpec`. */
+  relativeHorizontalPosition?:
+    | (typeof RelativeHorizontalPosition)[keyof typeof RelativeHorizontalPosition]
+    | "";
   /** Reference edge for the vertical position: margin, page, or text paragraph. */
   verticalAnchor?: (typeof TableAnchorType)[keyof typeof TableAnchorType];
   absoluteVerticalPosition?: number;
-  /** Vertical alignment within the anchor; "inline" flows in the text line. */
-  relativeVerticalPosition?: (typeof RelativeVerticalPosition)[keyof typeof RelativeVerticalPosition];
+  /** Vertical alignment within the anchor; "inline" flows in the text line.
+   *  The empty string preserves legacy producers that emitted an empty `w:tblpYSpec`. */
+  relativeVerticalPosition?:
+    | (typeof RelativeVerticalPosition)[keyof typeof RelativeVerticalPosition]
+    | "";
   bottomFromText?: number;
   topFromText?: number;
   leftFromText?: number;

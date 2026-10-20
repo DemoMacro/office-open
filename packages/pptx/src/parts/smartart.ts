@@ -23,6 +23,18 @@ export {
 
 export type { TreeNode };
 
+/** One source relationship from `ppt/diagrams/_rels/dataN.xml.rels`. */
+export interface SmartArtDataRelationshipOptions {
+  /** Source relationship Id (`rId3`). */
+  id: string;
+  /** Full OPC relationship Type URI. */
+  relationshipType: string;
+  /** Relationship Target, including relative paths and URLs. */
+  target: string;
+  /** TargetMode for external URLs. */
+  targetMode?: "External";
+}
+
 /**
  * SmartArt diagram (p:graphicFrame). Extends NonVisualDrawingPropertiesOptions
  * (cNvPr authored like every drawing, survives cross-format copy);
@@ -55,4 +67,10 @@ export interface SmartArtOptions
   color?: string | ColorDefinitionOptions;
   /** Verbatim source diagram parts. Round-trip only — do not hand-author. */
   raw?: SmartArtRawParts;
+  /** Source data-part relationships. Round-trip only — do not hand-author. */
+  sourceDataRelationships?: SmartArtDataRelationshipOptions[];
+  /** Source dgm:relIds relationship Ids (r:dm/r:lo/r:qs/r:cs). Round-trip only. */
+  sourceRelIds?: { dm?: string; lo?: string; qs?: string; cs?: string };
+  /** Source diagram part paths relative to the package root. Round-trip only. */
+  sourcePaths?: { data?: string; layout?: string; quickStyle?: string; colors?: string };
 }

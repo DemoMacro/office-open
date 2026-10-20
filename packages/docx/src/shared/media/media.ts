@@ -30,5 +30,11 @@ export const createTransformation = (options: MediaTransformation): MediaTransfo
     ...(options.shapeExtent ? { shapeExtent: options.shapeExtent } : {}),
     ...(options.effectExtent ? { effectExtent: options.effectExtent } : {}),
     ...(options.inlineDistances ? { inlineDistances: options.inlineDistances } : {}),
+    ...(options.inlineDistancePresent !== undefined
+      ? { inlineDistancePresent: options.inlineDistancePresent }
+      : {}),
+    ...(options.effectExtentPresent !== undefined
+      ? { effectExtentPresent: options.effectExtentPresent }
+      : {}),
   };
 };

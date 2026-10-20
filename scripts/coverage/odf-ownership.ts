@@ -217,7 +217,7 @@ export const ODF_CODEC_OWNERSHIP: readonly OdfCodecEntry[] = [
     roundTrip: ["generateWorkbook", "parseWorkbook"],
     testId: "ODS raw style overlay semantic round trip",
     fixtureKey: "percent-length-overlay",
-    rawFallbacks: ["style:table-row-properties", "style:paragraph-properties"],
+    rawFallbacks: ["style:paragraph-properties"],
   },
   {
     id: "ods-linked-graphics",
@@ -287,7 +287,7 @@ export const ODF_CODEC_OWNERSHIP: readonly OdfCodecEntry[] = [
   {
     id: "database-formula-embedded-object",
     classification: "subdocument",
-    owner: { package: "odf", module: "src/database/database.ts", export: "parseDatabaseDocument" },
+    owner: { package: "odf", module: "src/database.ts", export: "parseDatabaseDocument" },
     parts: CONTENT_PART,
     schemaElements: [
       { name: "table:table-cell", attributes: ["table:formula"] },
@@ -301,7 +301,7 @@ export const ODF_CODEC_OWNERSHIP: readonly OdfCodecEntry[] = [
   {
     id: "chart",
     classification: "subdocument",
-    owner: { package: "odf", module: "src/chart/chart.ts", export: "parseChartDocument" },
+    owner: { package: "odf", module: "src/chart.ts", export: "parseChartDocument" },
     parts: CONTENT_PART,
     schemaElements: [
       { name: "office:document-content", attributes: ["office:version"] },
@@ -309,6 +309,10 @@ export const ODF_CODEC_OWNERSHIP: readonly OdfCodecEntry[] = [
       { name: "chart:chart", attributes: ["chart:class"] },
       { name: "chart:title", attributes: [] },
       { name: "chart:plot-area", attributes: ["chart:style-name"] },
+      {
+        name: "chart:coordinate-region",
+        attributes: ["svg:height", "svg:width", "svg:x", "svg:y"],
+      },
       { name: "chart:series", attributes: ["chart:values-cell-range-address"] },
     ],
     roundTrip: ["generateChartDocument", "parseChartDocument"],
@@ -319,7 +323,7 @@ export const ODF_CODEC_OWNERSHIP: readonly OdfCodecEntry[] = [
   {
     id: "database",
     classification: "subdocument",
-    owner: { package: "odf", module: "src/database/database.ts", export: "parseDatabaseDocument" },
+    owner: { package: "odf", module: "src/database.ts", export: "parseDatabaseDocument" },
     parts: CONTENT_PART,
     schemaElements: [
       { name: "office:document-content", attributes: ["office:version"] },
@@ -336,7 +340,7 @@ export const ODF_CODEC_OWNERSHIP: readonly OdfCodecEntry[] = [
   {
     id: "forms-and-xforms",
     classification: "subdocument",
-    owner: { package: "odf", module: "src/forms/forms.ts", export: "parseOfficeForms" },
+    owner: { package: "odf", module: "src/forms.ts", export: "parseOfficeForms" },
     parts: CONTENT_PART,
     schemaElements: [
       { name: "office:forms", attributes: [] },

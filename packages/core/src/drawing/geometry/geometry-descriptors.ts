@@ -107,7 +107,7 @@ function stringifyPath(path: PathOptions): string {
   if (path.stroke !== undefined) attrs.push(`stroke="${path.stroke}"`);
   if (path.extrusionOk !== undefined) attrs.push(`extrusionOk="${path.extrusionOk}"`);
   const attrStr = attrs.length ? " " + attrs.join(" ") : "";
-  const cmds = path.commands.map(stringifyPathCommand).join("");
+  const cmds = (path.commands ?? []).map(stringifyPathCommand).join("");
   if (!cmds && !attrStr) return "<a:path/>";
   return `<a:path${attrStr}>${cmds}</a:path>`;
 }
@@ -193,7 +193,7 @@ function readPath(el: XmlElement): Partial<PathOptions> {
       }
     }
   }
-  if (commands.length > 0) result.commands = commands;
+  result.commands = commands;
   return result as PathOptions;
 }
 
@@ -431,9 +431,7 @@ export const customGeometryDesc: CustomDescriptor<CustomGeometryOptions> = {
       for (const child of pathLst.elements ?? []) {
         if (child.name === "a:path") {
           const p = readPath(child);
-          if (p.commands && p.commands.length > 0) {
-            paths.push(p as PathOptions);
-          }
+          paths.push(p as PathOptions);
         }
       }
       result.pathList = paths;

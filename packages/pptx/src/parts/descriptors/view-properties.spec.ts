@@ -25,6 +25,18 @@ function roundTrip(opts: ViewPropertiesOptions) {
 }
 
 describe("viewPropsDesc round-trip", () => {
+  it("parses percent-literal restored pane sizes", () => {
+    const xml =
+      '<p:viewPr xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">' +
+      '<p:normalViewPr><p:restoredLeft sz="14.988%" autoAdjust="0"/>' +
+      '<p:restoredTop sz="94.66%"/></p:normalViewPr></p:viewPr>';
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const result = viewPropsDesc.parse(el, readCtx);
+    expect(result.normalView?.restoredLeft).toEqual({ size: 14988, autoAdjust: false });
+    expect(result.normalView?.restoredTop).toEqual({ size: 94660 });
+  });
+
   it("round-trips explicit slide view toggles", () => {
     const result = roundTrip({
       slideView: {

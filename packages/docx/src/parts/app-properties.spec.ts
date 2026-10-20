@@ -160,4 +160,20 @@ describe("appPropertiesDesc vector round-trip", () => {
     expect(xml).toContain("<vt:variant><vt:i4>1114168</vt:i4></vt:variant>");
     expect(xml).toContain("<vt:variant><vt:i4>281</vt:i4></vt:variant>");
   });
+
+  it("round-trips an empty HLinks vector", () => {
+    const result = roundTrip({ hlinks: [] });
+    expect(result.hlinks).toEqual([]);
+    expect(appPropertiesDesc.stringify({ hlinks: [] }, writeCtx)).toContain(
+      '<HLinks><vt:vector size="0" baseType="variant"></vt:vector></HLinks>',
+    );
+  });
+
+  it("round-trips an HLinks container without a vector", () => {
+    const xml = appPropertiesDesc.stringify({ hlinks: null }, writeCtx)!;
+    expect(xml).toContain("<HLinks></HLinks>");
+    expect(appPropertiesDesc.parse(parseXml(xml).elements![0]!, readCtx)).toMatchObject({
+      hlinks: null,
+    });
+  });
 });

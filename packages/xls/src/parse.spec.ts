@@ -1640,7 +1640,7 @@ describe("parseWorkbook", () => {
             0,
             0,
             numericResult(42),
-            Uint8Array.from([0x44, 0, 0, 0, 0x40, 0x41, 1, 4, 0]),
+            Uint8Array.from([0x44, 0, 0, 0, 0x40, 0x42, 1, 4, 0]),
           ),
         ],
       },

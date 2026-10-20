@@ -109,6 +109,24 @@ describe("slideLayoutDesc stringify/parse", () => {
     expect(result.transition).toEqual({ type: "fade", speed: "slow" });
   });
 
+  it("preserves a markup-compatibility transition verbatim", () => {
+    const markupCompatibility =
+      'xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" ' +
+      'xmlns:p14="http://schemas.microsoft.com/office/powerpoint/2010/main"';
+    const xml =
+      `<p:sldLayout ${NS} ${markupCompatibility} type="blank">` +
+      "<p:cSld><p:spTree/></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr>" +
+      '<mc:AlternateContent><mc:Choice Requires="p14">' +
+      '<p:transition p14:dur="100"/>' +
+      "</mc:Choice><mc:Fallback><p:transition/></mc:Fallback></mc:AlternateContent>" +
+      "</p:sldLayout>";
+
+    const result = parseXmlDef(xml);
+    expect(typeof result.transition).toBe("string");
+    expect(result.transition).toContain('p14:dur="100"');
+    expect(result.transition).toContain("<mc:Fallback>");
+  });
+
   it("emits p:hf in attribute form per CT_HeaderFooter and round-trips it", () => {
     const xml = slideLayoutDesc.stringify(
       { type: "blank", headerFooter: { slideNumber: true, dateTime: false } },

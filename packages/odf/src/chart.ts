@@ -1,53 +1,65 @@
 import type {
   AxisOptions,
+  ChartCoordinateRegionOptions,
+  ChartShapePropertiesOptions,
   ChartSeriesData,
   ChartSpaceOptions,
   ChartTitleOptions,
   ChartValue,
+  ErrorBarOptions,
+  DataType,
+  OdfChartStyleResources,
   ScatterSeriesData,
   ShapePropertiesOptions,
+  TrendlineOptions,
+  TrendlineType,
 } from "@office-open/core";
 import { parse, type Element } from "@office-open/xml";
 
-import type { OcfManifestOptions } from "../container/manifest";
-import { generateOcf, readOcf, readXml, type OdfFiles } from "../container/package";
 import {
-  graphicFill,
-  graphicOutline,
-  hexColorValue,
-  parseGraphicStyles,
-  pushShapeStyle,
-  type GraphicStyle,
-} from "../drawing/graphic-style";
-import { OdfSchemaError } from "../errors";
-import { metaXml, ODF_NAMESPACES, parseMeta } from "../meta/core-properties";
-import { parseOdfNode, parseOdfNodes, type OdfXmlNode } from "../runtime/odf-node";
+  chartMediaFiles,
+  chartStylesXml,
+  parseChartStyleContext,
+  projectChartStyle,
+  pushChartStyle,
+  type ChartStyle,
+} from "./chart-style";
+import type { OcfManifestOptions } from "./container/manifest";
+import {
+  generateOcf,
+  readOcf,
+  readXml,
+  type OdfFiles,
+  type OdfPackageFiles,
+} from "./container/package";
+import { hexColorValue } from "./drawing/graphic-style";
+import { OdfSchemaError } from "./errors";
+import { metaXml, ODF_NAMESPACES, parseMeta } from "./meta";
+import { parseOdfNode, parseOdfNodes, type OdfXmlNode } from "./runtime/odf-node";
 import {
   attributeString,
   childNamed,
   childrenNamed,
+  emuToLength,
   escapeText,
+  lengthToEmu,
   spreadsheetColumnName as columnLetters,
   spreadsheetColumnNumber as columnNumber,
   textOf,
   xmlElement,
-} from "../runtime/xml";
+} from "./runtime/xml";
 
 const MIME = "application/vnd.oasis.opendocument.chart";
 export const CHART_MIME = MIME;
-const NAMESPACES = `${ODF_NAMESPACES} xmlns:chart="urn:oasis:names:tc:opendocument:xmlns:chart:1.0"`;
+const NAMESPACES =
+  `${ODF_NAMESPACES} xmlns:chart="urn:oasis:names:tc:opendocument:xmlns:chart:1.0"` +
+  ' xmlns:chartooo="urn:org:documentfoundation:names:experimental:chart:xmlns:loext:1.0"';
 const CONTENT_PATH = "content.xml";
 
 /** Standalone ODF chart subdocument using the shared chart model. */
 export interface ChartDocumentOptions {
   title?: string;
   chart: ChartSpaceOptions;
-}
-
-interface ChartStyle {
-  graphic?: GraphicStyle;
-  styleName?: string;
-  properties: Record<string, string>;
 }
 
 interface ChartSeriesSource {
@@ -101,28 +113,67 @@ const LEGEND_POSITIONS: Record<string, ChartSpaceOptions["legendPosition"]> = {
 
 export function generateChartDocument(options: ChartDocumentOptions): Uint8Array {
   return generateOcf(MIME, {
-    "content.xml": chartBodyXml(options.chart),
+    ...chartSubdocumentFiles("", options.chart),
     "meta.xml": metaXml({ title: options.title }),
   });
+}
+
+/** Builds the content, style, and media parts for an embedded chart. */
+export function chartSubdocumentFiles(basePath: string, chart: ChartSpaceOptions): OdfPackageFiles {
+  const resources = chart.odfStyleResources ?? emptyChartStyleResources();
+  return {
+    [`${basePath}content.xml`]: chartBodyXml(chart),
+    [`${basePath}styles.xml`]: chartStylesXml(resources),
+    ...chartMediaFiles(basePath, resources),
+  };
 }
 
 /** Serializes an embedded chart subdocument body (its content.xml). */
 export function chartBodyXml(chart: ChartSpaceOptions): string {
   const styles: string[] = [];
-  const body = chartXml(chart, styles);
-  return `<?xml version="1.0" encoding="UTF-8"?><office:document-content ${NAMESPACES} office:version="1.3"><office:automatic-styles>${styles.join(
-    "",
-  )}</office:automatic-styles><office:body><office:chart>${body}</office:chart></office:body></office:document-content>`;
+  const previousResources = activeChartStyleResources;
+  activeChartStyleResources = chart.odfStyleResources ?? emptyChartStyleResources();
+  try {
+    const body = chartXml(chart, styles);
+    return `<?xml version="1.0" encoding="UTF-8"?><office:document-content ${NAMESPACES} office:version="1.3"><office:automatic-styles>${styles.join(
+      "",
+    )}</office:automatic-styles><office:body><office:chart>${body}</office:chart></office:body></office:document-content>`;
+  } finally {
+    activeChartStyleResources = previousResources;
+  }
 }
 
-export function parseChartDocument(data: Uint8Array): ChartDocumentOptions {
-  const { files } = readOcf(data, MIME);
-  const content = readXml(files, CONTENT_PATH);
-  const body = childNamed(childNamed(content, "office:body"), "office:chart");
-  const chart = parseChart(
-    childNamed(body, "chart:chart"),
-    childNamed(content, "office:automatic-styles"),
+let activeChartStyleResources = emptyChartStyleResources();
+
+function pushChartShapeStyle(
+  shapeProperties: ChartShapePropertiesOptions | undefined,
+  styles: string[],
+  fallbackName: string,
+  chartProperties: Record<string, string> = {},
+): string | undefined {
+  return pushChartStyle(
+    shapeProperties,
+    activeChartStyleResources,
+    styles,
+    fallbackName,
+    chartProperties,
   );
+}
+
+export async function parseChartDocument(data: DataType): Promise<ChartDocumentOptions> {
+  const { files, binaries } = await readOcf(data, MIME);
+  const content = readXml(files, CONTENT_PATH);
+  const styles = files["styles.xml"] ? xmlRoot(files["styles.xml"]) : undefined;
+  const context = parseChartStyleContext(
+    [
+      { part: CONTENT_PATH, root: content },
+      ...(styles ? [{ part: "styles.xml", root: styles }] : []),
+    ],
+    binaries,
+    "",
+  );
+  const body = childNamed(childNamed(content, "office:body"), "office:chart");
+  const chart = parseChart(childNamed(body, "chart:chart"), context, "");
   if (!chart) {
     throw unsupported(
       CONTENT_PATH,
@@ -135,17 +186,23 @@ export function parseChartDocument(data: Uint8Array): ChartDocumentOptions {
 }
 
 /** Parses an embedded chart body; undefined when the XML is not a chart document. */
-export function parseChartBody(xml: string): ChartSpaceOptions | undefined {
-  const document = parse(xml, { ignoreDeclaration: true, ignoreDoctype: true });
-  const root = document.elements?.[0] ?? document;
+export function parseChartBody(xml: string, stylesXml?: string): ChartSpaceOptions | undefined {
+  const root = xmlRoot(xml);
+  const styles = stylesXml ? xmlRoot(stylesXml) : undefined;
+  const context = parseChartStyleContext(
+    [{ part: CONTENT_PATH, root }, ...(styles ? [{ part: "styles.xml", root: styles }] : [])],
+    {},
+    "",
+  );
   const body = childNamed(childNamed(root, "office:body"), "office:chart");
-  return parseChart(childNamed(body, "chart:chart"), childNamed(root, "office:automatic-styles"));
+  return parseChart(childNamed(body, "chart:chart"), context, "");
 }
 
 /** Embedded chart subdocuments from the manifest, keyed by their object name. */
 export function parseEmbeddedCharts(
   manifest: OcfManifestOptions,
   files: OdfFiles,
+  binaries: Record<string, Uint8Array> = {},
 ): Map<string, ChartSpaceOptions> {
   const result = new Map<string, ChartSpaceOptions>();
   for (const entry of manifest.entries) {
@@ -163,15 +220,19 @@ export function parseEmbeddedCharts(
       }
       continue;
     }
-    const chart = parseChartBody(content);
-    if (entry.mediaType === MIME && !chart) {
-      throw unsupported(
-        `${fullPath}content.xml`,
-        "/office:document-content/office:body/office:chart",
-        "office:chart",
-        "referenced chart subdocument is missing its chart body",
-      );
-    }
+    const styles = files[`${fullPath}styles.xml`];
+    const contentRoot = xmlRoot(content);
+    const stylesRoot = styles ? xmlRoot(styles) : undefined;
+    const context = parseChartStyleContext(
+      [
+        { part: `${fullPath}content.xml`, root: contentRoot },
+        ...(stylesRoot ? [{ part: `${fullPath}styles.xml`, root: stylesRoot }] : []),
+      ],
+      binaries,
+      fullPath,
+    );
+    const body = childNamed(childNamed(contentRoot, "office:body"), "office:chart");
+    const chart = parseChart(childNamed(body, "chart:chart"), context, fullPath);
     if (chart && entry.mediaType !== undefined && entry.mediaType !== MIME) {
       throw unsupported(
         "META-INF/manifest.xml",
@@ -181,9 +242,17 @@ export function parseEmbeddedCharts(
       );
     }
     if (!chart) {
+      if (entry.mediaType === MIME || body?.name === "office:chart") {
+        throw unsupported(
+          `${fullPath}content.xml`,
+          "/office:document-content/office:body/office:chart",
+          body?.name ?? "office:chart",
+          "chart subdocument has no canonical chart root",
+        );
+      }
       continue;
     }
-    result.set(fullPath.replace(/\/$/, ""), chart);
+    result.set(fullPath.replace(/\/$/, ""), { ...chart, odfStyleResources: context.resources });
   }
   for (const [path, content] of Object.entries(files)) {
     const match = /^(.+)\/content\.xml$/.exec(path);
@@ -204,21 +273,35 @@ export function parseEmbeddedCharts(
   return result;
 }
 
+/** Resolves a draw:object href against manifest keys, including URI escapes. */
+export function resolveEmbeddedChart(
+  charts: Map<string, ChartSpaceOptions>,
+  href: string,
+): ChartSpaceOptions | undefined {
+  const normalizedHref = decodeURIComponent(
+    href.replace(/^\.\//, "").replace(/^\//, "").replace(/\/$/, ""),
+  );
+  if (charts.has(normalizedHref)) return charts.get(normalizedHref);
+  const hrefBase = normalizedHref.split("/").pop() ?? normalizedHref;
+  for (const [path, chart] of charts) {
+    const normalizedPath = decodeURIComponent(path.replace(/^\//, "").replace(/\/$/, ""));
+    if (normalizedPath === normalizedHref || normalizedPath.endsWith(`/${hrefBase}`)) return chart;
+  }
+  return undefined;
+}
+
 function chartXml(chart: ChartSpaceOptions, styles: string[]): string {
   const table = localTable(chart);
   return xmlElement(
     "chart:chart",
     {
       "chart:class": CHART_CLASSES[chart.type],
-      "chart:style-name": pushShapeStyle(
-        chart.shapeProperties?.fill,
-        chart.shapeProperties?.outline,
-        styles,
-        "chart",
-      ),
+      "chart:style-name": pushChartShapeStyle(chart.shapeProperties, styles, "chart"),
     },
     [
       titleXml("chart:title", chart.title, styles),
+      titleXml("chart:subtitle", chart.subtitle, styles),
+      titleXml("chart:footer", chart.footer, styles),
       legendXml(chart, styles),
       plotAreaXml(chart, table, styles),
       ...(table ? [serializeTable(table)] : []),
@@ -250,12 +333,7 @@ function titleXml(
     {
       "chart:style-name":
         title && typeof title === "object"
-          ? pushShapeStyle(
-              title.shapeProperties?.fill,
-              title.shapeProperties?.outline,
-              styles,
-              "chart",
-            )
+          ? pushChartShapeStyle(title.shapeProperties, styles, "chart")
           : undefined,
     },
     [xmlElement("text:p", undefined, [escapeText(text)])],
@@ -279,12 +357,7 @@ function legendXml(chart: ChartSpaceOptions, styles: string[]): string {
     {
       "chart:legend-position": odfPosition,
       ...(chart.legendOverlay === true ? { "svg:x": "0cm", "svg:y": "0cm" } : {}),
-      "chart:style-name": pushShapeStyle(
-        chart.legendShapeProperties?.fill,
-        chart.legendShapeProperties?.outline,
-        styles,
-        "chart",
-      ),
+      "chart:style-name": pushChartShapeStyle(chart.legendShapeProperties, styles, "chart"),
     },
     [],
   );
@@ -298,20 +371,26 @@ function plotAreaXml(
   return xmlElement(
     "chart:plot-area",
     {
-      "chart:style-name": pushShapeStyle(
-        chart.plotAreaShapeProperties?.fill,
-        chart.plotAreaShapeProperties?.outline,
-        styles,
-        "chart",
-      ),
+      "chart:style-name": pushChartShapeStyle(chart.plotAreaShapeProperties, styles, "chart"),
     },
     [
+      coordinateRegionXml(chart.coordinateRegion),
       ...(chart.axes ?? defaultAxes()).map((axis) => axisXml(axis, chart, table, styles)),
       ...allSeries(chart).map((series, index) => seriesXml(chart, series, index, table, styles)),
       wallXml(chart.sideWall ?? chart.backWall, styles),
       wallXml(chart.floor, styles, "chart:floor"),
     ],
   );
+}
+
+function coordinateRegionXml(region: ChartCoordinateRegionOptions | undefined): string {
+  if (!region) return "";
+  return xmlElement("chart:coordinate-region", {
+    "svg:x": region.x === undefined ? undefined : emuToLength(region.x),
+    "svg:y": region.y === undefined ? undefined : emuToLength(region.y),
+    "svg:width": region.width === undefined ? undefined : emuToLength(region.width),
+    "svg:height": region.height === undefined ? undefined : emuToLength(region.height),
+  });
 }
 
 function allSeries(chart: ChartSpaceOptions): ChartSpaceOptions["series"][number][] {
@@ -334,7 +413,7 @@ function axisXml(
   return xmlElement(
     "chart:axis",
     {
-      "chart:dimension": axis.kind === "value" || axis.kind === "date" ? "y" : "x",
+      "chart:dimension": axis.kind === "value" ? "y" : "x",
       "chart:name": titleText(axis.title),
       "chart:style-name": pushAxisStyle(axis, styles),
     },
@@ -343,6 +422,7 @@ function axisXml(
       axis.kind !== "value" && axis.kind !== "date" && categoryRange
         ? xmlElement("chart:categories", { "table:cell-range-address": categoryRange })
         : "",
+      axis.kind === "date" ? "<chartooo:date-scale/>" : "",
       axis.majorGridlines ? '<chart:grid chart:class="major"/>' : "",
       axis.minorGridlines ? '<chart:grid chart:class="minor"/>' : "",
     ],
@@ -350,12 +430,7 @@ function axisXml(
 }
 
 function pushAxisStyle(axis: AxisOptions, styles: string[]): string | undefined {
-  const graphicName = pushShapeStyle(
-    axis.shapeProperties?.fill,
-    axis.shapeProperties?.outline,
-    styles,
-    "chart",
-  );
+  const graphicName = pushChartShapeStyle(axis.shapeProperties, styles, "chart");
   const chartAttributes = {
     "chart:visible": axis.delete === true ? "false" : undefined,
     "chart:display-label": axis.tickLabelPosition === "none" ? "false" : undefined,
@@ -383,12 +458,7 @@ function wallXml(
 ): string {
   if (!wall) return "";
   return xmlElement(name, {
-    "chart:style-name": pushShapeStyle(
-      wall.shapeProperties?.fill,
-      wall.shapeProperties?.outline,
-      styles,
-      "chart",
-    ),
+    "chart:style-name": pushChartShapeStyle(wall.shapeProperties, styles, "chart"),
   });
 }
 
@@ -411,13 +481,12 @@ function seriesXml(
       "chart:values-cell-range-address": values,
       "chart:label-cell-address": label,
       "chart:class": seriesClass(chart, series),
-      "chart:vertical": chart.type === "column" ? "true" : undefined,
       "chart:attached-axis": "primary-y",
-      "chart:style-name": pushShapeStyle(
-        series.shapeProperties?.fill,
-        series.shapeProperties?.outline,
+      "chart:style-name": pushChartShapeStyle(
+        series.shapeProperties,
         styles,
-        "chart",
+        "series",
+        chart.type === "column" ? { "chart:vertical": "true" } : {},
       ),
     },
     [
@@ -425,6 +494,16 @@ function seriesXml(
         xmlElement("chart:domain", { "table:cell-range-address": domain }),
       ),
       ...dataPointXml(series, styles),
+      ...(series.trendlines ?? []).map((trendline) =>
+        xmlElement("chart:regression-curve", {
+          "chart:style-name": pushChartShapeStyle(trendline.shapeProperties, styles, "chart"),
+        }),
+      ),
+      ...(series.errorBars ?? []).map((errorBars) =>
+        xmlElement("chart:error-indicator", {
+          "chart:dimension": errorBars.direction ?? "y",
+        }),
+      ),
     ],
   );
 }
@@ -453,12 +532,7 @@ function dataPointXml(series: ChartSpaceOptions["series"][number], styles: strin
   return dataPointRuns(series).map((run) =>
     xmlElement("chart:data-point", {
       "chart:repeated": run.repeated,
-      "chart:style-name": pushShapeStyle(
-        run.first.shapeProperties?.fill,
-        run.first.shapeProperties?.outline,
-        styles,
-        "chart",
-      ),
+      "chart:style-name": pushChartShapeStyle(run.first.shapeProperties, styles, "chart"),
     }),
   );
 }
@@ -489,6 +563,11 @@ function defaultAxes(): AxisOptions[] {
   return [{ kind: "category" }, { kind: "value", majorGridlines: true }];
 }
 
+function seriesNameText(series: ChartSeriesData | ScatterSeriesData, index: number): string {
+  if (typeof series.name === "string") return series.name;
+  return series.name?.text ?? (series.name === undefined ? `Series ${index + 1}` : "");
+}
+
 function localValuesRange(seriesIndex: number, table: OdfXmlNode | undefined): string | undefined {
   if (!table) return undefined;
   const letter = columnLetters(seriesIndex + 2);
@@ -515,11 +594,20 @@ function localTable(chart: ChartSpaceOptions): OdfXmlNode | undefined {
   const header = scatter
     ? [
         "X",
-        ...chart.series.map((series, index) => series.name ?? `Y ${index + 1}`),
+        ...chart.series.map((series, index) => seriesNameText(series, index)),
         ...(chart.type === "bubble" ? ["Size"] : []),
       ]
-    : ["", ...chart.series.map((series, index) => series.name ?? `Series ${index + 1}`)];
+    : ["", ...chart.series.map((series, index) => seriesNameText(series, index))];
   const children = [
+    {
+      name: "table:table-columns",
+      children: [
+        {
+          name: "table:table-column",
+          attributes: { "table:number-columns-repeated": Math.max(1, header.length) },
+        },
+      ],
+    },
     tableRow(header),
     ...Array.from({ length: rows }, (_, row) =>
       tableRow(
@@ -566,14 +654,15 @@ function tableRow(values: string[]): OdfXmlNode {
         "office:value-type": value !== "" && Number.isFinite(Number(value)) ? "float" : "string",
         ...(value !== "" && Number.isFinite(Number(value)) ? { "office:value": value } : {}),
       },
-      children: [value],
+      children: [{ name: "text:p", children: [value] }],
     })),
   };
 }
 
 function parseChart(
   element: Element | undefined,
-  styleContainer: Element | undefined,
+  context: { resources: OdfChartStyleResources; styles: Map<string, ChartStyle> },
+  basePath: string,
 ): ChartSpaceOptions | undefined {
   if (!element) return undefined;
   const classToken = attributeString(element, "chart:class");
@@ -585,7 +674,7 @@ function parseChart(
       element.name ?? "",
       `unsupported chart class ${classToken ?? "(missing)"}`,
     );
-  const styleMap = chartStyles(styleContainer);
+  const styleMap = context.styles;
   const plotArea = childNamed(element, "chart:plot-area");
   if (!plotArea)
     throw unsupported(
@@ -594,7 +683,14 @@ function parseChart(
       "chart:plot-area",
       "missing plot area",
     );
-  rejectUnknown(plotArea, ["chart:axis", "chart:series", "chart:wall", "chart:floor"]);
+  rejectUnknown(plotArea, [
+    "chart:coordinate-region",
+    "chartooo:coordinate-region",
+    "chart:axis",
+    "chart:series",
+    "chart:wall",
+    "chart:floor",
+  ]);
   rejectUnknown(element, [
     "chart:title",
     "chart:subtitle",
@@ -603,39 +699,74 @@ function parseChart(
     "chart:plot-area",
     "table:table",
   ]);
-  for (const name of ["chart:subtitle", "chart:footer"]) {
-    if (childNamed(element, name))
-      throw unsupported(
-        CONTENT_PATH,
-        chartPath(element, name),
-        name,
-        "the core chart model has no subtitle or footer field",
-      );
-  }
   const sources = childrenNamed(plotArea, "chart:series").map(parseSeriesSource);
+  for (const source of sources) {
+    source.vertical = styleMap.get(source.styleName ?? "")?.properties["chart:vertical"] === "true";
+  }
   const series = sources.map((source, index) =>
-    parseSeries(source, index, element, styleMap, sources, type),
+    parseSeries(source, index, element, styleMap, sources, type, context.resources, basePath),
   );
-  const axes = childrenNamed(plotArea, "chart:axis").map((axis) => parseAxis(axis, styleMap));
+  const axes = childrenNamed(plotArea, "chart:axis").map((axis) =>
+    parseAxis(axis, styleMap, context.resources, basePath),
+  );
   const categories = parseCategories(plotArea, element);
   return {
     type: sourceType(sources, type),
-    title: parseTitle(childNamed(element, "chart:title"), styleMap),
+    ...(hasChartStyleResources(context.resources) ? { odfStyleResources: context.resources } : {}),
+    title: parseTitle(childNamed(element, "chart:title"), styleMap, context.resources, basePath),
+    subtitle: parseTitle(
+      childNamed(element, "chart:subtitle"),
+      styleMap,
+      context.resources,
+      basePath,
+    ),
+    footer: parseTitle(childNamed(element, "chart:footer"), styleMap, context.resources, basePath),
     ...(categories ? { categories, categoryFormula: categoryRange(plotArea) } : {}),
     series: series as ChartSpaceOptions["series"],
     showLegend: childNamed(element, "chart:legend") !== undefined,
     legendPosition: parseLegendPosition(childNamed(element, "chart:legend")),
     legendOverlay: legendOverlay(childNamed(element, "chart:legend")),
-    legendShapeProperties: styleShape(
-      styleMap.get(attributeString(childNamed(element, "chart:legend"), "chart:style-name") ?? ""),
+    legendShapeProperties: chartShape(
+      childNamed(element, "chart:legend"),
+      styleMap,
+      context.resources,
+      basePath,
     ),
-    shapeProperties: styleShape(styleMap.get(attributeString(element, "chart:style-name") ?? "")),
+    shapeProperties: chartShape(element, styleMap, context.resources, basePath),
     axes,
-    plotAreaShapeProperties: styleShape(
-      styleMap.get(attributeString(plotArea, "chart:style-name") ?? ""),
+    coordinateRegion: parseCoordinateRegion(
+      childNamed(plotArea, "chart:coordinate-region") ??
+        childNamed(plotArea, "chartooo:coordinate-region"),
     ),
-    sideWall: parseWall(childNamed(plotArea, "chart:wall"), styleMap),
-    floor: parseWall(childNamed(plotArea, "chart:floor"), styleMap),
+    plotAreaShapeProperties: chartShape(plotArea, styleMap, context.resources, basePath),
+    sideWall: parseWall(childNamed(plotArea, "chart:wall"), styleMap, context.resources, basePath),
+    floor: parseWall(childNamed(plotArea, "chart:floor"), styleMap, context.resources, basePath),
+  };
+}
+
+function parseCoordinateRegion(
+  element: Element | undefined,
+): ChartCoordinateRegionOptions | undefined {
+  if (!element) return undefined;
+  const length = (name: string): number | string | undefined => {
+    const value = attributeString(element, name);
+    if (value === undefined) return undefined;
+    const emu = lengthToEmu(value);
+    if (emu === undefined) {
+      throw unsupported(
+        CONTENT_PATH,
+        chartPath(element, name),
+        element.name ?? "chart:coordinate-region",
+        `${name} is not a valid ODF length`,
+      );
+    }
+    return emu;
+  };
+  return {
+    x: length("svg:x"),
+    y: length("svg:y"),
+    width: length("svg:width"),
+    height: length("svg:height"),
   };
 }
 
@@ -658,12 +789,7 @@ function parseSeriesSource(element: Element): ChartSeriesSource {
     "chart:error-indicator",
     "chart:data-label",
   ]);
-  for (const name of [
-    "chart:mean-value",
-    "chart:regression-curve",
-    "chart:error-indicator",
-    "chart:data-label",
-  ]) {
+  for (const name of ["chart:mean-value", "chart:data-label"]) {
     if (childNamed(element, name))
       throw unsupported(
         CONTENT_PATH,
@@ -690,6 +816,38 @@ function parseSeriesSource(element: Element): ChartSeriesSource {
   };
 }
 
+function requiredStyle(
+  styleMap: Map<string, ChartStyle>,
+  styleName: string | undefined,
+  element: Element,
+  basePath: string,
+): ChartStyle | undefined {
+  if (!styleName) return undefined;
+  const style = styleMap.get(styleName);
+  if (!style) {
+    throw unsupported(
+      `${basePath}content.xml`,
+      `${chartPath(element)}/@chart:style-name`,
+      styleName,
+      "unresolved-style-reference",
+    );
+  }
+  return style;
+}
+
+function seriesShape(
+  source: ChartSeriesSource,
+  styleMap: Map<string, ChartStyle>,
+  resources: OdfChartStyleResources,
+  basePath: string,
+): ChartShapePropertiesOptions | undefined {
+  return styleShape(
+    requiredStyle(styleMap, source.styleName, source.element, basePath),
+    resources,
+    basePath,
+  );
+}
+
 function parseSeries(
   source: ChartSeriesSource,
   index: number,
@@ -697,6 +855,8 @@ function parseSeries(
   styleMap: Map<string, ChartStyle>,
   sources: ChartSeriesSource[],
   chartType: ChartSpaceOptions["type"],
+  resources: OdfChartStyleResources,
+  basePath: string,
 ): ChartSpaceOptions["series"][number] {
   const table = parseOdfNodes(chart).find((node) => node.name === "table:table");
   const type =
@@ -709,24 +869,15 @@ function parseSeries(
       scatter ? (source.domains[1] ?? source.valuesRange) : source.valuesRange,
       table,
     );
-    if (
-      source.domains.some((domain) => !domain.startsWith("local-table.")) &&
-      (xValues.length === 0 || yValues.length === 0)
-    ) {
-      throw unsupported(
-        CONTENT_PATH,
-        chartPath(source.element, "chart:domain"),
-        "chart:domain",
-        "external scatter X/Y formulas cannot be represented without cached values",
-      );
-    }
     const result: ScatterSeriesData = {
       name: source.labelRange ? localCell(chart, source.labelRange) : undefined,
       nameFormula: source.labelRange?.startsWith("local-table.") ? undefined : source.labelRange,
       valueFormula: source.valuesRange?.startsWith("local-table.") ? undefined : source.valuesRange,
       xValues,
       yValues,
-      shapeProperties: styleShape(styleMap.get(source.styleName ?? "")),
+      shapeProperties: seriesShape(source, styleMap, resources, basePath),
+      trendlines: parseTrendlines(styleMap.get(source.styleName ?? "")),
+      errorBars: parseErrorBars(source.element, styleMap.get(source.styleName ?? "")),
     };
     if (type === "bubble") {
       return { ...result, bubbleSize: values, bubble3D: false };
@@ -738,29 +889,107 @@ function parseSeries(
     nameFormula: source.labelRange?.startsWith("local-table.") ? undefined : source.labelRange,
     valueFormula: source.valuesRange?.startsWith("local-table.") ? undefined : source.valuesRange,
     values,
-    shapeProperties: styleShape(styleMap.get(source.styleName ?? "")),
-    dataPoints: expandDataPoints(source, styleMap),
+    shapeProperties: seriesShape(source, styleMap, resources, basePath),
+    trendlines: parseTrendlines(styleMap.get(source.styleName ?? "")),
+    errorBars: parseErrorBars(source.element, styleMap.get(source.styleName ?? "")),
+    dataPoints: expandDataPoints(source, styleMap, resources, basePath),
   };
 }
 
-function expandDataPoints(source: ChartSeriesSource, styleMap: Map<string, ChartStyle>) {
+function expandDataPoints(
+  source: ChartSeriesSource,
+  styleMap: Map<string, ChartStyle>,
+  resources: OdfChartStyleResources,
+  basePath: string,
+) {
   let index = 0;
   return source.repeatedPoints.flatMap((run) =>
     Array.from({ length: Math.max(1, run.repeated) }, () => ({
       index: index++,
-      shapeProperties: styleShape(styleMap.get(run.styleName ?? "")),
+      shapeProperties: styleShape(
+        requiredStyle(styleMap, run.styleName, source.element, basePath),
+        resources,
+        basePath,
+      ),
     })),
   );
 }
 
-function parseAxis(element: Element, styleMap: Map<string, ChartStyle>): AxisOptions {
-  rejectUnknown(element, ["chart:title", "chart:categories", "chart:grid"]);
-  const style = styleMap.get(attributeString(element, "chart:style-name") ?? "");
+function parseTrendlines(style: ChartStyle | undefined): TrendlineOptions[] | undefined {
+  const type = style?.properties["chart:regression-type"];
+  if (!type || type === "none") return undefined;
+  const trendline: TrendlineOptions = {
+    type:
+      type === "moving-average"
+        ? "movingAverage"
+        : (type as Exclude<TrendlineType, "movingAverage">),
+  };
+  const degree = style?.properties["chart:regression-max-degree"];
+  if (type === "polynomial" && degree !== undefined) trendline.order = Number(degree);
+  if (style?.properties["chart:regression-force-intercept"] === "true") {
+    trendline.intercept = Number(style?.properties["chart:regression-intercept-value"] ?? 0);
+  }
+  return [trendline];
+}
+
+function parseErrorBars(
+  element: Element,
+  style: ChartStyle | undefined,
+): ErrorBarOptions[] | undefined {
+  const indicators = childrenNamed(element, "chart:error-indicator");
+  if (indicators.length === 0) return undefined;
+  return indicators.map((indicator) => {
+    const category = style?.properties["chart:error-category"] ?? "none";
+    const upper = style?.properties["chart:error-upper-indicator"] !== "false";
+    const lower = style?.properties["chart:error-lower-indicator"] !== "false";
+    const result: ErrorBarOptions = {
+      direction: attributeString(indicator, "chart:dimension") === "x" ? "x" : "y",
+      barType: upper && lower ? "both" : upper ? "plus" : "minus",
+      valueType:
+        category === "standard-deviation"
+          ? "standardDeviation"
+          : category === "percentage"
+            ? "percentage"
+            : category === "standard-error"
+              ? "standardError"
+              : category === "none"
+                ? "custom"
+                : "fixedValue",
+    };
+    if (result.valueType === "fixedValue") {
+      result.value = Number(
+        style?.properties["chart:error-margin"] ??
+          style?.properties["chart:error-lower-limit"] ??
+          0,
+      );
+    }
+    return result;
+  });
+}
+
+function parseAxis(
+  element: Element,
+  styleMap: Map<string, ChartStyle>,
+  resources: OdfChartStyleResources,
+  basePath: string,
+): AxisOptions {
+  rejectUnknown(element, ["chart:title", "chart:categories", "chart:grid", "chartooo:date-scale"]);
+  const style = requiredStyle(
+    styleMap,
+    attributeString(element, "chart:style-name"),
+    element,
+    basePath,
+  );
   const title =
-    parseTitle(childNamed(element, "chart:title"), styleMap) ??
+    parseTitle(childNamed(element, "chart:title"), styleMap, resources, basePath) ??
     attributeString(element, "chart:name");
   return {
-    kind: attributeString(element, "chart:dimension") === "y" ? "value" : "category",
+    kind:
+      attributeString(element, "chart:dimension") === "y"
+        ? "value"
+        : childNamed(element, "chartooo:date-scale")
+          ? "date"
+          : "category",
     title,
     delete: style?.properties["chart:visible"] === "false",
     tickLabelPosition: style?.properties["chart:display-label"] === "false" ? "none" : undefined,
@@ -770,19 +999,23 @@ function parseAxis(element: Element, styleMap: Map<string, ChartStyle>): AxisOpt
     minorGridlines: childrenNamed(element, "chart:grid").some(
       (grid) => attributeString(grid, "chart:class") === "minor",
     ),
-    shapeProperties: styleShape(style),
+    shapeProperties: styleShape(style, resources, basePath),
   };
 }
 
 function parseTitle(
   element: Element | undefined,
   styleMap: Map<string, ChartStyle>,
+  resources: OdfChartStyleResources,
+  basePath: string,
 ): string | ChartTitleOptions | undefined {
   if (!element) return undefined;
   const text = textOf(childNamed(element, "text:p"));
   if (!text) return undefined;
   const shapeProperties = styleShape(
-    styleMap.get(attributeString(element, "chart:style-name") ?? ""),
+    requiredStyle(styleMap, attributeString(element, "chart:style-name"), element, basePath),
+    resources,
+    basePath,
   );
   return shapeProperties ? { text, shapeProperties } : text;
 }
@@ -808,10 +1041,19 @@ function legendOverlay(element: Element | undefined): boolean | undefined {
     : false;
 }
 
-function parseWall(element: Element | undefined, styleMap: Map<string, ChartStyle>) {
+function parseWall(
+  element: Element | undefined,
+  styleMap: Map<string, ChartStyle>,
+  resources: OdfChartStyleResources,
+  basePath: string,
+) {
   if (!element) return undefined;
   return {
-    shapeProperties: styleShape(styleMap.get(attributeString(element, "chart:style-name") ?? "")),
+    shapeProperties: styleShape(
+      requiredStyle(styleMap, attributeString(element, "chart:style-name"), element, basePath),
+      resources,
+      basePath,
+    ),
   };
 }
 
@@ -832,50 +1074,33 @@ function categoryRange(plotArea: Element | undefined): string | undefined {
   return range?.startsWith("local-table.") ? undefined : range;
 }
 
-function chartStyles(container: Element | undefined): Map<string, ChartStyle> {
-  const graphics = parseGraphicStyles(container, "chart");
-  const result = new Map<string, ChartStyle>();
-  for (const style of childrenNamed(container, "style:style")) {
-    if (attributeString(style, "style:family") !== "chart") continue;
-    const name = attributeString(style, "style:name") ?? "";
-    const properties = childNamed(style, "style:chart-properties");
-    result.set(name, {
-      graphic: graphics.get(name),
-      styleName: name,
-      properties: Object.fromEntries(
-        Object.entries(properties?.attributes ?? {}).map(([key, value]) => [key, String(value)]),
-      ),
-    });
-  }
-  return result;
-}
-
-function styleShape(style: ChartStyle | undefined): ShapePropertiesOptions | undefined {
-  if (!style?.graphic) return undefined;
-  const unsupportedFill =
-    style.graphic.fill !== undefined &&
-    style.graphic.fill !== "none" &&
-    style.graphic.fill !== "solid" &&
-    !style.graphic.fillColor;
-  const unsupportedStroke =
-    style.graphic.stroke !== undefined &&
-    style.graphic.stroke !== "none" &&
-    style.graphic.stroke !== "solid";
-  if (unsupportedFill || unsupportedStroke) {
-    const property = unsupportedFill ? "draw:fill" : "draw:stroke";
-    const value = unsupportedFill ? style.graphic.fill : style.graphic.stroke;
+function chartShape(
+  element: Element | undefined,
+  styleMap: Map<string, ChartStyle>,
+  resources: OdfChartStyleResources,
+  basePath: string,
+): ChartShapePropertiesOptions | undefined {
+  if (!element) return undefined;
+  const styleName = attributeString(element, "chart:style-name");
+  if (!styleName) return undefined;
+  const style = styleMap.get(styleName);
+  if (!style) {
     throw unsupported(
-      CONTENT_PATH,
-      `/office:document-content/office:automatic-styles/style:style[@style:name="${style.styleName ?? ""}"]/style:graphic-properties`,
-      property,
-      `${value} has no canonical ChartSpaceOptions mapping`,
+      `${basePath}content.xml`,
+      `${chartPath(element)}/@chart:style-name`,
+      styleName,
+      "unresolved-style-reference",
     );
   }
-  const fill = graphicFill(style.graphic);
-  const outline = graphicOutline(style.graphic);
-  return fill || outline
-    ? { ...(fill ? { fill } : {}), ...(outline ? { outline } : {}) }
-    : undefined;
+  return styleShape(style, resources, basePath);
+}
+
+function styleShape(
+  style: ChartStyle | undefined,
+  resources: OdfChartStyleResources,
+  basePath: string,
+): ChartShapePropertiesOptions | undefined {
+  return style ? projectChartStyle(style, resources, basePath) : undefined;
 }
 
 function localColumnValues(range: string | undefined, table: OdfXmlNode | undefined): number[] {
@@ -897,7 +1122,7 @@ function localCells(chart: Element, range: string | undefined): string[] {
       ? parseOdfNode(chart)
       : parseOdfNodes(chart).find((node) => node.name === "table:table");
   const rows = (table?.children ?? []).filter(
-    (node): node is OdfXmlNode => typeof node !== "string",
+    (node): node is OdfXmlNode => typeof node === "object" && node.name === "table:table-row",
   );
   const firstColumn = columnNumber(match[1]!);
   const firstRow = Number(match[2]);
@@ -914,7 +1139,12 @@ function localCells(chart: Element, range: string | undefined): string[] {
         typeof cell === "object"
           ? String(
               cell.attributes?.["office:value"] ??
-                (cell.children ?? []).find((child) => typeof child === "string") ??
+                (
+                  (cell.children ?? []).find(
+                    (child): child is OdfXmlNode =>
+                      typeof child === "object" && child.name === "text:p",
+                  )?.children ?? []
+                ).find((child) => typeof child === "string") ??
                 "",
             )
           : "",
@@ -934,7 +1164,9 @@ function seriesValues(series: ChartSpaceOptions["series"][number]): readonly Cha
 }
 
 function rowCount(table: OdfXmlNode): number {
-  return (table.children ?? []).filter((child) => typeof child !== "string").length;
+  return (table.children ?? []).filter(
+    (child) => typeof child === "object" && child.name === "table:table-row",
+  ).length;
 }
 
 function chartPath(element: Element, child?: string): string {
@@ -958,4 +1190,23 @@ function rejectUnknown(element: Element, allowed: string[]): void {
 
 function unsupported(part: string, path: string, name: string, reason: string): OdfSchemaError {
   return new OdfSchemaError(`${part}: ${path}: ${name}: ${reason}`, part, path, name, reason);
+}
+
+function xmlRoot(xml: string): Element {
+  const document = parse(xml, { ignoreDeclaration: true, ignoreDoctype: true });
+  return document.elements?.[0] ?? document;
+}
+
+function emptyChartStyleResources(): OdfChartStyleResources {
+  return { styles: [], gradients: [], hatches: [], fillImages: [], strokeDashes: [] };
+}
+
+function hasChartStyleResources(resources: OdfChartStyleResources): boolean {
+  return (
+    resources.styles.length > 0 ||
+    resources.gradients.length > 0 ||
+    resources.hatches.length > 0 ||
+    resources.fillImages.length > 0 ||
+    resources.strokeDashes.length > 0
+  );
 }

@@ -5,14 +5,17 @@
  */
 
 import type {
-  AppPropertiesOptions,
-  ContentTypesInput,
   CorePropertiesOptions,
-  CustomPropertyOptions,
   DataType,
   EncryptedContainerOptions,
-  FormContainerOptions,
+  OfficeFormsOptions,
 } from "@office-open/core";
+import type {
+  AppPropertiesOptions,
+  ContentTypesInput,
+  CustomPropertyOptions,
+  PassthroughRelationship,
+} from "@office-open/core/opc";
 import type { ThemeOptions } from "@office-open/core/theme";
 import type {
   CellFillOptions,
@@ -76,7 +79,7 @@ export interface WorkbookOptions extends CorePropertiesOptions {
   /** Workbook <sheets> order; round-trip only. */
   sheetDefinitions?: SheetDefinition[];
   /** Workbook-level form containers. */
-  forms?: FormContainerOptions[];
+  forms?: OfficeFormsOptions;
   /**
    * Source file is an encrypted OOXML package (OLE2/CFB container). Round-trip
    * only: the original bytes are re-emitted verbatim; all other fields stay
@@ -161,6 +164,10 @@ export interface WorkbookOptions extends CorePropertiesOptions {
   fileRecovery?: FileRecoveryPropertiesOptions;
   /** Custom VBA function group names */
   functionGroups?: string[];
+  /** Explicit built-in function-group count (CT_FunctionGroups `@builtInGroupCount`). */
+  builtInGroupCount?: number;
+  /** True when the source declared `@builtInGroupCount`; keeps an explicit 16 from collapsing to the default. */
+  builtInGroupCountPresent?: boolean;
   /** Web publishing properties */
   webPublishing?: WebPublishingOptions;
   /** File sharing / read-only recommendation */
@@ -199,11 +206,21 @@ export interface WorkbookOptions extends CorePropertiesOptions {
   sharedStrings?: (string | RichTextOptions)[];
   /** Source <sst/@count>: total string-cell references; undefined on fresh authoring. */
   sharedStringsCount?: number;
+  /** Source `<sst/@xml:space>`; round-trip only. */
+  sharedStringsXmlSpace?: "default" | "preserve";
+  /** Source `<workbook/@xml:space>`; round-trip only. */
+  workbookXmlSpace?: "default" | "preserve";
+  /** Source `<styleSheet/@xml:space>`; round-trip only. */
+  stylesXmlSpace?: "default" | "preserve";
+  /** Source `<calcChain/@xml:space>`; round-trip only. */
+  calcChainXmlSpace?: "default" | "preserve";
 
   /** Declared unique string count (xl/sharedStrings.xml `@uniqueCount`). Round-trip only when absent in source. */
   sharedStringsUniqueCount?: number;
   /** True when the source declared xl/sharedStrings.xml, even with no si entries. Round-trip only. */
   sharedStringsDeclared?: boolean;
+  /** False when the source carried a sharedStrings part without its workbook relationship. Round-trip only. */
+  sharedStringsRelationshipPresent?: boolean;
   /** Source core-properties part path; preserves non-default OPC layouts. Round-trip only. */
   corePropertiesPath?: string;
   /**
@@ -250,13 +267,7 @@ export interface WorkbookOptions extends CorePropertiesOptions {
    * Round-trip channel: captured from a parsed source document — do not
    * hand-author.
    */
-  passthroughRelationships?: {
-    source: string;
-    relationshipType: string;
-    target: string;
-    rId: string;
-    targetMode?: "External";
-  }[];
+  passthroughRelationships?: PassthroughRelationship[];
 }
 
 /** Generate a pivot cache from worksheet records. */

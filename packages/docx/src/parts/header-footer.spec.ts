@@ -108,6 +108,51 @@ describe("header/footer part naming", () => {
   });
 });
 
+describe("legacy odd header references", () => {
+  it("round-trips the producer-specific odd slot", async () => {
+    const odd = [{ paragraph: { children: [{ text: "Odd header" }] } }];
+    const first = await generateDocument(
+      {
+        sections: [
+          {
+            children: [{ paragraph: { children: [{ text: "Body" }] } }],
+            headers: { odd, partNames: { odd: "header2.xml" } },
+          },
+        ],
+      },
+      { type: "uint8array" },
+    );
+    const parsed = parseDocumentSync(first);
+    expect(parsed.sections?.[0]?.headers?.odd).toEqual([{ paragraph: { text: "Odd header" } }]);
+    expect(parsed.sections?.[0]?.headers?.partNames?.odd).toBe("header2.xml");
+    const second = await generateDocument(parsed, { type: "uint8array" });
+    expect(decodePart(second, "word/document.xml")).toContain('w:type="odd"');
+    expect(decodePart(second, "word/header2.xml")).toContain("Odd header");
+  });
+});
+
+describe("empty header references", () => {
+  it("keeps even and first slots with empty parts", async () => {
+    const doc = {
+      sections: [
+        {
+          children: [{ paragraph: { children: [{ text: "Body" }] } }],
+          headers: { even: [], first: [] },
+        },
+      ],
+    };
+    const first = await generateDocument(doc, { type: "uint8array" });
+    const parsed = parseDocumentSync(first);
+    expect(parsed.sections?.[0]?.headers?.even).toEqual([]);
+    expect(parsed.sections?.[0]?.headers?.first).toEqual([]);
+
+    const second = await generateDocument(parsed, { type: "uint8array" });
+    const documentXml = decodePart(second, "word/document.xml");
+    expect(documentXml).toContain('w:headerReference r:id="rId8" w:type="even"');
+    expect(documentXml).toContain('w:headerReference r:id="rId9" w:type="first"');
+  });
+});
+
 describe("header/footer run identity", () => {
   it("round-trips rsids on body, header, and footer runs", async () => {
     const paragraph = {

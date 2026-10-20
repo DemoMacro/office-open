@@ -15,11 +15,14 @@
 
 import { parseColorMapping, parseOnOff, stringifyColorMapping } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
-import { attr, findChild, stringify as stringifyXml } from "@office-open/xml";
+import { parseNonVisualDrawingProperties } from "@office-open/core/drawing";
+import { attr, attrNum, findChild, stringify as stringifyXml } from "@office-open/xml";
 import {
   buildBackgroundXml,
   buildPlaceholderShapes,
+  buildOrderedPlaceholderShapes,
   type MasterPlaceholderOptions,
+  type MasterPlaceholderShape,
   type MasterChild,
   type StandardPlaceholderKey,
   type SlideMasterOptions,
@@ -31,7 +34,7 @@ import {
   stringifyCustDataLst,
 } from "@parts/slide/c-sld";
 import type { SlideChild } from "@parts/slide/slide-child";
-import { SP_TREE_HEADER } from "@shared/constants";
+import { stringifySpTreeHeader } from "@shared/constants";
 import {
   extractPlaceholderDefinition,
   PLACEHOLDER_TYPE_TO_KEY,
@@ -44,17 +47,19 @@ import { buildHfAttrs, parseHeaderFooter } from "../handout-master";
 import { timingDesc } from "./animation";
 import { backgroundDesc } from "./background";
 import { parseChild, stringifyChild } from "./bridge";
-import { readTransition, stringifyTransition } from "./slide";
+import { parseTransitionElement, stringifyTransition } from "./slide";
 import { DEFAULT_TEXT_STYLES, parseTextStyles, stringifyTextStyles } from "./text-list-style";
 
 // ── Types ──
 
 /** Slide master options — structured form (CT_SlideMaster). */
 export type SlideMasterDescriptorOptions = SlideMasterOptions & {
-  /** cSld/`@name`. */
-  name?: string;
+  /** cSld/`@name`; distinct from MasterDefinition.name identity. */
+  cSldName?: string;
   /** sldLayoutIdLst — layout ids + relationship ids owned by this master. */
-  slideLayoutIds?: { id: number; relationshipId: string }[];
+  slideLayoutIds?: { id?: number; relationshipId: string }[];
+  /** Presence marker for the optional sldLayoutIdLst element. */
+  slideLayoutIdsPresent?: boolean;
 };
 
 /**
@@ -77,6 +82,10 @@ function isPlaceholderChild(child: MasterChild): child is { placeholder: Standar
   return "placeholder" in child;
 }
 
+function isOrderedPlaceholderChild(child: MasterChild): child is { placeholderShape: number } {
+  return "placeholderShape" in child;
+}
+
 function isStandardPlaceholderKey(key: PlaceholderKey): key is StandardPlaceholderKey {
   return STANDARD_EMIT_KEYS.has(key);
 }
@@ -95,27 +104,45 @@ export const slideMasterDesc: CustomDescriptor<SlideMasterDescriptorOptions, Ppt
     parts.push(`<p:sldMaster ${NS}${preserveAttr}>`);
 
     // p:cSld (CT_CommonSlideData) — optional name attribute.
-    parts.push(`<p:cSld${opts.name !== undefined ? ` name="${opts.name}"` : ""}>`);
+    parts.push(`<p:cSld${opts.cSldName !== undefined ? ` name="${opts.cSldName}"` : ""}>`);
 
     // p:bg — undefined background emits the MS Office default bgRef idx="1001".
-    parts.push(buildBackgroundXml(opts.background, ctx));
+    if (opts.backgroundPresent !== false) parts.push(buildBackgroundXml(opts.background, ctx));
 
     // p:spTree — standard placeholders (scaled to slide width) + custom children.
     parts.push("<p:spTree>");
-    parts.push(SP_TREE_HEADER);
+    parts.push(
+      stringifySpTreeHeader(
+        opts.shapeTreeId,
+        opts.shapeTreeName,
+        opts.shapeTreeBlackWhiteMode,
+        opts.groupTransformless,
+        opts.shapeTreeCreationId,
+        opts.shapeTreeExt,
+      ),
+    );
     const {
       xml: placeholderXml,
       xmlByPlaceholder,
+      xmlShapes: orderedPlaceholderXml,
       nextId,
-    } = buildPlaceholderShapes(opts.placeholders, ctx);
+    } = opts.placeholderShapes
+      ? buildOrderedPlaceholderShapes(opts.placeholderShapes, ctx)
+      : buildPlaceholderShapes(opts.placeholders, ctx);
     const children = opts.children ?? [];
-    if (!children.some(isPlaceholderChild) && placeholderXml) parts.push(placeholderXml);
+    if (!opts.placeholderShapes && !children.some(isPlaceholderChild) && placeholderXml) {
+      parts.push(placeholderXml);
+    }
     // Children carry explicit cNvPr ids (starting after the placeholders) so they
     // never collide with the module-level shape id counter or the placeholders.
     let childId = nextId;
     for (const child of children) {
       if (isPlaceholderChild(child)) {
         parts.push(xmlByPlaceholder[child.placeholder] ?? "");
+        continue;
+      }
+      if (isOrderedPlaceholderChild(child)) {
+        parts.push(orderedPlaceholderXml[child.placeholderShape] ?? "");
         continue;
       }
       const xml = stringifyChild(withChildId(child, childId++), ctx);
@@ -125,7 +152,7 @@ export const slideMasterDesc: CustomDescriptor<SlideMasterDescriptorOptions, Ppt
 
     // custDataLst + controls (inside cSld per CT_CommonSlideData).
     parts.push(stringifyCustDataLst(opts.customerData));
-    parts.push(stringifyControls(opts.controls));
+    parts.push(stringifyControls(opts.controls, (picture) => stringifyChild({ picture }, ctx)));
 
     // cSld-tail extLst (p14:creationId's home) — verbatim.
     if (opts.cSldExt) parts.push(`<p:extLst>${opts.cSldExt}</p:extLst>`);
@@ -135,11 +162,15 @@ export const slideMasterDesc: CustomDescriptor<SlideMasterDescriptorOptions, Ppt
     // EG_TopLevelSlide — p:clrMap (required; defaults to the standard mapping).
     parts.push(stringifyColorMapping(opts.colorMapping, "p:clrMap"));
 
-    // p:sldLayoutIdLst (always emitted; empty when the master owns no layouts).
-    const layoutIds = (opts.slideLayoutIds ?? []).map(
-      (l) => `<p:sldLayoutId id="${l.id}" r:id="${l.relationshipId}"/>`,
-    );
-    parts.push(`<p:sldLayoutIdLst>${layoutIds.join("")}</p:sldLayoutIdLst>`);
+    // p:sldLayoutIdLst is optional: fresh masters emit an empty list, while
+    // a parsed master without the element omits it entirely.
+    if (opts.slideLayoutIds !== undefined || opts.slideLayoutIdsPresent !== false) {
+      const layoutIds = (opts.slideLayoutIds ?? []).map(
+        (l) =>
+          `<p:sldLayoutId${l.id === undefined ? "" : ` id="${l.id}"`} r:id="${l.relationshipId}"/>`,
+      );
+      parts.push(`<p:sldLayoutIdLst>${layoutIds.join("")}</p:sldLayoutIdLst>`);
+    }
 
     // p:transition (optional, after sldLayoutIdLst).
     if (opts.transition) {
@@ -159,12 +190,20 @@ export const slideMasterDesc: CustomDescriptor<SlideMasterDescriptorOptions, Ppt
     }
 
     // p:txStyles (defaults to the MS Office standard title/body/other block).
-    parts.push(
-      `<p:txStyles>${stringifyTextStyles(opts.textStyles ?? DEFAULT_TEXT_STYLES, ctx)}</p:txStyles>`,
-    );
+    if (opts.textStylesPresent !== false) {
+      parts.push(
+        `<p:txStyles>${stringifyTextStyles(opts.textStyles ?? DEFAULT_TEXT_STYLES, ctx)}</p:txStyles>`,
+      );
+    }
 
     // p:extLst — verbatim round-trip (last child per CT_SlideMaster sequence).
-    if (opts.ext) parts.push(`<p:extLst>${opts.ext}</p:extLst>`);
+    if (opts.ext !== undefined) {
+      const modified =
+        opts.extensionListModified === undefined
+          ? ""
+          : ` mod="${opts.extensionListModified ? 1 : 0}"`;
+      parts.push(`<p:extLst${modified}>${opts.ext}</p:extLst>`);
+    }
 
     parts.push("</p:sldMaster>");
     return parts.join("");
@@ -180,9 +219,10 @@ export const slideMasterDesc: CustomDescriptor<SlideMasterDescriptorOptions, Ppt
     const cSld = findChild(el, "p:cSld");
     if (cSld) {
       const name = attr(cSld, "name");
-      if (name !== undefined) result.name = name;
+      if (name !== undefined) result.cSldName = name;
 
       const bg = findChild(cSld, "p:bg");
+      if (!bg) result.backgroundPresent = false;
       if (bg) {
         const bgOpts = backgroundDesc.parse(bg, ctx);
         if (bgOpts && Object.keys(bgOpts).length > 0) result.background = bgOpts;
@@ -191,14 +231,48 @@ export const slideMasterDesc: CustomDescriptor<SlideMasterDescriptorOptions, Ppt
       // spTree — structured children + derived placeholder positions.
       const spTree = findChild(cSld, "p:spTree");
       if (spTree) {
+        const spTreeGroupProperties = findChild(spTree, "p:grpSpPr");
+        if (spTreeGroupProperties && findChild(spTreeGroupProperties, "a:xfrm") === undefined) {
+          result.groupTransformless = true;
+        }
+        const spTreeBwMode = spTreeGroupProperties?.attributes?.["bwMode"] as string | undefined;
+        if (spTreeBwMode !== undefined) result.shapeTreeBlackWhiteMode = spTreeBwMode;
+        const nvGrpSpPr = findChild(spTree, "p:nvGrpSpPr");
+        const rootCnvPr = nvGrpSpPr ? findChild(nvGrpSpPr, "p:cNvPr") : undefined;
+        const rootProperties = parseNonVisualDrawingProperties(rootCnvPr);
+        if (rootCnvPr) {
+          const shapeTreeId = attrNum(rootCnvPr, "id");
+          if (shapeTreeId !== undefined) result.shapeTreeId = shapeTreeId;
+          if (rootProperties.name !== undefined) result.shapeTreeName = rootProperties.name;
+          if (rootProperties.creationId !== undefined)
+            result.shapeTreeCreationId = rootProperties.creationId;
+          if (rootProperties.ext !== undefined) result.shapeTreeExt = rootProperties.ext;
+        }
         const children: MasterChild[] = [];
         const placeholders: MasterPlaceholderOptions = {};
+        const placeholderShapes: MasterPlaceholderShape[] = [];
         for (const child of spTree.elements ?? []) {
           if (child.name === "p:nvGrpSpPr" || child.name === "p:grpSpPr") continue;
           if (child.name === "p:sp") {
             const ph = extractPlaceholderDefinition(child, ctx, PLACEHOLDER_TYPE_TO_KEY);
             if (ph) {
               placeholders[ph.key] = ph.def;
+              if (isStandardPlaceholderKey(ph.key)) {
+                const phNvPr =
+                  findChild(child, "p:nvSpPr") !== undefined
+                    ? findChild(findChild(child, "p:nvSpPr")!, "p:nvPr")
+                    : undefined;
+                const phUserDrawn = phNvPr?.attributes?.["userDrawn"];
+                placeholderShapes.push({
+                  key: ph.key,
+                  definition: ph.def,
+                  ...(phUserDrawn !== undefined && parseOnOff(phUserDrawn)
+                    ? { userDrawn: true }
+                    : {}),
+                });
+                children.push({ placeholderShape: placeholderShapes.length - 1 });
+                continue;
+              }
               // Standard five re-emit from the map (fresh reference
               // positions); any other placeholder type stays in the spTree
               // children verbatim — the emit helper has no branch for it.
@@ -212,6 +286,7 @@ export const slideMasterDesc: CustomDescriptor<SlideMasterDescriptorOptions, Ppt
           if (parsed !== undefined) children.push(parsed);
         }
         if (children.length > 0) result.children = children;
+        if (placeholderShapes.length > 0) result.placeholderShapes = placeholderShapes;
         // Round-trip always declares the standard slots explicitly — absent
         // ones become false so a source master with no (or partial) standard
         // placeholders does not fall back to the fresh-file defaults. Other
@@ -225,7 +300,10 @@ export const slideMasterDesc: CustomDescriptor<SlideMasterDescriptorOptions, Ppt
 
       // custDataLst + controls (inside cSld).
       result.customerData = parseCustDataLst(findChild(cSld, "p:custDataLst"));
-      result.controls = parseControls(findChild(cSld, "p:controls"));
+      result.controls = parseControls(findChild(cSld, "p:controls"), (picture) => {
+        const child = parseChild(picture, ctx);
+        return child && "picture" in child ? child.picture : undefined;
+      });
 
       // cSld-tail extLst (p14:creationId's home) — verbatim, distinct from
       // the root-level extLst read below (two separate XSD slots).
@@ -246,15 +324,17 @@ export const slideMasterDesc: CustomDescriptor<SlideMasterDescriptorOptions, Ppt
       const ids = (sldLayoutIdLst.elements ?? [])
         .filter((e) => e.name === "p:sldLayoutId")
         .map((e) => ({
-          id: Number(attr(e, "id")),
+          ...(attr(e, "id") === undefined ? {} : { id: Number(attr(e, "id")) }),
           relationshipId: attr(e, "r:id") ?? "",
         }));
-      if (ids.length > 0) result.slideLayoutIds = ids;
+      result.slideLayoutIds = ids;
+      result.slideLayoutIdsPresent = true;
+    } else {
+      result.slideLayoutIdsPresent = false;
     }
 
     // p:transition.
-    const transition = findChild(el, "p:transition");
-    if (transition) result.transition = readTransition(transition, ctx);
+    result.transition = parseTransitionElement(el, ctx);
 
     // p:timing (structured entries, or verbatim inner XML fallback).
     const timing = findChild(el, "p:timing");
@@ -269,11 +349,14 @@ export const slideMasterDesc: CustomDescriptor<SlideMasterDescriptorOptions, Ppt
 
     // p:txStyles (CT_SlideMasterTextStyles — title/body/other).
     const txStyles = findChild(el, "p:txStyles");
+    if (!txStyles) result.textStylesPresent = false;
     if (txStyles) result.textStyles = parseTextStyles(txStyles, ctx);
 
     // p:extLst — verbatim inner XML for unmodeled extensions.
     const extLst = findChild(el, "p:extLst");
     if (extLst) {
+      const modified = attr(extLst, "mod");
+      if (modified !== undefined) result.extensionListModified = parseOnOff(modified) ?? false;
       const inner = stringifyXml(extLst);
       if (inner) result.ext = inner;
     }

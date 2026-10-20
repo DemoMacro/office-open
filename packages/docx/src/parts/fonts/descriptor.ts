@@ -21,8 +21,6 @@ import {
   type EmbeddedFontPartWithKey,
 } from "@parts/fonts/font-wrapper";
 
-import { DocxParseError } from "../../errors";
-
 // ── Input ──
 
 export interface FontTableInput {
@@ -71,7 +69,7 @@ function embeddedFontXml(partName: EmbeddedFontPartName, part: EmbeddedFontPartW
 }
 
 function fontXml(font: FontTableFont): string {
-  const parts: string[] = [`<w:font w:name="${escapeXml(font.name)}">`];
+  const parts: string[] = [`<w:font w:name="${escapeXml(font.nameRaw ?? font.name ?? "")}">`];
 
   // CT_Font child order (wml.xsd): altName, panose1, charset, family,
   // notTrueType, pitch, sig, embed*. Embedded fonts (carrying data) fall back
@@ -79,8 +77,12 @@ function fontXml(font: FontTableFont): string {
   // what was parsed.
   if (font.altName) parts.push(`<w:altName w:val="${escapeXml(font.altName)}"/>`);
   if (font.panose1) parts.push(`<w:panose1 w:val="${escapeXml(font.panose1)}"/>`);
-  if (font.characterSet || font.characterSetName) {
-    const valAttr = font.characterSet ? ` w:val="${escapeXml(font.characterSet)}"` : "";
+  if (font.characterSet || font.characterSetRaw || font.characterSetName) {
+    const valAttr = font.characterSetRaw
+      ? ` w:val="${escapeXml(font.characterSetRaw)}"`
+      : font.characterSet
+        ? ` w:val="${escapeXml(font.characterSet)}"`
+        : "";
     const csAttr = font.characterSetName
       ? ` w:characterSet="${escapeXml(font.characterSetName)}"`
       : "";
@@ -94,7 +96,8 @@ function fontXml(font: FontTableFont): string {
   }
   const pitch = font.pitch ?? (hasEmbeddedFace ? "variable" : undefined);
   if (pitch) parts.push(`<w:pitch w:val="${escapeXml(pitch)}"/>`);
-  const sig = font.sig ?? (hasEmbeddedFace ? DEFAULT_SIG : undefined);
+  const sig =
+    font.sig === null ? undefined : (font.sig ?? (hasEmbeddedFace ? DEFAULT_SIG : undefined));
   if (sig) {
     parts.push(
       `<w:sig w:usb0="${sig.usb0}" w:usb1="${sig.usb1}" w:usb2="${sig.usb2}" ` +
@@ -148,15 +151,8 @@ export const fontTableDesc: CustomDescriptor<
     const fonts: FontTableFont[] = [];
     const pushFont = (child: Element, requires?: string) => {
       const rawName = child.attributes?.["w:name"];
-      if (!rawName) {
-        throw new DocxParseError(
-          "Font declaration is missing required @w:name.",
-          "word/fontTable.xml",
-          "w:font",
-          "missing-required-attribute",
-        );
-      }
-      const font: FontTableFont = { name: String(rawName) };
+      const font: FontTableFont =
+        rawName === undefined ? { name: "", nameRaw: "" } : { name: String(rawName) };
       if (requires) font.requires = requires;
 
       const altNameEl = findChild(child, "w:altName");
@@ -177,13 +173,9 @@ export const fontTableDesc: CustomDescriptor<
         if (val !== undefined) {
           try {
             font.characterSet = uCharHexNumber(val);
+            if (font.characterSet !== val) font.characterSetRaw = val;
           } catch {
-            throw new DocxParseError(
-              `Invalid font character set "${val}".`,
-              "word/fontTable.xml",
-              "w:charset",
-              "invalid-enumeration",
-            );
+            font.characterSetRaw = val;
           }
         }
         const csName = attr(charsetEl, "w:characterSet");
@@ -241,7 +233,7 @@ export const fontTableDesc: CustomDescriptor<
       if (EMBED_FONT_ELEMENTS.some((name) => font[name]?.embedRid !== undefined)) {
         font.family ??= "auto";
         font.pitch ??= "variable";
-        font.sig ??= DEFAULT_SIG;
+        font.sig ??= null;
       }
 
       fonts.push(font);

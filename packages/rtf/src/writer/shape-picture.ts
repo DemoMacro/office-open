@@ -162,7 +162,9 @@ export function writeShape(shape: ShapeOptions, path: string): string {
     control("shpheight", Math.round(extents.height / EMU_PER_TWIP)),
     floating?.behindDocument ? control("shpfblwtxt", 1) : "",
     floating?.lockAnchor ? control("shplockanchor") : "",
-    floating?.zIndex === undefined ? "" : control("shpz", floating.zIndex),
+    floating?.zIndex === undefined || floating?.zIndex === null
+      ? ""
+      : control("shpz", floating.zIndex),
     wrapControls(floating?.wrap, path),
     text ? `${control("shptxt")}${rtfText(text)}` : "",
     "}",

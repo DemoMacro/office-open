@@ -1,4 +1,4 @@
-import { unzipSync } from "@office-open/core";
+import { unzipSync } from "@office-open/core/opc";
 import { describe, expect, it } from "vite-plus/test";
 
 import { generatePresentation } from "./generate";
@@ -17,6 +17,8 @@ const LAYOUT_REL =
   "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout";
 const IMAGE_REL = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image";
 const MEDIA_REL = "http://schemas.microsoft.com/office/2007/relationships/media";
+const COMMENT_AUTHORS_REL =
+  "http://schemas.openxmlformats.org/officeDocument/2006/relationships/commentAuthors";
 const PACKAGE_REL = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/package";
 const THEME_REL = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme";
 
@@ -27,9 +29,207 @@ const decodeEntry = (buffer: Uint8Array, path: string): string => {
   return new TextDecoder().decode(entry);
 };
 
+describe("same-named master round-trip", () => {
+  it("binds slides by source master path and preserves sparse layout paths", async () => {
+    const options: PresentationOptions = {
+      masters: [
+        {
+          name: "Same",
+          sourcePath: "ppt/slideMasters/slideMaster1.xml",
+          layouts: [{ type: "first", sourcePath: "ppt/slideLayouts/slideLayout1.xml" }],
+        },
+        {
+          name: "Same",
+          sourcePath: "ppt/slideMasters/slideMaster2.xml",
+          layouts: [{ type: "second", sourcePath: "ppt/slideLayouts/slideLayout13.xml" }],
+        },
+      ],
+      slides: [
+        {
+          master: "Same",
+          masterSourcePath: "ppt/slideMasters/slideMaster2.xml",
+          layout: "second",
+          layoutKey: "layout:2",
+        },
+      ],
+    };
+
+    const buffer = await generatePresentation(options);
+    const slideRels = decodeEntry(buffer, "ppt/slides/_rels/slide1.xml.rels");
+    const presentationRels = decodeEntry(buffer, "ppt/_rels/presentation.xml.rels");
+
+    expect(slideRels).toContain('Target="../slideLayouts/slideLayout13.xml"');
+    expect(presentationRels).toContain('Target="slideMasters/slideMaster2.xml"');
+    expect(presentationRels).toContain('Target="slides/slide1.xml"');
+  });
+});
+
+describe("presentation theme relationship edge", () => {
+  const optionsWithoutThemeRel = (): PresentationOptions => ({
+    masters: [
+      {
+        name: "Same",
+        sourcePath: "ppt/slideMasters/slideMaster1.xml",
+        layouts: [{ type: "first", sourcePath: "ppt/slideLayouts/slideLayout1.xml" }],
+      },
+    ],
+    slides: [
+      {
+        master: "Same",
+        masterSourcePath: "ppt/slideMasters/slideMaster1.xml",
+        layout: "first",
+        layoutKey: "layout:1",
+      },
+    ],
+  });
+
+  it("adds the default theme only for a fresh document", async () => {
+    const presentationRels = decodeEntry(
+      await generatePresentation(optionsWithoutThemeRel()),
+      "ppt/_rels/presentation.xml.rels",
+    );
+    expect(presentationRels).toContain('Type="' + THEME_REL + '"');
+  });
+
+  it("omits the theme when the source presentation had no theme edge", async () => {
+    const options = optionsWithoutThemeRel();
+    options.passthroughRelationships = [
+      {
+        source: "ppt/presentation.xml",
+        relationshipType: THEME_REL,
+        target: "theme/theme1.xml",
+        rId: "unused",
+      },
+    ];
+    options.passthroughRelationships = [];
+    const presentationRels = decodeEntry(
+      await generatePresentation(options),
+      "ppt/_rels/presentation.xml.rels",
+    );
+    expect(presentationRels).not.toContain('Type="' + THEME_REL + '"');
+  });
+
+  it("claims the source theme rId and target", async () => {
+    const options = optionsWithoutThemeRel();
+    options.passthroughRelationships = [
+      {
+        source: "ppt/presentation.xml",
+        relationshipType: THEME_REL,
+        target: "theme/theme1.xml",
+        rId: "rId9",
+      },
+    ];
+    const presentationRels = decodeEntry(
+      await generatePresentation(options),
+      "ppt/_rels/presentation.xml.rels",
+    );
+    expect(presentationRels).toContain('Id="rId9"');
+    expect(presentationRels).toContain('Target="theme/theme1.xml"');
+  });
+});
+
+describe("presentation comment-author relationship edge", () => {
+  it("does not duplicate a claimed comment-author relationship", async () => {
+    const options: PresentationOptions = {
+      commentAuthorsPresent: true,
+      passthroughRelationships: [
+        {
+          source: "ppt/presentation.xml",
+          relationshipType: COMMENT_AUTHORS_REL,
+          target: "commentAuthors.xml",
+          rId: "rId5",
+        },
+      ],
+    };
+
+    const presentationRels = decodeEntry(
+      await generatePresentation(options),
+      "ppt/_rels/presentation.xml.rels",
+    );
+
+    expect(presentationRels.match(/Type="[^"]*commentAuthors"/g)).toHaveLength(1);
+  });
+});
+
 // Source slide1.xml.rels: rId1 layout, rId2 a chart part the verbatim island
 // still references by r:id. The edit adds a modeled picture — without the
 // reserve the media batch takes rId2 and the chart claim renumbers.
+describe("unlisted master layout edges", () => {
+  it("preserves relationship edges absent from sldLayoutIdLst", async () => {
+    const options: PresentationOptions = {
+      masters: [
+        {
+          name: "Same",
+          sourcePath: "ppt/slideMasters/slideMaster1.xml",
+          layouts: [
+            { type: "first", sourcePath: "ppt/slideLayouts/slideLayout1.xml" },
+            {
+              type: "second",
+              sourcePath: "ppt/slideLayouts/slideLayout2.xml",
+              orphaned: true,
+              sourceRelationshipId: "rId9",
+              sourceOwnRels: true,
+            },
+          ],
+          slideLayoutIds: [{ id: 2147483648, relationshipId: "rId1" }],
+        },
+      ],
+      slides: [
+        {
+          master: "Same",
+          masterSourcePath: "ppt/slideMasters/slideMaster1.xml",
+          layout: "first",
+          layoutKey: "layout:1",
+        },
+      ],
+    };
+
+    const masterRels = decodeEntry(
+      await generatePresentation(options),
+      "ppt/slideMasters/_rels/slideMaster1.xml.rels",
+    );
+    expect(masterRels).toContain('Id="rId1"');
+    expect(masterRels).toContain('Id="rId9"');
+    expect(masterRels).toContain('Target="../slideLayouts/slideLayout2.xml"');
+  });
+
+  it("preserves dangling layout relationships without creating their parts", async () => {
+    const options: PresentationOptions = {
+      masters: [
+        {
+          name: "Same",
+          sourcePath: "ppt/slideMasters/slideMaster1.xml",
+          layouts: [{ type: "first", sourcePath: "ppt/slideLayouts/slideLayout1.xml" }],
+        },
+      ],
+      slides: [
+        {
+          master: "Same",
+          masterSourcePath: "ppt/slideMasters/slideMaster1.xml",
+          layout: "first",
+          layoutKey: "layout:1",
+        },
+      ],
+      passthroughRelationships: [
+        {
+          source: "ppt/slideMasters/slideMaster1.xml",
+          relationshipType: LAYOUT_REL,
+          target: "../slideLayouts/slideLayout9.xml",
+          rId: "rId9",
+          sourceTargetMissing: true,
+        },
+      ],
+    };
+
+    const buffer = await generatePresentation(options);
+    const unzipped = unzipSync(buffer);
+    const masterRels = decodeEntry(buffer, "ppt/slideMasters/_rels/slideMaster1.xml.rels");
+    expect(masterRels).toContain('Id="rId9"');
+    expect(masterRels).toContain('Target="../slideLayouts/slideLayout9.xml"');
+    expect(Object.keys(unzipped)).not.toContain("ppt/slideLayouts/slideLayout9.xml");
+  });
+});
+
 describe("slide rels with passthrough source ids and a modeled picture", () => {
   it("keeps source ids for re-used rels and allocates the picture above them", async () => {
     const options: PresentationOptions = {

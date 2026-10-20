@@ -6,17 +6,15 @@
  * @module
  */
 
+import { pickNonVisualDrawingProperties, Relationships, toUint8Array } from "@office-open/core";
+import { buildUserShapesData, chartExSpaceDesc, chartSpaceDesc } from "@office-open/core/chart";
 import {
-  RELATIONSHIP_TYPES,
   partPathToRelsPath,
-  Relationships,
-  type PassthroughRelationship,
+  RELATIONSHIP_TYPES,
   resolveRelationshipTarget,
+  type PassthroughRelationship,
   type RelationshipType,
-  pickNonVisualDrawingProperties,
-  toUint8Array,
-} from "@office-open/core";
-import { buildUserShapesData, chartSpaceDesc } from "@office-open/core/chart";
+} from "@office-open/core/opc";
 import {
   createDataModel,
   definitionId,
@@ -31,6 +29,7 @@ import {
 import { OOXML_XML_DECLARATION } from "@office-open/xml";
 import type {
   DrawingChartOptions,
+  DrawingChartExOptions,
   DrawingContentPartOptions,
   DrawingPictureOptions,
   DrawingSmartArtOptions,
@@ -102,6 +101,7 @@ export function compileSheetDrawing(
 ): string {
   const imgOpts = wsOpts.images ?? [];
   const chartOpts = wsOpts.charts ?? [];
+  const chartExOpts = wsOpts.chartExs ?? [];
   const smartArtOpts = wsOpts.smartArts ?? [];
   const webExtensionOpts = wsOpts.webExtensions ?? [];
   const shapeOpts = wsOpts.shapes ?? [];
@@ -111,6 +111,7 @@ export function compileSheetDrawing(
 
   const drawingImages: DrawingPictureOptions[] = [];
   const drawingCharts: DrawingChartOptions[] = [];
+  const drawingChartExs: DrawingChartExOptions[] = [];
   const drawingSmartArts: DrawingSmartArtOptions[] = [];
   const drawingWebExtensions: DrawingWebExtensionOptions[] = [];
   const drawingContentParts: DrawingContentPartOptions[] = [];
@@ -231,8 +232,11 @@ export function compileSheetDrawing(
       ...pickNonVisualDrawingProperties(img),
       ...(img.properties ? { properties: img.properties } : {}),
       ...(img.blackWhiteMode ? { blackWhiteMode: img.blackWhiteMode } : {}),
+      ...(img.macro !== undefined ? { macro: img.macro } : {}),
       ...(img.compression !== undefined ? { compression: img.compression } : {}),
       ...(img.sourceRectangle ? { sourceRectangle: img.sourceRectangle } : {}),
+      ...(img.fillRectangle !== undefined ? { fillRectangle: img.fillRectangle } : {}),
+      ...(img.blipFillPresent !== undefined ? { blipFillPresent: img.blipFillPresent } : {}),
       ...(img.dpi !== undefined ? { dpi: img.dpi } : {}),
       ...(img.rotWithShape !== undefined ? { rotWithShape: img.rotWithShape } : {}),
       ...(img.preferRelativeResize !== undefined
@@ -290,8 +294,11 @@ export function compileSheetDrawing(
     drawingCharts.push({
       ...pickAnchorOptions(chart),
       ...chartCnvPr,
+      frameTransform: chart.frameTransform !== false,
       ...(chart.frameExtentCx !== undefined ? { frameExtentCx: chart.frameExtentCx } : {}),
       ...(chart.frameExtentCy !== undefined ? { frameExtentCy: chart.frameExtentCy } : {}),
+      ...(chart.frameOffsetX !== undefined ? { frameOffsetX: chart.frameOffsetX } : {}),
+      ...(chart.frameOffsetY !== undefined ? { frameOffsetY: chart.frameOffsetY } : {}),
       ...(chart.frameRotation !== undefined ? { frameRotation: chart.frameRotation } : {}),
       ...(chart.frameFlipHorizontal !== undefined
         ? { frameFlipHorizontal: chart.frameFlipHorizontal }
@@ -299,6 +306,8 @@ export function compileSheetDrawing(
       ...(chart.frameFlipVertical !== undefined
         ? { frameFlipVertical: chart.frameFlipVertical }
         : {}),
+      ...(chart.frameTitle !== undefined ? { title: chart.frameTitle } : {}),
+      ...(chart.frameHidden !== undefined ? { hidden: chart.frameHidden } : {}),
       rId: chartRid,
       ...(chart.frameLocks ? { frameLocks: chart.frameLocks } : {}),
       ...(chart.macro !== undefined ? { macro: chart.macro } : {}),
@@ -308,6 +317,68 @@ export function compileSheetDrawing(
       ...(chart.shapeId !== undefined ? { shapeId: chart.shapeId } : {}),
     });
     state.globalChartIdx++;
+  }
+
+  // ChartEx parts are typed canonical parts; the frame only carries their
+  // package relationship, while companion rels keep source rIds verbatim.
+  for (const chartEx of chartExOpts) {
+    const sourceChartExRel = chartEx.sourcePath
+      ? sourceDrawingRels.find(
+          (rel) =>
+            rel.relationshipType.endsWith("/chartEx") &&
+            resolveRelationshipTarget(drawingPath, rel.target) === chartEx.sourcePath,
+        )
+      : sourceDrawingRels.find((rel) => rel.relationshipType.endsWith("/chartEx"));
+    const chartExIndex = state.globalChartExIdx;
+    const chartExPath =
+      sourceChartExRel !== undefined && chartEx.sourcePath !== undefined
+        ? chartEx.sourcePath
+        : `xl/charts/chartEx${chartExIndex + 1}.xml`;
+    const chartExTarget = sourceChartExRel?.target ?? `../charts/chartEx${chartExIndex + 1}.xml`;
+    const chartExRid = addPreservedDrawingRel(
+      sourceChartExRel,
+      RELATIONSHIP_TYPES.chartEx,
+      chartExTarget,
+    );
+
+    const chartExRels = new Relationships(chartExPath);
+    for (const sourceRel of chartEx.sourceRelationships ?? []) {
+      chartExRels.claimSourceRel(sourceRel);
+    }
+    mapping[`ChartEx${chartExIndex}`] = {
+      data: XML_DECL + (chartExSpaceDesc.stringify(chartEx, ctx) ?? ""),
+      path: chartExPath,
+    };
+    if (chartExRels.relationshipCount > 0) {
+      mapping[`ChartExRels${chartExIndex}`] = {
+        data: XML_DECL + chartExRels.serialize(),
+        path: partPathToRelsPath(chartExPath),
+      };
+    }
+
+    drawingChartExs.push({
+      ...pickAnchorOptions(chartEx),
+      ...pickNonVisualDrawingProperties(chartEx),
+      rId: chartExRid,
+      ...(chartEx.frameExtentCx !== undefined ? { frameExtentCx: chartEx.frameExtentCx } : {}),
+      ...(chartEx.frameExtentCy !== undefined ? { frameExtentCy: chartEx.frameExtentCy } : {}),
+      ...(chartEx.frameOffsetX !== undefined ? { frameOffsetX: chartEx.frameOffsetX } : {}),
+      ...(chartEx.frameOffsetY !== undefined ? { frameOffsetY: chartEx.frameOffsetY } : {}),
+      ...(chartEx.frameRotation !== undefined ? { frameRotation: chartEx.frameRotation } : {}),
+      ...(chartEx.frameFlipHorizontal !== undefined
+        ? { frameFlipHorizontal: chartEx.frameFlipHorizontal }
+        : {}),
+      ...(chartEx.frameFlipVertical !== undefined
+        ? { frameFlipVertical: chartEx.frameFlipVertical }
+        : {}),
+      ...(chartEx.frameLocks ? { frameLocks: chartEx.frameLocks } : {}),
+      ...(chartEx.macro !== undefined ? { macro: chartEx.macro } : {}),
+      ...(chartEx.fPublished !== undefined ? { fPublished: chartEx.fPublished } : {}),
+      ...(chartEx.hyperlink ? { hyperlink: chartEx.hyperlink } : {}),
+      ...(chartEx.zOrder !== undefined ? { zOrder: chartEx.zOrder } : {}),
+      ...(chartEx.shapeId !== undefined ? { shapeId: chartEx.shapeId } : {}),
+    });
+    state.globalChartExIdx++;
   }
 
   // Process SmartArt. The modeled XML parts are always rebuilt from canonical
@@ -499,6 +570,7 @@ export function compileSheetDrawing(
     {
       images: drawingImages,
       charts: drawingCharts,
+      chartExs: drawingChartExs,
       smartArts: drawingSmartArts,
       webExtensions: drawingWebExtensions,
       shapes: shapeOpts,
@@ -583,6 +655,7 @@ export function compileSheetDrawing(
   }
 
   // Insert drawing reference at its CT_Worksheet sequence position.
+  if (wsOpts.drawingReferencePresent === false) return sheetXml;
   const drawingTarget = drawingRel?.target ?? `../drawings/drawing${drawingIdx}.xml`;
   const existingDrawingRid = wsRels.idOf(RELATIONSHIP_TYPES.drawing, drawingTarget);
   const drawingRid =

@@ -13,7 +13,8 @@ export type OdfStyleFamily =
   | "table-cell"
   | "section"
   | "page-layout"
-  | "drawing-page";
+  | "drawing-page"
+  | "ruby";
 
 /** Source-only OCF member carried outside modeled canonical content. */
 export interface OdfPackageMemberOptions {

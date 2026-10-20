@@ -6,7 +6,7 @@
  * no document names or paths are emitted. Encrypted inputs are identified
  * before parsing; package errors are separated from parser errors.
  */
-import { readdir, readFile } from "node:fs/promises";
+import { readdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 import { unzipSync } from "fflate";
@@ -34,6 +34,16 @@ interface Counts {
   encrypted: number;
   packageFailure: number;
   parseFailure: number;
+}
+
+interface ParseDiagnostic {
+  file: string;
+  format: Format;
+  category: string;
+  error: string;
+  part?: string;
+  name?: string;
+  reason?: string;
 }
 
 function emptyCounts(): Counts {
@@ -100,10 +110,15 @@ function hasEncryptedManifest(data: Uint8Array): boolean {
 
 function packageCategory(message: string): string {
   const normalized = message.toLowerCase();
-  if (normalized.includes("zip") || normalized.includes("compression")) return "package:invalid";
-  if (normalized.includes("mime")) return "package:invalid";
-  if (normalized.includes("manifest")) return "package:invalid";
-  if (normalized.includes("missing content.xml")) return "package:missing-content";
+  if (normalized.includes("zip") || normalized.includes("compression"))
+    return "package:invalid-zip";
+  if (normalized.includes("unexpected odf mime type")) return "package:unsupported-mime";
+  if (normalized.includes("manifest")) return "package:invalid-manifest";
+  if (normalized.includes("cannot read content.xml")) return "package:missing-content";
+  if (normalized.includes("cannot read styles.xml")) return "package:missing-styles";
+  if (normalized.includes("embedded object subdocument is missing")) {
+    return "package:missing-embedded-object";
+  }
   return "package:other";
 }
 
@@ -128,6 +143,9 @@ function printCounts(label: string, counts: Counts): void {
 
 async function run(directory: string): Promise<void> {
   const files = await collectFiles(directory);
+  const diagnosticPath = process.argv[4];
+  const writeDiagnostics = process.argv[3] === "--diagnostics" && diagnosticPath !== undefined;
+  const diagnostics: ParseDiagnostic[] = [];
   const formats = {
     odp: emptyCounts(),
     ods: emptyCounts(),
@@ -182,6 +200,19 @@ async function run(directory: string): Promise<void> {
         totals.parseFailure++;
       }
       errorCategories.set(category, (errorCategories.get(category) ?? 0) + 1);
+      if (writeDiagnostics) {
+        diagnostics.push({
+          file,
+          format: extension,
+          category,
+          error: message,
+          ...(error instanceof OdtParseError ||
+          error instanceof OdsParseError ||
+          error instanceof OdpParseError
+            ? { part: error.part, name: error.name, reason: error.reason }
+            : {}),
+        });
+      }
     }
   }
 
@@ -198,11 +229,15 @@ async function run(directory: string): Promise<void> {
     }
   }
 
+  if (writeDiagnostics) {
+    await writeFile(diagnosticPath!, `${JSON.stringify(diagnostics, null, 2)}\n`);
+  }
+
   if (totals.parseFailure > 0) process.exitCode = 1;
 }
 
 const directory = process.argv[2];
-if (!directory || process.argv.length !== 3) {
+if (!directory || (process.argv.length !== 3 && process.argv.length !== 5)) {
   console.error("usage: tsx scripts/corpus/odf.ts <directory>");
   process.exitCode = 1;
 } else {

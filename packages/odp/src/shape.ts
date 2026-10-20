@@ -1,4 +1,4 @@
-import type { ChartSpaceOptions } from "@office-open/core";
+import type { ChartSpaceOptions, CustomGeometryOptions, PathCommand } from "@office-open/core";
 import {
   attributeString,
   childNamed,
@@ -22,15 +22,35 @@ import type {
 import type { Element } from "@office-open/xml";
 
 import { endpointConnection, parseChartFrame, parsePictureFrame } from "./drawing";
+import { OdpParseError } from "./error";
 import { unknownSlideChild } from "./presentation";
 import { parseSlideTable } from "./slide";
 import { parseParagraph, textBodyXml, type TextProperties } from "./text-run";
 
 /** Shape with preset geometry renders as draw:custom-shape + enhanced-geometry. */
 export function customShapeXml(shape: ShapeOptions, styles: string[]): string {
+  if (shape.odfControlId !== undefined) return controlShapeXml(shape, styles);
   const geometry = shape.properties?.geometry;
-  const preset =
-    geometry === undefined ? undefined : typeof geometry === "string" ? geometry : geometry.preset;
+  const preset = typeof geometry === "string" ? geometry : geometry?.preset;
+  const customGeometry = shape.properties?.customGeometry;
+  if (customGeometry)
+    return xmlElement(
+      "draw:path",
+      {
+        "draw:style-name": pushShapeStyle(
+          shape.properties?.fill ?? undefined,
+          shape.properties?.outline ?? undefined,
+          styles,
+        ),
+        "svg:x": toOdfLength(shape.x),
+        "svg:y": toOdfLength(shape.y),
+        "svg:width": toOdfLength(shape.width),
+        "svg:height": toOdfLength(shape.height),
+        "draw:name": shape.name,
+        "svg:d": customGeometryPath(customGeometry),
+      },
+      shape.textBody ? textBodyXml(shape.textBody, styles) : [],
+    );
   return xmlElement(
     "draw:custom-shape",
     {
@@ -51,9 +71,52 @@ export function customShapeXml(shape: ShapeOptions, styles: string[]): string {
         { "draw:type": preset ? presetGeometryOdf(preset) : undefined },
         [],
       ),
-      ...textBodyXml(shape.textBody, styles),
+      ...(shape.textBody ? textBodyXml(shape.textBody, styles) : []),
     ],
   );
+}
+
+/** ODF form-control placeholder restores as a positioned draw:control. */
+export function controlShapeXml(shape: ShapeOptions, styles: string[]): string {
+  return xmlElement(
+    "draw:control",
+    {
+      "draw:control": shape.odfControlId,
+      "draw:style-name": pushShapeStyle(
+        shape.properties?.fill ?? undefined,
+        shape.properties?.outline ?? undefined,
+        styles,
+      ),
+      "svg:x": toOdfLength(shape.x),
+      "svg:y": toOdfLength(shape.y),
+      "svg:width": toOdfLength(shape.width),
+      "svg:height": toOdfLength(shape.height),
+      "draw:name": shape.name,
+    },
+    shape.textBody ? textBodyXml(shape.textBody, styles) : [],
+  );
+}
+
+function customGeometryPath(geometry: CustomGeometryOptions): string {
+  return (geometry.pathList ?? [])
+    .flatMap((path) => path.commands ?? [])
+    .map((command): string => {
+      const coordinate = (value: string): string =>
+        String(Math.round((Number(value) / 360000) * 1000) / 1000);
+      if (command.command === "moveTo")
+        return `M ${coordinate(command.point.x)} ${coordinate(command.point.y)}`;
+      if (command.command === "lineTo")
+        return `L ${coordinate(command.point.x)} ${coordinate(command.point.y)}`;
+      if (command.command === "close") return "Z";
+      throw new OdpParseError(
+        "Unsupported custom geometry path command",
+        "content.xml",
+        "/draw:page/draw:path",
+        "svg:d",
+        "unsupported-path-command",
+      );
+    })
+    .join(" ");
 }
 
 export function shapeXml(shape: ShapeOptions, styles: string[]): string {
@@ -66,7 +129,13 @@ export function shapeXml(shape: ShapeOptions, styles: string[]): string {
       "svg:width": emuToLength(shape.width),
       "svg:height": emuToLength(shape.height),
     },
-    [xmlElement("draw:text-box", undefined, textBodyXml(shape.textBody, styles))],
+    [
+      xmlElement(
+        "draw:text-box",
+        undefined,
+        shape.textBody ? textBodyXml(shape.textBody, styles) : [],
+      ),
+    ],
   );
 }
 
@@ -105,19 +174,57 @@ export function toOdfLength(value: number | string | undefined): string | undefi
   return emuToLength(typeof value === "number" ? value : (lengthToEmu(value) ?? 0));
 }
 
-export function parseShape(frame: Element, textStyles: Map<string, TextProperties>): ShapeOptions {
+export function parseShape(
+  frame: Element,
+  textStyles: Map<string, TextProperties>,
+  id?: number,
+): ShapeOptions {
   const textBox = childNamed(frame, "draw:text-box");
+  const paragraphs = childrenNamed(textBox, "text:p");
   return {
     name: attributeString(frame, "draw:name"),
     x: lengthToEmu(attributeString(frame, "svg:x")),
     y: lengthToEmu(attributeString(frame, "svg:y")),
     width: lengthToEmu(attributeString(frame, "svg:width")),
     height: lengthToEmu(attributeString(frame, "svg:height")),
-    textBody: {
-      paragraphs: childrenNamed(textBox, "text:p").map((paragraph) =>
-        parseParagraph(paragraph, textStyles),
-      ),
+    ...(id === undefined ? {} : { id }),
+    ...(paragraphs.length > 0
+      ? {
+          textBody: {
+            paragraphs: paragraphs.map((paragraph) => parseParagraph(paragraph, textStyles)),
+          },
+        }
+      : {}),
+  };
+}
+
+/** draw:control maps to a typed pptx shape with its ODF form-control overlay. */
+export function parseControlSlideShape(
+  element: Element,
+  textStyles: Map<string, TextProperties>,
+  graphicStyles: Map<string, GraphicStyle>,
+): ShapeOptions {
+  const graphic = graphicStyles.get(attributeString(element, "draw:style-name") ?? "");
+  const paragraphs = childrenNamed(element, "text:p");
+  return {
+    odfControlId: attributeString(element, "draw:control"),
+    name: attributeString(element, "draw:name"),
+    x: lengthToEmu(attributeString(element, "svg:x")),
+    y: lengthToEmu(attributeString(element, "svg:y")),
+    width: lengthToEmu(attributeString(element, "svg:width")),
+    height: lengthToEmu(attributeString(element, "svg:height")),
+    properties: {
+      geometry: "rect",
+      fill: graphicFill(graphic),
+      outline: graphicOutline(graphic),
     },
+    ...(paragraphs.length > 0
+      ? {
+          textBody: {
+            paragraphs: paragraphs.map((paragraph) => parseParagraph(paragraph, textStyles)),
+          },
+        }
+      : {}),
   };
 }
 
@@ -159,6 +266,51 @@ export function parseCustomSlideShape(
   };
 }
 
+/** ODF primitive/path shapes map onto the shared pptx shape model. */
+export function parsePrimitiveSlideShape(
+  element: Element,
+  textStyles: Map<string, TextProperties>,
+  graphicStyles: Map<string, GraphicStyle>,
+): ShapeOptions {
+  const graphic = graphicStyles.get(attributeString(element, "draw:style-name") ?? "");
+  const fill = graphicFill(graphic);
+  const outline = graphicOutline(graphic);
+  const paragraphs = childrenNamed(element, "text:p");
+  const x = lengthToEmu(attributeString(element, "svg:x"));
+  const y = lengthToEmu(attributeString(element, "svg:y"));
+  const customGeometry = primitiveGeometry(element);
+  const geometry =
+    element.name === "draw:rect"
+      ? ("rect" as const)
+      : element.name === "draw:ellipse" || element.name === "draw:circle"
+        ? ("ellipse" as const)
+        : undefined;
+  return {
+    name: attributeString(element, "draw:name"),
+    x,
+    y,
+    width: lengthToEmu(attributeString(element, "svg:width")),
+    height: lengthToEmu(attributeString(element, "svg:height")),
+    ...(paragraphs.length > 0
+      ? {
+          textBody: {
+            paragraphs: paragraphs.map((paragraph) => parseParagraph(paragraph, textStyles)),
+          },
+        }
+      : {}),
+    ...(geometry || fill || outline || customGeometry
+      ? {
+          properties: {
+            ...(geometry ? { geometry } : {}),
+            ...(customGeometry ? { customGeometry } : {}),
+            ...(fill ? { fill } : {}),
+            ...(outline ? { outline } : {}),
+          },
+        }
+      : {}),
+  };
+}
+
 /** Parses a draw:connector back to a pptx connector child. */
 export function parseConnector(element: Element): { connector: ConnectorOptions } {
   return {
@@ -189,6 +341,7 @@ export function parseLine(element: Element): { line: LineShapeOptions } {
 export function parseGroup(
   element: Element,
   textStyles: Map<string, TextProperties>,
+  graphicStyles: Map<string, GraphicStyle>,
   columnWidths: Map<string, number>,
   binaries: Record<string, Uint8Array>,
   chartPool: Map<string, ChartSpaceOptions>,
@@ -204,10 +357,24 @@ export function parseGroup(
       if (childNamed(child, "draw:text-box")) return [{ shape: parseShape(child, textStyles) }];
       throw unknownSlideChild(child, "/draw:g");
     }
+    if (child.name === "draw:custom-shape")
+      return [{ shape: parseCustomSlideShape(child, textStyles, graphicStyles) }];
+    if (child.name === "draw:control")
+      return [{ shape: parseControlSlideShape(child, textStyles, graphicStyles) }];
     if (child.name === "draw:line") return [parseLine(child)];
+    if (isPrimitiveShape(child))
+      return [{ shape: parsePrimitiveSlideShape(child, textStyles, graphicStyles) }];
     if (child.name === "draw:connector") return [parseConnector(child)];
     if (child.name === "draw:g")
-      return parseGroup(child, textStyles, columnWidths, binaries, chartPool, usedBinaryPaths);
+      return parseGroup(
+        child,
+        textStyles,
+        graphicStyles,
+        columnWidths,
+        binaries,
+        chartPool,
+        usedBinaryPaths,
+      );
     if (child.name === "table:table") return [parseSlideTable(child, textStyles, columnWidths)];
     throw unknownSlideChild(child, "/draw:g");
   });
@@ -219,4 +386,310 @@ export function parseGroup(
       },
     },
   ];
+}
+
+function isPrimitiveShape(element: Element): boolean {
+  return (
+    element.name === "draw:rect" ||
+    element.name === "draw:circle" ||
+    element.name === "draw:ellipse" ||
+    element.name === "draw:path" ||
+    element.name === "draw:polygon" ||
+    element.name === "draw:polyline"
+  );
+}
+
+function primitiveGeometry(element: Element): CustomGeometryOptions | undefined {
+  if (element.name === "draw:path")
+    return {
+      pathList: [{ commands: parseSvgPath(attributeString(element, "svg:d") ?? "") }],
+    };
+  if (element.name === "draw:polygon" || element.name === "draw:polyline")
+    return {
+      pathList: [
+        {
+          commands: parsePointList(
+            attributeString(element, "draw:points") ?? attributeString(element, "svg:points") ?? "",
+            element.name === "draw:polygon",
+          ),
+        },
+      ],
+    };
+  return undefined;
+}
+
+function parseSvgPath(path: string): PathCommand[] {
+  const tokens = path.match(/[MLHVCSQTAZmlhvcsqtaz]|-?(?:\d+(?:\.\d+)?|\.\d+)(?:[eE][+-]?\d+)?/gu);
+  if (!tokens) throw invalidPrimitivePath();
+  const commands: PathCommand[] = [];
+  let index = 0;
+  let command:
+    | "M"
+    | "L"
+    | "H"
+    | "V"
+    | "C"
+    | "S"
+    | "Q"
+    | "T"
+    | "A"
+    | "Z"
+    | "m"
+    | "l"
+    | "h"
+    | "v"
+    | "c"
+    | "s"
+    | "q"
+    | "t"
+    | "a"
+    | "z"
+    | undefined;
+  let currentX = 0;
+  let currentY = 0;
+  let startX = 0;
+  let startY = 0;
+  let previousCubic: { x: number; y: number } | undefined;
+  let previousQuad: { x: number; y: number } | undefined;
+  const point = (x: number, y: number, relative: boolean): { x: string; y: string } => {
+    const left = relative ? currentX + x : x;
+    const top = relative ? currentY + y : y;
+    return {
+      x: String(lengthToEmu(`${left}cm`) ?? 0),
+      y: String(lengthToEmu(`${top}cm`) ?? 0),
+    };
+  };
+  while (index < tokens.length) {
+    const token = tokens[index]!;
+    if (/^[MLHVCSQTAZmlhvcsqtaz]$/u.test(token)) {
+      if (token === "Z" || token === "z") {
+        commands.push({ command: "close" });
+        currentX = startX;
+        currentY = startY;
+        command = undefined;
+      } else {
+        command = token as typeof command;
+      }
+      index++;
+      continue;
+    }
+    if (!command) throw invalidPrimitivePath();
+    const relative = command === command.toLowerCase();
+    const argumentCounts = { M: 2, L: 2, H: 1, V: 1, C: 6, S: 4, Q: 4, T: 2, A: 7 };
+    const count = argumentCounts[command.toUpperCase() as keyof typeof argumentCounts] ?? 0;
+    if (count === 0) throw invalidPrimitivePath();
+    const values: number[] = [];
+    for (let position = 0; position < count; position++) {
+      const value = Number(tokens[index]);
+      if (!Number.isFinite(value)) throw invalidPrimitivePath();
+      values.push(value);
+      index++;
+    }
+    const upper = command.toUpperCase() as "M" | "L" | "H" | "V" | "C" | "S" | "Q" | "T" | "A";
+    if (upper === "M") {
+      const [x, y] = [values[0]!, values[1]!];
+      const target = point(x, y, relative);
+      currentX = relative ? currentX + x : x;
+      currentY = relative ? currentY + y : y;
+      startX = currentX;
+      startY = currentY;
+      commands.push({ command: "moveTo", point: target });
+      command = relative ? "l" : "L";
+    } else if (upper === "L" || upper === "H" || upper === "V") {
+      const x = upper === "V" ? currentX : relative ? currentX + values[0]! : values[0]!;
+      const y =
+        upper === "H"
+          ? currentY
+          : relative
+            ? currentY + (upper === "V" ? values[0]! : values[1]!)
+            : upper === "V"
+              ? values[0]!
+              : values[1]!;
+      currentX = x;
+      currentY = y;
+      commands.push({ command: "lineTo", point: point(x, y, false) });
+    } else if (upper === "C" || upper === "S") {
+      const first =
+        upper === "C"
+          ? {
+              x: relative ? currentX + values[0]! : values[0]!,
+              y: relative ? currentY + values[1]! : values[1]!,
+            }
+          : {
+              x: previousCubic ? 2 * currentX - previousCubic.x : currentX,
+              y: previousCubic ? 2 * currentY - previousCubic.y : currentY,
+            };
+      const second = {
+        x: relative ? currentX + values[upper === "C" ? 2 : 0]! : values[upper === "C" ? 2 : 0]!,
+        y: relative ? currentY + values[upper === "C" ? 3 : 1]! : values[upper === "C" ? 3 : 1]!,
+      };
+      const end = {
+        x: relative ? currentX + values[upper === "C" ? 4 : 2]! : values[upper === "C" ? 4 : 2]!,
+        y: relative ? currentY + values[upper === "C" ? 5 : 3]! : values[upper === "C" ? 5 : 3]!,
+      };
+      commands.push({
+        command: "cubicBezTo",
+        points: [
+          point(first.x, first.y, false),
+          point(second.x, second.y, false),
+          point(end.x, end.y, false),
+        ],
+      });
+      previousCubic = second;
+      previousQuad = undefined;
+      currentX = end.x;
+      currentY = end.y;
+    } else if (upper === "Q" || upper === "T") {
+      const control =
+        upper === "Q"
+          ? {
+              x: relative ? currentX + values[0]! : values[0]!,
+              y: relative ? currentY + values[1]! : values[1]!,
+            }
+          : {
+              x: previousQuad ? 2 * currentX - previousQuad.x : currentX,
+              y: previousQuad ? 2 * currentY - previousQuad.y : currentY,
+            };
+      const end = {
+        x: relative ? currentX + values[upper === "Q" ? 2 : 0]! : values[upper === "Q" ? 2 : 0]!,
+        y: relative ? currentY + values[upper === "Q" ? 3 : 1]! : values[upper === "Q" ? 3 : 1]!,
+      };
+      commands.push({
+        command: "quadBezTo",
+        points: [point(control.x, control.y, false), point(end.x, end.y, false)],
+      });
+      previousQuad = control;
+      previousCubic = undefined;
+      currentX = end.x;
+      currentY = end.y;
+    } else {
+      const [radiusX, radiusY, rotation, large, sweep, x, y] = values;
+      const end = { x: relative ? currentX + x! : x!, y: relative ? currentY + y! : y! };
+      commands.push(
+        ...arcToCubic(
+          currentX,
+          currentY,
+          radiusX!,
+          radiusY!,
+          rotation!,
+          large! !== 0,
+          sweep! !== 0,
+          end.x,
+          end.y,
+        ),
+      );
+      previousCubic = undefined;
+      previousQuad = undefined;
+      currentX = end.x;
+      currentY = end.y;
+    }
+  }
+  if (commands.length === 0) throw invalidPrimitivePath();
+  return commands;
+}
+
+function arcToCubic(
+  startX: number,
+  startY: number,
+  radiusX: number,
+  radiusY: number,
+  rotationDegrees: number,
+  largeArc: boolean,
+  sweep: boolean,
+  endX: number,
+  endY: number,
+): PathCommand[] {
+  if (startX === endX && startY === endY) return [];
+  const phi = (rotationDegrees * Math.PI) / 180;
+  const cos = Math.cos(phi);
+  const sin = Math.sin(phi);
+  let rx = Math.abs(radiusX);
+  let ry = Math.abs(radiusY);
+  const left = (cos * (startX - endX)) / 2 + (sin * (startY - endY)) / 2;
+  const top = (-sin * (startX - endX)) / 2 + (cos * (startY - endY)) / 2;
+  const scale = (left * left) / (rx * rx) + (top * top) / (ry * ry);
+  if (scale > 1) {
+    const factor = Math.sqrt(scale);
+    rx *= factor;
+    ry *= factor;
+  }
+  const denominator = rx * rx * top * top + ry * ry * left * left;
+  const factor = Math.sqrt(Math.max(0, (rx * rx * ry * ry - denominator) / denominator));
+  const sign = largeArc === sweep ? -1 : 1;
+  const centerLeft = (sign * factor * rx * top) / ry;
+  const centerTop = (-sign * factor * ry * left) / rx;
+  const centerX = cos * centerLeft - sin * centerTop + (startX + endX) / 2;
+  const centerY = sin * centerLeft + cos * centerTop + (startY + endY) / 2;
+  const angle = (x: number, y: number): number =>
+    Math.atan2((y - centerY) / ry, (x - centerX) / rx);
+  let theta = angle(startX, startY);
+  let delta = angle(endX, endY) - theta;
+  if (!sweep && delta > 0) delta -= 2 * Math.PI;
+  if (sweep && delta < 0) delta += 2 * Math.PI;
+  const segments = Math.ceil(Math.abs(delta) / (Math.PI / 2));
+  const commands: PathCommand[] = [];
+  for (let segment = 1; segment <= segments; segment++) {
+    const start = theta + (delta * (segment - 1)) / segments;
+    const end = theta + (delta * segment) / segments;
+    const alpha = (4 / 3) * Math.tan((end - start) / 4);
+    const local = (angleValue: number, radiusFactor: number): { x: number; y: number } => ({
+      x: centerX + rx * Math.cos(angleValue) - alpha * radiusFactor * rx * Math.sin(angleValue),
+      y: centerY + ry * Math.sin(angleValue) + alpha * radiusFactor * ry * Math.cos(angleValue),
+    });
+    const first = local(start, 1);
+    const second = local(end, -1);
+    const target = segment === segments ? { x: endX, y: endY } : local(end, 0);
+    commands.push({
+      command: "cubicBezTo",
+      points: [
+        {
+          x: String(lengthToEmu(`${first.x}cm`) ?? 0),
+          y: String(lengthToEmu(`${first.y}cm`) ?? 0),
+        },
+        {
+          x: String(lengthToEmu(`${second.x}cm`) ?? 0),
+          y: String(lengthToEmu(`${second.y}cm`) ?? 0),
+        },
+        {
+          x: String(lengthToEmu(`${target.x}cm`) ?? 0),
+          y: String(lengthToEmu(`${target.y}cm`) ?? 0),
+        },
+      ],
+    });
+  }
+  return commands;
+}
+
+function parsePointList(points: string, close: boolean): PathCommand[] {
+  const values = points
+    .split(/[ ,;]+/u)
+    .filter(Boolean)
+    .map(Number);
+  if (
+    values.length < 4 ||
+    values.length % 2 !== 0 ||
+    values.some((value) => !Number.isFinite(value))
+  )
+    throw invalidPrimitivePath();
+  const commands: PathCommand[] = [];
+  for (let index = 0; index < values.length; index += 2) {
+    commands.push({
+      command: index === 0 ? "moveTo" : "lineTo",
+      point: {
+        x: String(lengthToEmu(`${values[index]!}cm`) ?? 0),
+        y: String(lengthToEmu(`${values[index + 1]!}cm`) ?? 0),
+      },
+    });
+  }
+  return close ? [...commands, { command: "close" }] : commands;
+}
+
+function invalidPrimitivePath(): OdpParseError {
+  return new OdpParseError(
+    "Invalid ODF primitive shape geometry",
+    "content.xml",
+    "/draw:page",
+    "svg:points",
+    "invalid-primitive-geometry",
+  );
 }

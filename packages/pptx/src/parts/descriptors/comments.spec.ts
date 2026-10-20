@@ -59,6 +59,18 @@ describe("commentAuthorsDesc round-trip", () => {
     ]);
     expect(result[0]?.ext).toBe('<p:ext uri="{TEST}"/>');
   });
+
+  it("preserves an empty author extension list", () => {
+    const result = roundTrip([
+      { id: 0, name: "Alice", initials: "AL", clrIdx: 0, lastIdx: 1, ext: "" },
+    ]);
+    expect(result[0]?.ext).toBe("");
+  });
+
+  it("preserves zero-value and empty author attributes", () => {
+    const result = roundTrip([{ id: 0, name: "andersk", initials: "", clrIdx: 0, lastIdx: 2 }]);
+    expect(result[0]).toEqual({ id: 0, name: "andersk", initials: "", clrIdx: 0, lastIdx: 2 });
+  });
 });
 
 // ── slideCommentsDesc ──
@@ -82,6 +94,13 @@ describe("slideCommentsDesc round-trip", () => {
     expect(result[0]?.x).toBe(100);
     expect(result[0]?.y).toBe(200);
     expect(result[0]?.text).toBe("Hello");
+  });
+
+  it("round-trips optional comment extents", () => {
+    const comments: CommentEntry[] = [
+      { authorId: 0, idx: 1, x: 100, y: 200, width: 300, height: 400, text: "Hello" },
+    ];
+    expect(roundTrip(comments)).toEqual(comments);
   });
 
   it("round-trips empty comment text", () => {

@@ -27,7 +27,19 @@ export interface TableBordersOptions {
   end?: BorderOptions;
   insideHorizontal?: BorderOptions;
   insideVertical?: BorderOptions;
+  /** Source child order; omit it to write the XSD sequence order. */
+  order?: TableBorderSide[];
 }
+
+export type TableBorderSide =
+  | "top"
+  | "start"
+  | "left"
+  | "bottom"
+  | "end"
+  | "right"
+  | "insideHorizontal"
+  | "insideVertical";
 
 const NONE_BORDER: BorderOptions = {
   color: "auto",

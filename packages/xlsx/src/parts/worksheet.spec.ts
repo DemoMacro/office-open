@@ -99,6 +99,8 @@ describe("Worksheet", () => {
         state: "frozen",
         topLeftCell: "A1",
         activePane: "topLeft",
+        activePanePresent: true,
+        statePresent: true,
       });
       expect(buildWorksheetXml(result, {})).toContain(
         '<pane ySplit="0" xSplit="0" topLeftCell="A1" activePane="topLeft" state="frozen"/>',
@@ -115,6 +117,21 @@ describe("Worksheet", () => {
       );
       expect(result.freezePanes).toMatchObject({ state: "frozenSplit" });
       expect(buildWorksheetXml(result, {})).toContain('state="frozenSplit"');
+    });
+
+    it("preserves omitted pane defaults on round-trip", () => {
+      const result = parseSource(
+        `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">` +
+          `<sheetViews><sheetView workbookViewId="0"><pane xSplit="1" ySplit="1"/></sheetView></sheetViews>` +
+          `<sheetData/></worksheet>`,
+      );
+      expect(result.freezePanes).toEqual({
+        row: 1,
+        col: 1,
+        activePanePresent: false,
+        statePresent: false,
+      });
+      expect(buildWorksheetXml(result, {})).toContain('<pane ySplit="1" xSplit="1"/>');
     });
 
     it("keeps split shorthand compatible with explicit state", () => {
@@ -371,6 +388,22 @@ describe("Worksheet", () => {
       const xml = buildWorksheetXml(result, {});
       expect(xml).toContain("<x12ac:list>1,&quot;2,3&quot;,4</x12ac:list>");
       expect(xml).toContain("<mc:Fallback><formula1>&quot;1,2,3,4&quot;</formula1></mc:Fallback>");
+    });
+
+    it("preserves data validation container identity", () => {
+      const result = parseSource(
+        `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">` +
+          `<dataValidations disablePrompts="0" xWindow="0" yWindow="0">` +
+          `<dataValidation type="whole" sqref="A1"><formula1>1</formula1></dataValidation>` +
+          `</dataValidations></worksheet>`,
+      );
+      expect(result.dataValidationsCount).toBe(false);
+      expect(result.dataValidationsDisablePrompts).toBe(false);
+      expect(result.dataValidationsXWindow).toBe(0);
+      expect(result.dataValidationsYWindow).toBe(0);
+      const xml = buildWorksheetXml(result, {});
+      expect(xml).toContain('<dataValidations disablePrompts="0" xWindow="0" yWindow="0">');
+      expect(xml).not.toContain("count=");
     });
 
     it("round-trips explicit sheetView defaults", () => {
@@ -857,6 +890,26 @@ describe("Worksheet", () => {
       const result = worksheetDesc.parse(el, {} as unknown as ReadContext);
       expect(result.pageSetup?.paperWidth).toBe("210mm");
       expect(result.pageSetup?.paperHeight).toBe("297mm");
+    });
+
+    it("round-trips an empty <pageSetup/>", () => {
+      const xml = buildWorksheetXml(
+        { pageSetup: { pageSetupPresent: true }, rows: [{ cells: [{ value: "A" }] }] },
+        {},
+      );
+      expect(xml).toContain("<pageSetup/>");
+      const el = parseXml(xml).elements?.[0];
+      if (!el) throw new Error("parsed document has no root element");
+      const result = worksheetDesc.parse(el, {} as unknown as ReadContext);
+      expect(result.pageSetup?.pageSetupPresent).toBe(true);
+    });
+
+    it("does not conjure pageSetup from pageSetUpPr flags alone", () => {
+      const xml = buildWorksheetXml(
+        { pageSetup: { fitToPage: true }, rows: [{ cells: [{ value: "A" }] }] },
+        {},
+      );
+      expect(xml).not.toContain("<pageSetup");
     });
   });
 
@@ -1712,6 +1765,21 @@ describe("Worksheet", () => {
       expect(xml).toContain('<pane topLeftCell="A16"/>');
       expect(xml).not.toContain("ySplit=");
       expect(xml).not.toContain("xSplit=");
+    });
+
+    it("preserves explicit custom pane relationship defaults", () => {
+      const xml = buildWorksheetXml(
+        {
+          customSheetViews: [
+            {
+              guid: "A1B2C3",
+              pane: { activePanePresent: true, statePresent: true },
+            },
+          ],
+        },
+        {},
+      );
+      expect(xml).toContain('<pane activePane="topLeft" state="frozen"/>');
     });
 
     it("round-trips oleObjects and controls", () => {

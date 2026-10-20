@@ -60,6 +60,30 @@ import type { TableLookOptions } from "./table-look";
  */
 export type TableJustification = "start" | "center" | "end" | "left" | "right";
 
+/**
+ * Child order for `w:tblPr`. Rare legacy files can write valid properties in a
+ * non-XSD sequence; generated output uses the XSD sequence when omitted.
+ */
+export type TablePropertyOrder =
+  | "style"
+  | "float"
+  | "overlap"
+  | "visuallyRightToLeft"
+  | "styleRowBandSize"
+  | "styleColBandSize"
+  | "width"
+  | "alignment"
+  | "cellSpacing"
+  | "indent"
+  | "borders"
+  | "shading"
+  | "layout"
+  | "margins"
+  | "tableLook"
+  | "caption"
+  | "description"
+  | "revision";
+
 export interface TablePropertiesOptionsBase {
   width?: TableWidthProperties;
   indent?: TableWidthProperties;
@@ -83,6 +107,8 @@ export interface TablePropertiesOptionsBase {
   caption?: string;
   /** Table description for accessibility (tblDescription) */
   description?: string;
+  /** Source child order for w:tblPr; round-trip only for non-XSD sequences. */
+  propertyOrder?: TablePropertyOrder[];
 }
 
 export type TablePropertiesChangeOptions = TablePropertiesOptions & ChangedProperties;

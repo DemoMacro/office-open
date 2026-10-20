@@ -15,6 +15,7 @@ import type { Percentage } from "../../util/values";
 import { stripColorHashPrefix } from "../../util/values";
 import { solidFillDesc } from "../color/color-descriptors";
 import { gradientFillDesc, patternFillDesc } from "../fill/fill-descriptors";
+import { parsePositivePercentage } from "./custom-dash";
 import type { DashStop } from "./custom-dash";
 import type { LineEndOptions } from "./line-end";
 import type { OutlineOptions } from "./outline";
@@ -96,6 +97,8 @@ export function stringifyLineProperties(
   // Dash
   if (opts.customDash) {
     parts.push(stringifyCustomDash(opts.customDash));
+  } else if (opts.dashPresent) {
+    parts.push("<a:prstDash/>");
   } else if (opts.dash) {
     parts.push(`<a:prstDash val="${escapeXml(opts.dash)}"/>`);
   }
@@ -103,7 +106,8 @@ export function stringifyLineProperties(
   // Join
   if (opts.join) {
     if (opts.join === "miter" && opts.miterLimit !== undefined) {
-      parts.push(`<a:miter lim="${opts.miterLimit}"/>`);
+      const limit = typeof opts.miterLimit === "string" ? opts.miterLimit : opts.miterLimit * 1000;
+      parts.push(`<a:miter lim="${limit}"/>`);
     } else {
       parts.push(`<a:${opts.join}/>`);
     }
@@ -171,17 +175,15 @@ export const outlineDesc: CustomDescriptor<OutlineOptions> = {
     const prstDash = findChild(el, "a:prstDash");
     if (prstDash?.attributes?.["val"])
       result.dash = String(prstDash.attributes["val"]) as OutlineOptions["dash"];
+    else if (prstDash) result.dashPresent = true;
     const custDash = findChild(el, "a:custDash");
     if (custDash?.elements) {
       result.customDash = custDash.elements
         .filter((c) => c.name === "a:ds")
-        .map(
-          (c) =>
-            ({
-              d: String(c.attributes?.["d"] ?? ""),
-              sp: String(c.attributes?.["sp"] ?? ""),
-            }) as DashStop,
-        );
+        .map((c) => ({
+          d: parsePositivePercentage(String(c.attributes?.["d"] ?? "")),
+          sp: parsePositivePercentage(String(c.attributes?.["sp"] ?? "")),
+        }));
     }
 
     // Join
@@ -192,7 +194,8 @@ export const outlineDesc: CustomDescriptor<OutlineOptions> = {
       if (miter) {
         result.join = "miter";
         const limit = String(miter.attributes?.["lim"] ?? "");
-        if (limit) result.miterLimit = limit.endsWith("%") ? (limit as Percentage) : Number(limit);
+        if (limit)
+          result.miterLimit = limit.endsWith("%") ? (limit as Percentage) : Number(limit) / 1000;
       }
     }
 

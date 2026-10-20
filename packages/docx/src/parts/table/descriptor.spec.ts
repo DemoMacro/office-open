@@ -27,6 +27,16 @@ const readCtx = {
   getRaw: () => undefined,
 } as unknown as ReadContext;
 
+function applyTableOrderCase(): void {
+  const opts = tableDesc.parse(parseXml(tableOrderSource()).elements![0]!, readCtx);
+  expect(opts.propertyOrder).toEqual(["width", "float", "overlap", "layout"]);
+
+  const out = tableDesc.stringify(opts, writeCtx)!;
+  expect(out.indexOf("<w:tblW")).toBeLessThan(out.indexOf("<w:tblpPr"));
+  expect(out.indexOf("<w:tblpPr")).toBeLessThan(out.indexOf("<w:tblOverlap"));
+  expect(out.indexOf("<w:tblOverlap")).toBeLessThan(out.indexOf("<w:tblLayout"));
+}
+
 function roundTrip(opts: TableOptions) {
   const xml = tableDesc.stringify(opts, writeCtx)!;
   const doc = parseXml(xml);
@@ -42,6 +52,16 @@ function roundTripSource(source: string) {
   return tableDesc.parse(el, readCtx);
 }
 
+function tableOrderSource(): string {
+  return [
+    `<w:tbl xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">`,
+    `<w:tblPr><w:tblW w:w="0" w:type="auto"/><w:tblpPr w:tblpX="0"/>`,
+    `<w:tblOverlap w:val="never"/><w:tblLayout w:type="fixed"/></w:tblPr>`,
+    `<w:tblGrid><w:gridCol w:w="100"/></w:tblGrid>`,
+    `<w:tr><w:tc><w:tcPr/><w:p/></w:tc></w:tr></w:tbl>`,
+  ].join("");
+}
+
 describe("tableDesc round-trip", () => {
   it("round-trips a simple table", () => {
     const result = roundTrip({
@@ -49,6 +69,19 @@ describe("tableDesc round-trip", () => {
     });
     expect(result.rows).toHaveLength(1);
     expect((result.rows[0] as TableRowOptions).cells).toHaveLength(1);
+  });
+
+  it("applies duplicate cell-properties containers last-one-wins", () => {
+    const source =
+      `<w:tbl xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">` +
+      `<w:tblGrid><w:gridCol w:w="100"/></w:tblGrid>` +
+      `<w:tr><w:tc><w:tcPr><w:tcW w:w="100" w:type="dxa"/></w:tcPr>` +
+      `<w:tcPr><w:tcBorders><w:bottom w:val="single"/></w:tcBorders><w:tcW w:w="200" w:type="dxa"/></w:tcPr>` +
+      `<w:p/></w:tc></w:tr></w:tbl>`;
+    const result = roundTripSource(source);
+    const cell = (result.rows[0] as TableRowOptions).cells[0] as TableCellOptions;
+    expect(cell.width).toEqual({ size: 200, type: "twips" });
+    expect(cell.borders?.bottom?.style).toBe("single");
   });
 
   it("preserves bare row and cell cnfStyle elements", () => {
@@ -63,6 +96,50 @@ describe("tableDesc round-trip", () => {
     const row = result.rows[0] as TableRowOptions;
     expect(row.cnfStyle).toEqual({});
     expect((row.cells[0] as TableCellOptions).cnfStyle).toEqual({});
+  });
+
+  it("preserves permission markers between row cells", () => {
+    const source =
+      `<w:tbl xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">` +
+      `<w:tblGrid><w:gridCol w:w="100"/></w:tblGrid>` +
+      `<w:tr><w:permStart w:id="0" w:edGrp="everyone"/><w:tc><w:p/></w:tc>` +
+      `<w:permEnd w:id="0"/></w:tr></w:tbl>`;
+    const result = roundTripSource(source);
+    const row = result.rows[0] as TableRowOptions;
+    expect(row.cells).toEqual([
+      { permStart: { id: 0, editGroup: "everyone" } },
+      { children: [{ paragraph: {} }] },
+      { permEnd: 0 },
+    ]);
+    expect(tableDesc.stringify(result, writeCtx)).toContain(
+      '<w:permStart w:id="0" w:edGrp="everyone"/>',
+    );
+  });
+
+  it("round-trips all move range markers between rows", () => {
+    const source =
+      `<w:tbl xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">` +
+      `<w:tblGrid><w:gridCol w:w="100"/></w:tblGrid>` +
+      `<w:moveFromRangeStart w:id="1" w:name="source" w:author="A" w:date="2020"/>` +
+      `<w:moveFromRangeEnd w:id="1" w:displacedByCustomXml="next"/>` +
+      `<w:moveToRangeStart w:id="2" w:colFirst="0" w:colLast="1"/>` +
+      `<w:moveToRangeEnd w:id="2"/>` +
+      `<w:tr><w:tc><w:p/></w:tc></w:tr></w:tbl>`;
+    const result = roundTripSource(source);
+    expect(result.rows).toEqual([
+      { moveFromRangeStart: { id: 1, name: "source", author: "A", date: "2020" } },
+      { moveFromRangeEnd: { id: 1, displacedByCustomXml: "next" } },
+      { moveToRangeStart: { id: 2, colFirst: 0, colLast: 1 } },
+      { moveToRangeEnd: { id: 2 } },
+      { cells: [{ children: [{ paragraph: {} }] }] },
+    ]);
+    const xml = tableDesc.stringify(result, writeCtx)!;
+    expect(xml).toContain(
+      '<w:moveFromRangeStart w:id="1" w:name="source" w:author="A" w:date="2020"/>',
+    );
+    expect(xml).toContain('<w:moveFromRangeEnd w:id="1" w:displacedByCustomXml="next"/>');
+    expect(xml).toContain('<w:moveToRangeStart w:id="2" w:colFirst="0" w:colLast="1"/>');
+    expect(xml).toContain('<w:moveToRangeEnd w:id="2"/>');
   });
 
   it("round-trips table style", () => {
@@ -167,14 +244,60 @@ describe("tableDesc round-trip", () => {
     expect(xml).toContain('w:val="weavingBraid"');
   });
 
-  it("drops border sides without a w:val", () => {
+  it("keeps the borders container when a side lacks a w:val", () => {
     const xml =
       '<w:tbl><w:tblPr><w:tblBorders><w:top w:sz="4"/></w:tblBorders></w:tblPr>' +
       "<w:tblGrid/><w:tr><w:tc><w:p/></w:tc></w:tr></w:tbl>";
     const el = parseXml(xml).elements?.[0];
     if (!el) throw new Error("parsed document has no root element");
     const result = tableDesc.parse(el, readCtx);
-    expect(result.borders).toBeUndefined();
+    expect(result.borders).toEqual({});
+  });
+
+  it("preserves non-XSD source order for table borders", () => {
+    const xml =
+      "<w:tbl><w:tblPr><w:tblBorders>" +
+      '<w:top w:val="single"/><w:left w:val="single"/><w:bottom w:val="single"/>' +
+      '<w:insideH w:val="single"/><w:right w:val="single"/><w:insideV w:val="single"/>' +
+      "</w:tblBorders></w:tblPr><w:tblGrid/><w:tr><w:tc><w:p/></w:tc></w:tr></w:tbl>";
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const result = tableDesc.parse(el, readCtx);
+    expect(result.borders!.order).toEqual([
+      "top",
+      "left",
+      "bottom",
+      "insideHorizontal",
+      "right",
+      "insideVertical",
+    ]);
+    expect(tableDesc.stringify(result, writeCtx)).toContain(
+      '<w:bottom w:val="single"/><w:insideH w:val="single"/><w:right w:val="single"/>',
+    );
+  });
+
+  it("omits table border order for canonical partial sequences", () => {
+    const xml =
+      "<w:tbl><w:tblPr><w:tblBorders>" +
+      '<w:top w:val="single"/><w:left w:val="single"/>' +
+      "</w:tblBorders></w:tblPr><w:tblGrid/><w:tr><w:tc><w:p/></w:tc></w:tr></w:tbl>";
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    expect(tableDesc.parse(el, readCtx).borders).toEqual({
+      left: expect.objectContaining({ style: "single" }),
+      top: expect.objectContaining({ style: "single" }),
+    });
+  });
+
+  it("preserves table border order for noncanonical partial sequences", () => {
+    const xml =
+      "<w:tbl><w:tblPr><w:tblBorders>" +
+      '<w:left w:val="single"/><w:top w:val="single"/>' +
+      "</w:tblBorders></w:tblPr><w:tblGrid/><w:tr><w:tc><w:p/></w:tc></w:tr></w:tbl>";
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const result = tableDesc.parse(el, readCtx);
+    expect(result.borders!.order).toEqual(["left", "top"]);
   });
 
   it("round-trips table layout", () => {
@@ -191,6 +314,30 @@ describe("tableDesc round-trip", () => {
       rows: [{ cells: [{ children: [] }, { children: [] }] }],
     });
     expect(result.columnWidths).toEqual([3000, 3000]);
+  });
+
+  it("preserves legacy empty table columns", () => {
+    const xml =
+      "<w:tbl><w:tblPr/><w:tblGrid><w:tblCol/><w:tblCol/><w:tblCol/><w:tblCol/></w:tblGrid>" +
+      "<w:tr><w:tc><w:p/></w:tc></w:tr></w:tbl>";
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const result = tableDesc.parse(el, readCtx);
+
+    expect(result.legacyColumnCount).toBe(4);
+    expect(tableDesc.stringify(result, writeCtx)).toContain(
+      "<w:tblGrid><w:tblCol/><w:tblCol/><w:tblCol/><w:tblCol/></w:tblGrid>",
+    );
+  });
+
+  it("preserves an explicitly empty table grid", () => {
+    const xml = "<w:tbl><w:tblPr/><w:tblGrid/><w:tr><w:tc><w:p/></w:tc></w:tr></w:tbl>";
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const result = tableDesc.parse(el, readCtx);
+
+    expect(result.columnWidths).toEqual([]);
+    expect(tableDesc.stringify(result, writeCtx)).toContain("<w:tblGrid></w:tblGrid>");
   });
 
   it("round-trips table width UniversalMeasure (mm)", () => {
@@ -474,6 +621,7 @@ describe("tableDesc round-trip", () => {
     const source =
       '<w:tbl xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
       "<w:tblPr/>" +
+      "<w:tblGrid/>" +
       "<w:tr><w:trPr/><w:tc><w:tcPr/><w:p/></w:tc></w:tr>" +
       "</w:tbl>";
     const result = roundTripSource(source);
@@ -659,6 +807,29 @@ describe("tableDesc round-trip", () => {
     }
   });
 
+  it("round-trips historical nested cell-level SDTs", () => {
+    const source =
+      `<w:tbl xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">` +
+      `<w:tblGrid><w:gridCol w:w="100"/></w:tblGrid>` +
+      `<w:tr><w:sdt><w:sdtPr><w:alias w:val="outer"/></w:sdtPr>` +
+      `<w:sdtContent><w:sdt><w:sdtPr><w:alias w:val="inner"/></w:sdtPr>` +
+      `<w:sdtContent><w:tc><w:p/></w:tc></w:sdtContent></w:sdt>` +
+      `</w:sdtContent></w:sdt></w:tr></w:tbl>`;
+    const result = roundTripSource(source);
+    const row = result.rows[0] as TableRowOptions;
+    const outer = row.cells[0];
+    expect(outer && "sdt" in outer).toBe(true);
+    if (outer && "sdt" in outer) {
+      expect(outer.sdt.properties.alias).toBe("outer");
+      const inner = outer.sdt.cells?.[0];
+      expect(inner && "sdt" in inner).toBe(true);
+      if (inner && "sdt" in inner) {
+        expect(inner.sdt.properties.alias).toBe("inner");
+        expect(inner.sdt.cells).toHaveLength(1);
+      }
+    }
+  });
+
   it("round-trips a row-level SDT (CT_SdtRow wrapping a row)", () => {
     const result = roundTrip({
       rows: [
@@ -666,7 +837,7 @@ describe("tableDesc round-trip", () => {
         {
           sdt: {
             properties: { alias: "RowCtrl", tag: "row-ctrl", richText: true },
-            rows: [{ cells: [{ children: [{ paragraph: "controlled row" }] }] }],
+            content: [{ cells: [{ children: [{ paragraph: "controlled row" }] }] }],
           },
         },
       ],
@@ -676,8 +847,32 @@ describe("tableDesc round-trip", () => {
     expect(rowEntry && "sdt" in rowEntry).toBe(true);
     if (rowEntry && "sdt" in rowEntry) {
       expect(rowEntry.sdt.properties).toMatchObject({ alias: "RowCtrl", tag: "row-ctrl" });
-      expect(rowEntry.sdt.rows).toHaveLength(1);
+      expect(rowEntry.sdt.content).toHaveLength(1);
     }
+  });
+
+  it("round-trips nested row-level SDTs in source order", () => {
+    const source =
+      `<w:tbl xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">` +
+      `<w:tblGrid><w:gridCol w:w="100"/></w:tblGrid>` +
+      `<w:sdt><w:sdtPr><w:alias w:val="outer"/></w:sdtPr><w:sdtEndPr/>` +
+      `<w:sdtContent><w:sdt><w:sdtPr><w:alias w:val="inner"/></w:sdtPr>` +
+      `<w:sdtContent><w:tr><w:tc><w:p/></w:tc></w:tr></w:sdtContent></w:sdt>` +
+      `</w:sdtContent></w:sdt></w:tbl>`;
+    const result = roundTripSource(source);
+    const outer = result.rows[0];
+    expect(outer && "sdt" in outer).toBe(true);
+    if (outer && "sdt" in outer) {
+      expect(outer.sdt.endProperties).toEqual({});
+      const inner = outer.sdt.content?.[0];
+      expect(inner && "sdt" in inner).toBe(true);
+      if (inner && "sdt" in inner) {
+        expect(inner.sdt.properties.alias).toBe("inner");
+        expect(inner.sdt.content).toHaveLength(1);
+      }
+    }
+    const xml = tableDesc.stringify(result, writeCtx)!;
+    expect(xml.indexOf('w:val="outer"')).toBeLessThan(xml.indexOf('w:val="inner"'));
   });
 
   it("round-trips a cell-level customXml (CT_CustomXmlCell wrapping a cell)", () => {
@@ -849,6 +1044,37 @@ describe("tableDesc round-trip", () => {
     expect(result.float!.overlap).toBe("never");
   });
 
+  it("round-trips legacy empty table position specs", () => {
+    const result = roundTrip({
+      float: { relativeHorizontalPosition: "", relativeVerticalPosition: "" },
+      rows: [{ cells: [{ children: [] }] }],
+    });
+    expect(result.float!.relativeHorizontalPosition).toBe("");
+    expect(result.float!.relativeVerticalPosition).toBe("");
+  });
+
+  it("preserves a non-XSD table property sequence", () => {
+    applyTableOrderCase();
+  });
+
+  it("round-trips an explicitly empty table borders container", () => {
+    const result = roundTrip({
+      borders: {},
+      rows: [{ cells: [{ children: [] }] }],
+    });
+    expect(result.borders).toEqual({});
+    expect(tableDesc.stringify(result, writeCtx)).toContain("<w:tblBorders></w:tblBorders>");
+  });
+
+  it("emits w:tblOverlap without an empty w:tblpPr", () => {
+    const xml = tableDesc.stringify(
+      { float: { overlap: "never" }, rows: [{ cells: [{ children: [] }] }] },
+      writeCtx,
+    )!;
+    expect(xml).toContain('<w:tblOverlap w:val="never"/>');
+    expect(xml).not.toContain("<w:tblpPr");
+  });
+
   it("round-trips the 6 special-row flags via w:tblLook (CT_TblLook)", () => {
     const result = roundTrip({
       firstRow: true,
@@ -931,6 +1157,15 @@ describe("tableDesc round-trip", () => {
     expect(row.propertyExceptions!.tblPrExChange!.id).toBe(3);
     expect(row.propertyExceptions!.tblPrExChange!.author).toBe("E");
     expect(row.propertyExceptions!.tblPrExChange!.width).toEqual({ size: 50, type: "twips" });
+  });
+
+  it("preserves an empty row property-exceptions element", () => {
+    const xml =
+      "<w:tbl><w:tblPr/><w:tblGrid><w:gridCol w:w='100'/></w:tblGrid>" +
+      "<w:tr><w:tblPrEx/><w:tc><w:p/></w:tc></w:tr></w:tbl>";
+    const result = tableDesc.parse(parseXml(xml).elements![0]!, readCtx) as TableOptions;
+    expect(result.rows[0]).toHaveProperty("propertyExceptions", {});
+    expect(tableDesc.stringify(result, writeCtx)).toContain("<w:tblPrEx>");
   });
 
   it("round-trips tcPr with co-occurring hMerge/noWrap/fitText/verticalAlign (CT_TcPrBase order)", () => {
@@ -1043,14 +1278,68 @@ describe("tableDesc round-trip", () => {
     expect(row.height!.rule).toBeUndefined();
   });
 
-  it("echoes stringify default tcW type rather than inflating to dxa", () => {
+  it("keeps omitted CT_TblWidth types omitted", () => {
     const result = roundTrip({
       rows: [{ cells: [{ children: [], width: { size: 1000 } }] }],
     });
     const cell = (result.rows[0] as TableRowOptions).cells[0] as TableCellOptions;
-    // stringify injects type=auto (ST_TblWidthType default); parse echoes it,
-    // not the old hard-coded "dxa".
-    expect(cell.width).toEqual({ size: 1000, type: "auto" });
+    expect(cell.width).toEqual({ size: 1000 });
+  });
+
+  it("keeps omitted table-indent type omitted", () => {
+    const xml = tableDesc.stringify(
+      { indent: { size: 200 }, rows: [{ cells: [{ children: [] }] }] },
+      writeCtx,
+    )!;
+    expect(xml).toContain('<w:tblInd w:w="200"/>');
+    const result = roundTrip({ indent: { size: 200 }, rows: [{ cells: [{ children: [] }] }] });
+    expect(result.indent).toEqual({ size: 200 });
+  });
+
+  it("treats a trailing raw paragraph as the required cell paragraph", () => {
+    const xml = tableDesc.stringify(
+      {
+        rows: [{ cells: [{ children: [{ rawXml: "<w:p><w:r><w:t>Raw</w:t></w:r></w:p>" }] }] }],
+      },
+      writeCtx,
+    )!;
+    expect(xml.match(/<w:p[ />]/g)).toHaveLength(1);
+  });
+});
+
+describe("tableDesc deep nesting", () => {
+  it("stringifies deeply nested tables without exhausting the stack", () => {
+    let table: TableOptions = {
+      rows: [{ cells: [{ children: [{ paragraph: "leaf" }] }] }],
+    };
+    for (let depth = 0; depth < 2_000; depth += 1) {
+      table = { rows: [{ cells: [{ children: [{ table }] }] }] };
+    }
+
+    const xml = tableDesc.stringify(table, writeCtx)!;
+    expect(xml.match(/<w:tbl>/g)).toHaveLength(2_001);
+  });
+
+  it("parses deeply nested tables without exhausting the stack", () => {
+    const prefix =
+      '<w:tbl><w:tblPr/><w:tblGrid><w:gridCol w:w="100"/></w:tblGrid>' + "<w:tr><w:tc>";
+    const suffix = "</w:tc></w:tr></w:tbl>";
+    const source = prefix.repeat(2_001) + suffix.repeat(2_001);
+    const doc = parseXml(source);
+    const root = doc.elements?.[0];
+    if (!root) throw new Error("parsed document has no root element");
+
+    let depth = 0;
+    let table = tableDesc.parse(root, readCtx);
+    while (depth < 2_001) {
+      const row = table.rows[0] as TableRowOptions;
+      const cell = row.cells[0] as TableCellOptions;
+      const child = cell.children?.[0];
+      if (!child || !("table" in child)) break;
+      table = child.table;
+      depth += 1;
+    }
+    expect(depth).toBe(2_000);
   });
 });
 
@@ -1068,6 +1357,7 @@ describe("table cell block-level children (EG_BlockLevelElts)", () => {
     });
     const xml =
       `<w:tbl xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">` +
+      `<w:tblGrid/>` +
       `<w:tr><w:tc><w:p/><w:sdt><w:sdtPr><w:alias w:val="Company"/></w:sdtPr>` +
       `<w:sdtContent><w:p><w:r><w:t>Microsoft</w:t></w:r></w:p></w:sdtContent></w:sdt></w:tc></w:tr></w:tbl>`;
     const opts = tableDesc.parse(parseXml(xml).elements![0]!, readCtx) as TableOptions;
@@ -1105,5 +1395,30 @@ describe("table cell block-level children (EG_BlockLevelElts)", () => {
     expect(xml).toContain("<w:sdt-mark/>");
     // A cell ending in a block container does not get an injected <w:p/>
     expect(xml).not.toMatch(/<w:sdt-mark\/><w:p\/>/);
+  });
+
+  it("preserves a table-only cell without a compatibility paragraph", () => {
+    const xml = tableDesc.stringify(
+      {
+        rows: [
+          {
+            cells: [
+              {
+                children: [
+                  {
+                    table: {
+                      rows: [{ cells: [{ children: [] }] }],
+                    },
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      } as TableOptions,
+      writeCtx,
+    )!;
+    expect(xml).toContain("<w:tbl>");
+    expect(xml).not.toMatch(/<\/w:tbl><w:p\/>/);
   });
 });

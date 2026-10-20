@@ -17,29 +17,30 @@
  */
 
 import {
-  RELATIONSHIP_TYPES,
   addModelBinaries,
   compileMapping,
   createThemeXml,
-  dropDanglingPassthroughRels,
-  DOCX_PARTS,
   encodeUriPath,
-  finalizeContentTypes,
-  findAndReplaceImagePlaceholders,
-  optionalRelsPart,
-  partPathToRelsPath,
   Relationships,
-  TargetModeType,
   replaceNumberingPlaceholders,
-  IMAGE_MEDIA_CONTENT_TYPES,
-  partContentTypeResolver,
-  ooxmlPackageFormatInfo,
-  resolveMainPartContentType,
 } from "@office-open/core";
-import type { RelationshipType } from "@office-open/core";
-import type { ReproducibleScope, XmlifyedFile, Zippable } from "@office-open/core";
+import type { ReproducibleScope } from "@office-open/core";
 import type { OoxmlPackageVariant } from "@office-open/core";
 import type { WriteContext } from "@office-open/core/descriptor";
+import {
+  DOCX_PARTS,
+  dropDanglingPassthroughRels,
+  finalizeContentTypes,
+  IMAGE_MEDIA_CONTENT_TYPES,
+  ooxmlPackageFormatInfo,
+  optionalRelsPart,
+  partContentTypeResolver,
+  partPathToRelsPath,
+  RELATIONSHIP_TYPES,
+  resolveMainPartContentType,
+  TargetModeType,
+} from "@office-open/core/opc";
+import type { RelationshipType, XmlifyedFile, Zippable } from "@office-open/core/opc";
 import { buildThemeXml } from "@office-open/core/theme";
 import type { DocumentOptions } from "@parts/core-properties";
 import {
@@ -56,7 +57,7 @@ import { compileChartExParts, compileChartParts, compileSmartArtParts } from "./
 import { compileGlossaryParts } from "./compile/glossary";
 import { compileHeaderFooterParts } from "./compile/headerfooter";
 import { compileNotesParts } from "./compile/notes";
-import { XML_DECL } from "./compile/shared";
+import { XML_DECL, resolveNumberingMedia } from "./compile/shared";
 import { compileTextBoxParts } from "./compile/textbox";
 import { DocxWriteContext, themePartName } from "./context";
 import {
@@ -172,6 +173,21 @@ function hasSourcePart(options: DocumentOptions, partName: string): boolean {
       (override) => override.partName.toLowerCase() === `/${partName.toLowerCase()}`,
     );
   return result;
+}
+
+function sourcePartContentType(options: DocumentOptions, partName: string): string | undefined {
+  return options.contentTypes?.overrides.find(
+    (override) => override.partName.toLowerCase() === `/${partName.toLowerCase()}`,
+  )?.contentType;
+}
+
+function canForcePartContentType(
+  options: DocumentOptions,
+  partName: string,
+  contentType: string,
+): boolean {
+  const source = sourcePartContentType(options, partName);
+  return source === undefined || source === contentType;
 }
 
 function renamePrimaryDocument(files: Zippable, sourcePath: string, targetPath: string): void {
@@ -330,7 +346,12 @@ export function compileDocument(
             path:
               chartEx.sourcePath ??
               `word/charts/chartEx${Number(chartEx.key.replace(/^chartEx_/, "")) || index + 1}.xml`,
-            contentType: DOCX_CHART_EX_CONTENT_TYPE,
+            contentType:
+              sourcePartContentType(
+                ctx._options,
+                chartEx.sourcePath ??
+                  `word/charts/chartEx${Number(chartEx.key.replace(/^chartEx_/, "")) || index + 1}.xml`,
+              ) ?? DOCX_CHART_EX_CONTENT_TYPE,
           })),
           ...(ctx.glossaryOptions
             ? [
@@ -361,7 +382,12 @@ export function compileDocument(
                       },
                     ]
                   : []),
-                ...(ctx.glossaryOptions.styles
+                ...(ctx.glossaryOptions.styles &&
+                canForcePartContentType(
+                  ctx._options,
+                  `word/${ctx.glossaryOptions.stylesPartName ?? "glossary/styles.xml"}`,
+                  "application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml",
+                )
                   ? [
                       {
                         path: `word/${ctx.glossaryOptions.stylesPartName ?? "glossary/styles.xml"}`,
@@ -512,6 +538,9 @@ interface XmlifyedFileMapping {
 
 function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
   const mailMergeRecipients = ctx._options.mailMergeRecipients ?? [];
+  const settingsXml = hasSourcePart(ctx._options, "word/settings.xml")
+    ? XML_DECL + (settingsDesc.stringify(ctx._settingsOptions, ctx) ?? "")
+    : "";
   const hasSettingsRelationships = (ctx._options.passthroughRelationships ?? []).some(
     (rel) => rel.source === "word/settings.xml",
   );
@@ -620,6 +649,13 @@ function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
     // Theme — a parsed source theme round-trips structurally; fresh output
     // emits the Office default. Theme fill media resolve against part rels.
     ...(() => {
+      const themePath = themePartName(ctx._options);
+      if (
+        ctx._options.theme === undefined &&
+        ctx._options.rawParts?.some((part) => part.path === themePath)
+      ) {
+        return {};
+      }
       const rels = new Relationships();
       const themeXml = ctx._options.theme
         ? bindThemeMedia(
@@ -628,7 +664,6 @@ function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
             rels,
           )
         : createThemeXml();
-      const themePath = themePartName(ctx._options);
       const themeFile = themePath.split("/").at(-1)!;
       return {
         Theme: { data: XML_DECL + themeXml, path: themePath },
@@ -663,12 +698,8 @@ function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
           // Picture-bullet media resolves through numbering.xml's own rels —
           // same placeholder bridge as headers/footers, ids local to the part
           // (numbering.xml carries no other relationships).
-          const numberingXml = ctx.numbering.serialize(ctx);
-          const numberingMedia = findAndReplaceImagePlaceholders(numberingXml, ctx.media.array, 1);
-          const numberingRels = new Relationships();
-          for (const [i, ref] of numberingMedia.referenced.entries()) {
-            numberingRels.addRelationship(1 + i, RELATIONSHIP_TYPES.image, `media/${ref.fileName}`);
-          }
+          const numberingMedia = resolveNumberingMedia(ctx.numbering.serialize(ctx), ctx);
+          const numberingRels = numberingMedia.rels;
           return {
             Numbering: { data: numberingMedia.xml, path: "word/numbering.xml" },
             NumberingRelationships: optionalRelsPart(
@@ -679,18 +710,21 @@ function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
           };
         })()
       : {}),
-    ...(hasSourcePart(ctx._options, "docProps/core.xml")
-      ? {
-          Properties: {
-            data: XML_DECL + (corePropertiesDesc.stringify(ctx._options, ctx) ?? ""),
-            path: "docProps/core.xml",
-          },
-        }
-      : {}),
+    ...(() => {
+      const corePropertiesPath = ctx._options.corePropertiesPath ?? "docProps/core.xml";
+      return hasSourcePart(ctx._options, corePropertiesPath)
+        ? {
+            Properties: {
+              data: XML_DECL + (corePropertiesDesc.stringify(ctx._options, ctx) ?? ""),
+              path: corePropertiesPath,
+            },
+          }
+        : {};
+    })(),
     ...(hasSourcePart(ctx._options, "word/settings.xml")
       ? {
           Settings: {
-            data: XML_DECL + (settingsDesc.stringify(ctx._settingsOptions, ctx) ?? ""),
+            data: settingsXml,
             path: "word/settings.xml",
           },
         }
@@ -713,6 +747,22 @@ function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
           SettingsRelationships: {
             data: (() => {
               const rels = new Relationships();
+              const settingsSourceRels = (ctx._options.passthroughRelationships ?? []).filter(
+                (rel) => rel.source === "word/settings.xml",
+              );
+              const settingsSourceRids = new Set<string>();
+              for (const match of (settingsXml ?? "").matchAll(/\br:id="([^"]+)"/g)) {
+                const id = match[1];
+                if (id) settingsSourceRids.add(id);
+              }
+              for (const rel of settingsSourceRels) {
+                const isRecipientSource =
+                  recipientData.includes(rel.rId) &&
+                  rel.relationshipType === RELATIONSHIP_TYPES.recipientData;
+                if (settingsSourceRids.has(rel.rId) && !isRecipientSource) {
+                  rels.claimSourceRel(rel, { force: true });
+                }
+              }
               if (ctx._settingsOptions.attachedTemplate !== undefined) {
                 rels.addRelationship(
                   1,
@@ -721,6 +771,7 @@ function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
                   TargetModeType.EXTERNAL,
                 );
               }
+              const attachedTemplateTarget = ctx._settingsOptions.attachedTemplate;
               recipientData.forEach((rId, index) => {
                 const id = /^rId(\d+)$/.exec(rId)?.[1];
                 if (id) {
@@ -731,8 +782,22 @@ function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
                   );
                 }
               });
-              for (const rel of ctx._options.passthroughRelationships ?? []) {
-                if (rel.source !== "word/settings.xml") continue;
+              for (const rel of settingsSourceRels) {
+                const recipientIndex = recipientData.indexOf(rel.rId);
+                const canonicalRecipientTarget =
+                  recipientIndex >= 0
+                    ? (mailMergeRecipients[recipientIndex]?.partName ??
+                      `recipients${recipientIndex + 1}.xml`)
+                    : undefined;
+                if (
+                  (attachedTemplateTarget !== undefined &&
+                    rel.relationshipType === RELATIONSHIP_TYPES.attachedTemplate) ||
+                  (canonicalRecipientTarget !== undefined &&
+                    rel.relationshipType === RELATIONSHIP_TYPES.recipientData &&
+                    rels.hasRelationship(rel.relationshipType, canonicalRecipientTarget))
+                ) {
+                  continue;
+                }
                 rels.claimSourceRel(rel);
               }
               return XML_DECL + rels.serialize();

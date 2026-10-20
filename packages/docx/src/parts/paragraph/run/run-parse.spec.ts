@@ -60,6 +60,12 @@ describe("parseRunProperties round-trip", () => {
     });
   });
 
+  it("round-trips legacy high-ASCII font alias", () => {
+    const result = roundTrip({ font: { ascii: "PW Extended", hAscii: "PW Extended" } });
+    expect(result.font).toEqual({ ascii: "PW Extended", hAscii: "PW Extended" });
+    expect(stringifyRunProperties(result)).toContain('w:hAscii="PW Extended"');
+  });
+
   it("preserves source order when text precedes a break", () => {
     const source = `<w:r ${W_NS}><w:t>after</w:t><w:br/></w:r>`;
     const element = parseXml(source).elements?.[0];
@@ -67,6 +73,15 @@ describe("parseRunProperties round-trip", () => {
     const opts = parsedRunToOptions(parseRun(element, {} as never)) as RunOptions;
     expect(opts.children).toEqual(["after", { break: 1 }]);
     expect(stringifyRunInline(opts, {} as never)).toBe("<w:r><w:t>after</w:t><w:br/></w:r>");
+  });
+
+  it("flattens schema-invalid nested runs from legacy text boxes", () => {
+    const source = `<w:r ${W_NS}><w:r><w:rPr><w:i/></w:rPr><w:t>Test text box</w:t></w:r></w:r>`;
+    const element = parseXml(source).elements?.[0];
+    if (!element) throw new Error("parsed run has no root element");
+    const parsed = parseRun(element, {} as never);
+    expect(parsed.properties).toEqual({ italic: true });
+    expect((parsedRunToOptions(parsed) as RunOptions).text).toBe("Test text box");
   });
 
   it("preserves source order when run properties follow content", () => {
@@ -104,6 +119,26 @@ describe("parseRunProperties round-trip", () => {
     expect(result.color).toBe("FF0000");
   });
 
+  it("preserves producer-specific hash color lexical values", () => {
+    const sourceXml =
+      `<w:rPr ${W_NS}><w:color w:val="#004080" w:themeColor="accent1" ` +
+      'w:themeShade="80"/></w:rPr>';
+    const element = parseXml(sourceXml).elements?.[0];
+    if (!element) throw new Error("parsed rPr has no root element");
+    const parsed = parseRunProperties(element);
+    expect(parsed.color).toEqual({
+      val: "004080",
+      valRaw: "#004080",
+      themeColor: "accent1",
+      themeShade: "80",
+    });
+    const xml = stringifyRunProperties(parsed)!;
+    expect(xml).toContain('<w:color w:val="#004080"');
+    expect(
+      parseRunProperties(parseXml(`<w:r ${W_NS}>${xml}</w:r>`).elements![0]!.elements![0]!),
+    ).toEqual(parsed);
+  });
+
   it("round-trips underline with themeColor/themeTint/themeShade", () => {
     const result = roundTrip({
       underline: {
@@ -128,6 +163,16 @@ describe("parseRunProperties round-trip", () => {
     expect(xml).toContain('<w:u w:color="FF0000"/>');
     expect(xml).not.toContain("w:val");
     expect(roundTrip({ underline: {} })).toEqual({ underline: {} });
+  });
+
+  it("preserves producer-specific underline hash colors", () => {
+    const element = parseXml(`<w:rPr ${W_NS}><w:u w:val="single" w:color="#004080"/></w:rPr>`)
+      .elements?.[0];
+    if (!element) throw new Error("parsed rPr has no root element");
+    const parsed = parseRunProperties(element);
+    expect(parsed.underline).toEqual({ type: "single", color: "004080", colorRaw: "#004080" });
+    const xml = stringifyRunProperties(parsed)!;
+    expect(xml).toContain('<w:u w:val="single" w:color="#004080"/>');
   });
 
   it("round-trips eastAsianLayout", () => {
@@ -165,6 +210,26 @@ describe("parseRunProperties round-trip", () => {
     expect(rev.author).toBe("A");
     expect(rev.date).toBe("2024-01-01T00:00:00Z");
     expect(rev.italic).toBe(true);
+  });
+
+  it("round-trips paragraph-mark revisions inside rPrChange", () => {
+    const result = roundTrip({
+      revision: {
+        id: 4,
+        author: "pavel",
+        date: "2009-07-24T15:06:00Z",
+        italic: true,
+        insertion: { id: 7, author: "pavel", date: "2009-07-24T15:06:00Z" },
+        deletion: { id: 8, author: "JimBob" },
+      },
+    });
+    const rev = result.revision as unknown as Record<string, unknown>;
+    expect(rev.insertion).toEqual({
+      id: 7,
+      author: "pavel",
+      date: "2009-07-24T15:06:00Z",
+    });
+    expect(rev.deletion).toEqual({ id: 8, author: "JimBob" });
   });
 
   it("normalizes characterSpacing UniversalMeasure (mm) to twips", () => {
@@ -219,6 +284,13 @@ describe("parseRunProperties round-trip", () => {
     expect(xml).toContain('<w:iCs w:val="f"/>');
   });
 
+  it("preserves the right-to-left toggle spelling", () => {
+    const parsed = roundTrip({ rightToLeft: false, rightToLeftRaw: "0" });
+    expect(parsed.rightToLeft).toBe(false);
+    expect(parsed.rightToLeftRaw).toBe("0");
+    expect(stringifyRunProperties(parsed)).toContain('<w:rtl w:val="0"/>');
+  });
+
   it("does not auto-pair iCs when only italic is set", () => {
     const rPr = stringifyRunProperties({ italic: true })!;
     expect(rPr).toContain("<w:i");
@@ -229,6 +301,15 @@ describe("parseRunProperties round-trip", () => {
     const rPr = stringifyRunProperties({ size: 24 })!;
     expect(rPr).toContain("<w:sz ");
     expect(rPr).not.toContain("szCs");
+  });
+
+  it("converts half-point and universal font sizes to points", () => {
+    for (const value of [40, "20pt"]) {
+      const sourceXml = `<w:rPr ${W_NS}><w:sz w:val="${value}"/></w:rPr>`;
+      const element = parseXml(sourceXml).elements?.[0];
+      if (!element) throw new Error("parsed rPr has no root element");
+      expect(parseRunProperties(element).size).toBe(20);
+    }
   });
 
   it("emits szCs when sizeComplexScript is an explicit number", () => {
@@ -243,6 +324,13 @@ describe("parseRunProperties round-trip", () => {
       expect(rPr).toContain(`<w:vertAlign w:val="${val}"/>`);
       expect(roundTrip({ verticalAlign: val }).verticalAlign).toBe(val);
     }
+  });
+
+  it("round-trips fit-text width and control id", () => {
+    const parsed = roundTrip({ fitText: 120, fitTextId: 7 });
+    expect(parsed.fitText).toBe(120);
+    expect(parsed.fitTextId).toBe(7);
+    expect(stringifyRunProperties(parsed)).toContain('<w:fitText w:val="120" w:id="7"/>');
   });
 });
 
@@ -290,6 +378,16 @@ describe("parseRun text space preservation", () => {
     const xml = stringifyRunInline(opts as never, {} as never);
     expect(xml).toContain("<w:t>a</w:t>");
     expect(xml).toContain('<w:t xml:space="preserve">b</w:t>');
+  });
+
+  it("adds xml:space when edge-whitespace text requires it", () => {
+    const doc = parseXml(`<w:r ${W_NS}><w:t> spaced </w:t></w:r>`);
+    const el = doc.elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const opts = parsedRunToOptions(parseRun(el, {} as never));
+    expect(opts).toEqual({ text: " spaced ", preserveSpace: false });
+    const xml = stringifyRunInline(opts as never, {} as never);
+    expect(xml).toContain('<w:t xml:space="preserve"> spaced </w:t>');
   });
 });
 
@@ -350,6 +448,64 @@ describe("parseRun customMarkFollows (CT_FtnEdnRef)", () => {
     expect(opts.footnoteReference).toEqual({ id: 3, customMarkFollows: true });
   });
 
+  it("preserves explicit false customMarkFollows", () => {
+    const source = `<w:r ${W_NS}><w:footnoteReference w:id="3" w:customMarkFollows="0"/></w:r>`;
+    const element = parseXml(source).elements?.[0];
+    if (!element) throw new Error("parsed run has no root element");
+    const opts = parsedRunToOptions(parseRun(element, {} as never)) as RunOptions;
+    expect(opts.footnoteReference).toEqual({ id: 3, customMarkFollows: false });
+    expect(stringifyRunInline(opts, {} as never)).toBe(
+      '<w:r><w:footnoteReference w:id="3" w:customMarkFollows="0"/></w:r>',
+    );
+  });
+
+  it("preserves multiple comment references in one run", () => {
+    const source =
+      `<w:r ${W_NS}>` +
+      '<w:rPr><w:rStyle w:val="CommentReference"/></w:rPr>' +
+      '<w:commentReference w:id="2"/>' +
+      '<w:commentReference w:id="5"/>' +
+      "</w:r>";
+    const element = parseXml(source).elements?.[0];
+    if (!element) throw new Error("parsed run has no root element");
+    const opts = parsedRunToOptions(parseRun(element, {} as never)) as RunOptions;
+    expect(opts.children).toEqual([{ commentReference: 2 }, { commentReference: 5 }]);
+    expect(stringifyRunInline(opts, {} as never)).toBe(
+      '<w:r><w:rPr><w:rStyle w:val="CommentReference"/></w:rPr>' +
+        '<w:commentReference w:id="2"/><w:commentReference w:id="5"/></w:r>',
+    );
+  });
+
+  it("preserves three comment references and mixed reference kinds in order", () => {
+    const source =
+      `<w:r ${W_NS}>` +
+      '<w:commentReference w:id="2"/>' +
+      '<w:commentReference w:id="5"/>' +
+      '<w:commentReference w:id="8"/>' +
+      '<w:footnoteReference w:id="4"/>' +
+      "</w:r>";
+    const element = parseXml(source).elements?.[0];
+    if (!element) throw new Error("parsed run has no root element");
+    const opts = parsedRunToOptions(parseRun(element, {} as never)) as RunOptions;
+    expect(opts.children).toEqual([
+      { commentReference: 2 },
+      { commentReference: 5 },
+      { commentReference: 8 },
+      { footnoteReference: 4 },
+    ]);
+  });
+
+  it("preserves explicit false customMarkFollows on endnotes", () => {
+    const source = `<w:r ${W_NS}><w:endnoteReference w:id="4" w:customMarkFollows="false"/></w:r>`;
+    const element = parseXml(source).elements?.[0];
+    if (!element) throw new Error("parsed run has no root element");
+    const opts = parsedRunToOptions(parseRun(element, {} as never)) as RunOptions;
+    expect(opts.endnoteReference).toEqual({ id: 4, customMarkFollows: false });
+    expect(stringifyRunInline(opts, {} as never)).toBe(
+      '<w:r><w:endnoteReference w:id="4" w:customMarkFollows="0"/></w:r>',
+    );
+  });
+
   it("parses a plain footnoteReference as a numeric id", () => {
     const doc = parseXml(`<w:r ${W_NS}><w:footnoteReference w:id="5"/></w:r>`);
     const plainFnEl = doc.elements?.[0];
@@ -358,6 +514,23 @@ describe("parseRun customMarkFollows (CT_FtnEdnRef)", () => {
       footnoteReference: number;
     };
     expect(opts.footnoteReference).toBe(5);
+  });
+
+  it("keeps a note reference mixed with a symbol run", () => {
+    const doc = parseXml(
+      `<w:r ${W_NS}><w:sym w:char="F0E0" w:font="Wingdings"/>` +
+        '<w:footnoteReference w:id="6"/></w:r>',
+    );
+    const element = doc.elements?.[0];
+    if (!element) throw new Error("parsed document has no root element");
+    const opts = parsedRunToOptions(parseRun(element, {} as never)) as RunOptions;
+    expect(opts.children).toEqual([
+      { symbolRun: { char: "F0E0", symbolFont: "Wingdings" } },
+      { footnoteReference: 6 },
+    ]);
+    expect(stringifyRunInline(opts, {} as never)).toBe(
+      '<w:r><w:sym w:char="F0E0" w:font="Wingdings"/><w:footnoteReference w:id="6"/></w:r>',
+    );
   });
 });
 
@@ -422,6 +595,22 @@ describe("Office 2016 symbol parse", () => {
         mcChoiceRequires: "v",
         mcFallback: "<mc:Fallback><w:object><w:drawing/></w:object></mc:Fallback>",
       },
+    });
+  });
+
+  it("keeps a pagination hint sharing an OLE object run", () => {
+    const doc = parseXml(
+      `<w:r ${W_NS} xmlns:v="urn:schemas-microsoft-com:vml" ` +
+        `xmlns:o="urn:schemas-microsoft-com:office:office">` +
+        `<w:lastRenderedPageBreak/>` +
+        `<w:object w:dxaOrig="100" w:dyaOrig="50">` +
+        `<v:shape id="_x0000_i1025" type="#_x0000_t75" style="width:100pt;height:50pt" o:ole=""/>` +
+        `</w:object></w:r>`,
+    );
+    const el = doc.elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    expect(parsedRunToOptions(parseRun(el, {} as never))).toMatchObject({
+      children: [{ lastRenderedPageBreak: true }, { object: {} }],
     });
   });
 });

@@ -121,7 +121,8 @@ export function buildRstXml(rst: RichTextOptions): string {
   if (rst.text !== undefined) parts.push(tElementRaw(rst.text, rst.textSpaceRaw));
   if (rst.runs && rst.runs.length > 0) {
     for (const run of rst.runs) {
-      const rPr = buildRPrXml(run.properties);
+      const rPrXml = buildRPrXml(run.properties);
+      const rPr = run.propertiesPresent === true && rPrXml === "" ? "<rPr/>" : rPrXml;
       parts.push(`<r>${rPr}${tElementRaw(run.text, run.textSpaceRaw)}</r>`);
     }
   }
@@ -192,6 +193,7 @@ export class SharedStrings {
   private richIndexMap = new Map<RichTextOptions, number>();
   private sourceCount?: number;
   private sourceUniqueCount?: number;
+  private sourceXmlSpace?: "default" | "preserve";
   /** Whether parsed source entries were loaded (round-trip mode). */
   public sourceLoaded = false;
 
@@ -257,16 +259,22 @@ export class SharedStrings {
     this.sourceUniqueCount = value;
   }
 
+  public setSourceXmlSpace(value: "default" | "preserve"): void {
+    this.sourceXmlSpace = value;
+  }
+
   /** Return a serializable snapshot for the descriptor. */
   public toDescriptorOptions(): {
     entries: SstEntry[];
     count?: number;
     uniqueCount?: number;
+    xmlSpace?: "default" | "preserve";
   } {
     return {
       entries: this.entries,
       ...(this.sourceCount !== undefined ? { count: this.sourceCount } : {}),
       ...(this.sourceUniqueCount !== undefined ? { uniqueCount: this.sourceUniqueCount } : {}),
+      ...(this.sourceXmlSpace !== undefined ? { xmlSpace: this.sourceXmlSpace } : {}),
     };
   }
 
@@ -276,6 +284,7 @@ export class SharedStrings {
       this.entries,
       this.sourceCount ?? this.entries.length,
       this.sourceUniqueCount ?? this.entries.length,
+      this.sourceXmlSpace,
     );
   }
 }
@@ -284,11 +293,13 @@ function serializeSst(
   entries: (string | RichTextOptions)[],
   referenceCount?: number,
   uniqueCount?: number,
+  xmlSpace?: "default" | "preserve",
 ): string {
   const p: string[] = [
     '<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"',
     referenceCount === undefined ? "" : ` count="${referenceCount}"`,
     uniqueCount === undefined ? "" : ` uniqueCount="${uniqueCount}"`,
+    xmlSpace === undefined ? "" : ` xml:space="${xmlSpace}"`,
   ];
   p.push(">");
   for (const entry of entries) {
@@ -313,6 +324,8 @@ export interface SharedStringsDocOptions {
   count?: number;
   /** Unique string entries (<sst/@uniqueCount>); defaults to entries.length. */
   uniqueCount?: number;
+  /** Source `<sst/@xml:space>`; round-trip only. */
+  xmlSpace?: "default" | "preserve";
 }
 
 // ── Descriptor ──
@@ -321,7 +334,7 @@ export const sharedStringsDesc: CustomDescriptor<SharedStringsDocOptions> = {
   kind: "custom",
 
   stringify(opts, _ctx) {
-    return serializeSst(opts.entries, opts.count, opts.uniqueCount);
+    return serializeSst(opts.entries, opts.count, opts.uniqueCount, opts.xmlSpace);
   },
 
   parse(el, _ctx) {
@@ -370,7 +383,11 @@ export const sharedStringsDesc: CustomDescriptor<SharedStringsDocOptions> = {
           const rPrEl = findChild(r, "rPr");
           const run: RichTextRunOptions = { text: textOf(rt) ?? "" };
           if (attr(rt, "xml:space") !== undefined) run.textSpaceRaw = attr(rt, "xml:space");
-          if (rPrEl) run.properties = parseRPr(rPrEl);
+          else if (/^\s|\s$/.test(run.text)) run.textSpaceRaw = "default";
+          if (rPrEl) {
+            run.properties = parseRPr(rPrEl);
+            run.propertiesPresent = true;
+          }
           runs.push(run);
         }
       }
@@ -392,7 +409,10 @@ export const sharedStringsDesc: CustomDescriptor<SharedStringsDocOptions> = {
             if (!rt) continue;
             const run: RichTextRunOptions = { text: textOf(rt) ?? "" };
             const rPrEl = findChild(child, "rPr");
-            if (rPrEl) run.properties = parseRPr(rPrEl);
+            if (rPrEl) {
+              run.properties = parseRPr(rPrEl);
+              run.propertiesPresent = true;
+            }
             rPhRuns.push(run);
           }
           const phonetic: PhoneticRunOptions = {
@@ -459,7 +479,11 @@ export const sharedStringsDesc: CustomDescriptor<SharedStringsDocOptions> = {
       }
     }
 
-    return { entries };
+    const rootSpace = attr(el, "xml:space");
+    return {
+      entries,
+      ...(rootSpace === "preserve" || rootSpace === "default" ? { xmlSpace: rootSpace } : {}),
+    };
   },
 };
 

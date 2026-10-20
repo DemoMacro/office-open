@@ -1,4 +1,8 @@
-import type { Base64, FormContainerOptions, Guid, UnsignedShortHex } from "@office-open/core";
+import type { Base64, Guid, OfficeFormsOptions, UnsignedShortHex } from "@office-open/core";
+
+import type { ForeignAttributeOptions } from "../../shared/foreign";
+
+export type { ForeignAttributeOptions };
 /**
  * Workbook — option types for SpreadsheetML documents.
  *
@@ -184,6 +188,9 @@ export interface FileSharingOptions {
   userName?: string;
   /** Legacy reservation password (hex) */
   reservationPassword?: UnsignedShortHex;
+  /** Source legacy reservation password hash carried through verbatim —
+   * re-hashing would corrupt it. Round-trip only: do not hand-author. */
+  reservationPasswordHashRaw?: string;
   /** Modern encryption: algorithm name */
   algorithmName?: string;
   /** Modern encryption: base64 hash value */
@@ -326,6 +333,8 @@ export interface CalculationPropertiesOptions {
   nullDate?: { year: number; month: number; day: number };
   /** Calc completed (CT_CalcPr `@calcCompleted`); explicit false round-trips `0`. */
   calcCompleted?: boolean;
+  /** Foreign-namespace attributes on `<calcPr>` (e.g. hs:hclCalcId); round-trip only. */
+  foreignAttributes?: ForeignAttributeOptions[];
 }
 
 /** Workbook view options (CT_BookView) */
@@ -417,6 +426,8 @@ export interface DefinedNameOptions {
   publishToServer?: boolean;
   /** Workbook parameter (default false) */
   workbookParameter?: boolean;
+  /** Source `xml:space` form of the formula text; round-trip only. */
+  xmlSpace?: "preserve" | "default";
 }
 
 export interface FileVersionOptions {
@@ -492,12 +503,14 @@ export interface WorkbookDescriptorOptions {
   functionGroups?: string[];
   /** Explicit built-in function-group count (CT_FunctionGroups `@builtInGroupCount`). */
   builtInGroupCount?: number;
+  /** True when the source declared `@builtInGroupCount`; keeps an explicit 16 from collapsing to the default. */
+  builtInGroupCountPresent?: boolean;
   webPublishing?: WebPublishingOptions;
   fileSharing?: FileSharingOptions;
   properties?: WorkbookPropertiesOptions;
   calculation?: CalculationPropertiesOptions;
-  /** Workbook-level form containers. */
-  forms?: FormContainerOptions[];
+  /** Workbook-level ODF forms, including root focus and design-mode settings. */
+  forms?: OfficeFormsOptions;
   /** OLE embedded range (CT_OleSize, after calcPr per XSD sequence) */
   oleSize?: string;
   bookView?: WorkbookViewOptions | false;
@@ -505,6 +518,8 @@ export interface WorkbookDescriptorOptions {
   /** Defined names (CT_DefinedNames) — named ranges, constants, formulas */
   definedNames?: DefinedNameOptions[];
   conformance?: WorkbookConformance;
+  /** Root `xml:space` lexical form; round-trip only. */
+  rootXmlSpace?: "default" | "preserve";
   /** Legacy SpreadsheetML 2005 child order; round-trip only. */
   legacyChildOrder?: boolean;
 }

@@ -17,7 +17,7 @@ import type { ShapeStyleOptions } from "./shape";
 /** spPr paint children carried by endpoint-model shapes (p:sp line, p:cxnSp). */
 export type EndpointShapeProperties = Pick<
   ShapePropertiesOptions,
-  "fill" | "outline" | "effects" | "scene3d" | "shape3d"
+  "fill" | "outline" | "effects" | "scene3d" | "shape3d" | "extensions" | "ext"
 >;
 
 /** Connector paint adds the preset geometry to the shared endpoint paint. */
@@ -32,7 +32,12 @@ export interface LineShapeOptions extends NonVisualDrawingPropertiesOptions {
   locking?: ShapeLockingOptions;
   /** Text body — source lines carry wrap/anchor hints and an empty paragraph. */
   textBody?: TextBodyOptions;
-  /** Text-box marker (p:cNvSpPr @txBox). */
+  /** false preserves a source `p:sp` line shape with no optional `p:txBody`. */
+  textBodyPresent?: boolean;
+  /**
+   * Text-box marker (`p:cNvSpPr/@txBox`); omit for fresh authoring, set
+   * `false` only to preserve an explicit source marker.
+   */
   textBox?: boolean;
   /** p:nvPr `@userDrawn` — preserve presentation-authored line marking. */
   userDrawn?: boolean;

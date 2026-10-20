@@ -4,7 +4,7 @@
 ![npm downloads](https://img.shields.io/npm/dw/@office-open/ods)
 ![npm license](https://img.shields.io/npm/l/@office-open/ods)
 
-> Generate and parse OpenDocument Spreadsheet `.ods` files using canonical `WorkbookOptions` JSON.
+> Generate and parse OpenDocument Spreadsheet (`.ods`) files from plain `WorkbookOptions` JSON — no Microsoft Office or LibreOffice required.
 
 ## Features
 
@@ -17,7 +17,17 @@
 ## Installation
 
 ```bash
+# pnpm
 pnpm add @office-open/ods
+
+# npm
+npm install @office-open/ods
+
+# yarn
+yarn add @office-open/ods
+
+# bun
+bun add @office-open/ods
 ```
 
 ## Quick Start
@@ -25,17 +35,19 @@ pnpm add @office-open/ods
 ```typescript
 import { generateWorkbook, parseWorkbook } from "@office-open/ods";
 
-const ods = generateWorkbook({
+const ods = await generateWorkbook({
   worksheets: [{ name: "Sheet 1", rows: [{ cells: [{ value: 42 }] }] }],
 });
-const options = parseWorkbook(ods);
+const options = await parseWorkbook(ods);
 ```
 
 ## API
 
-- `generateWorkbook(options)` — generate an `.ods` package from `WorkbookOptions`
-- `parseWorkbook(data)` — parse an `.ods` package into `WorkbookOptions`
+- `generateWorkbook(options, output?)` — generate an `.ods` package from `WorkbookOptions` as `Promise` (`Uint8Array` by default); `generateWorkbookSync` covers synchronous output and `generateWorkbookStream` returns a `ReadableStream<Uint8Array>`
+- `parseWorkbook(data)` — parse bytes, Base64/data-URL strings, `Blob`, or `ReadableStream` into `WorkbookOptions` as `Promise`; `parseWorkbookSync` covers synchronous parsing (rejects `Blob` and `ReadableStream` inputs)
 - `OdsParseError` — structured parse failure with part, path, and reason diagnostics
+
+Every input is a plain JSON object (`WorkbookOptions` and its option types). The full typed API reference lives in the [documentation](https://www.office-open.com/en/getting-started/more-formats).
 
 ## Errors and Limitations
 

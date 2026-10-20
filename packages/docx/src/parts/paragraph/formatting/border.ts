@@ -33,4 +33,8 @@ export interface BordersOptions {
   between?: BorderOptions;
   /** Bar border (paragraph-level bar, rendered at left of paragraph) */
   bar?: BorderOptions;
+  /** Border between page columns; Word tolerates this legacy pBdr child. */
+  insideHorizontal?: BorderOptions;
+  /** Border between adjacent paragraphs; Word tolerates this legacy pBdr child. */
+  insideVertical?: BorderOptions;
 }

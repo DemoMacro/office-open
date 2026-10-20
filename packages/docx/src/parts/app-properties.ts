@@ -11,4 +11,4 @@ export {
   appPropertiesDesc,
   type AppPropertiesOptions,
   type AppPropertiesInput,
-} from "@office-open/core";
+} from "@office-open/core/opc";

@@ -47,6 +47,7 @@ import {
   takeChartSourcePath,
   takeChartSourceRelationships,
   takeSmartArtSourcePaths,
+  takeSmartArtSourceRelationships,
   takeUserShapesSourcePath,
 } from "./drawing/drawing-parse";
 import { stringifyRunProperties } from "./paragraph/stringify";
@@ -146,7 +147,7 @@ function rawSmartArtFingerprint(raw: SmartArtRawParts | undefined): string | und
     v === undefined ? undefined : encodeBase64(toUint8Array(v));
   return JSON.stringify({
     drawing: b64(raw.drawing),
-    media: raw.media?.map((m) => m.fileName),
+    media: raw.media?.map(({ fileName, partPath }) => ({ fileName, partPath })),
   });
 }
 
@@ -210,6 +211,9 @@ function registerDrawingChildMedia(
                   relationshipId: externalData.relationshipId,
                   fileName: externalData.fileName,
                   data: externalData.data,
+                  ...(externalData.relationshipType
+                    ? { relationshipType: externalData.relationshipType }
+                    : {}),
                 },
               }
             : {}),
@@ -318,6 +322,8 @@ export function stringifyDrawingChild(
             dpi: opts.dpi,
             rotWithShape: opts.rotWithShape,
             sourceRectangle: opts.sourceRectangle,
+            fillRectangle: opts.fillRectangle,
+            stretch: opts.stretch,
             nonVisualProperties: opts.nonVisualProperties,
             useLocalDpi: opts.useLocalDpi,
             useLocalDpiUri: opts.useLocalDpiUri,
@@ -334,6 +340,8 @@ export function stringifyDrawingChild(
           scene3d: opts.scene3d,
           shape3d: opts.shape3d,
           blipEffects: opts.blipEffects,
+          blipExt: opts.blipExt,
+          shapeExtensions: opts.shapeExtensions,
           tile: opts.tile,
           graphicFrameLocks: opts.graphicFrameLocks,
           extensionIds: opts.extensionIds,
@@ -392,7 +400,11 @@ export function stringifyDrawingChild(
         dpi: opts.dpi,
         rotWithShape: opts.rotWithShape,
         sourceRectangle: opts.sourceRectangle,
+        fillRectangle: opts.fillRectangle,
+        stretch: opts.stretch,
         nonVisualProperties: opts.nonVisualProperties,
+        nonVisualPropertiesPresent: opts.nonVisualPropertiesPresent,
+        shapePropertiesPresent: opts.shapePropertiesPresent,
         useLocalDpi: opts.useLocalDpi,
         useLocalDpiUri: opts.useLocalDpiUri,
         compression: opts.compression,
@@ -418,7 +430,11 @@ export function stringifyDrawingChild(
         dpi: opts.dpi,
         rotWithShape: opts.rotWithShape,
         sourceRectangle: opts.sourceRectangle,
+        fillRectangle: opts.fillRectangle,
+        stretch: opts.stretch,
         nonVisualProperties: opts.nonVisualProperties,
+        nonVisualPropertiesPresent: opts.nonVisualPropertiesPresent,
+        shapePropertiesPresent: opts.shapePropertiesPresent,
         useLocalDpi: opts.useLocalDpi,
         useLocalDpiUri: opts.useLocalDpiUri,
         compression: opts.compression,
@@ -441,6 +457,8 @@ export function stringifyDrawingChild(
         scene3d: opts.scene3d,
         shape3d: opts.shape3d,
         blipEffects: opts.blipEffects,
+        blipExt: opts.blipExt,
+        shapeExtensions: opts.shapeExtensions,
         tile: opts.tile,
         graphicFrameLocks: opts.graphicFrameLocks,
         extensionIds: opts.extensionIds,
@@ -493,6 +511,9 @@ export function stringifyDrawingChild(
               relationshipId: externalData.relationshipId,
               fileName: externalData.fileName,
               data: externalData.data,
+              ...(externalData.relationshipType
+                ? { relationshipType: externalData.relationshipType }
+                : {}),
             },
           }
         : {}),
@@ -574,10 +595,11 @@ export function stringifyDrawingChild(
     // data rels target to follow, or the rels would point at the wrong bytes.
     let raw = opts.raw;
     if (raw?.media) {
-      const renames = new Map<string, string>();
+      const media = [];
       for (const m of raw.media) {
         const data = toUint8Array(m.data);
         const type = imageTypeFromPath(m.fileName);
+        const sourceDirectory = m.partPath?.split("/").slice(0, -1);
         const entry = ctx.file.media.addMedia(
           data,
           type,
@@ -586,21 +608,18 @@ export function stringifyDrawingChild(
               type,
               data,
               fileName,
+              ...(sourceDirectory ? { partPath: [...sourceDirectory, fileName].join("/") } : {}),
               transformation: { width: 0, height: 0 },
             }) as MediaData,
           m.fileName,
         );
-        if (entry.fileName !== m.fileName) renames.set(m.fileName, entry.fileName);
+        media.push({
+          ...m,
+          fileName: entry.fileName,
+          ...(entry.partPath ? { partPath: entry.partPath } : {}),
+        });
       }
-      if (renames.size > 0) {
-        raw = {
-          ...raw,
-          media: raw.media.map((media) => {
-            const outputName = renames.get(media.fileName);
-            return outputName ? { ...media, fileName: outputName } : media;
-          }),
-        };
-      }
+      raw = { ...raw, media };
     }
 
     ctx.file.smartArts.addSmartArt(smartArtKey, {
@@ -610,6 +629,9 @@ export function stringifyDrawingChild(
       style: opts.style ?? "simple1",
       color: opts.color ?? "accent1_2",
       ...(takeSmartArtSourcePaths(opts) ? { sourcePaths: takeSmartArtSourcePaths(opts) } : {}),
+      ...(takeSmartArtSourceRelationships(opts)
+        ? { sourceRelationships: takeSmartArtSourceRelationships(opts) }
+        : {}),
       // Store a shallow copy with the remapped rels — never mutate the
       // caller's Options object.
       ...(raw ? { raw } : {}),
@@ -649,6 +671,7 @@ export function stringifyDrawingChild(
       {
         mediaData,
         docProperties: opts.altText,
+        docPropertiesPresent: opts.docPropertiesPresent,
         floating: opts.floating,
         outline: opts.outline,
         fill: opts.fill,
@@ -683,6 +706,7 @@ export function stringifyDrawingChild(
     const mediaData: GroupMediaData = {
       children: opts.children.map(cloneDrawingChild),
       transformation: createTransformation(opts.transformation),
+      groupExtent: opts.groupExtent,
       childOffsetX: opts.childOffsetX,
       childOffsetY: opts.childOffsetY,
       childExtentWidth: opts.childExtentWidth,
@@ -690,6 +714,8 @@ export function stringifyDrawingChild(
       fill: opts.fill,
       effects: opts.effects,
       groupShapeLocks: opts.groupShapeLocks,
+      extensions: opts.extensions,
+      blackWhiteMode: opts.blackWhiteMode,
       type: "wpg",
     };
 

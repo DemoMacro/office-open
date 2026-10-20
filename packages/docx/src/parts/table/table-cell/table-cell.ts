@@ -24,19 +24,15 @@ import type { TableCellPropertiesOptions } from "./table-cell-properties";
 export interface TableCellOptions extends BaseTableCellOptions, TableCellPropertiesOptions {
   /** Array of Paragraph, Table, or plain objects that make up the cell content */
   children: SectionChild[];
-  /**
-   * The source carried a bare `<w:tcPr/>` with no attributes or children.
-   * Round-trip marker only — re-emits the empty element instead of dropping
-   * it (element presence is part of the source's fidelity).
-   */
-  cellProperties?: boolean;
 }
 
 /** Options for a cell-level structured document tag (CT_SdtCell). */
+export type SdtCellContent = TableCellOptions | { sdt: SdtCellOptions };
+
 export interface SdtCellOptions {
   properties: SdtPropertiesOptions;
-  /** Cells wrapped by the SDT (sdtContent holds <w:tc>). */
-  cells?: TableCellOptions[];
+  /** Cells wrapped by the SDT, including historical nested cell SDT wrappers. */
+  cells?: SdtCellContent[];
   /** Run properties for the SDT end mark (w:sdtEndPr). */
   endProperties?: RunPropertiesOptions;
 }

@@ -72,7 +72,9 @@ export const groupShapePropertiesDesc: CustomDescriptor<GroupShapePropertiesOpti
       opts.childOffsetX !== undefined ||
       opts.childOffsetY !== undefined ||
       opts.childExtentWidth !== undefined ||
-      opts.childExtentHeight !== undefined;
+      opts.childExtentHeight !== undefined ||
+      opts.childOffsetPresent === true ||
+      opts.childExtentPresent === true;
     if (hasTransform) {
       const xfrm = groupTransform2DDesc.stringify(opts, ctx);
       if (xfrm) parts.push(xfrm);

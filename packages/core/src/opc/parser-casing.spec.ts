@@ -39,4 +39,21 @@ describe("ParsedArchive case-insensitive part names", () => {
     expect(doc.remove("xl/sharedstrings.xml")).toBe(true);
     expect(doc.has("xl/SharedStrings.xml")).toBe(false);
   });
+
+  it("rejects ZIP members that collide as OPC part names", () => {
+    expect(() =>
+      parseArchive(
+        zipSync({
+          "_rels/.rels": [
+            enc(
+              '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"/>',
+            ),
+            { level: 0 },
+          ],
+          "xl/sheet1.xml": [enc("<sheet/>"), { level: 0 }],
+          "xl/Sheet1.xml": [enc("<sheet/>"), { level: 0 }],
+        }),
+      ),
+    ).toThrow("duplicate ZIP part name");
+  });
 });

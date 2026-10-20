@@ -58,6 +58,33 @@ describe("Relationships", () => {
     );
   });
 
+  it("claimSourceRel preserves non-numeric source ids", () => {
+    const rels = new Relationships("word/document.xml");
+    const hyperlink =
+      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink";
+    rels.claimSourceRel({
+      relationshipType: hyperlink,
+      target: "https://example.invalid/",
+      rId: "source-link",
+      targetMode: "External",
+    });
+    expect(rels.idOf(hyperlink, "https://example.invalid/", "External")).toBe("source-link");
+    expect(rels.serialize()).toContain('Id="source-link"');
+  });
+
+  it("claimSourceRel preserves a source Type spelling", () => {
+    const rels = new Relationships("word/document.xml");
+    const canonicalTheme =
+      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme";
+    rels.addRelationship(1, canonicalTheme, "theme/theme1.xml");
+    rels.claimSourceRel({
+      relationshipType: "urn:example:theme",
+      target: "/word/theme/theme1.xml",
+      rId: "rId1",
+    });
+    expect(rels.serialize()).toContain('Type="urn:example:theme"');
+  });
+
   it("addRelationship() takes an explicit id (fixed rId1, offset batches)", () => {
     const rels = new Relationships();
     rels.addRelationship(

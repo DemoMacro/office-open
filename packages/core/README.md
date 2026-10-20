@@ -13,7 +13,7 @@
 - **Vector (VML)** — Full structured VML vocabulary (vml, office, word, excel, presentation namespaces) for shapes, strokes, and legacy anchors
 - **Chart Components** — Shared chart types (bar, line, pie, area, scatter) and chart collection
 - **SmartArt Components** — Data model, tree-to-model converter, layout/style/color definitions
-- **OPC (Open Packaging)** — Content types, relationships, and ZIP packaging
+- **OPC (Open Packaging)** — High-level archive APIs on the root, with the full packaging runtime under `/opc`
 - **Value Validators** — Runtime validation for OOXML spec types (ST_HexColor, ST_OnOff, ST_DecimalNumber, etc.)
 - **Unit Converters** — TWIP and EMU conversions (mm/in/pt/px)
 - **ID Generators** — Sequential numeric IDs, random IDs, SHA-1 hash, UUID v4
@@ -78,17 +78,19 @@ gen(); // → 1, 2, 3, ...
 
 ## API
 
-| Path                           | Contents                                                                  |
-| ------------------------------ | ------------------------------------------------------------------------- |
-| `@office-open/core`            | Descriptors, validators, converters, ID generators, OPC, password hashing |
-| `@office-open/core/descriptor` | Descriptor runtime (`CustomDescriptor`, `stringify`, `parse`, contexts)   |
-| `@office-open/core/util`       | Validators, converters, ID generators, mappings, crypto, base64           |
-| `@office-open/core/chart`      | Chart types, series data, chart collection, title                         |
-| `@office-open/core/smartart`   | SmartArt data model, tree-to-model, definitions                           |
-| `@office-open/core/drawing`    | DrawingML fills, outlines, effects, geometry, text body                   |
-| `@office-open/core/vector`     | Structured VML vocabulary (shapes, strokes, legacy anchors)               |
-| `@office-open/core/patch`      | Template patching utilities (replacer, traverser, token replacer)         |
-| `@office-open/core/theme`      | Theme definitions and color schemes                                       |
+| Path                           | Contents                                                                              |
+| ------------------------------ | ------------------------------------------------------------------------------------- |
+| `@office-open/core`            | Descriptors, validators, converters, ID generators, archive parser, output conversion |
+| `@office-open/core/descriptor` | Descriptor runtime (`CustomDescriptor`, `stringify`, `parse`, contexts)               |
+| `@office-open/core/opc`        | OPC relationships, content types, manifests, encryption, ZIP packer                   |
+| `@office-open/core/cfb`        | Compound File Binary reader, legacy encryption, summary metadata                      |
+| `@office-open/core/util`       | Validators, converters, ID generators, mappings, crypto, base64                       |
+| `@office-open/core/chart`      | Chart types, series data, chart collection, title                                     |
+| `@office-open/core/smartart`   | SmartArt data model, tree-to-model, definitions                                       |
+| `@office-open/core/drawing`    | DrawingML fills, outlines, effects, geometry, text body                               |
+| `@office-open/core/vector`     | Structured VML vocabulary (shapes, strokes, legacy anchors)                           |
+| `@office-open/core/patch`      | Template patching utilities (replacer, traverser, token replacer)                     |
+| `@office-open/core/theme`      | Theme definitions and color schemes                                                   |
 
 ## Documentation
 

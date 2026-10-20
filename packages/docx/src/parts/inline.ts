@@ -10,9 +10,10 @@
  * @module
  */
 
-import { RELATIONSHIP_TYPES, hpsMeasureValue } from "@office-open/core";
-import { TargetModeType } from "@office-open/core";
-import { escapeXml } from "@office-open/xml";
+import { hpsMeasureValue } from "@office-open/core";
+import { RELATIONSHIP_TYPES } from "@office-open/core/opc";
+import { TargetModeType } from "@office-open/core/opc";
+import { element, escapeXml } from "@office-open/xml";
 import { subDocDesc } from "@parts/bodychildren";
 import { objectDesc, type ObjectElementOptions } from "@parts/object";
 import type {
@@ -24,10 +25,14 @@ import type {
 } from "@parts/paragraph/links/bookmark";
 import type {
   ComplexFieldOptions,
+  ComplexFieldInstructionMember,
+  FieldMarkerOptions,
+  FootnoteEndnoteReferenceOptions,
   ParagraphChild,
   ParagraphOptions,
   TrackChangeChild,
 } from "@parts/paragraph/paragraph";
+import type { NumberingChangeOptions } from "@parts/paragraph/properties";
 import type { CommentChildOptions } from "@parts/paragraph/run/comment-run";
 import type { RubyOptions } from "@parts/paragraph/run/ruby";
 import {
@@ -54,6 +59,13 @@ import {
 } from "./paragraph/stringify";
 
 // ── Run ──
+
+function customMarkFollowsXml(
+  reference: number | FootnoteEndnoteReferenceOptions | undefined,
+): string {
+  if (typeof reference !== "object" || reference.customMarkFollows === undefined) return "";
+  return ` w:customMarkFollows="${reference.customMarkFollows ? "1" : "0"}"`;
+}
 
 function stringifySymbolRunInner(opts: SymbolRunOptions): string {
   const tag = opts.kind === "office2016" ? "w16se:sym" : "w:sym";
@@ -83,11 +95,93 @@ function stringifySimpleField(
   return `<w:fldSimple ${sfAttrs.join(" ")}/>`;
 }
 
+function stringifyComplexFieldMember(
+  member: ComplexFieldInstructionMember,
+  ctx: BodyContext,
+  isDelete = false,
+): string {
+  if ("run" in member) {
+    if (!isDelete) return stringifyRunInline(member.run, ctx);
+    const children = member.run.children?.map((child) => {
+      if (
+        typeof child === "object" &&
+        child !== null &&
+        "instructionText" in child &&
+        !("deletedInstructionText" in child)
+      ) {
+        const segment = child as { instructionText: string; preserveSpace?: boolean };
+        const { instructionText, preserveSpace } = segment;
+        return {
+          deletedInstructionText: instructionText,
+          ...(preserveSpace !== undefined ? { preserveSpace } : {}),
+        };
+      }
+      return child;
+    });
+    return stringifyRunInline({ ...member.run, children }, ctx, true);
+  }
+  if ("simpleField" in member) return stringifySimpleField(member.simpleField, ctx);
+  if ("bookmarkStart" in member) {
+    return `<w:bookmarkStart ${buildBookmarkStartAttrs(member.bookmarkStart)}/>`;
+  }
+  if ("bookmarkEnd" in member) {
+    return `<w:bookmarkEnd ${buildMarkupRangeAttrs(member.bookmarkEnd)}/>`;
+  }
+  if ("proofErr" in member) {
+    return `<w:proofErr w:type="${member.proofErr}"/>`;
+  }
+  if ("hyperlink" in member) {
+    const xml = stringifyChildDispatch(member, ctx);
+    if (Array.isArray(xml)) return xml.join("");
+    return xml ?? "";
+  }
+  if ("complexField" in member) {
+    return stringifyComplexFieldRuns(member.complexField, isDelete, ctx);
+  }
+  if ("fieldMarker" in member) return stringifyFieldMarker(member.fieldMarker);
+  if ("sdt" in member) {
+    const xml = stringifyChildDispatch(member, ctx);
+    if (Array.isArray(xml)) return xml.join("");
+    return xml ?? "";
+  }
+  if (
+    "insertion" in member ||
+    "deletion" in member ||
+    "movedFrom" in member ||
+    "movedTo" in member
+  ) {
+    const xml = stringifyChildDispatch(member, ctx);
+    if (Array.isArray(xml)) return xml.join("");
+    return xml ?? "";
+  }
+  const xml = stringifyChildDispatch(member, ctx);
+  if (xml === undefined) return "";
+  return Array.isArray(xml) ? xml.join("") : xml;
+}
+
+function stringifyFieldMarker(marker: FieldMarkerOptions): string {
+  const attrs = runAttrs([marker.additionRsid, marker.runPropertiesRsid, marker.deletionRsid]);
+  const lrpb = marker.lastRenderedPageBreak ? "<w:lastRenderedPageBreak/>" : "";
+  const numberingChangeXml = marker.numberingChange
+    ? element("w:numberingChange", {
+        "w:original": marker.numberingChange.original,
+        "w:id": marker.numberingChange.id,
+        "w:author": marker.numberingChange.author,
+        "w:date": marker.numberingChange.date,
+      })
+    : "";
+  const fldChar = numberingChangeXml
+    ? `<w:fldChar w:fldCharType="${marker.type}">${numberingChangeXml}</w:fldChar>`
+    : `<w:fldChar w:fldCharType="${marker.type}"/>`;
+  return `<w:r${attrs}>${marker.rPrXml ?? ""}${lrpb}${fldChar}</w:r>`;
+}
+
 function stringifyComplexFieldRuns(
   cf: ComplexFieldOptions,
   isDelete = false,
   ctx: BodyContext,
 ): string {
+  if (cf.compoundRunXml) return cf.compoundRunXml + (cf.compoundEndRunXml ?? "");
   const instrTag = isDelete ? "w:delInstrText" : "w:instrText";
   const textTag = isDelete ? "w:delText" : "w:t";
   // Run-properties: Word writes identical rPr across a field's runs. Apply
@@ -96,51 +190,39 @@ function stringifyComplexFieldRuns(
   // result had none, matching Word's uniform behavior).
   const ctrl = cf.rPrXml ?? "";
   const res = cf.resultRPrXml ?? ctrl;
-  const beginAttrs = runAttrs([cf.additionRsid, cf.runPropertiesRsid]);
+  const beginAttrs = runAttrs([cf.additionRsid, cf.runPropertiesRsid, cf.deletionRsid]);
   const resultAttrs = [
     cf.resultAdditionRsid ? ` w:rsidR="${cf.resultAdditionRsid}"` : "",
     cf.resultRunPropertiesRsid ? ` w:rsidRPr="${cf.resultRunPropertiesRsid}"` : "",
+    cf.resultDeletionRsid ? ` w:rsidDel="${cf.resultDeletionRsid}"` : "",
   ].join("");
   // Instruction: verbatim when the source split it across non-plain runs;
   // plain template otherwise; no instruction run at all for an empty
   // instruction (a bare begin→end field round-trips without one).
   const mixedInstructionXml = cf.instructionMembers
-    ?.map((member) =>
-      "run" in member
-        ? stringifyRunInline(member.run, ctx)
-        : "simpleField" in member
-          ? stringifySimpleField(member.simpleField, ctx)
-          : "bookmarkStart" in member
-            ? `<w:bookmarkStart ${buildBookmarkStartAttrs(member.bookmarkStart)}/>`
-            : `<w:bookmarkEnd ${buildMarkupRangeAttrs(member.bookmarkEnd)}/>`,
-    )
+    ?.map((member) => stringifyComplexFieldMember(member, ctx, isDelete))
     .join("");
   const instrXml =
     mixedInstructionXml ??
     cf.instrRunsXml ??
     (cf.instruction !== ""
-      ? `<w:r${runAttrs([cf.instructionAdditionRsid, cf.instructionRunPropertiesRsid])}>${cf.instructionRPrXml ?? ctrl}<${instrTag}${cf.instructionPreserveSpace ? ' xml:space="preserve"' : ""}>${escapeXml(cf.instruction)}</${instrTag}></w:r>`
+      ? `<w:r${runAttrs([cf.instructionAdditionRsid, cf.instructionRunPropertiesRsid, cf.instructionDeletionRsid])}>${cf.instructionRPrXml ?? ctrl}<${instrTag}${cf.instructionPreserveSpace ? ' xml:space="preserve"' : ""}>${escapeXml(cf.instruction)}</${instrTag}></w:r>`
       : "");
   // `separate` + the result run are emitted only when there is a cached
   // result or ordered result members; a result-less field round-trips as
   // begin/instrText/end. Result runs go verbatim when the source split them
   // beyond the plain template.
   const separatorXml =
-    cf.resultRunsXml !== undefined || cf.resultMembers !== undefined || cf.result !== undefined
-      ? `<w:r${runAttrs([cf.separatorAdditionRsid, cf.separatorRunPropertiesRsid])}>${cf.separatorRPrXml ?? ctrl}<w:fldChar w:fldCharType="separate"/></w:r>`
+    cf.hasResult === true ||
+    cf.resultRunsXml !== undefined ||
+    cf.resultMembers !== undefined ||
+    cf.result !== undefined
+      ? `<w:r${runAttrs([cf.separatorAdditionRsid, cf.separatorRunPropertiesRsid, cf.separatorDeletionRsid])}>${cf.separatorRPrXml ?? ctrl}<w:fldChar w:fldCharType="separate"/></w:r>`
       : "";
   const resultXml =
     cf.resultMembers !== undefined
       ? cf.resultMembers
-          .map((member) =>
-            "run" in member
-              ? stringifyRunInline(member.run, ctx)
-              : "simpleField" in member
-                ? stringifySimpleField(member.simpleField, ctx)
-                : "bookmarkStart" in member
-                  ? `<w:bookmarkStart ${buildBookmarkStartAttrs(member.bookmarkStart)}/>`
-                  : `<w:bookmarkEnd ${buildMarkupRangeAttrs(member.bookmarkEnd)}/>`,
-          )
+          .map((member) => stringifyComplexFieldMember(member, ctx, isDelete))
           .join("")
       : cf.resultRunsXml !== undefined
         ? cf.resultRunsXml
@@ -148,21 +230,38 @@ function stringifyComplexFieldRuns(
           ? `<w:r${resultAttrs}>${res}<${textTag}${cf.resultPreserveSpace ? ' xml:space="preserve"' : ""}>${escapeXml(cf.result)}</${textTag}></w:r>`
           : "";
   const lrpb = cf.lastRenderedPageBreak ? "<w:lastRenderedPageBreak/>" : "";
+  const endFldChar = endFieldCharXml(cf.endNumberingChange);
   return (
-    `<w:r${beginAttrs}>${ctrl}${lrpb}<w:fldChar w:fldCharType="begin"${
-      cf.fieldLock !== undefined ? ` w:fldLock="${cf.fieldLock ? 1 : 0}"` : ""
-    }/></w:r>` +
+    `<w:r${beginAttrs}>${ctrl}${lrpb}${createBegin(
+      undefined,
+      undefined,
+      cf.fieldLock,
+      cf.fieldData,
+      cf.beginNumberingChange,
+    )}</w:r>` +
     instrXml +
     separatorXml +
     resultXml +
-    `<w:r${runAttrs([cf.endAdditionRsid, cf.endRunPropertiesRsid])}>${cf.endRPrXml ?? ctrl}<w:fldChar w:fldCharType="end"/></w:r>`
+    `<w:r${runAttrs([cf.endAdditionRsid, cf.endRunPropertiesRsid, cf.endDeletionRsid])}>${cf.endRPrXml ?? ctrl}${endFldChar}</w:r>`
   );
 }
 
-function runAttrs(ids: readonly [string | undefined, string | undefined]): string {
+function endFieldCharXml(change: NumberingChangeOptions | undefined): string {
+  if (!change) return '<w:fldChar w:fldCharType="end"/>';
+  const child = element("w:numberingChange", {
+    "w:original": change.original,
+    "w:id": change.id,
+    "w:author": change.author,
+    "w:date": change.date,
+  });
+  return `<w:fldChar w:fldCharType="end">${child}</w:fldChar>`;
+}
+
+function runAttrs(ids: readonly (string | undefined)[]): string {
   let attrs = "";
   if (ids[0]) attrs += ` w:rsidR="${ids[0]}"`;
   if (ids[1]) attrs += ` w:rsidRPr="${ids[1]}"`;
+  if (ids[2]) attrs += ` w:rsidDel="${ids[2]}"`;
   return attrs;
 }
 
@@ -172,47 +271,11 @@ function runIdentityAttrs(child: ParagraphChild): string {
     runPropertiesRsid?: string;
     deletionRsid?: string;
   };
-  let identity = runAttrs([attrs.additionRsid, attrs.runPropertiesRsid]);
-  if (attrs.deletionRsid) identity += ` w:rsidDel="${attrs.deletionRsid}"`;
-  return identity;
-}
-
-/** Serialize a deleted run: rPr + delText (or field delInstrText). */
-function stringifyDeletedRun(c: RunOptions | string): string {
-  const opts = typeof c === "string" ? { text: c } : c;
-  const parts: string[] = [];
-  // Reference runs keep exactly the run properties the source carried —
-  // Word does not always style comment references, so nothing is injected.
-  const rPr = stringifyRunProperties(opts);
-  if (rPr) parts.push(rPr);
-  if (opts.break) parts.push(breakXml(opts.break));
-  let attr = "";
-  if (opts.additionRsid) attr += ` w:rsidR="${opts.additionRsid}"`;
-  if (opts.runPropertiesRsid) attr += ` w:rsidRPr="${opts.runPropertiesRsid}"`;
-  if (opts.deletionRsid) attr += ` w:rsidDel="${opts.deletionRsid}"`;
-  const openTag = attr ? `<w:r${attr}>` : "<w:r>";
-  const hasSpaceSegment =
-    opts.children?.some(
-      (child) => typeof child === "object" && child !== null && "preserveSpace" in child,
-    ) === true;
-  if (opts.children) {
-    for (const cc of opts.children) {
-      if (typeof cc === "string") {
-        parts.push(textElementXml("w:delText", cc, opts.preserveSpace && !hasSpaceSegment));
-      } else if (typeof cc === "object" && cc !== null && "commentReference" in cc) {
-        parts.push(`<w:commentReference w:id="${Number(cc.commentReference)}"/>`);
-      } else if (typeof cc === "object" && cc !== null && "break" in cc) {
-        parts.push(breakXml((cc as { break: number | BreakOptions }).break));
-      }
-    }
-  } else if (opts.text) {
-    parts.push(textElementXml("w:delText", String(opts.text), opts.preserveSpace));
-  }
-  return `${openTag}${parts.join("")}</w:r>`;
+  return runAttrs([attrs.additionRsid, attrs.runPropertiesRsid, attrs.deletionRsid]);
 }
 
 function textElementXml(tag: string, text: string, preserve?: boolean): string {
-  const preserveSpace = preserve === undefined ? /^[\t\n\r ]|[\t\n\r ]$/.test(text) : preserve;
+  const preserveSpace = preserve === true || /^[\t\n\r ]|[\t\n\r ]$/.test(text);
   const attr = preserveSpace ? ' xml:space="preserve"' : "";
   return `<${tag}${attr}>${escapeXml(text)}</${tag}>`;
 }
@@ -222,7 +285,12 @@ function stringifyRubyContent(opts: RubyOptions["text"], ctx: BodyContext): stri
     opts.children
       ?.map((child) => {
         if (typeof child === "string") return stringifyRunInline({ text: child }, ctx);
-        if ("symbolRun" in child || "object" in child || "pict" in child) {
+        if (
+          "symbolRun" in child ||
+          "object" in child ||
+          "pict" in child ||
+          !("style" in child && "text" in child)
+        ) {
           return stringifyChildDispatch(child, ctx) ?? "";
         }
         return stringifyRunInline(child, ctx);
@@ -248,26 +316,11 @@ function stringifyRuby(opts: RubyOptions, ctx: BodyContext): string {
   );
 }
 
-export function stringifyRunInline(opts: RunOptions, ctx: BodyContext): string {
+export function stringifyRunInline(opts: RunOptions, ctx: BodyContext, isDeleted = false): string {
   let body = "";
+  const textTag = isDeleted ? "w:delText" : "w:t";
 
-  // Pre-scan children for commentReference — a styled reference carries the
-  // CommentReference style in its own properties; only an unstyled fresh one
-  // gets the conventional default. The scan is pointless when a style is
-  // already set (the default can never apply).
-  let commentRefStyle = false;
-  if (opts.children && !opts.style) {
-    for (const child of opts.children) {
-      if (typeof child === "object" && child !== null && "commentReference" in child) {
-        commentRefStyle = true;
-        break;
-      }
-    }
-  }
-
-  const runOpts =
-    commentRefStyle && !opts.style ? { ...opts, style: "CommentReference" as const } : opts;
-  const rPr = stringifyRunProperties(runOpts);
+  const rPr = stringifyRunProperties(opts);
 
   if (opts.break) body += breakXml(opts.break);
   if (opts.pageBreak) body += '<w:br w:type="page"/>';
@@ -284,20 +337,18 @@ export function stringifyRunInline(opts: RunOptions, ctx: BodyContext): string {
   const enRef = opts.endnoteReference;
   if (fnRef !== undefined) {
     const id = typeof fnRef === "number" ? fnRef : fnRef.id;
-    const cmf =
-      typeof fnRef === "object" && fnRef.customMarkFollows ? ' w:customMarkFollows="1"' : "";
+    const cmf = customMarkFollowsXml(fnRef);
     body += `<w:footnoteReference w:id="${id}"${cmf}/>`;
   } else if (enRef !== undefined) {
     const id = typeof enRef === "number" ? enRef : enRef.id;
-    const cmf =
-      typeof enRef === "object" && enRef.customMarkFollows ? ' w:customMarkFollows="1"' : "";
+    const cmf = customMarkFollowsXml(enRef);
     body += `<w:endnoteReference w:id="${id}"${cmf}/>`;
   }
 
   if (opts.children) {
     for (const child of opts.children) {
       if (typeof child === "string") {
-        body += textElementXml("w:t", child, opts.preserveSpace && !hasSpaceSegment);
+        body += textElementXml(textTag, child, opts.preserveSpace && !hasSpaceSegment);
       } else if (typeof child === "object" && child !== null) {
         // Bare run-inner elements — emit directly inside this <w:r>. Must run
         // before stringifyChildDispatch, which wraps paragraph-level children
@@ -308,7 +359,7 @@ export function stringifyRunInline(opts: RunOptions, ctx: BodyContext): string {
         }
         const textSegment = child as { text?: string; preserveSpace?: boolean };
         if (typeof textSegment.text === "string" && "preserveSpace" in textSegment) {
-          body += textElementXml("w:t", textSegment.text, textSegment.preserveSpace);
+          body += textElementXml(textTag, textSegment.text, textSegment.preserveSpace);
           continue;
         }
         if ("instructionText" in textSegment) {
@@ -326,6 +377,11 @@ export function stringifyRunInline(opts: RunOptions, ctx: BodyContext): string {
             segment.deletedInstructionText,
             segment.preserveSpace,
           );
+          continue;
+        }
+        if ("deletedText" in textSegment) {
+          const segment = textSegment as { deletedText: string; preserveSpace?: boolean };
+          body += textElementXml("w:delText", segment.deletedText, segment.preserveSpace);
           continue;
         }
         if ("pageBreak" in child) {
@@ -357,20 +413,14 @@ export function stringifyRunInline(opts: RunOptions, ctx: BodyContext): string {
         const bareFnRef = (child as RunOptions).footnoteReference;
         if (bareFnRef !== undefined) {
           const id = typeof bareFnRef === "number" ? bareFnRef : bareFnRef.id;
-          const cmf =
-            typeof bareFnRef === "object" && bareFnRef.customMarkFollows
-              ? ' w:customMarkFollows="1"'
-              : "";
+          const cmf = customMarkFollowsXml(bareFnRef);
           body += `<w:footnoteReference w:id="${id}"${cmf}/>`;
           continue;
         }
         const bareEnRef = (child as RunOptions).endnoteReference;
         if (bareEnRef !== undefined) {
           const id = typeof bareEnRef === "number" ? bareEnRef : bareEnRef.id;
-          const cmf =
-            typeof bareEnRef === "object" && bareEnRef.customMarkFollows
-              ? ' w:customMarkFollows="1"'
-              : "";
+          const cmf = customMarkFollowsXml(bareEnRef);
           body += `<w:endnoteReference w:id="${id}"${cmf}/>`;
           continue;
         }
@@ -423,7 +473,7 @@ export function stringifyRunInline(opts: RunOptions, ctx: BodyContext): string {
         if (jsonResult !== undefined) {
           body += Array.isArray(jsonResult) ? jsonResult.join("") : jsonResult;
         } else if ("text" in child || "children" in child || "break" in child) {
-          body += stringifyRunInline(child as RunOptions, ctx);
+          body += stringifyRunInline(child as RunOptions, ctx, isDeleted);
         }
         // Anything else is an unknown field — silent no-op (runtime convention
         // for unrecognized JSON: TS excess-property checks guard authoring,
@@ -431,7 +481,7 @@ export function stringifyRunInline(opts: RunOptions, ctx: BodyContext): string {
       }
     }
   } else if (opts.text !== undefined) {
-    body += textElementXml("w:t", String(opts.text), opts.preserveSpace);
+    body += textElementXml(textTag, String(opts.text), opts.preserveSpace);
   }
 
   let attr = "";
@@ -482,7 +532,7 @@ export function buildBookmarkStartAttrs(bs: BookmarkStartOptions): string {
 }
 
 /** Shared attribute string for w:moveFromRangeStart / w:moveToRangeStart (CT_MoveBookmark). */
-function buildMoveRangeStartAttrs(m: MoveRangeStartOptions): string {
+export function buildMoveRangeStartAttrs(m: MoveRangeStartOptions): string {
   const a: string[] = [`w:id="${m.id}"`];
   if (m.name) a.push(`w:name="${escapeXml(m.name)}"`);
   if (m.author) a.push(`w:author="${escapeXml(m.author)}"`);
@@ -536,6 +586,35 @@ function stringifyTrackChangeBreak(opts: RunOptions, type: "page" | "column"): s
  * w:del, plain text inside w:ins), comment range markers, and nested
  * same-family wrappers — each child's text form follows its nearest wrapper.
  */
+function stringifySdtTrackChangeContent(
+  children: readonly (ParagraphChild | string)[] | undefined,
+  ctx: BodyContext,
+  isDelete: boolean,
+): string {
+  const parts: string[] = [];
+  for (const child of children ?? []) {
+    if (typeof child === "string") {
+      parts.push(stringifyRunInline({ text: child }, ctx, isDelete));
+      continue;
+    }
+    if ("complexField" in child) {
+      parts.push(stringifyComplexFieldRuns(child.complexField, isDelete, ctx));
+      continue;
+    }
+    if (isPlainTextRun(child)) {
+      parts.push(stringifyRunInline(child, ctx, isDelete));
+      continue;
+    }
+    const xml = stringifyChildDispatch(child, ctx);
+    if (xml !== undefined) {
+      parts.push(Array.isArray(xml) ? xml.join("") : xml);
+    } else {
+      parts.push(stringifyRunInline(child as RunOptions, ctx, isDelete));
+    }
+  }
+  return parts.join("");
+}
+
 function stringifyTrackChangeChildren(
   children: readonly TrackChangeChild[],
   ctx: BodyContext,
@@ -569,6 +648,16 @@ function stringifyTrackChangeChildren(
       parts.push(`<w:proofErr w:type="${c.proofErr}"/>`);
     } else if (typeof c !== "string" && "complexField" in c) {
       parts.push(stringifyComplexFieldRuns(c.complexField, isDelete, ctx));
+    } else if (typeof c !== "string" && "sdt" in c) {
+      const sdt = c.sdt;
+      parts.push(
+        stringifySdtShell(
+          sdt.properties,
+          sdt.endProperties,
+          stringifySdtTrackChangeContent(sdt.children, ctx, isDelete),
+          ctx.reproducible,
+        ),
+      );
     } else if (typeof c !== "string" && "formField" in c) {
       const xml = stringifyChildDispatch(c as ParagraphChild, ctx);
       if (typeof xml === "string") parts.push(xml);
@@ -579,8 +668,8 @@ function stringifyTrackChangeChildren(
       // dispatch builds the complete <w:r> for drawings and other variants,
       // and plain-run shapes it does not recognize take the wrapper-aware
       // fallback below.
-      if (isDelete && isPlainTextRun(c as ParagraphChild)) {
-        parts.push(stringifyDeletedRun(c as RunOptions));
+      if (isDelete && isPlainTextRun(c)) {
+        parts.push(stringifyRunInline(c, ctx, true));
       } else {
         const xml = stringifyChildDispatch(c as ParagraphChild, ctx);
         if (typeof xml === "string") {
@@ -588,14 +677,18 @@ function stringifyTrackChangeChildren(
         } else {
           parts.push(
             isDelete
-              ? stringifyDeletedRun(c as RunOptions)
+              ? stringifyRunInline(c as RunOptions, ctx, true)
               : stringifyRunInline(c as RunOptions, ctx),
           );
         }
       }
     } else {
       // Plain string child — inside w:del it serializes as delText.
-      parts.push(isDelete ? stringifyDeletedRun(c) : stringifyRunInline({ text: c }, ctx));
+      parts.push(
+        isDelete
+          ? stringifyRunInline({ text: c }, ctx, true)
+          : stringifyRunInline({ text: c }, ctx),
+      );
     }
   }
   return parts.join("");
@@ -691,7 +784,7 @@ function runPropertiesXml(child: ParagraphChild): string {
  * context-specific text spelling (w:delText inside a deletion wrapper) use
  * this to claim the shape before dispatch does.
  */
-function isPlainTextRun(child: ParagraphChild): boolean {
+function isPlainTextRun(child: ParagraphChild): child is RunOptions {
   const run = child as RunOptions;
   return (
     "text" in child &&
@@ -739,10 +832,7 @@ export function stringifyChildDispatch(
   const fnRefChild = (child as RunOptions).footnoteReference;
   if (fnRefChild !== undefined) {
     const id = typeof fnRefChild === "number" ? fnRefChild : fnRefChild.id;
-    const cmf =
-      typeof fnRefChild === "object" && fnRefChild.customMarkFollows
-        ? ' w:customMarkFollows="1"'
-        : "";
+    const cmf = customMarkFollowsXml(fnRefChild);
     // Round-tripped run properties win; a fresh reference gets the
     // conventional FootnoteReference character style. A RunOptions-flavored
     // child carries them flattened, so read both shapes.
@@ -755,10 +845,7 @@ export function stringifyChildDispatch(
   const enRefChild = (child as RunOptions).endnoteReference;
   if (enRefChild !== undefined) {
     const id = typeof enRefChild === "number" ? enRefChild : enRefChild.id;
-    const cmf =
-      typeof enRefChild === "object" && enRefChild.customMarkFollows
-        ? ' w:customMarkFollows="1"'
-        : "";
+    const cmf = customMarkFollowsXml(enRefChild);
     const props = "properties" in child ? child.properties : undefined;
     const rPr = props
       ? (stringifyRunProperties(props) ?? "")
@@ -781,7 +868,6 @@ export function stringifyChildDispatch(
     const rPr = child.properties ? (stringifyRunProperties(child.properties) ?? "") : "";
     return `<w:r${runIdentityAttrs(child)}>${rPr}<w:commentReference w:id="${child.commentReference}"/></w:r>`;
   }
-
   // Bookmark markers — pure XML
   if ("bookmarkStart" in child) {
     return `<w:bookmarkStart ${buildBookmarkStartAttrs(child.bookmarkStart)}/>`;
@@ -849,16 +935,25 @@ export function stringifyChildDispatch(
       : "";
     const instructionRPr = child.instructionRPrXml ?? ctrl;
     const instructionXml =
+      child.instructionMembers
+        ?.map((member) => stringifyComplexFieldMember(member, ctx))
+        .join("") ??
       child.instrRunsXml ??
       `<w:r${runAttrs([child.instructionAdditionRsid, child.instructionRunPropertiesRsid])}>${instructionRPr}<w:instrText xml:space="preserve"> ${instrCode} </w:instrText></w:r>`;
     const resultXml =
       child.hasResult === false
         ? ""
         : `<w:r${runAttrs([child.separatorAdditionRsid, child.separatorRunPropertiesRsid])}>${child.separatorRPrXml ?? ctrl}${createSeparate()}</w:r>` +
-          (child.resultRunsXml ??
-            `<w:r${runAttrs([child.resultAdditionRsid, child.resultRunPropertiesRsid])}>${child.resultRPrXml ?? (resultRPr || rPr)}<w:t xml:space="preserve">${escapeXml(result)}</w:t></w:r>`);
+          (child.resultMembers
+            ? child.resultMembers.map((member) => stringifyComplexFieldMember(member, ctx)).join("")
+            : (child.resultRunsXml ??
+              `<w:r${runAttrs([child.resultAdditionRsid, child.resultRunPropertiesRsid])}>${child.resultRPrXml ?? (resultRPr || rPr)}<w:t xml:space="preserve">${escapeXml(result)}</w:t></w:r>`));
     return (
-      `<w:r${runAttrs([child.additionRsid, child.runPropertiesRsid])}>${ctrl}${createBegin(undefined, ff)}</w:r>` +
+      `<w:r${runAttrs([child.additionRsid, child.runPropertiesRsid])}>${ctrl}${child.lastRenderedPageBreak ? "<w:lastRenderedPageBreak/>" : ""}${createBegin(
+        undefined,
+        ff,
+        child.fieldLock,
+      )}</w:r>` +
       instructionXml +
       resultXml +
       `<w:r${runAttrs([child.endAdditionRsid, child.endRunPropertiesRsid])}>${endRPr}${createEnd()}</w:r>`
@@ -933,10 +1028,10 @@ export function stringifyChildDispatch(
       // form (injecting "1" here would oscillate across re-generations —
       // absent parses back as undefined, which would then inject "1").
       if (hl.history !== undefined) attrs.push(`w:history="${hl.history ? "1" : "0"}"`);
-      if (hl.anchor) attrs.push(`w:anchor="${escapeXml(hl.anchor)}"`);
-      if (hl.tooltip) attrs.push(`w:tooltip="${escapeXml(hl.tooltip)}"`);
-      if (hl.targetFrame) attrs.push(`w:tgtFrame="${escapeXml(hl.targetFrame)}"`);
-      if (hl.docLocation) attrs.push(`w:docLocation="${escapeXml(hl.docLocation)}"`);
+      if (hl.anchor !== undefined) attrs.push(`w:anchor="${escapeXml(hl.anchor)}"`);
+      if (hl.tooltip !== undefined) attrs.push(`w:tooltip="${escapeXml(hl.tooltip)}"`);
+      if (hl.targetFrame !== undefined) attrs.push(`w:tgtFrame="${escapeXml(hl.targetFrame)}"`);
+      if (hl.docLocation !== undefined) attrs.push(`w:docLocation="${escapeXml(hl.docLocation)}"`);
     };
     if (hl.url) {
       // Auto-allocated sequential id — deterministic across runs, so a
@@ -947,16 +1042,16 @@ export function stringifyChildDispatch(
       // per reference even when the URL repeats (sharing would collapse the
       // source's per-reference entries on round-trip).
       const relType = RELATIONSHIP_TYPES.hyperlink;
-      let relationshipId: number;
+      let linkId: string;
       if (hl.sourceRelationshipId === undefined) {
         // Fresh authoring: one relationship per hyperlink element — Word emits
         // a distinct rel per reference even when the URL repeats.
-        relationshipId = ctx.viewWrapper.relationships.add(
+        linkId = `rId${ctx.viewWrapper.relationships.add(
           relType,
           hl.url,
           TargetModeType.EXTERNAL,
-        );
-      } else if (!ctx.viewWrapper.relationships.hasId(`rId${hl.sourceRelationshipId}`)) {
+        )}`;
+      } else if (!ctx.viewWrapper.relationships.hasId(hl.sourceRelationshipId)) {
         // Round-trip: the source id slot is free — re-emit at that exact id so
         // per-reference entries keep the source topology.
         ctx.viewWrapper.relationships.addRelationship(
@@ -965,24 +1060,21 @@ export function stringifyChildDispatch(
           hl.url,
           TargetModeType.EXTERNAL,
         );
-        relationshipId = hl.sourceRelationshipId;
+        linkId = hl.sourceRelationshipId;
       } else {
         // The slot is taken. When the occupant is the same kind+target the
         // source shared one rel across references — reuse it. Otherwise the id
         // was reassigned and this reference allocates a fresh rel.
         const shared = ctx.viewWrapper.relationships.idOf(relType, hl.url, TargetModeType.EXTERNAL);
-        const sharedId = shared === undefined ? undefined : /^rId(\d+)$/.exec(shared)?.[1];
-        relationshipId =
-          sharedId !== undefined
-            ? Number(sharedId)
-            : ctx.viewWrapper.relationships.add(relType, hl.url, TargetModeType.EXTERNAL);
+        linkId =
+          shared ??
+          `rId${ctx.viewWrapper.relationships.add(relType, hl.url, TargetModeType.EXTERNAL)}`;
       }
-      const linkId = `rId${relationshipId}`;
       const attrs = [`r:id="${linkId}"`];
       pushHlAttrs(attrs);
       return `<w:hyperlink ${attrs.join(" ")}>${body}</w:hyperlink>`;
     }
-    if (hl.anchor) {
+    if (hl.anchor !== undefined) {
       const attrs: string[] = [];
       pushHlAttrs(attrs);
       return `<w:hyperlink ${attrs.join(" ")}>${body}</w:hyperlink>`;
@@ -1100,6 +1192,10 @@ export function stringifyChildDispatch(
     return stringifyComplexFieldRuns(child.complexField, false, ctx);
   }
 
+  if ("fieldMarker" in child) {
+    return stringifyFieldMarker(child.fieldMarker);
+  }
+
   // ── Sequential identifier (SEQ field) ──
   if ("seqIdentifier" in child) {
     const id = child.seqIdentifier;
@@ -1172,7 +1268,7 @@ export function stringifyChildDispatch(
   if ("sdt" in child) {
     const s = child.sdt;
     let contentXml = "";
-    if (s.properties.checkbox) {
+    if (s.properties.checkbox && !s.children?.length) {
       // Inline checkbox: render the state symbol as a run (no <w:p> wrapper).
       contentXml = checkboxSymbolRunInner(s.properties.checkbox);
     } else if (s.children && s.children.length > 0) {
@@ -1184,7 +1280,7 @@ export function stringifyChildDispatch(
           const jr = stringifyChildDispatch(c as ParagraphChild, ctx);
           if (jr !== undefined) {
             cparts.push(Array.isArray(jr) ? jr.join("") : jr);
-          } else if ("text" in c || "children" in c || "break" in c) {
+          } else {
             cparts.push(stringifyRunInline(c as RunOptions, ctx));
           }
         }

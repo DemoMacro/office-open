@@ -36,7 +36,7 @@ import {
 } from "./zip-native";
 
 export type { Zippable, ZipOptions } from "fflate";
-export { strFromU8, unzipSync, zipSync } from "fflate";
+export { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
 
 export interface XmlifyedFile {
   path: string;

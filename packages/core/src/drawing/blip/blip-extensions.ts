@@ -10,6 +10,19 @@
  */
 import { element } from "@office-open/xml";
 
+const USE_LOCAL_DPI_EXT_URI = "{28A0092B-C50C-407E-A947-70E740481C1C}";
+
+/** Creates the a14:useLocalDpi extension; `default` omits the explicit value. */
+export const createUseLocalDpiExtension = (value: boolean | "default"): string =>
+  element("a:extLst", undefined, [
+    element("a:ext", { uri: USE_LOCAL_DPI_EXT_URI }, [
+      element("a14:useLocalDpi", {
+        "xmlns:a14": "http://schemas.microsoft.com/office/drawing/2010/main",
+        ...(value === "default" ? {} : { val: value ? 1 : 0 }),
+      }),
+    ]),
+  ]);
+
 /**
  * Creates an SVG blip element for embedding SVG images.
  *

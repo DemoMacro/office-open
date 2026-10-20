@@ -25,7 +25,11 @@ export interface IndentProperties {
   right?: number | UniversalMeasure;
   rightChars?: number;
   hanging?: number | PositiveUniversalMeasure;
+  /** Source negative `w:hanging`; round-trip only — do not hand-author. */
+  hangingRaw?: string;
   hangingChars?: number;
   firstLine?: number | PositiveUniversalMeasure;
+  /** Source negative `w:firstLine`; round-trip only — do not hand-author. */
+  firstLineRaw?: string;
   firstLineChars?: number;
 }

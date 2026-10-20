@@ -8,15 +8,10 @@
  * @module
  */
 
-import {
-  convertToEmu,
-  imageTypeFromPath,
-  partPathToRelsPath,
-  resolveRelationshipTarget,
-  toUint8Array,
-} from "@office-open/core";
+import { convertToEmu, imageTypeFromPath, toUint8Array } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import type { ReadContext } from "@office-open/core/descriptor";
+import { partPathToRelsPath, resolveRelationshipTarget } from "@office-open/core/opc";
 import {
   type SmartArtRawParts,
   createDataModel,
@@ -35,7 +30,7 @@ import { attr, findChild, findFirst } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 
 import type { PptxWriteContext } from "../../context";
-import type { SmartArtOptions } from "../smartart";
+import type { SmartArtDataRelationshipOptions, SmartArtOptions } from "../smartart";
 import {
   readGraphicFrameLocking,
   readGraphicFrameHyperlink,
@@ -114,6 +109,11 @@ export const smartArtDesc: CustomDescriptor<SmartArtOptions> = {
         style: opts.style ?? "simple1",
         color: opts.color ?? "accent1_2",
         ...(opts.raw ? { raw: withRegisteredRawMedia(pptxCtx, opts.raw) } : {}),
+        ...(opts.sourceDataRelationships
+          ? { sourceDataRelationships: opts.sourceDataRelationships }
+          : {}),
+        ...(opts.sourceRelIds ? { sourceRelIds: opts.sourceRelIds } : {}),
+        ...(opts.sourcePaths ? { sourcePaths: opts.sourcePaths } : {}),
       });
     }
 
@@ -163,9 +163,10 @@ export const smartArtDesc: CustomDescriptor<SmartArtOptions> = {
     // SmartArt data via dgm:relIds → r:dm, plus the layout/style/colors parts
     const relIds = findFirst(el, "dgm:relIds");
     if (relIds) {
+      let dataPath: string | undefined;
       const rId = attr(relIds, "r:dm");
       if (rId) {
-        const dataPath = _ctx.resolveRelationship(rId);
+        dataPath = _ctx.resolveRelationship(rId);
         if (dataPath) {
           const dataEl = _ctx.getPart(dataPath);
           if (dataEl) {
@@ -181,7 +182,10 @@ export const smartArtDesc: CustomDescriptor<SmartArtOptions> = {
           const drawingPaths = [...(slideRels?.values() ?? [])].filter((path) =>
             path.startsWith("ppt/diagrams/drawing"),
           );
-          result.raw = readRawParts(dataPath, _ctx, drawingPaths);
+          const rawData = readRawParts(dataPath, _ctx, drawingPaths);
+          result.raw = rawData.raw;
+          if (rawData.relationships.length > 0)
+            result.sourceDataRelationships = rawData.relationships;
         }
       }
 
@@ -206,6 +210,19 @@ export const smartArtDesc: CustomDescriptor<SmartArtOptions> = {
         const id = color.uniqueId?.split("/").pop();
         result.color = id && isBuiltinColorDefinition(id, color) ? id : color;
       }
+
+      result.sourceRelIds = {
+        dm: attr(relIds, "r:dm") ?? undefined,
+        lo: attr(relIds, "r:lo") ?? undefined,
+        qs: attr(relIds, "r:qs") ?? undefined,
+        cs: attr(relIds, "r:cs") ?? undefined,
+      };
+      result.sourcePaths = {
+        data: dataPath ?? undefined,
+        layout: layoutPath ?? undefined,
+        quickStyle: stylePath ?? undefined,
+        colors: colorPath ?? undefined,
+      };
     }
 
     return result as SmartArtOptions;
@@ -250,7 +267,7 @@ function readRawParts(
     getRaw(path: string): Uint8Array | undefined;
   },
   drawingPaths: readonly string[],
-): SmartArtRawParts | undefined {
+): { raw?: SmartArtRawParts; relationships: SmartArtDataRelationshipOptions[] } {
   const raw: SmartArtRawParts = {};
   let drawingRelationship = false;
   const relsPath = partPathToRelsPath(dataPath);
@@ -290,7 +307,31 @@ function readRawParts(
     if (index !== undefined) raw.drawing = ctx.getRaw(`ppt/diagrams/drawing${index}.xml`);
   }
   raw.drawingRelationship = drawingRelationship;
-  return raw;
+  return { raw, relationships: readDataRelationships(relsEl) };
+}
+
+/** Preserve every source data-part relationship, including hyperlink rels. */
+function readDataRelationships(relsEl: Element | undefined) {
+  const relationships: {
+    id: string;
+    relationshipType: string;
+    target: string;
+    targetMode?: "External";
+  }[] = [];
+  for (const rel of relsEl?.elements ?? []) {
+    if (rel.name !== "Relationship") continue;
+    const id = attr(rel, "Id");
+    const relationshipType = attr(rel, "Type");
+    const target = attr(rel, "Target");
+    if (!id || !relationshipType || !target) continue;
+    relationships.push({
+      id,
+      relationshipType,
+      target,
+      ...(attr(rel, "TargetMode") === "External" ? { targetMode: "External" as const } : {}),
+    });
+  }
+  return relationships;
 }
 
 /** Parse SmartArt data XML into options. */

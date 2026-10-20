@@ -66,6 +66,24 @@ describe("slideDesc round-trip", () => {
     expect(result.showMasterPlaceholderAnimations).toBe(false);
   });
 
+  it("preserves explicit true slide master attributes", () => {
+    const xml =
+      '<p:sld xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"' +
+      ' showMasterSp="1" showMasterPhAnim="1"><p:cSld><p:spTree/></p:cSld></p:sld>';
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const result = slideDesc.parse(el, readCtx);
+    expect(result.showMasterShapes).toBe(true);
+    expect(result.showMasterShapesPresent).toBe(true);
+    expect(result.showMasterPlaceholderAnimations).toBe(true);
+    expect(result.showMasterPlaceholderAnimationsPresent).toBe(true);
+
+    const output = slideDesc.stringify(result, writeCtx);
+    if (!output) throw new Error("stringify returned undefined");
+    expect(output).toContain('showMasterSp="1"');
+    expect(output).toContain('showMasterPhAnim="1"');
+  });
+
   it("preserves explicit slide show attributes", () => {
     const xml = slideDesc.stringify({ showRaw: "1" }, writeCtx)!;
     expect(xml).toContain(' show="1"');
@@ -167,6 +185,24 @@ describe("slideDesc round-trip", () => {
     expect(result.transition).toBeDefined();
     expect(asStructured(result.transition).type).toBe("push");
     expect(asStructured(result.transition).advanceOnClick).toBe(true);
+  });
+
+  it("round-trips explicit transition defaults", () => {
+    const cases = [
+      { type: "push", direction: "left" },
+      { type: "strips", direction: "leftUp" },
+      { type: "split", orient: "horizontal", direction: "out" },
+      { type: "wheel", spokes: 4 },
+      { type: "zoom", direction: "in" },
+    ] as const;
+    for (const transition of cases) {
+      const xml = slideDesc.stringify({ transition }, writeCtx) ?? "";
+      if (transition.type === "push") expect(xml).toContain('<p:push dir="l"/>');
+      if (transition.type === "strips") expect(xml).toContain('<p:strips dir="lu"/>');
+      if (transition.type === "split") expect(xml).toContain('<p:split orient="horz" dir="out"/>');
+      if (transition.type === "wheel") expect(xml).toContain('<p:wheel spokes="4"/>');
+      if (transition.type === "zoom") expect(xml).toContain('<p:zoom dir="in"/>');
+    }
   });
 
   it("instantiates dt/ftr/sldNum placeholders for headerFooter (no p:hf on CT_Slide)", () => {

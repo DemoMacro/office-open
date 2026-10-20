@@ -56,7 +56,7 @@ function level(
   const properties = [
     control("levelnfc", format.code),
     control("levelnfcn", format.code),
-    level.alignment === undefined ? "" : control("leveljc", alignmentCode(level.alignment)),
+    level.alignment == null ? "" : control("leveljc", alignmentCode(level.alignment)),
     level.suffix === undefined ? "" : control("levelfollow", suffixCode(level.suffix)),
     level.start === undefined ? "" : control("levelstartat", level.start),
     typeof level.paragraph?.indent?.left === "number"

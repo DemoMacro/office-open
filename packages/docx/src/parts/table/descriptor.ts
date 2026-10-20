@@ -23,19 +23,32 @@ import {
 import type { CustomXmlCellOptions, CustomXmlRowOptions } from "@parts/custom-xml";
 import {
   buildBookmarkStartAttrs,
+  buildMoveRangeStartAttrs,
   buildMarkupRangeAttrs,
   stringifyParagraphInline,
 } from "@parts/inline";
-import type { BookmarkStartOptions, MarkupRangeOptions } from "@parts/paragraph/links/bookmark";
+import type {
+  BookmarkStartOptions,
+  MarkupRangeOptions,
+  MoveRangeStartOptions,
+} from "@parts/paragraph/links/bookmark";
 import { parseRunProperties } from "@parts/paragraph/run/run-parse";
+import type { PermStartOptions } from "@parts/perm-start";
 import { parseSdtProperties } from "@parts/sdt/sdt-parse";
 import type { TableGridChangeOptions } from "@parts/table/grid";
-import type { TableOptions } from "@parts/table/table";
+import type { TableMarkerChild, TableOptions } from "@parts/table/table";
 import type { TableCellSpacingProperties } from "@parts/table/table-cell-spacing";
-import type { SdtCellOptions, TableCellOptions } from "@parts/table/table-cell/table-cell";
+import type {
+  SdtCellContent,
+  SdtCellOptions,
+  TableCellOptions,
+} from "@parts/table/table-cell/table-cell";
 import type { TableCellBordersOptions } from "@parts/table/table-cell/table-cell-components";
 import { VerticalMergeType } from "@parts/table/table-cell/table-cell-components";
-import type { TableBordersOptions } from "@parts/table/table-properties/table-borders";
+import type {
+  TableBorderSide,
+  TableBordersOptions,
+} from "@parts/table/table-properties/table-borders";
 import type { TableCellMarginOptions } from "@parts/table/table-properties/table-cell-margin";
 import type { TableFloatOptions } from "@parts/table/table-properties/table-float-properties";
 import type { TableLookOptions } from "@parts/table/table-properties/table-look";
@@ -52,6 +65,8 @@ import type { CnfStyleOptions } from "@parts/table/table-row/table-row-propertie
 import type { TableWidthProperties } from "@parts/table/table-width";
 import { widthFiftiethsToPct } from "@parts/table/table-width";
 
+import { DocxParseError } from "../../errors";
+
 /** Read a CT_TblWidth @w:type as the Options-side width unit word. */
 const widthTypeOf = (el: Element): string | undefined => {
   const raw = attr(el, "w:type");
@@ -67,6 +82,7 @@ import type { ChangedProperties } from "@shared/track-revision/track-revision";
 
 import type { BodyContext, DocxReadContext } from "../../context";
 import {
+  tablePropertiesOrder,
   stringifyTableCellProperties,
   stringifyTableProperties,
   stringifyTablePropertyExceptions,
@@ -79,6 +95,7 @@ import type {
 import type {
   TablePropertiesChangeOptions,
   TablePropertiesOptions,
+  TablePropertyOrder,
 } from "./table-properties/table-properties";
 import type {
   TableRowPropertiesChangeOptions,
@@ -100,15 +117,21 @@ function parseChangeAttrs(el: Element): Partial<ChangedProperties> {
 // ── Table grid ──
 
 function buildTableGridXml(
-  widths: Array<number | string>,
+  widths: Array<number | string | null>,
   revision?: TableGridChangeOptions,
   scope?: ReproducibleScope,
+  legacyColumnCount?: number,
 ): string {
   // w:gridCol @w is s:ST_TwipsMeasure — normalize UniversalMeasure to twip integers
   // so the emitted @w is always a bare integer (never "25mm").
-  const gridCol = (w: number | string): string =>
-    `<w:gridCol w:w="${convertToTwip(w as number | UniversalMeasure)}"/>`;
-  const cols = widths.map(gridCol).join("");
+  const gridCol = (w: number | string | null): string =>
+    w === null
+      ? "<w:gridCol/>"
+      : `<w:gridCol w:w="${convertToTwip(w as number | UniversalMeasure)}"/>`;
+  const cols =
+    legacyColumnCount !== undefined && legacyColumnCount > 0
+      ? "<w:tblCol/>".repeat(legacyColumnCount)
+      : widths.map(gridCol).join("");
 
   if (revision) {
     const revCols = revision.columnWidths.map(gridCol).join("");
@@ -147,7 +170,8 @@ function stringifyCellChild(child: SectionChild, ctx: BodyContext): string {
     return stringifyParagraphInline(child.paragraph, ctx);
   }
   if ("table" in child) {
-    // Recursive: nested table via descriptor
+    const nested = _nestedOutputs.get(child.table);
+    if (nested !== undefined) return nested;
     return tableDesc.stringify(child.table, ctx) ?? "";
   }
 
@@ -170,20 +194,24 @@ function stringifyTableCell(cell: TableCellOptions, ctx: BodyContext): string {
     }
   }
 
-  // Cells must end with a paragraph unless the last child is already one.
-  // Block containers (sdt/customXml/toc/textbox) hold the closing paragraph
-  // themselves, so a cell ending in one round-trips without an injected <w:p/>.
-  // A nested table does NOT count — Word treats a table-only cell as corrupt
-  // and refuses the file, so it always gets the trailing paragraph.
+  // A table-only cell is valid OOXML; preserve it without the compatibility
+  // paragraph producers do not carry. Other block containers hold their own
+  // closing paragraph.
   const last = children?.[children.length - 1];
+  const lastRawXml =
+    last !== undefined && typeof last !== "string" && "rawXml" in last
+      ? last.rawXml.trimEnd()
+      : undefined;
   const endsWithParagraph =
     last !== undefined &&
     typeof last !== "string" &&
     ("paragraph" in last ||
       "sdt" in last ||
+      "table" in last ||
       "customXml" in last ||
       "toc" in last ||
-      "textbox" in last);
+      "textbox" in last ||
+      lastRawXml?.endsWith("</w:p>"));
   if (!endsWithParagraph) {
     body += "<w:p/>";
   }
@@ -192,6 +220,26 @@ function stringifyTableCell(cell: TableCellOptions, ctx: BodyContext): string {
 }
 
 // ── Row stringification ──
+
+function stringifyPermStart(options: PermStartOptions): string {
+  let attrs = "";
+  if (options.id !== undefined) attrs += ` w:id="${options.id}"`;
+  if (options.editGroup) attrs += ` w:edGrp="${options.editGroup}"`;
+  if (options.editor) attrs += ` w:ed="${options.editor}"`;
+  if (options.colFirst !== undefined) attrs += ` w:colFirst="${options.colFirst}"`;
+  if (options.colLast !== undefined) attrs += ` w:colLast="${options.colLast}"`;
+  return `<w:permStart${attrs}/>`;
+}
+
+function stringifySdtCellContent(content: SdtCellContent, ctx: BodyContext): string {
+  if ("sdt" in content) return stringifySdtCell(content.sdt, ctx);
+  return stringifyTableCell(content, ctx);
+}
+
+function stringifySdtCell(sdt: SdtCellOptions, ctx: BodyContext): string {
+  const contentXml = (sdt.cells ?? []).map((cell) => stringifySdtCellContent(cell, ctx)).join("");
+  return stringifySdtShell(sdt.properties, sdt.endProperties, contentXml, ctx.reproducible);
+}
 
 function stringifyTableRow(
   row: TableRowOptions,
@@ -215,9 +263,7 @@ function stringifyTableRow(
   // markers anchored between cells emit at their captured position)
   for (const cell of row.cells) {
     if ("sdt" in cell) {
-      const s = cell.sdt;
-      const contentXml = (s.cells ?? []).map((c) => stringifyTableCell(c, ctx)).join("");
-      parts.push(stringifySdtShell(s.properties, s.endProperties, contentXml, ctx.reproducible));
+      parts.push(stringifySdtCell(cell.sdt, ctx));
     } else if ("customXml" in cell) {
       const cx = cell.customXml;
       const contentXml = (cx.children ?? []).map((c) => stringifyTableCell(c, ctx)).join("");
@@ -230,6 +276,10 @@ function stringifyTableRow(
       parts.push(`<w:bookmarkStart ${buildBookmarkStartAttrs(cell.bookmarkStart)}/>`);
     } else if ("bookmarkEnd" in cell) {
       parts.push(`<w:bookmarkEnd ${buildMarkupRangeAttrs(cell.bookmarkEnd)}/>`);
+    } else if ("permStart" in cell) {
+      parts.push(stringifyPermStart(cell.permStart));
+    } else if ("permEnd" in cell) {
+      parts.push(`<w:permEnd w:id="${cell.permEnd}"/>`);
     } else {
       parts.push(stringifyTableCell(cell, ctx));
     }
@@ -260,16 +310,20 @@ function stringifyTableRow(
 // ── Row options type ──
 
 /** Type guard: a plain row (not SDT/customXml-wrapped). */
-function isPlainRow(
-  r: TableRowOptions | { sdt: SdtRowOptions } | { customXml: CustomXmlRowOptions },
-): r is TableRowOptions {
-  return !("sdt" in r) && !("customXml" in r);
+function isPlainRow(r: TableOptions["rows"][number]): r is TableRowOptions {
+  return !("sdt" in r) && !("customXml" in r) && "cells" in r;
 }
 
 /** Type guard: a run-level marker anchored between cells (not a cell). */
 function isRowMarker(c: TableRowOptions["cells"][number]): c is TableRowMarkerChild {
   return (
-    "commentRangeStart" in c || "commentRangeEnd" in c || "bookmarkStart" in c || "bookmarkEnd" in c
+    "commentRangeStart" in c ||
+    "commentRangeEnd" in c ||
+    "bookmarkStart" in c ||
+    "bookmarkEnd" in c ||
+    "permStart" in c ||
+    "permEnd" in c ||
+    "moveToRangeEnd" in c
   );
 }
 
@@ -489,74 +543,214 @@ export const tableDesc: CustomDescriptor<TableOptions, BodyContext> = {
   kind: "custom",
 
   stringify(opts, ctx) {
-    const parts: string[] = [];
-
-    // Table properties
-    // tblPr is required in CT_Tbl (minOccurs defaults to 1) — always emit it,
-    // even when empty; do not inject optional defaults (width/borders are XSD-optional).
-    const tblPrOpts: TablePropertiesOptions & { includeIfEmpty?: boolean } = {
-      alignment: opts.alignment,
-      borders: opts.borders,
-      caption: opts.caption,
-      margins: opts.margins,
-      cellSpacing: opts.cellSpacing,
-      description: opts.description,
-      float: opts.float,
-      indent: opts.indent,
-      layout: opts.layout,
-      revision: opts.revision,
-      shading: opts.shading,
-      style: opts.style,
-      styleColBandSize: opts.styleColBandSize,
-      styleRowBandSize: opts.styleRowBandSize,
-      tableLook: tableLookForEmit(opts),
-      visuallyRightToLeft: opts.visuallyRightToLeft,
-      width: opts.width,
-      includeIfEmpty: true,
-    };
-    parts.push(stringifyTableProperties(tblPrOpts, ctx.reproducible)!);
-
-    // Table grid (fallback width count ignores markers between cells)
-    const columnWidths =
-      opts.columnWidths ??
-      Array(
-        Math.max(
-          1,
-          ...opts.rows.map((r) =>
-            isPlainRow(r) ? r.cells.filter((c) => !isRowMarker(c)).length : 0,
-          ),
-        ),
-      ).fill(100);
-    parts.push(buildTableGridXml(columnWidths, opts.columnWidthsRevision, ctx.reproducible));
-
-    // Compute vertical merge CONTINUE cells
-    const extraCells = computeVerticalMergeCells(opts.rows);
-
-    // Rows (a row may be wrapped by a row-level SDT)
-    for (const [ri, r] of opts.rows.entries()) {
-      if ("sdt" in r) {
-        const sdt = r.sdt;
-        const contentXml = (sdt.rows ?? []).map((rr) => stringifyTableRow(rr, ctx)).join("");
-        parts.push(
-          stringifySdtShell(sdt.properties, sdt.endProperties, contentXml, ctx.reproducible),
-        );
-      } else if ("customXml" in r) {
-        const cx = r.customXml;
-        const contentXml = (cx.children ?? []).map((rr) => stringifyTableRow(rr, ctx)).join("");
-        parts.push(stringifyCustomXmlShell(cx, contentXml));
-      } else {
-        const extras = extraCells.get(ri);
-        parts.push(stringifyTableRow(r, ctx, extras));
-      }
+    if (_nestedOutputs.has(opts)) return _nestedOutputs.get(opts)!;
+    const previousOutputs = _nestedOutputs;
+    _nestedOutputs = createNestedTableOutputs(opts, ctx);
+    try {
+      return stringifyTableEl(opts, ctx);
+    } finally {
+      _nestedOutputs = previousOutputs;
     }
-
-    return `<w:tbl>${parts.join("")}</w:tbl>`;
   },
 
   parse(el, ctx) {
-    return parseTableEl(el, ctx as DocxReadContext);
+    const previousSources = _sourceTableOptions;
+    if (previousSources?.has(el)) return previousSources.get(el)!;
+    _sourceTableOptions = createSourceTableOptions(el, ctx as DocxReadContext);
+    try {
+      return _sourceTableOptions.get(el)!;
+    } finally {
+      _sourceTableOptions = previousSources;
+    }
   },
 };
+
+let _nestedOutputs = new WeakMap<TableOptions, string>();
+let _sourceTableOptions: WeakMap<Element, TableOptions> | undefined;
+
+function createNestedTableOutputs(
+  root: TableOptions,
+  ctx: BodyContext,
+): WeakMap<TableOptions, string> {
+  const outputs = new WeakMap<TableOptions, string>();
+  const pending: TableOptions[] = collectNestedTables(root);
+  for (let index = pending.length - 1; index >= 0; index -= 1) {
+    const table = pending[index]!;
+    _nestedOutputs = outputs;
+    outputs.set(table, stringifyTableEl(table, ctx));
+  }
+  return outputs;
+}
+
+function collectNestedTables(root: TableOptions): TableOptions[] {
+  const tables: TableOptions[] = [];
+  const visited = new Set<TableOptions>();
+  const pending: { value: unknown; expand: boolean }[] = [{ value: root, expand: false }];
+  const expandedTables = new Set<TableOptions>();
+  const seen = new Set<unknown>();
+  while (pending.length > 0) {
+    const frame = pending.pop()!;
+    if (!frame.expand) {
+      const value = frame.value;
+      if (typeof value !== "object" || value === null || seen.has(value)) continue;
+      seen.add(value);
+      if ("table" in value && typeof value.table === "object" && value.table !== null) {
+        const table = value.table as TableOptions;
+        if (!visited.has(table)) {
+          visited.add(table);
+          pending.push({ value: table, expand: true });
+        }
+      }
+      for (const item of Object.values(value)) pending.push({ value: item, expand: false });
+      continue;
+    }
+    const table = frame.value as TableOptions;
+    if (expandedTables.has(table)) continue;
+    expandedTables.add(table);
+    tables.push(table);
+    for (const item of Object.values(table)) pending.push({ value: item, expand: false });
+  }
+  return tables.reverse();
+}
+
+function createSourceTableOptions(
+  root: Element,
+  ctx: DocxReadContext,
+): WeakMap<Element, TableOptions> {
+  const options = new WeakMap<Element, TableOptions>();
+  for (const table of collectSourceTables(root)) {
+    _sourceTableOptions = options;
+    options.set(table, parseTableEl(table, ctx));
+  }
+  return options;
+}
+
+function collectSourceTables(root: Element): Element[] {
+  const tables: Element[] = [];
+  const pending: Element[] = [root];
+  while (pending.length > 0) {
+    const element = pending.pop()!;
+    if (element.name === "w:tbl") tables.push(element);
+    const children = element.elements ?? [];
+    for (let index = children.length - 1; index >= 0; index -= 1) {
+      const child = children[index]!;
+      if (child.type === "element") pending.push(child);
+    }
+  }
+  return tables.reverse();
+}
+
+function stringifyTableEl(opts: TableOptions, ctx: BodyContext): string {
+  const parts: string[] = [];
+
+  // Table properties
+  // tblPr is required in CT_Tbl (minOccurs defaults to 1) — always emit it,
+  // even when empty; do not inject optional defaults (width/borders are XSD-optional).
+  const tblPrOpts: TablePropertiesOptions & { includeIfEmpty?: boolean } = {
+    alignment: opts.alignment,
+    borders: opts.borders,
+    caption: opts.caption,
+    margins: opts.margins,
+    cellSpacing: opts.cellSpacing,
+    description: opts.description,
+    float: opts.float,
+    propertyOrder: opts.propertyOrder,
+    indent: opts.indent,
+    layout: opts.layout,
+    revision: opts.revision,
+    shading: opts.shading,
+    style: opts.style,
+    styleColBandSize: opts.styleColBandSize,
+    styleRowBandSize: opts.styleRowBandSize,
+    tableLook: tableLookForEmit(opts),
+    visuallyRightToLeft: opts.visuallyRightToLeft,
+    width: opts.width,
+    includeIfEmpty: true,
+  };
+  parts.push(stringifyTableProperties(tblPrOpts, ctx.reproducible)!);
+
+  // Table grid (fallback width count ignores markers between cells)
+  const columnWidths =
+    opts.columnWidthsRaw ??
+    opts.columnWidths ??
+    Array(
+      Math.max(
+        1,
+        ...opts.rows.map((r) =>
+          isPlainRow(r) ? r.cells.filter((c) => !isRowMarker(c)).length : 0,
+        ),
+      ),
+    ).fill(100);
+  parts.push(
+    buildTableGridXml(
+      columnWidths,
+      opts.columnWidthsRevision,
+      ctx.reproducible,
+      opts.legacyColumnCount,
+    ),
+  );
+
+  // Compute vertical merge CONTINUE cells
+  const extraCells = computeVerticalMergeCells(opts.rows);
+
+  // Rows (a row may be wrapped by a row-level SDT)
+  for (const [ri, r] of opts.rows.entries()) {
+    if ("sdt" in r) {
+      const sdt = r.sdt;
+      const contentXml = (sdt.content ?? [])
+        .map((item) => stringifySdtRowContent(item, ctx))
+        .join("");
+      parts.push(
+        stringifySdtShell(sdt.properties, sdt.endProperties, contentXml, ctx.reproducible),
+      );
+    } else if ("customXml" in r) {
+      const cx = r.customXml;
+      const contentXml = (cx.children ?? []).map((rr) => stringifyTableRow(rr, ctx)).join("");
+      parts.push(stringifyCustomXmlShell(cx, contentXml));
+    } else {
+      if (!("cells" in r)) {
+        parts.push(stringifyTableMarker(r));
+        continue;
+      }
+      const extras = extraCells.get(ri);
+      parts.push(stringifyTableRow(r, ctx, extras));
+    }
+  }
+
+  return `<w:tbl>${parts.join("")}</w:tbl>`;
+}
+
+function stringifyTableMarker(marker: TableMarkerChild): string {
+  if ("bookmarkStart" in marker)
+    return `<w:bookmarkStart ${buildBookmarkStartAttrs(marker.bookmarkStart)}/>`;
+  if ("bookmarkEnd" in marker)
+    return `<w:bookmarkEnd ${buildMarkupRangeAttrs(marker.bookmarkEnd)}/>`;
+  if ("commentRangeStart" in marker)
+    return `<w:commentRangeStart ${buildMarkupRangeAttrs(marker.commentRangeStart)}/>`;
+  if ("commentRangeEnd" in marker)
+    return `<w:commentRangeEnd ${buildMarkupRangeAttrs(marker.commentRangeEnd)}/>`;
+  if ("moveFromRangeStart" in marker)
+    return `<w:moveFromRangeStart ${buildMoveRangeStartAttrs(marker.moveFromRangeStart)}/>`;
+  if ("moveFromRangeEnd" in marker)
+    return `<w:moveFromRangeEnd ${buildMarkupRangeAttrs(marker.moveFromRangeEnd)}/>`;
+  if ("moveToRangeStart" in marker)
+    return `<w:moveToRangeStart ${buildMoveRangeStartAttrs(marker.moveToRangeStart)}/>`;
+  return `<w:moveToRangeEnd ${buildMarkupRangeAttrs(marker.moveToRangeEnd)}/>`;
+}
+
+function stringifySdtRowContent(
+  item: NonNullable<SdtRowOptions["content"]>[number],
+  ctx: BodyContext,
+): string {
+  if ("sdt" in item) {
+    const sdt = item.sdt;
+    const contentXml = (sdt.content ?? [])
+      .map((child) => stringifySdtRowContent(child, ctx))
+      .join("");
+    return stringifySdtShell(sdt.properties, sdt.endProperties, contentXml, ctx.reproducible);
+  }
+  return stringifyTableRow(item, ctx);
+}
 
 // ── Parse (Element → TableOptions) ──
 
@@ -568,6 +762,34 @@ let _parseChild: ParseChildFn | undefined;
 /** Set the child parser callback (called from parseBody). */
 export function setTableParseChild(fn: ParseChildFn): void {
   _parseChild = fn;
+}
+
+const TABLE_PROPERTY_CHILDREN: ReadonlyArray<readonly [string, TablePropertyOrder]> = [
+  ["w:tblStyle", "style"],
+  ["w:tblpPr", "float"],
+  ["w:tblOverlap", "overlap"],
+  ["w:bidiVisual", "visuallyRightToLeft"],
+  ["w:tblStyleRowBandSize", "styleRowBandSize"],
+  ["w:tblStyleColBandSize", "styleColBandSize"],
+  ["w:tblW", "width"],
+  ["w:jc", "alignment"],
+  ["w:tblCellSpacing", "cellSpacing"],
+  ["w:tblInd", "indent"],
+  ["w:tblBorders", "borders"],
+  ["w:shd", "shading"],
+  ["w:tblLayout", "layout"],
+  ["w:tblCellMar", "margins"],
+  ["w:tblLook", "tableLook"],
+  ["w:tblCaption", "caption"],
+  ["w:tblDescription", "description"],
+  ["w:tblPrChange", "revision"],
+];
+
+function parseTablePropertyOrder(el: Element): TablePropertyOrder[] {
+  return (el.elements ?? []).flatMap((child) => {
+    const property = TABLE_PROPERTY_CHILDREN.find(([name]) => name === child.name)?.[1];
+    return property ? [property] : [];
+  });
 }
 
 export function parseTablePropertiesEl(el: Element): TablePropertiesOptions {
@@ -604,7 +826,7 @@ export function parseTablePropertiesEl(el: Element): TablePropertiesOptions {
   if (tblBorders) {
     // XML side names → TableBordersOptions keys (insideH/insideV map to
     // insideHorizontal/insideVertical); all 8 sides are CT_TblBorders-optional.
-    const SIDE_KEYS: ReadonlyArray<[string, keyof TableBordersOptions]> = [
+    const SIDE_KEYS: ReadonlyArray<[string, TableBorderSide]> = [
       ["top", "top"],
       ["start", "start"],
       ["left", "left"],
@@ -615,14 +837,23 @@ export function parseTablePropertiesEl(el: Element): TablePropertiesOptions {
       ["insideV", "insideVertical"],
     ];
     const borders: TableBordersOptions = {};
-    for (const [xmlSide, key] of SIDE_KEYS) {
-      const sideEl = findChild(tblBorders, `w:${xmlSide}`);
-      if (!sideEl) continue;
+    const order: TableBorderSide[] = [];
+    for (const sideEl of tblBorders.elements ?? []) {
+      const side = SIDE_KEYS.find(([xmlSide]) => sideEl.name === `w:${xmlSide}`);
+      if (!side) continue;
       const sideOpts = parseBorderSide(sideEl);
       if (!sideOpts) continue;
-      borders[key] = sideOpts;
+      borders[side[1]] = sideOpts;
+      order.push(side[1]);
     }
-    if (Object.keys(borders).length > 0) opts.borders = borders;
+    const presentSides = new Set(order);
+    const canonicalOrder = [...SIDE_KEYS]
+      .map((entry) => entry[1])
+      .filter((side) => presentSides.has(side));
+    if (order.length > 0 && order.join() !== canonicalOrder.join()) {
+      borders.order = order;
+    }
+    opts.borders = borders;
   }
 
   const tblCellMar = findChild(el, "w:tblCellMar");
@@ -658,13 +889,13 @@ export function parseTablePropertiesEl(el: Element): TablePropertiesOptions {
       const tblpX = attrNum(tblpPr, "w:tblpX");
       if (tblpX !== undefined) floatOpts.absoluteHorizontalPosition = tblpX;
       const tblpXSpec = attr(tblpPr, "w:tblpXSpec");
-      if (tblpXSpec)
+      if (tblpXSpec !== undefined)
         floatOpts.relativeHorizontalPosition =
           tblpXSpec as TableFloatOptions["relativeHorizontalPosition"];
       const tblpY = attrNum(tblpPr, "w:tblpY");
       if (tblpY !== undefined) floatOpts.absoluteVerticalPosition = tblpY;
       const tblpYSpec = attr(tblpPr, "w:tblpYSpec");
-      if (tblpYSpec)
+      if (tblpYSpec !== undefined)
         floatOpts.relativeVerticalPosition =
           tblpYSpec as TableFloatOptions["relativeVerticalPosition"];
       const bottomFromText = attrNum(tblpPr, "w:bottomFromText");
@@ -765,21 +996,40 @@ export function parseTablePropertiesEl(el: Element): TablePropertiesOptions {
     if (Object.keys(look).length > 0) opts.tableLook = look;
   }
 
+  const sourceOrder = parseTablePropertyOrder(el);
+  if (sourceOrder.join() !== tablePropertiesOrder(opts).join()) {
+    opts.propertyOrder = sourceOrder;
+  }
+
   return opts;
 }
 
-function parseColumnWidthsEl(el: Element): {
-  widths: Array<number | string>;
+function parseColumnWidthsEl(
+  el: Element,
+  ctx: DocxReadContext,
+): {
+  widths: Array<number | string | null>;
+  legacyColumnCount?: number;
   revision?: TableGridChangeOptions;
 } {
-  const widths: Array<number | string> = [];
+  const widths: Array<number | string | null> = [];
+  let legacyColumnCount: number | undefined;
   const tblGrid = findChild(el, "w:tblGrid");
-  if (!tblGrid) return { widths };
+  if (!tblGrid) {
+    throw new DocxParseError(
+      "Table is missing its required grid",
+      ctx.currentPart,
+      "/w:tbl/w:tblGrid",
+      "missing-required-element",
+    );
+  }
 
   for (const col of children(tblGrid, "w:gridCol")) {
     const w = attrMeasure(col, "w:w");
-    widths.push(w ?? 100);
+    widths.push(w ?? null);
   }
+  const legacyColumns = children(tblGrid, "w:tblCol").length;
+  if (legacyColumns > 0) legacyColumnCount = legacyColumns;
 
   // CT_TblGrid may carry a tblGridChange (CT_TblGridChange = CT_Markup + tblGrid).
   const tblGridChange = findChild(tblGrid, "w:tblGridChange");
@@ -796,12 +1046,13 @@ function parseColumnWidthsEl(el: Element): {
     if (id !== undefined) {
       return {
         widths,
+        legacyColumnCount,
         revision: { id, columnWidths: revWidths as number[] | PositiveUniversalMeasure[] },
       };
     }
   }
 
-  return { widths };
+  return { widths, legacyColumnCount };
 }
 
 export function parseTableRowPropertiesEl(el: Element): TableRowPropertiesOptions {
@@ -962,6 +1213,9 @@ export function parseTableCellPropertiesEl(el: Element): TableCellPropertiesOpti
 
   const tcBorders = findChild(el, "w:tcBorders");
   if (tcBorders) {
+    if ((tcBorders.elements ?? []).filter((child) => child.type === "element").length === 0) {
+      opts.emptyBorders = true;
+    }
     // XML side name → TableCellBordersOptions key (incl. start/end + diagonals);
     // all sides are CT_TcBorders-optional. Mirrors table-level borders parse.
     const SIDE_KEYS: ReadonlyArray<[string, keyof TableCellBordersOptions]> = [
@@ -1071,7 +1325,8 @@ export function parseTableCellPropertiesEl(el: Element): TableCellPropertiesOpti
 function parseTableCellEl(el: Element, ctx: DocxReadContext): TableCellOptions {
   const opts: Partial<TableCellOptions> = {};
 
-  const tcPr = findChild(el, "w:tcPr");
+  const tcPrList = children(el, "w:tcPr");
+  const tcPr = tcPrList.at(-1);
   if (tcPr) {
     const props = parseTableCellPropertiesEl(tcPr);
     Object.assign(opts, props);
@@ -1088,11 +1343,34 @@ function parseTableCellEl(el: Element, ctx: DocxReadContext): TableCellOptions {
     // Whitespace text nodes survive captureSpacesBetweenElements parsing and
     // must not reach the dispatcher (they stringify as empty rawXml noise).
     if (child.type !== "element" || child.name === "w:tcPr") continue;
+    const nestedTable = child.name === "w:tbl" ? _sourceTableOptions?.get(child) : undefined;
+    if (nestedTable) {
+      childElements.push({ table: nestedTable });
+      continue;
+    }
     if (_parseChild) childElements.push(_parseChild(child, ctx));
   }
 
   opts.children = childElements;
   return opts as TableCellOptions;
+}
+
+function parseSdtCell(child: Element, ctx: DocxReadContext): SdtCellOptions {
+  const sdtPr = findChild(child, "w:sdtPr");
+  const properties = sdtPr ? parseSdtProperties(sdtPr, ctx) : {};
+  const sdtEndPr = findChild(child, "w:sdtEndPr");
+  const endRPr = sdtEndPr ? findChild(sdtEndPr, "w:rPr") : undefined;
+  const endProperties = sdtEndPr ? (endRPr ? parseRunProperties(endRPr) : {}) : undefined;
+  const sdtContent = findChild(child, "w:sdtContent");
+  const cells: SdtCellContent[] = [];
+  for (const sub of sdtContent?.elements ?? []) {
+    if (sub.name === "w:tc") cells.push(parseTableCellEl(sub, ctx));
+    else if (sub.name === "w:sdt") cells.push({ sdt: parseSdtCell(sub, ctx) });
+  }
+  const sdt: SdtCellOptions = { properties };
+  if (cells.length > 0) sdt.cells = cells;
+  if (endProperties) sdt.endProperties = endProperties;
+  return sdt;
 }
 
 function parseTableRowEl(el: Element, ctx: DocxReadContext): TableRowOptions {
@@ -1116,7 +1394,7 @@ function parseTableRowEl(el: Element, ctx: DocxReadContext): TableRowOptions {
   const tblPrEx = findChild(el, "w:tblPrEx");
   if (tblPrEx) {
     const exceptions = parseTablePropertyExceptions(tblPrEx);
-    if (Object.keys(exceptions).length > 0) opts.propertyExceptions = exceptions;
+    opts.propertyExceptions = exceptions;
   }
 
   // rsid attributes on w:tr element
@@ -1177,26 +1455,27 @@ function parseTableRowEl(el: Element, ctx: DocxReadContext): TableRowOptions {
           bookmarkEnd.displacedByCustomXml = disp as DisplacedByCustomXml;
         childCells.push({ bookmarkEnd: bookmarkEnd as MarkupRangeOptions });
       }
-    } else if (child.name === "w:sdt") {
-      const sdtPr = findChild(child, "w:sdtPr");
-      const properties = sdtPr ? parseSdtProperties(sdtPr) : {};
-      // CT_SdtEndPr wraps its run properties in a w:rPr child
-      const sdtEndPr = findChild(child, "w:sdtEndPr");
-      const endRPr = sdtEndPr ? findChild(sdtEndPr, "w:rPr") : undefined;
-      const endProperties = sdtEndPr ? (endRPr ? parseRunProperties(endRPr) : {}) : undefined;
-      const sdtContent = findChild(child, "w:sdtContent");
-      const sdtCells: TableCellOptions[] = [];
-      if (sdtContent) {
-        for (const sub of sdtContent.elements ?? []) {
-          if (sub.name === "w:tc") sdtCells.push(parseTableCellEl(sub, ctx));
+    } else if (child.name === "w:permStart") {
+      const id = attrNum(child, "w:id");
+      if (id !== undefined) {
+        const start: Partial<PermStartOptions> = { id };
+        const editor = attr(child, "w:ed");
+        if (editor !== undefined) start.editor = editor;
+        const editGroup = attr(child, "w:edGrp");
+        if (editGroup !== undefined) {
+          start.editGroup = editGroup as PermStartOptions["editGroup"];
         }
+        const colFirst = attrNum(child, "w:colFirst");
+        if (colFirst !== undefined) start.colFirst = colFirst;
+        const colLast = attrNum(child, "w:colLast");
+        if (colLast !== undefined) start.colLast = colLast;
+        childCells.push({ permStart: start as PermStartOptions });
       }
-      const sdt: SdtCellOptions = {
-        properties,
-      };
-      if (sdtCells.length > 0) sdt.cells = sdtCells;
-      if (endProperties) sdt.endProperties = endProperties;
-      childCells.push({ sdt });
+    } else if (child.name === "w:permEnd") {
+      const id = attrNum(child, "w:id");
+      if (id !== undefined) childCells.push({ permEnd: id });
+    } else if (child.name === "w:sdt") {
+      childCells.push({ sdt: parseSdtCell(child, ctx) });
     } else if (child.name === "w:customXml") {
       const element = attr(child, "w:element") ?? "";
       const cx: CustomXmlCellOptions = { element };
@@ -1221,6 +1500,65 @@ function parseTableRowEl(el: Element, ctx: DocxReadContext): TableRowOptions {
   return opts as TableRowOptions;
 }
 
+function parseTableMarker(child: Element): TableMarkerChild | undefined {
+  const id = attrNum(child, "w:id");
+  if (id === undefined) return undefined;
+  const marker: Partial<MarkupRangeOptions> = { id };
+  const displacedBy = attr(child, "w:displacedByCustomXml");
+  if (displacedBy === "next" || displacedBy === "prev")
+    marker.displacedByCustomXml = displacedBy as DisplacedByCustomXml;
+  if (child.name === "w:bookmarkStart") {
+    const name = attr(child, "w:name");
+    if (!name) return undefined;
+    return { bookmarkStart: { ...marker, name } as BookmarkStartOptions };
+  }
+  if (child.name === "w:moveFromRangeStart" || child.name === "w:moveToRangeStart") {
+    const start: Partial<MoveRangeStartOptions> = { ...marker };
+    const name = attr(child, "w:name");
+    const author = attr(child, "w:author");
+    const date = attr(child, "w:date");
+    const colFirst = attrNum(child, "w:colFirst");
+    const colLast = attrNum(child, "w:colLast");
+    if (name !== undefined) start.name = name;
+    if (author !== undefined) start.author = author;
+    if (date !== undefined) start.date = date;
+    if (colFirst !== undefined) start.colFirst = colFirst;
+    if (colLast !== undefined) start.colLast = colLast;
+    return child.name === "w:moveFromRangeStart"
+      ? { moveFromRangeStart: start as MoveRangeStartOptions }
+      : { moveToRangeStart: start as MoveRangeStartOptions };
+  }
+  const key =
+    child.name === "w:bookmarkEnd"
+      ? "bookmarkEnd"
+      : child.name === "w:commentRangeStart"
+        ? "commentRangeStart"
+        : child.name === "w:commentRangeEnd"
+          ? "commentRangeEnd"
+          : child.name === "w:moveFromRangeEnd"
+            ? "moveFromRangeEnd"
+            : "moveToRangeEnd";
+  return { [key]: marker } as TableMarkerChild;
+}
+
+function parseSdtRow(child: Element, ctx: DocxReadContext): SdtRowOptions {
+  const sdtPr = findChild(child, "w:sdtPr");
+  const properties = sdtPr ? parseSdtProperties(sdtPr, ctx) : {};
+  const sdtEndPr = findChild(child, "w:sdtEndPr");
+  const endRPr = sdtEndPr ? findChild(sdtEndPr, "w:rPr") : undefined;
+  const endProperties = sdtEndPr ? (endRPr ? parseRunProperties(endRPr) : {}) : undefined;
+  const sdtContent = findChild(child, "w:sdtContent");
+  const content: NonNullable<SdtRowOptions["content"]> = [];
+  for (const item of sdtContent?.elements ?? []) {
+    if (item.name === "w:tr") content.push(parseTableRowEl(item, ctx));
+    if (item.name === "w:sdt") content.push({ sdt: parseSdtRow(item, ctx) });
+  }
+  const sdt: SdtRowOptions = { properties };
+  if (content.length > 0) sdt.content = content;
+  if (endProperties) sdt.endProperties = endProperties;
+  return sdt;
+}
+
 function parseTableEl(el: Element, ctx: DocxReadContext): TableOptions {
   const opts: Partial<TableOptions> = {};
 
@@ -1243,39 +1581,39 @@ function parseTableEl(el: Element, ctx: DocxReadContext): TableOptions {
     }
   }
 
-  const grid = parseColumnWidthsEl(el);
-  if (grid.widths.length > 0) {
-    opts.columnWidths = grid.widths as NonNullable<TableOptions["columnWidths"]>;
+  const grid = parseColumnWidthsEl(el, ctx);
+  if (grid.legacyColumnCount === undefined) {
+    const sourceWidths = grid.widths as NonNullable<TableOptions["columnWidthsRaw"]>;
+    opts.columnWidths = sourceWidths.map((width) => width ?? 100) as NonNullable<
+      TableOptions["columnWidths"]
+    >;
+    if (sourceWidths.some((width) => width === null)) opts.columnWidthsRaw = sourceWidths;
   }
   if (grid.revision) {
     opts.columnWidthsRevision = grid.revision;
   }
+  if (grid.legacyColumnCount !== undefined) {
+    opts.legacyColumnCount = grid.legacyColumnCount;
+  }
 
-  const rows: (TableRowOptions | { sdt: SdtRowOptions } | { customXml: CustomXmlRowOptions })[] =
-    [];
+  const rows: TableOptions["rows"] = [];
   for (const child of el.elements ?? []) {
     if (child.name === "w:tr") {
       rows.push(parseTableRowEl(child, ctx));
+    } else if (
+      child.name === "w:bookmarkStart" ||
+      child.name === "w:bookmarkEnd" ||
+      child.name === "w:commentRangeStart" ||
+      child.name === "w:commentRangeEnd" ||
+      child.name === "w:moveFromRangeStart" ||
+      child.name === "w:moveFromRangeEnd" ||
+      child.name === "w:moveToRangeStart" ||
+      child.name === "w:moveToRangeEnd"
+    ) {
+      const marker = parseTableMarker(child);
+      if (marker) rows.push(marker);
     } else if (child.name === "w:sdt") {
-      const sdtPr = findChild(child, "w:sdtPr");
-      const properties = sdtPr ? parseSdtProperties(sdtPr) : {};
-      // CT_SdtEndPr wraps its run properties in a w:rPr child
-      const sdtEndPr = findChild(child, "w:sdtEndPr");
-      const endRPr = sdtEndPr ? findChild(sdtEndPr, "w:rPr") : undefined;
-      const endProperties = sdtEndPr ? (endRPr ? parseRunProperties(endRPr) : {}) : undefined;
-      const sdtContent = findChild(child, "w:sdtContent");
-      const sdtRows: TableRowOptions[] = [];
-      if (sdtContent) {
-        for (const sub of sdtContent.elements ?? []) {
-          if (sub.name === "w:tr") sdtRows.push(parseTableRowEl(sub, ctx));
-        }
-      }
-      const sdt: SdtRowOptions = {
-        properties,
-      };
-      if (sdtRows.length > 0) sdt.rows = sdtRows;
-      if (endProperties) sdt.endProperties = endProperties;
-      rows.push({ sdt });
+      rows.push({ sdt: parseSdtRow(child, ctx) });
     } else if (child.name === "w:customXml") {
       const element = attr(child, "w:element") ?? "";
       const cx: CustomXmlRowOptions = { element };

@@ -2,11 +2,11 @@
   "sdk": {
     "docx": {
       "total": 505,
-      "clean": 504,
+      "clean": 503,
       "diff": 0,
       "parseFail": 0,
       "genFail": 0,
-      "malformed": 1
+      "malformed": 2
     },
     "xlsx": {
       "total": 155,
@@ -153,6 +153,58 @@
       "parseFail": 0,
       "genFail": 0,
       "malformed": 0
+    }
+  },
+  "apache-poi": {
+    "docx": {
+      "total": 190,
+      "clean": 171,
+      "diff": 0,
+      "parseFail": 0,
+      "genFail": 0,
+      "malformed": 19
+    },
+    "xlsx": {
+      "total": 387,
+      "clean": 361,
+      "diff": 0,
+      "parseFail": 0,
+      "genFail": 0,
+      "malformed": 26
+    },
+    "pptx": {
+      "total": 110,
+      "clean": 98,
+      "diff": 0,
+      "parseFail": 0,
+      "genFail": 0,
+      "malformed": 12
+    }
+  },
+  "libreoffice-core": {
+    "docx": {
+      "total": 2313,
+      "clean": 2273,
+      "diff": 0,
+      "parseFail": 0,
+      "genFail": 0,
+      "malformed": 40
+    },
+    "xlsx": {
+      "total": 571,
+      "clean": 565,
+      "diff": 0,
+      "parseFail": 0,
+      "genFail": 0,
+      "malformed": 6
+    },
+    "pptx": {
+      "total": 587,
+      "clean": 584,
+      "diff": 0,
+      "parseFail": 0,
+      "genFail": 0,
+      "malformed": 3
     }
   }
 }

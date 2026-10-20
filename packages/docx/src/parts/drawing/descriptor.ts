@@ -17,7 +17,7 @@
  * @module
  */
 
-import { RELATIONSHIP_TYPES, type ReproducibleScope, TargetModeType } from "@office-open/core";
+import { type ReproducibleScope } from "@office-open/core";
 import { convertToEmu, uniqueNumericIdCreator } from "@office-open/core";
 import {
   NOOP_WRITE_CONTEXT,
@@ -32,6 +32,7 @@ import type {
   OutlineOptions,
   CustomGeometryOptions,
   PresetGeometryOptions,
+  OfficeArtExtensionOptions,
   Scene3DOptions,
   Shape3DOptions,
   ShapeType,
@@ -48,10 +49,12 @@ import {
   shapePropertiesDesc,
   stringifyBlipEffects,
   stringifyBackgroundFormatting,
+  stringifyEndpointConnection,
   stringifyNonVisualContentPartProperties,
   stringifyNonVisualDrawingProperties,
   stringifyWholeE2oFormatting,
 } from "@office-open/core/drawing";
+import { RELATIONSHIP_TYPES, TargetModeType } from "@office-open/core/opc";
 import { escapeXml } from "@office-open/xml";
 import { stringifyParagraphInline } from "@parts/inline";
 import type { ParagraphOptions } from "@parts/paragraph/paragraph";
@@ -129,6 +132,11 @@ export interface GroupShapeLocksOptions {
   noChangeAspect?: boolean;
   noMove?: boolean;
   noResize?: boolean;
+  /**
+   * The source carried a bare `<a:grpSpLocks/>` with no attributes.
+   * Round-trip marker only — re-emits the empty element.
+   */
+  emptyLocks?: boolean;
 }
 
 export interface DrawingDescriptorOptions {
@@ -136,6 +144,8 @@ export interface DrawingDescriptorOptions {
   mediaData: ExtendedMediaData;
   /** Non-visual document properties (name, description, hyperlinks) */
   docProperties?: DocPropertiesOptions;
+  /** Whether the drawing wrapper carried wp:docPr; round-trip only. */
+  docPropertiesPresent?: boolean;
   /** Floating/anchored positioning (omit for inline) */
   floating?: Floating;
   /** Shape outline */
@@ -154,6 +164,10 @@ export interface DrawingDescriptorOptions {
   shape3d?: Shape3DOptions;
   /** Image blip effects (brightness, contrast, etc.) */
   blipEffects?: BlipEffectsOptions;
+  /** Raw inner XML of a:blip/a:extLst for non-SVG/non-useLocalDpi extensions (round-trip). */
+  blipExt?: string;
+  /** Typed a:extLst/a:ext children of pic:spPr (round-trip). */
+  shapeExtensions?: { uri: string; content?: string }[];
   /** Image tile fill mode */
   tile?: TileOptions;
   /** Graphic frame locks (wp:cNvGraphicFramePr). `{}` → empty element; omit → authoring default. */
@@ -297,19 +311,24 @@ function buildHyperlinkChildren(
   const aNs = `xmlns:a="${drawingmlUri(dialect, "main")}"`;
   if (ids.clickId) {
     parts.push(
-      `<a:hlinkClick r:id="${ids.clickId}"${hyperlinkAttribute(hyperlink?.clickTooltip)} ${aNs}/>`,
+      `<a:hlinkClick r:id="${ids.clickId}"${hyperlinkAttributes(hyperlink, "click")} ${aNs}/>`,
     );
   }
   if (ids.hoverId) {
     parts.push(
-      `<a:hlinkHover r:id="${ids.hoverId}"${hyperlinkAttribute(hyperlink?.hoverTooltip)} ${aNs}/>`,
+      `<a:hlinkHover r:id="${ids.hoverId}"${hyperlinkAttributes(hyperlink, "hover")} ${aNs}/>`,
     );
   }
   return parts.join("");
 }
 
-function hyperlinkAttribute(tooltip: string | undefined): string {
-  return tooltip ? ` tooltip="${escapeXml(tooltip)}"` : "";
+function hyperlinkAttributes(
+  hyperlink: HyperlinkOptions | undefined,
+  kind: "click" | "hover",
+): string {
+  const tooltip = kind === "click" ? hyperlink?.clickTooltip : hyperlink?.hoverTooltip;
+  const targetFrame = kind === "click" ? hyperlink?.clickTargetFrame : hyperlink?.hoverTargetFrame;
+  return `${targetFrame === undefined ? "" : ` tgtFrame="${escapeXml(targetFrame)}"`}${tooltip === undefined ? "" : ` tooltip="${escapeXml(tooltip)}"`}`;
 }
 
 // ── DocPr ──
@@ -344,11 +363,23 @@ function buildSrcRectXml(srcRect: SourceRectangleOptions | undefined): string {
   return srAttrs.length ? `<a:srcRect ${srAttrs.join(" ")}/>` : "<a:srcRect/>";
 }
 
+function buildFillRectXml(fillRect: SourceRectangleOptions | false | undefined): string {
+  if (fillRect === false) return "";
+  if (!fillRect) return "<a:fillRect/>";
+  const attrs: string[] = [];
+  if (fillRect.left !== undefined) attrs.push(`l="${fillRect.left}"`);
+  if (fillRect.top !== undefined) attrs.push(`t="${fillRect.top}"`);
+  if (fillRect.right !== undefined) attrs.push(`r="${fillRect.right}"`);
+  if (fillRect.bottom !== undefined) attrs.push(`b="${fillRect.bottom}"`);
+  return attrs.length ? `<a:fillRect ${attrs.join(" ")}/>` : "<a:fillRect/>";
+}
+
 function stringifyBlipFill(
   mediaData: MediaData | LinkedPictureMediaData,
   blipEffects?: BlipEffectsOptions,
   tile?: TileOptions,
   ctx?: BodyContext,
+  blipExt?: string,
 ): string {
   const fileName =
     mediaData.type === "svg" && "fallback" in mediaData
@@ -380,17 +411,22 @@ function stringifyBlipFill(
   // Blip extension list: useLocalDpi (rendering hint) + SVG blip reference.
   // Both live in a single shared a:extLst; emitted only when at least one ext
   // is present so blips without extensions stay self-closing.
-  const extParts: string[] = [];
-  const useLocalDpiExt = buildUseLocalDpiExt(mediaData.useLocalDpi, mediaData.useLocalDpiUri);
-  if (useLocalDpiExt) extParts.push(useLocalDpiExt);
-  if (mediaData.type === "svg") {
-    extParts.push(
-      `<a:ext uri="${SVG_BLIP_EXT_URI}"><asvg:svgBlip xmlns:asvg="http://schemas.microsoft.com/office/drawing/2016/SVG/main" r:embed="{${escapeXml(
-        mediaData.fileName,
-      )}}"/></a:ext>`,
-    );
+  let extLstXml: string;
+  if (blipExt !== undefined) {
+    extLstXml = blipExt ? `<a:extLst>${blipExt}</a:extLst>` : "";
+  } else {
+    const extParts: string[] = [];
+    const useLocalDpiExt = buildUseLocalDpiExt(mediaData.useLocalDpi, mediaData.useLocalDpiUri);
+    if (useLocalDpiExt) extParts.push(useLocalDpiExt);
+    if (mediaData.type === "svg") {
+      extParts.push(
+        `<a:ext uri="${SVG_BLIP_EXT_URI}"><asvg:svgBlip xmlns:asvg="http://schemas.microsoft.com/office/drawing/2016/SVG/main" r:embed="{${escapeXml(
+          mediaData.fileName,
+        )}}"/></a:ext>`,
+      );
+    }
+    extLstXml = extParts.length > 0 ? `<a:extLst>${extParts.join("")}</a:extLst>` : "";
   }
-  const extLstXml = extParts.length > 0 ? `<a:extLst>${extParts.join("")}</a:extLst>` : "";
 
   // Blip effects
   const blipEffectsXml = blipEffects ? stringifyBlipEffects(blipEffects, NOOP_WRITE_CONTEXT) : "";
@@ -416,8 +452,8 @@ function stringifyBlipFill(
     if (tile.sy !== undefined) tileAttrs.push(`sy="${tile.sy}"`);
     const tileAttrStr = tileAttrs.length ? " " + tileAttrs.join(" ") : "";
     parts.push(`<a:tile${tileAttrStr}/>`);
-  } else {
-    parts.push("<a:stretch><a:fillRect/></a:stretch>");
+  } else if (mediaData.stretch !== false) {
+    parts.push(`<a:stretch>${buildFillRectXml(mediaData.fillRectangle)}</a:stretch>`);
   }
 
   const fillAttrs: string[] = [];
@@ -441,6 +477,7 @@ function stringifyShapeProps(
   blackWhiteMode?: BlackWhiteMode,
   geometry?: ShapeType | PresetGeometryOptions,
   customGeometry?: CustomGeometryOptions,
+  extensions?: { uri: string; content?: string }[],
 ): string {
   const spPr = shapePropertiesDesc.stringify(
     {
@@ -458,6 +495,7 @@ function stringifyShapeProps(
       effects,
       scene3d,
       shape3d,
+      extensions,
     },
     NOOP_WRITE_CONTEXT,
   );
@@ -527,34 +565,52 @@ export function stringifyWpsTextBoxChild(
 
 function stringifyWpsShape(opts: WpsStringifyOptions, ctx: BodyContext): string {
   const transform = opts.transformation;
+  const shapeProperties = {
+    ...(opts.transformPresent === false
+      ? {}
+      : {
+          x: convertToEmu(opts.shapeOffset?.x ?? transform.offset?.x ?? 0),
+          y: convertToEmu(opts.shapeOffset?.y ?? transform.offset?.y ?? 0),
+          width: transform.shapeExtent?.width ?? convertToEmu(transform.width),
+          height: transform.shapeExtent?.height ?? convertToEmu(transform.height),
+          flipHorizontal: transform.flipHorizontal,
+          flipVertical: transform.flipVertical,
+          rotation: transform.rotation,
+        }),
+    transformPresent: opts.transformPresent === true ? true : undefined,
+    customGeometry: opts.customGeometry,
+    // WPS shapes always carry geometry — default to rect when none specified.
+    geometry: opts.customGeometry ? undefined : (opts.geometry ?? "rect"),
+    fill: opts.fill,
+    outline: opts.outline,
+    effectDag: opts.effectDag,
+    effects: opts.effects,
+    scene3d: opts.scene3d,
+    shape3d: opts.shape3d,
+    extensions: opts.extensions,
+  };
   const spPrContent =
-    shapePropertiesDesc.stringify(
-      {
-        x: convertToEmu(transform.offset?.x ?? 0),
-        y: convertToEmu(transform.offset?.y ?? 0),
-        width: transform.shapeExtent?.width ?? convertToEmu(transform.width),
-        height: transform.shapeExtent?.height ?? convertToEmu(transform.height),
-        flipHorizontal: transform.flipHorizontal,
-        flipVertical: transform.flipVertical,
-        rotation: transform.rotation,
-        customGeometry: opts.customGeometry,
-        // WPS shapes always carry geometry — default to rect when none specified.
-        geometry: opts.customGeometry ? undefined : (opts.geometry ?? "rect"),
-        fill: opts.fill,
-        outline: opts.outline,
-        effectDag: opts.effectDag,
-        effects: opts.effects,
-        scene3d: opts.scene3d,
-        shape3d: opts.shape3d,
-        extensions: opts.extensions,
-      },
-      ctx,
-    ) ?? "";
+    opts.shapePropertiesPresent === false
+      ? ""
+      : (shapePropertiesDesc.stringify(shapeProperties, ctx) ?? "");
+  const spPrXml =
+    opts.shapePropertiesPresent === false
+      ? ""
+      : `<wps:spPr${opts.blackWhiteMode ? ` bwMode="${opts.blackWhiteMode}"` : ""}>${spPrContent}</wps:spPr>`;
 
   // Non-visual shape properties — default txBox="1"
-  const cNvSpPr = opts.nonVisualProperties
-    ? stringifyNonVisualShapeProperties(opts.nonVisualProperties)
+  const nonVisualXml = opts.nonVisualProperties
+    ? stringifyNonVisualShapeProperties(opts.nonVisualProperties, ctx)
     : '<wps:cNvSpPr txBox="1"/>';
+  const wrappedXml = opts.wrappedNonVisualProperties
+    ? `<wps:nvSpPr>${stringifyNonVisualShapeProperties(opts.wrappedNonVisualProperties, ctx)}</wps:nvSpPr>`
+    : "";
+  const cNvSpPr =
+    opts.nonVisualPropertiesPresent === false
+      ? wrappedXml
+      : (opts.nonVisualPropertiesWrapped
+          ? `<wps:nvSpPr>${nonVisualXml}</wps:nvSpPr>`
+          : nonVisualXml) + wrappedXml;
 
   // CT_TxbxContent contains the full Word block-level group, not only
   // paragraphs: SDTs, tables, custom XML, and unknown raw children all survive.
@@ -566,7 +622,9 @@ function stringifyWpsShape(opts: WpsStringifyOptions, ctx: BodyContext): string 
   // wps:txbx — inline block content or a relationship to a passthrough
   // w14:txbx part. The relationship belongs to the current owner part, not
   // necessarily document.xml (the same shape can live in a header/footer).
-  let txbxXml = childXml ? `<wps:txbx><w:txbxContent>${childXml}</w:txbxContent></wps:txbx>` : "";
+  let txbxXml = childXml
+    ? `<wps:txbx${opts.textBoxId !== undefined ? ` id="${opts.textBoxId}"` : ""}><w:txbxContent>${childXml}</w:txbxContent></wps:txbx>`
+    : "";
   if (!childXml && opts.textBoxPart) {
     const target = textBoxRelationshipTarget(opts.textBoxPart.path, ctx);
     const existingId = ctx.viewWrapper.relationships.idOf(TEXT_BOX_REL, target);
@@ -586,11 +644,11 @@ function stringifyWpsShape(opts: WpsStringifyOptions, ctx: BodyContext): string 
   return (
     `<wps:wsp${neafAttr}>` +
     cNvSpPr +
-    `<wps:spPr${opts.blackWhiteMode ? ` bwMode="${opts.blackWhiteMode}"` : ""}>${spPrContent}</wps:spPr>` +
+    spPrXml +
     styleXml +
     txbxXml +
     linkedTxbxXml +
-    stringifyBodyPr(opts.bodyProperties) +
+    (opts.bodyPropertiesPresent === false ? "" : stringifyBodyPr(opts.bodyProperties)) +
     "</wps:wsp>"
   );
 }
@@ -606,27 +664,29 @@ function textBoxRelationshipTarget(partPath: string, ctx: BodyContext): string {
     : partPath.slice("word/".length);
 }
 
-function stringifyNonVisualShapeProperties(opts: NonVisualShapePropertiesOptions): string {
+function stringifyNonVisualShapeProperties(
+  opts: NonVisualShapePropertiesOptions,
+  ctx: BodyContext,
+): string {
   let xml = "";
   // wps:cNvPr — id/name/descr/title/hidden (XSD CT_NonVisualDrawingProps)
-  if (opts.id !== undefined || opts.name !== undefined) {
-    const attrs: string[] = [];
-    if (opts.id !== undefined) attrs.push(`id="${opts.id}"`);
-    if (opts.name !== undefined) attrs.push(`name="${escapeXml(opts.name)}"`);
-    if (opts.description !== undefined) attrs.push(`descr="${escapeXml(opts.description)}"`);
-    if (opts.title !== undefined) attrs.push(`title="${escapeXml(opts.title)}"`);
-    if (opts.hidden !== undefined) attrs.push(`hidden="${opts.hidden ? 1 : 0}"`);
-    xml += `<wps:cNvPr ${attrs.join(" ")}/>`;
+  const hyperlinkIds = registerHyperlinks(opts.hyperlink, ctx);
+  const hyperlinkXml = buildHyperlinkChildren(hyperlinkIds, opts.hyperlink);
+  if (opts.id !== undefined || opts.name !== undefined || opts.ext || opts.creationId) {
+    xml += stringifyNonVisualDrawingProperties("wps:cNvPr", opts.id ?? 0, opts, "", hyperlinkXml);
+  } else if (hyperlinkXml) {
+    xml += stringifyNonVisualDrawingProperties("wps:cNvPr", 0, opts, "", hyperlinkXml);
   }
   // CT_WordprocessingShape choice: wps:cNvSpPr (text box/autoshape) or
   // wps:cNvCnPr (connector). Each carries its optional locks element.
   if (opts.connector) {
-    xml += opts.connectorLocking
-      ? `<wps:cNvCnPr>${connectorLockingDesc.stringify(
-          opts.connectorLocking,
-          NOOP_WRITE_CONTEXT,
-        )}</wps:cNvCnPr>`
-      : "<wps:cNvCnPr/>";
+    const connectorLocks = opts.connectorLocking
+      ? (connectorLockingDesc.stringify(opts.connectorLocking, NOOP_WRITE_CONTEXT) ?? "")
+      : "";
+    const connections =
+      (opts.startConnection ? stringifyEndpointConnection("stCxn", opts.startConnection) : "") +
+      (opts.endConnection ? stringifyEndpointConnection("endCxn", opts.endConnection) : "");
+    xml += `<wps:cNvCnPr>${connectorLocks}${connections}</wps:cNvCnPr>`;
   } else {
     const locks = opts.locking
       ? (shapeLockingDesc.stringify(opts.locking, NOOP_WRITE_CONTEXT) ?? "")
@@ -678,8 +738,13 @@ function stringifyWpgGroup(
     transformation: MediaTransformation;
     childOffsetX?: number;
     childOffsetY?: number;
+    childOffsetPresent?: boolean;
     childExtentWidth?: number;
     childExtentHeight?: number;
+    childExtentPresent?: boolean;
+    groupExtent?: { width: number; height: number };
+    extensions?: OfficeArtExtensionOptions[];
+    blackWhiteMode?: BlackWhiteMode;
     fill?: FillOptions;
     effects?: EffectListOptions;
     groupShapeLocks?: GroupShapeLocksOptions | null;
@@ -693,15 +758,17 @@ function stringifyWpgGroup(
       {
         x: convertToEmu(transform.offset?.x ?? 0),
         y: convertToEmu(transform.offset?.y ?? 0),
-        width: convertToEmu(transform.width),
-        height: convertToEmu(transform.height),
+        width: convertToEmu(opts.groupExtent?.width ?? transform.width),
+        height: convertToEmu(opts.groupExtent?.height ?? transform.height),
         flipHorizontal: transform.flipHorizontal,
         flipVertical: transform.flipVertical,
         rotation: transform.rotation,
         childOffsetX: opts.childOffsetX,
         childOffsetY: opts.childOffsetY,
+        childOffsetPresent: opts.childOffsetPresent,
         childExtentWidth: opts.childExtentWidth,
         childExtentHeight: opts.childExtentHeight,
+        childExtentPresent: opts.childExtentPresent,
         fill: opts.fill,
         effects: opts.effects,
       },
@@ -712,11 +779,17 @@ function stringifyWpgGroup(
   const childXml = opts.children
     .map((child) => stringifyGroupChild(child, ctx, opts.dialect))
     .join("");
+  const extensions = (opts.extensions ?? [])
+    .map(
+      (extension) => `<a:ext uri="${escapeXml(extension.uri)}">${extension.content ?? ""}</a:ext>`,
+    )
+    .join("");
+  const extensionXml = extensions ? `<a:extLst>${extensions}</a:extLst>` : "";
 
   return (
     "<wpg:wgp>" +
     stringifyCnvGrpSpPr(opts.groupShapeLocks, opts.dialect) +
-    `<wpg:grpSpPr>${grpSpPrContent}</wpg:grpSpPr>` +
+    `<wpg:grpSpPr${opts.blackWhiteMode ? ` bwMode="${opts.blackWhiteMode}"` : ""}>${grpSpPrContent}${extensionXml}</wpg:grpSpPr>` +
     childXml +
     "</wpg:wgp>"
   );
@@ -791,39 +864,56 @@ function stringifyGroupChild(
   // viewers render); the vector SVG lives in the svgBlip extension below.
   const blipTarget = isSvg && "fallback" in picData ? picData.fallback.fileName : picData.fileName;
   const picParts: string[] = [];
-  picParts.push(stringifyNvPicPr(picData.nonVisualProperties, ctx, dialect));
-  const groupBlipParts: string[] = [];
-  const extParts: string[] = [];
-  const useLocalDpiExt = buildUseLocalDpiExt(picData.useLocalDpi, picData.useLocalDpiUri);
-  if (useLocalDpiExt) extParts.push(useLocalDpiExt);
-  if (isSvg) {
-    extParts.push(
-      `<a:ext uri="${SVG_BLIP_EXT_URI}"><asvg:svgBlip xmlns:asvg="http://schemas.microsoft.com/office/drawing/2016/SVG/main" r:embed="{${escapeXml(
-        picData.fileName,
-      )}}"/></a:ext>`,
-    );
+  if (picData.nonVisualPropertiesPresent !== false) {
+    picParts.push(stringifyNvPicPr(picData.nonVisualProperties, ctx, dialect));
   }
-  const extLst = extParts.length > 0 ? `<a:extLst>${extParts.join("")}</a:extLst>` : "";
+  const groupBlipParts: string[] = [];
+  const groupBlipAttrs = [`r:embed="{${escapeXml(blipTarget)}}"`];
+  if (picData.compression !== undefined)
+    groupBlipAttrs.push(`cstate="${escapeXml(picData.compression)}"`);
+  // Verbatim blipExt subsumes useLocalDpi and SVG (see standalone path above).
+  let extLst: string;
+  if (picData.blipExt !== undefined) {
+    extLst = picData.blipExt ? `<a:extLst>${picData.blipExt}</a:extLst>` : "";
+  } else {
+    const extParts: string[] = [];
+    const useLocalDpiExt = buildUseLocalDpiExt(picData.useLocalDpi, picData.useLocalDpiUri);
+    if (useLocalDpiExt) extParts.push(useLocalDpiExt);
+    if (isSvg) {
+      extParts.push(
+        `<a:ext uri="${SVG_BLIP_EXT_URI}"><asvg:svgBlip xmlns:asvg="http://schemas.microsoft.com/office/drawing/2016/SVG/main" r:embed="{${escapeXml(
+          picData.fileName,
+        )}}"/></a:ext>`,
+      );
+    }
+    extLst = extParts.length > 0 ? `<a:extLst>${extParts.join("")}</a:extLst>` : "";
+  }
   groupBlipParts.push(
     extLst
-      ? `<a:blip r:embed="{${escapeXml(blipTarget)}}">${extLst}</a:blip>`
-      : `<a:blip r:embed="{${escapeXml(blipTarget)}}"/>`,
+      ? `<a:blip ${groupBlipAttrs.join(" ")}>${extLst}</a:blip>`
+      : `<a:blip ${groupBlipAttrs.join(" ")}/>`,
   );
   const groupSrcRectXml = buildSrcRectXml(picData.sourceRectangle);
   if (groupSrcRectXml) groupBlipParts.push(groupSrcRectXml);
-  groupBlipParts.push("<a:stretch><a:fillRect/></a:stretch>");
+  if (picData.stretch !== false)
+    groupBlipParts.push(`<a:stretch>${buildFillRectXml(picData.fillRectangle)}</a:stretch>`);
   picParts.push(`<pic:blipFill>${groupBlipParts.join("")}</pic:blipFill>`);
-  picParts.push(
-    stringifyShapeProps(
-      picData.transformation,
-      picData.outline,
-      picData.fill,
-      undefined,
-      undefined,
-      undefined,
-      picData.blackWhiteMode,
-    ),
-  );
+  if (picData.shapePropertiesPresent !== false) {
+    picParts.push(
+      stringifyShapeProps(
+        picData.transformation,
+        picData.outline,
+        picData.fill,
+        undefined,
+        undefined,
+        undefined,
+        picData.blackWhiteMode,
+        undefined,
+        undefined,
+        (picData as { shapeExtensions?: { uri: string; content?: string }[] }).shapeExtensions,
+      ),
+    );
+  }
   return `<pic:pic xmlns:pic="${drawingmlUri(dialect, "picture")}">${picParts.join("")}</pic:pic>`;
 }
 
@@ -950,18 +1040,33 @@ function stringifyNestedGroup(
         rotation: grp.transformation.rotation,
         childOffsetX: grp.childOffsetX,
         childOffsetY: grp.childOffsetY,
+        childOffsetPresent: grp.childOffsetPresent,
         childExtentWidth: grp.childExtentWidth,
         childExtentHeight: grp.childExtentHeight,
+        childExtentPresent: grp.childExtentPresent,
         fill: grp.fill,
         effects: grp.effects,
       },
       ctx,
     ) ?? "";
+  const extensions = (grp.extensions ?? [])
+    .map(
+      (extension) => `<a:ext uri="${escapeXml(extension.uri)}">${extension.content ?? ""}</a:ext>`,
+    )
+    .join("");
+  const extensionXml = extensions ? `<a:extLst>${extensions}</a:extLst>` : "";
   return (
     "<wpg:grpSp>" +
-    '<wpg:cNvPr id="0" name=""/>' +
+    (grp.nonVisualPropertiesPresent === false
+      ? ""
+      : stringifyNonVisualDrawingProperties(
+          "wpg:cNvPr",
+          grp.nonVisualProperties?.id ?? 0,
+          grp.nonVisualProperties,
+          "",
+        )) +
     stringifyCnvGrpSpPr(grp.groupShapeLocks, dialect) +
-    `<wpg:grpSpPr>${grpSpPrContent}</wpg:grpSpPr>` +
+    `<wpg:grpSpPr${grp.blackWhiteMode ? ` bwMode="${grp.blackWhiteMode}"` : ""}>${grpSpPrContent}${extensionXml}</wpg:grpSpPr>` +
     grp.children.map((c) => stringifyGroupChild(c, ctx, dialect)).join("") +
     "</wpg:grpSp>"
   );
@@ -974,8 +1079,19 @@ function stringifyGraphicDataContent(
   opts: DrawingDescriptorOptions,
   ctx: BodyContext,
 ): string {
-  const { outline, fill, effects, scene3d, shape3d, blipEffects, tile, geometry, customGeometry } =
-    opts;
+  const {
+    outline,
+    fill,
+    effects,
+    scene3d,
+    shape3d,
+    blipEffects,
+    tile,
+    geometry,
+    customGeometry,
+    blipExt,
+    shapeExtensions,
+  } = opts;
   const dialect = opts.dialect;
   const transform = mediaData.transformation;
 
@@ -1029,11 +1145,16 @@ function stringifyGraphicDataContent(
       {
         children: md.children,
         transformation: transform,
+        groupExtent: md.groupExtent,
         childOffsetX: md.childOffsetX,
         childOffsetY: md.childOffsetY,
+        childOffsetPresent: md.childOffsetPresent,
         childExtentWidth: md.childExtentWidth,
         childExtentHeight: md.childExtentHeight,
+        childExtentPresent: md.childExtentPresent,
         fill: md.fill,
+        extensions: md.extensions,
+        blackWhiteMode: md.blackWhiteMode,
         effects: md.effects,
         groupShapeLocks: md.groupShapeLocks,
         dialect,
@@ -1052,19 +1173,24 @@ function stringifyGraphicDataContent(
   return (
     `<a:graphicData uri="${drawingmlUri(dialect, "picture")}">` +
     `<pic:pic xmlns:pic="${drawingmlUri(dialect, "picture")}">` +
-    stringifyNvPicPr(md.nonVisualProperties, ctx, dialect) +
-    stringifyBlipFill(md, blipEffects, tile, ctx) +
-    stringifyShapeProps(
-      transform,
-      outline,
-      fill,
-      effects,
-      scene3d,
-      shape3d,
-      md.blackWhiteMode,
-      geometry,
-      customGeometry,
-    ) +
+    (md.nonVisualPropertiesPresent === false
+      ? ""
+      : stringifyNvPicPr(md.nonVisualProperties, ctx, dialect)) +
+    stringifyBlipFill(md, blipEffects, tile, ctx, blipExt) +
+    (md.shapePropertiesPresent === false
+      ? ""
+      : stringifyShapeProps(
+          transform,
+          outline,
+          fill,
+          effects,
+          scene3d,
+          shape3d,
+          md.blackWhiteMode,
+          geometry,
+          customGeometry,
+          shapeExtensions,
+        )) +
     `</pic:pic></a:graphicData>`
   );
 }
@@ -1245,14 +1371,18 @@ function stringifyCnvGrpSpPr(
   dialect?: DocumentNamespaceDialect,
 ): string {
   if (!locks) return "<wpg:cNvGrpSpPr/>";
+  if (locks.emptyLocks) {
+    return `<wpg:cNvGrpSpPr><a:grpSpLocks xmlns:a="${drawingmlUri(dialect, "main")}"/></wpg:cNvGrpSpPr>`;
+  }
   const attrParts: string[] = [];
-  if (locks.noGrp) attrParts.push('noGrp="1"');
-  if (locks.noUngrp) attrParts.push('noUngrp="1"');
-  if (locks.noSelect) attrParts.push('noSelect="1"');
-  if (locks.noRot) attrParts.push('noRot="1"');
-  if (locks.noChangeAspect) attrParts.push('noChangeAspect="1"');
-  if (locks.noMove) attrParts.push('noMove="1"');
-  if (locks.noResize) attrParts.push('noResize="1"');
+  if (locks.noGrp !== undefined) attrParts.push(`noGrp="${locks.noGrp ? 1 : 0}"`);
+  if (locks.noUngrp !== undefined) attrParts.push(`noUngrp="${locks.noUngrp ? 1 : 0}"`);
+  if (locks.noSelect !== undefined) attrParts.push(`noSelect="${locks.noSelect ? 1 : 0}"`);
+  if (locks.noRot !== undefined) attrParts.push(`noRot="${locks.noRot ? 1 : 0}"`);
+  if (locks.noChangeAspect !== undefined)
+    attrParts.push(`noChangeAspect="${locks.noChangeAspect ? 1 : 0}"`);
+  if (locks.noMove !== undefined) attrParts.push(`noMove="${locks.noMove ? 1 : 0}"`);
+  if (locks.noResize !== undefined) attrParts.push(`noResize="${locks.noResize ? 1 : 0}"`);
   if (attrParts.length === 0) return "<wpg:cNvGrpSpPr/>";
   const attrStr = " " + attrParts.join(" ");
   return `<wpg:cNvGrpSpPr><a:grpSpLocks${attrStr} xmlns:a="${drawingmlUri(dialect, "main")}"/></wpg:cNvGrpSpPr>`;
@@ -1270,13 +1400,25 @@ function stringifyInline(
   // Prefer the verbatim source effectExtent (round-trip); fall back to
   // computing it from the shape's effects on the generation path.
   const calculatedEffectExtent = calculateEffectExtent(effects);
-  const effectExtent = mediaData.transformation.effectExtent ?? {
-    left: calculatedEffectExtent.l,
-    top: calculatedEffectExtent.t,
-    right: calculatedEffectExtent.r,
-    bottom: calculatedEffectExtent.b,
-  };
+  const effectExtent =
+    mediaData.transformation.effectExtentPresent === false
+      ? undefined
+      : (mediaData.transformation.effectExtent ?? {
+          left: calculatedEffectExtent.l,
+          top: calculatedEffectExtent.t,
+          right: calculatedEffectExtent.r,
+          bottom: calculatedEffectExtent.b,
+        });
   const distances = mediaData.transformation.inlineDistances ?? {};
+  const distanceAttrs =
+    mediaData.transformation.inlineDistancePresent === false
+      ? []
+      : [
+          `distT="${convertToEmu(distances.top ?? 0)}"`,
+          `distB="${convertToEmu(distances.bottom ?? 0)}"`,
+          `distL="${convertToEmu(distances.left ?? 0)}"`,
+          `distR="${convertToEmu(distances.right ?? 0)}"`,
+        ];
   // CT_Inline's choice is a:graphic — a content part only nests inside a wpg
   // group or canvas, never directly under wp:inline.
   const choiceXml = `<a:graphic xmlns:a="${drawingmlUri(
@@ -1285,15 +1427,13 @@ function stringifyInline(
   )}">${stringifyGraphicDataContent(mediaData, opts, ctx)}</a:graphic>`;
 
   return (
-    `<w:drawing><wp:inline ${[
-      `distT="${convertToEmu(distances.top ?? 0)}"`,
-      `distB="${convertToEmu(distances.bottom ?? 0)}"`,
-      `distL="${convertToEmu(distances.left ?? 0)}"`,
-      `distR="${convertToEmu(distances.right ?? 0)}"`,
-      ...drawingExtensionAttrs(opts.extensionIds),
-    ].join(" ")}>` +
+    `<w:drawing><wp:inline ${[...distanceAttrs, ...drawingExtensionAttrs(opts.extensionIds)].join(
+      " ",
+    )}>` +
     `<wp:extent cx="${cx}" cy="${cy}"/>` +
-    `<wp:effectExtent l="${effectExtent.left}" t="${effectExtent.top}" r="${effectExtent.right}" b="${effectExtent.bottom}"/>` +
+    (effectExtent
+      ? `<wp:effectExtent l="${effectExtent.left}" t="${effectExtent.top}" r="${effectExtent.right}" b="${effectExtent.bottom}"/>`
+      : "") +
     stringifyDocPr(
       docProperties,
       hlIds,
@@ -1342,14 +1482,16 @@ function stringifyAnchor(
     `locked="${floating.lockAnchor ? 1 : 0}"`,
     `layoutInCell="${floating.layoutInCell ? 1 : 0}"`,
     ...(floating.hidden !== undefined ? [`hidden="${floating.hidden ? 1 : 0}"`] : []),
-    `relativeHeight="${floating.zIndex}"`,
+    ...(floating.zIndex !== null ? [`relativeHeight="${floating.zIndex}"`] : []),
     ...drawingExtensionAttrs(opts.extensionIds),
   ];
 
   // Wrap
   let wrapXml: string;
   const rawWrap = rawFloating?.wrap;
-  if (rawWrap?.type === TextWrappingType.SQUARE) {
+  if (rawFloating?.wrapPresent === false) {
+    wrapXml = "";
+  } else if (rawWrap?.type === TextWrappingType.SQUARE) {
     wrapXml = wrapSquareStr(rawWrap);
   } else if (rawWrap?.type === TextWrappingType.TIGHT) {
     wrapXml = wrapTightStr(rawWrap, cx, cy);
@@ -1370,9 +1512,12 @@ function stringifyAnchor(
 
   // Prefer the verbatim source effectExtent (round-trip); default to zero.
   const ee = mediaData.transformation.effectExtent;
-  const effectExtentXml = ee
-    ? `<wp:effectExtent l="${ee.left}" t="${ee.top}" r="${ee.right}" b="${ee.bottom}"/>`
-    : '<wp:effectExtent l="0" t="0" r="0" b="0"/>';
+  const effectExtentXml =
+    mediaData.transformation.effectExtentPresent === false
+      ? ""
+      : ee
+        ? `<wp:effectExtent l="${ee.left}" t="${ee.top}" r="${ee.right}" b="${ee.bottom}"/>`
+        : '<wp:effectExtent l="0" t="0" r="0" b="0"/>';
 
   // wp14:sizeRelH/V trail a:graphic in CT_Anchor (Word 2010+); percent is a
   // whole-number percentage in the API, pctWidth/pctHeight carry 1/1000 %.
@@ -1390,21 +1535,29 @@ function stringifyAnchor(
 
   return (
     `<w:drawing><wp:anchor ${attrParts.join(" ")}>` +
-    `<wp:simplePos x="${convertToEmu(floating.simplePos?.x ?? 0)}" y="${convertToEmu(
-      floating.simplePos?.y ?? 0,
-    )}"/>` +
-    stringifyPositionH(floating.horizontalPosition) +
-    stringifyPositionV(floating.verticalPosition) +
+    (rawFloating?.simplePosPresent === false
+      ? ""
+      : `<wp:simplePos x="${convertToEmu(floating.simplePos?.x ?? 0)}" y="${convertToEmu(
+          floating.simplePos?.y ?? 0,
+        )}"/>`) +
+    (rawFloating?.horizontalPositionPresent === false
+      ? ""
+      : stringifyPositionH(floating.horizontalPosition)) +
+    (rawFloating?.verticalPositionPresent === false
+      ? ""
+      : stringifyPositionV(floating.verticalPosition)) +
     `<wp:extent cx="${cx}" cy="${cy}"/>` +
     effectExtentXml +
     wrapXml +
-    stringifyDocPr(
-      docProperties,
-      hlIds,
-      opts.docProperties?.hyperlink,
-      ctx.reproducible,
-      opts.dialect,
-    ) +
+    (opts.docPropertiesPresent === false
+      ? ""
+      : stringifyDocPr(
+          docProperties,
+          hlIds,
+          opts.docProperties?.hyperlink,
+          ctx.reproducible,
+          opts.dialect,
+        )) +
     stringifyCnvGraphicFramePr(opts.graphicFrameLocks, opts.dialect) +
     choiceXml +
     sizeRelXml +

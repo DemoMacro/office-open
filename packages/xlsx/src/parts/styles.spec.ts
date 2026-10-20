@@ -325,6 +325,71 @@ describe("Styles", () => {
       }
     });
 
+    it("round-trips legacy theme colors", () => {
+      const xml =
+        `<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">` +
+        `<colors><themeColors>` +
+        `<rgbColor rgb="FFFFFFFF"/><rgbColor rgb="FF000000"/>` +
+        `</themeColors></colors></styleSheet>`;
+      const el = parseXml(xml, { nativeTypeAttributes: true }).elements?.[0];
+      if (!el) throw new Error("parsed document has no root element");
+      const parsed = stylesDesc.parse(el, undefined as unknown as ReadContext);
+      expect(parsed.colors?.themeColors).toEqual([{ rgb: "FFFFFFFF" }, { rgb: "FF000000" }]);
+
+      const styles = new Styles();
+      styles.setColors(parsed.colors!);
+      expect(styles.serialize()).toContain(
+        '<themeColors><rgbColor rgb="FFFFFFFF"/><rgbColor rgb="FF000000"/></themeColors>',
+      );
+    });
+
+    it("round-trips legacy numeric theme colors", () => {
+      const xml =
+        `<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">` +
+        `<colors><themeColors><rgbColor val="16777215"/><rgbColor val="0"/></themeColors></colors>` +
+        `</styleSheet>`;
+      const el = parseXml(xml, { nativeTypeAttributes: true }).elements?.[0];
+      if (!el) throw new Error("parsed document has no root element");
+      const parsed = stylesDesc.parse(el, undefined as unknown as ReadContext);
+      expect(parsed.colors?.themeColors).toEqual([{ value: "16777215" }, { value: "0" }]);
+
+      const styles = new Styles();
+      styles.setColors(parsed.colors!);
+      expect(styles.serialize()).toContain(
+        '<themeColors><rgbColor val="16777215"/><rgbColor val="0"/></themeColors>',
+      );
+    });
+
+    it("round-trips foreign cellStyleXf attributes and children", () => {
+      const xml =
+        `<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" ` +
+        `xmlns:vendor="https://example.com/vendor">` +
+        `<fonts count="1"><font><sz val="11"/><name val="Calibri"/></font></fonts>` +
+        `<fills count="1"><fill><patternFill patternType="none"/></fill></fills>` +
+        `<borders count="1"><border/></borders>` +
+        `<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" ` +
+        `vendor:count="2" legacyCount="3"><vendor:metadata/></xf></cellStyleXfs>` +
+        `</styleSheet>`;
+      const el = parseXml(xml, { nativeTypeAttributes: true }).elements?.[0];
+      if (!el) throw new Error("parsed document has no root element");
+      const parsed = stylesDesc.parse(el, undefined as unknown as ReadContext);
+      expect(parsed.cellStyleXfs?.[0]?.foreignAttributes).toEqual([
+        { name: "vendor:count", value: "2" },
+        { name: "legacyCount", value: "3" },
+      ]);
+      expect(parsed.cellStyleXfs?.[0]?.foreignChildren).toEqual([
+        { name: "vendor:metadata", xml: "<vendor:metadata/>" },
+      ]);
+
+      const styles = new Styles();
+      styles.adopt({ fonts: [], fills: [], borders: [], cellXfs: [] });
+      styles.setCellStyleXfs(parsed.cellStyleXfs!);
+      const out = styles.serialize();
+      expect(out).toContain('vendor:count="2"');
+      expect(out).toContain('legacyCount="3"');
+      expect(out).toContain("<vendor:metadata/>");
+    });
+
     it("preserves an omitted applyProtection flag with protection", () => {
       const xml =
         `<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">` +
@@ -344,6 +409,23 @@ describe("Styles", () => {
       const out = styles.serialize();
       expect(out).toContain("<protection locked=");
       expect(out).not.toContain("applyProtection=");
+    });
+
+    it("does not inject the Normal cell style into a round-trip source", () => {
+      const xml =
+        `<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">` +
+        `<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>` +
+        `<cellXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/></cellXfs>` +
+        `<cellStyles count="1"><cellStyle name="Custom" xfId="0"/></cellStyles>` +
+        `</styleSheet>`;
+      const el = parseXml(xml, { nativeTypeAttributes: true }).elements?.[0];
+      if (!el) throw new Error("parsed document has no root element");
+      const parsed = stylesDesc.parse(el, undefined as unknown as ReadContext);
+      const styles = new Styles();
+      styles.adopt({ fonts: [], fills: [], borders: [], cellXfs: parsed.cellXfs! });
+      styles.setCellStyleXfs(parsed.cellStyleXfs!);
+      styles.setCustomCellStyles(parsed.customCellStyles!);
+      expect(styles.serialize()).not.toContain('name="Normal"');
     });
 
     it("distinguishes explicit false xf flags and zero references", () => {

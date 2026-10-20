@@ -2,7 +2,6 @@ import type { ReadContext } from "@office-open/core/descriptor";
 import { parse as parseXml } from "@office-open/xml";
 import { describe, expect, it } from "vite-plus/test";
 
-import { DocxParseError } from "../../errors";
 import { fontTableDesc } from "./descriptor";
 import type { FontTableInput } from "./descriptor";
 
@@ -94,6 +93,19 @@ describe("fontTableDesc round-trip", () => {
     expect(result.fonts[0]?.characterSetName).toBe("ISO-8859-1");
   });
 
+  it("preserves source lexical character sets", () => {
+    const xml =
+      '<w:fonts xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+      '<w:font w:name="Arial"><w:charset w:val="1"/></w:font>' +
+      "</w:fonts>";
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("no root");
+    const parsed = fontTableDesc.parse(el, readCtx);
+    expect(parsed.fonts[0]).toMatchObject({ name: "Arial", characterSetRaw: "1" });
+    const generated = fontTableDesc.stringify(parsed, writeCtx)!;
+    expect(generated).toContain('<w:charset w:val="1"/>');
+  });
+
   it("round-trips font key stripping braces", () => {
     const result = roundTrip({
       fonts: [
@@ -129,14 +141,48 @@ describe("fontTableDesc round-trip", () => {
     expect(result.fonts).toHaveLength(0);
   });
 
-  it("rejects a font declaration without required @w:name", () => {
+  it("preserves an omitted embedded-font signature", () => {
+    const xml =
+      '<w:fonts xmlns:r="urn:r" xmlns:w="urn:w">' +
+      '<w:font w:name="Missing Sig"><w:embedRegular r:id="rId1" w:fontKey="{A}"/></w:font>' +
+      "</w:fonts>";
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("no root");
+    const parsed = fontTableDesc.parse(el, readCtx);
+    expect(parsed.fonts[0]?.sig).toBeNull();
+    expect(fontTableDesc.stringify(parsed, writeCtx)).not.toContain("<w:sig");
+  });
+
+  it("round-trips a font declaration without @w:name", () => {
     const xml =
       '<w:fonts xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
-      '<w:font><w:pitch w:val="variable"/></w:font></w:fonts>';
+      '<w:font><w:charset w:val="1"/><w:family w:val="auto"/>' +
+      '<w:pitch w:val="default"/></w:font></w:fonts>';
     const el = parseXml(xml).elements?.[0];
     if (!el) throw new Error("no root");
 
-    expect(() => fontTableDesc.parse(el, readCtx)).toThrow(DocxParseError);
+    const parsed = fontTableDesc.parse(el, readCtx);
+    expect(parsed.fonts[0]).toMatchObject({
+      name: "",
+      nameRaw: "",
+      characterSetRaw: "1",
+      family: "auto",
+      pitch: "default",
+    });
+    expect(fontTableDesc.stringify(parsed, writeCtx)).toContain('<w:font w:name="">');
+  });
+
+  it("round-trips a numeric-zero font name", () => {
+    const xml =
+      '<w:fonts xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+      '<w:font w:name="0"/></w:fonts>';
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("no root");
+
+    const parsed = fontTableDesc.parse(el, readCtx);
+    expect(parsed.fonts[0]?.name).toBe("0");
+    expect(parsed.fonts[0]?.nameRaw).toBeUndefined();
+    expect(fontTableDesc.stringify(parsed, writeCtx)).toContain('<w:font w:name="0">');
   });
 
   it("round-trips a markup-compatibility gated font declaration", () => {

@@ -19,7 +19,11 @@ import type {
   ParagraphPropertiesOptions,
   ParagraphStylePropertiesOptions,
 } from "@parts/paragraph/properties";
-import type { RunStylePropertiesOptions } from "@parts/paragraph/run/properties";
+import {
+  ON_OFF_LEXICAL_VALUES,
+  type OnOffLexicalValue,
+  type RunStylePropertiesOptions,
+} from "@parts/paragraph/run/properties";
 import { parseRunProperties } from "@parts/paragraph/run/run-parse";
 import type {
   StyleChildOrder,
@@ -47,6 +51,7 @@ import type { TablePropertiesOptions } from "@parts/table/table-properties/table
 import type { TableRowPropertiesOptions } from "@parts/table/table-row/table-row-properties";
 
 import type { DocxReadContext } from "../../context";
+import { DocxParseError } from "../../errors";
 import { stringifyElement } from "../../util/stringify-element";
 
 /**
@@ -102,8 +107,16 @@ export interface StylesOptions {
  * whose raw XML carries no `w:styleId` attribute.
  */
 export function extractStyleId(raw: string): string | undefined {
-  const m = raw.match(/w:styleId="([^"]+)"/);
+  const m = raw.match(/w:styleId="([^"]*)"/);
   return m ? m[1] : undefined;
+}
+
+function extractStyleType(raw: string): string | undefined {
+  return raw.match(/<w:style\b[^>]*\bw:type="([^"]+)"/)?.[1];
+}
+
+function styleKey(type: string, id: string): string {
+  return `${type}:${id}`;
 }
 
 /**
@@ -198,7 +211,16 @@ export class Styles {
     const styleParts = this.parts.slice(this.styleStart);
     const orderedStyleParts = this.styleOrder
       ? this.styleOrder
-          .map((id) => styleParts.find((style) => extractStyleId(style) === id))
+          .map((key) => {
+            const separator = key.indexOf(":");
+            const type = separator >= 0 ? key.slice(0, separator) : undefined;
+            const id = separator >= 0 ? key.slice(separator + 1) : key;
+            return styleParts.find(
+              (style) =>
+                extractStyleId(style) === id &&
+                (type === undefined || extractStyleType(style) === type),
+            );
+          })
           .filter((style): style is string => style !== undefined)
       : styleParts;
     const body = [...this.parts.slice(0, this.styleStart), ...orderedStyleParts].join("");
@@ -270,7 +292,9 @@ interface ParsedStyle {
   _type?: string;
   id?: string;
   default?: boolean;
+  defaultRaw?: OnOffLexicalValue;
   customStyle?: boolean;
+  customStyleRaw?: OnOffLexicalValue;
   name?: string;
   aliases?: string;
   basedOn?: string;
@@ -278,6 +302,7 @@ interface ParsedStyle {
   link?: string;
   uiPriority?: number;
   quickFormat?: boolean;
+  quickFormatRaw?: OnOffLexicalValue;
   semiHidden?: boolean;
   unhideWhenUsed?: boolean;
   autoRedefine?: boolean;
@@ -340,8 +365,8 @@ export function parseStyleDefinitions(
   const characterStyles: (CharacterStyleOptions & { id: string })[] = [];
   const tableStyles: TableStyleOptions[] = [];
   const numberingStyles: NumberingStyleOptions[] = [];
-  const stylesById = new Map<string, { type: string; style: ParsedStyle }>();
-  const styleOrderById = new Map<string, undefined>();
+  const stylesByKey = new Map<string, { type: string; style: ParsedStyle }>();
+  const styleOrderByKey = new Map<string, undefined>();
 
   for (const child of el.elements ?? []) {
     if (child.name === "w:docDefaults") {
@@ -357,15 +382,16 @@ export function parseStyleDefinitions(
     } else if (child.name === "w:style") {
       const styleOpts = parseStyleElement(child, parseParagraphProperties, ctx);
       // Skip styles without a type or styleId — both are required to be useful.
-      if (!styleOpts?._type || !styleOpts.id) continue;
-      styleOrderById.delete(styleOpts.id);
-      styleOrderById.set(styleOpts.id, undefined);
-      stylesById.set(styleOpts.id, { type: styleOpts._type, style: styleOpts });
+      if (!styleOpts?._type || styleOpts.id === undefined) continue;
+      const key = styleKey(styleOpts._type, styleOpts.id);
+      styleOrderByKey.delete(key);
+      styleOrderByKey.set(key, undefined);
+      stylesByKey.set(key, { type: styleOpts._type, style: styleOpts });
     }
   }
 
-  for (const id of styleOrderById.keys()) {
-    const styleEntry = stylesById.get(id)!;
+  for (const key of styleOrderByKey.keys()) {
+    const styleEntry = stylesByKey.get(key)!;
     const styleOpts = styleEntry.style;
     // All styles (builtin + custom) round-trip structured so HTML renderers
     // can consume style attributes directly. Builtin verbatim _raw is gone —
@@ -391,7 +417,7 @@ export function parseStyleDefinitions(
   // Mark round-trip origin so context.ts consumes parsed structured styles
   // directly instead of rebuilding builtins via the factory.
   opts.roundTripped = true;
-  if (styleOrderById.size > 0) opts.styleOrder = [...styleOrderById.keys()];
+  if (styleOrderByKey.size > 0) opts.styleOrder = [...styleOrderByKey.keys()];
 
   return Object.keys(opts).length > 0 ? opts : undefined;
 }
@@ -452,10 +478,32 @@ function parseStyleElement(
   if (type) opts._type = type;
 
   const id = attr(el, "w:styleId");
-  if (id) opts.id = id;
+  if (id !== undefined) opts.id = id;
 
-  if (attrBool(el, "w:default")) opts.default = true;
-  if (attrBool(el, "w:customStyle")) opts.customStyle = true;
+  const defaultRaw = attr(el, "w:default");
+  if (defaultRaw !== undefined) {
+    if (!(ON_OFF_LEXICAL_VALUES as readonly string[]).includes(defaultRaw))
+      throw new DocxParseError(
+        "Invalid default style on/off value",
+        ctx.currentPart,
+        "/w:styles/w:style/@w:default",
+        "invalid-value",
+      );
+    opts.default = attrBool(el, "w:default") ?? true;
+    opts.defaultRaw = defaultRaw as OnOffLexicalValue;
+  }
+  const customStyleRaw = attr(el, "w:customStyle");
+  if (customStyleRaw !== undefined) {
+    if (!(ON_OFF_LEXICAL_VALUES as readonly string[]).includes(customStyleRaw))
+      throw new DocxParseError(
+        "Invalid custom style on/off value",
+        ctx.currentPart,
+        "/w:styles/w:style/@w:customStyle",
+        "invalid-value",
+      );
+    opts.customStyle = attrBool(el, "w:customStyle") ?? true;
+    opts.customStyleRaw = customStyleRaw as OnOffLexicalValue;
+  }
 
   const nameEl = findChild(el, "w:name");
   if (nameEl) {
@@ -487,7 +535,27 @@ function parseStyleElement(
     if (val !== undefined) opts.uiPriority = val;
   }
 
-  if (findChild(el, "w:qFormat")) opts.quickFormat = true;
+  const qFormat = findChild(el, "w:qFormat");
+  if (qFormat) {
+    const lexicalValue = attr(qFormat, "w:val");
+    if (
+      lexicalValue !== undefined &&
+      !(ON_OFF_LEXICAL_VALUES as readonly string[]).includes(lexicalValue)
+    ) {
+      throw new DocxParseError(
+        "Invalid qFormat on/off value",
+        ctx.currentPart,
+        "/w:styles/w:style/w:qFormat/@w:val",
+        "invalid-value",
+      );
+    }
+    if (lexicalValue !== undefined) {
+      opts.quickFormatRaw = lexicalValue as OnOffLexicalValue;
+      opts.quickFormat = attrBool(qFormat, "w:val") ?? true;
+    } else {
+      opts.quickFormat = true;
+    }
+  }
   if (findChild(el, "w:semiHidden")) opts.semiHidden = true;
   if (findChild(el, "w:unhideWhenUsed")) opts.unhideWhenUsed = true;
   if (findChild(el, "w:autoRedefine")) opts.autoRedefine = true;
@@ -515,6 +583,16 @@ function parseStyleElement(
     if (Object.keys(paraOpts).length > 0) {
       opts.paragraph = paraOpts;
     }
+    const misplacedQFormat = findChild(pPr, "w:qFormat");
+    if (misplacedQFormat) {
+      const lexicalValue = attr(misplacedQFormat, "w:val");
+      if (lexicalValue !== undefined) {
+        opts.quickFormatRaw = lexicalValue as OnOffLexicalValue;
+        opts.quickFormat = attrBool(misplacedQFormat, "w:val") ?? true;
+      } else {
+        opts.quickFormat = true;
+      }
+    }
   }
 
   const rPr = findChild(el, "w:rPr");
@@ -534,11 +612,13 @@ function parseStyleElement(
   if (trPr) {
     const rowOpts = parseTableRowPropertiesEl(trPr);
     if (Object.keys(rowOpts).length > 0) opts.row = rowOpts;
+    else opts.row = { rowProperties: true };
   }
   const tcPr = findChild(el, "w:tcPr");
   if (tcPr) {
     const cellOpts = parseTableCellPropertiesEl(tcPr);
     if (Object.keys(cellOpts).length > 0) opts.cell = cellOpts;
+    else opts.cell = { cellProperties: true };
   }
   // Conditional table style formats (CT_TblStylePr, unbounded).
   const conditionalFormats: ConditionalTableStyleOptions[] = [];
@@ -567,11 +647,13 @@ function parseStyleElement(
     if (cfTrPr) {
       const rowOpts = parseTableRowPropertiesEl(cfTrPr);
       if (Object.keys(rowOpts).length > 0) cf.row = rowOpts;
+      else cf.row = { rowProperties: true };
     }
     const cfTcPr = findChild(child, "w:tcPr");
     if (cfTcPr) {
       const cellOpts = parseTableCellPropertiesEl(cfTcPr);
       if (Object.keys(cellOpts).length > 0) cf.cell = cellOpts;
+      else cf.cell = { cellProperties: true };
     }
     conditionalFormats.push(cf);
   }

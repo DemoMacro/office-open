@@ -1,6 +1,7 @@
 import type { ObjectElementOptions } from "@parts/object";
 import type { PictOptions } from "@parts/pict";
 
+import type { ParagraphChild } from "../paragraph";
 import type { RunOptions } from "./run";
 import type { SymbolRunOptions } from "./symbol-run";
 
@@ -37,6 +38,7 @@ export interface RubyContentOptions {
     | { symbolRun: SymbolRunOptions }
     | { object: ObjectElementOptions }
     | { pict: PictOptions }
+    | ParagraphChild
     | string
   )[];
 }
@@ -44,6 +46,11 @@ export interface RubyContentOptions {
 /** A ruby annotation (CT_Ruby). */
 export interface RubyOptions {
   properties: RubyPropertiesOptions;
+  /**
+   * Ruby-level style reference for formats that provide one (`text:ruby`);
+   * source-only projection for OOXML because `w:rubyPr` has no style child.
+   */
+  style?: string;
   /** Annotation text (`w:rt`). */
   text: RubyContentOptions;
   /** Base text being annotated (`w:rubyBase`). */

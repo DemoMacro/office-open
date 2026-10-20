@@ -1,4 +1,4 @@
-import { unzipSync, zipSync } from "@office-open/core";
+import { unzipSync, zipSync } from "@office-open/core/opc";
 import { buildThemeXml, type ThemeOptions } from "@office-open/core/theme";
 import { describe, expect, it } from "vite-plus/test";
 
@@ -32,6 +32,14 @@ const mediaBlipThemeXml =
   '<a:solidFill><a:schemeClr val="phClr"/></a:solidFill>' +
   '<a:blipFill><a:blip r:embed="rId1"/></a:blipFill></a:bgFillStyleLst>' +
   "</a:fmtScheme></a:themeElements></a:theme>";
+
+const unresolvedMediaBlipThemeXml = mediaBlipThemeXml.replace(
+  '<a:blipFill><a:blip r:embed="rId1"/></a:blipFill>',
+  '<a:blipFill><a:blip r:embed="rId1">' +
+    '<a:duotone><a:schemeClr val="phClr"><a:shade val="1200"/><a:satMod val="150000"/></a:schemeClr>' +
+    '<a:schemeClr val="phClr"><a:tint val="90000"/><a:satMod val="150000"/></a:schemeClr></a:duotone>' +
+    '</a:blip><a:tile tx="0" ty="0" sx="70000" sy="70000" flip="none" algn="tl"/></a:blipFill>',
+);
 
 const themeOptions: ThemeOptions = {
   name: "Custom Theme",
@@ -183,5 +191,37 @@ describe("document theme part", () => {
     expect(output["word/theme/_rels/theme1.xml.rels"]).toBeDefined();
     const regenerated = parseDocumentSync(zipSync(output));
     expect(regenerated.theme?.formatScheme?.backgroundFillStyles.at(-1)).toEqual(fill);
+  });
+
+  it("preserves unresolved format-scheme blip references without fabricating media", () => {
+    const source = zipSync({
+      "word/document.xml": new TextEncoder().encode(documentXml),
+      "word/_rels/document.xml.rels": new TextEncoder().encode(documentRelsXml),
+      "word/theme/theme1.xml": new TextEncoder().encode(unresolvedMediaBlipThemeXml),
+    });
+
+    const parsed = parseDocumentSync(source);
+    const fill = parsed.theme?.formatScheme?.backgroundFillStyles.at(-1);
+    expect(fill).toMatchObject({
+      type: "blip",
+      noEmbed: true,
+      sourceReferenceId: "rId1",
+      blipEffects: {
+        duotone: {
+          color1: { value: "phClr", transforms: { shade: 1.2, satMod: 150 } },
+          color2: { value: "phClr", transforms: { tint: 90, satMod: 150 } },
+        },
+      },
+      tile: { tx: 0, ty: 0, sx: 70, sy: 70, flip: "none", alignment: "topLeft" },
+      stretch: false,
+    });
+
+    const output = unzipSync(generateDocumentSync(parsed, { type: "uint8array" }));
+    const theme = new TextDecoder().decode(output["word/theme/theme1.xml"]!);
+    expect(theme).toContain("<a:blip xmlns:r=");
+    expect(theme).toContain('r:embed="rId1"');
+    expect(theme).toContain("<a:tile");
+    expect(Object.keys(output)).not.toContain("word/theme/_rels/theme1.xml.rels");
+    expect(Object.keys(output)).not.toContain("word/media/theme-media.png");
   });
 });

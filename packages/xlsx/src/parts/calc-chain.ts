@@ -30,6 +30,8 @@ export interface CalcCell {
 
 export interface CalcChainOptions {
   cells: CalcCell[];
+  /** Root `xml:space` lexical form; round-trip only. */
+  rootXmlSpace?: "default" | "preserve";
 }
 
 // ── Descriptor ──
@@ -38,8 +40,11 @@ export const calcChainDesc: CustomDescriptor<CalcChainOptions> = {
   kind: "custom",
 
   stringify(opts, _ctx) {
+    const rootSpaceAttr = opts.rootXmlSpace ? ` xml:space="${opts.rootXmlSpace}"` : "";
     const parts: string[] = [
-      '<calcChain xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">',
+      '<calcChain xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"' +
+        rootSpaceAttr +
+        ">",
     ];
     for (const cell of opts.cells) {
       const cellAttrs: Record<string, string | number | boolean> = {
@@ -58,6 +63,10 @@ export const calcChainDesc: CustomDescriptor<CalcChainOptions> = {
 
   parse(el, _ctx) {
     const result: Partial<CalcChainOptions> = {};
+    const rootXmlSpace = el.attributes?.["xml:space"];
+    if (rootXmlSpace === "preserve" || rootXmlSpace === "default") {
+      result.rootXmlSpace = rootXmlSpace;
+    }
     const cells: CalcCell[] = [];
     for (const child of el.elements ?? []) {
       if (child.name !== "c") continue;

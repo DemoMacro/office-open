@@ -27,6 +27,16 @@ export interface HandoutMasterOptions {
   children?: SlideChild[];
   /** Root spTree black-and-white mode (p:grpSpPr @bwMode). */
   shapeTreeBlackWhiteMode?: BlackWhiteMode;
+  /** Root spTree cNvPr id — round-trip only. */
+  shapeTreeId?: number;
+  /** Root spTree cNvPr name — round-trip only. */
+  shapeTreeName?: string;
+  /** Root spTree cNvPr creation id — round-trip only. */
+  shapeTreeCreationId?: string;
+  /** Root spTree cNvPr extension-list inner XML — round-trip only. */
+  shapeTreeExt?: string;
+  /** Omit the shape-tree root transform when the source omitted it. */
+  groupTransformless?: boolean;
   /** Color mapping overrides */
   colorMapping?: Partial<ColorMappingOptions>;
   /** Header/footer settings */
@@ -47,7 +57,7 @@ export function buildHfAttrs(opts?: HeaderFooterOptions): string {
   return attrs.join(" ");
 }
 
-/** Parse a p:hf element into HeaderFooterOptions (undefined when empty/absent). */
+/** Parse a p:hf element into HeaderFooterOptions (undefined only when absent). */
 export function parseHeaderFooter(el: Element | undefined): HeaderFooterOptions | undefined {
   if (!el) return undefined;
   const headerFooter: HeaderFooterOptions = {};
@@ -59,7 +69,7 @@ export function parseHeaderFooter(el: Element | undefined): HeaderFooterOptions 
   if (ftr !== undefined) headerFooter.footer = parseOnOff(ftr) ?? false;
   const sldNum = attr(el, "sldNum");
   if (sldNum !== undefined) headerFooter.slideNumber = parseOnOff(sldNum) ?? false;
-  return Object.keys(headerFooter).length > 0 ? headerFooter : undefined;
+  return headerFooter;
 }
 
 /**

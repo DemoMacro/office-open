@@ -3,7 +3,7 @@ import type { ShapeOptions } from "@office-open/pptx";
 import { PptParseError } from "../errors";
 import { RecordType, findDirect, type RecordNode } from "../records";
 
-type PlaceholderType = NonNullable<ShapeOptions["placeholder"]>;
+type PlaceholderType = Exclude<NonNullable<ShapeOptions["placeholder"]>, true>;
 type PlaceholderSize = NonNullable<ShapeOptions["placeholderSize"]>;
 
 interface PlaceholderAtom {

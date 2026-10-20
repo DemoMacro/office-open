@@ -62,6 +62,10 @@ export interface MediaTransformation {
     bottom?: number;
     left?: number;
   };
+  /** Whether the source wrapper carried wp:inline distance attributes. */
+  inlineDistancePresent?: boolean;
+  /** Whether the source wrapper carried wp:effectExtent. */
+  effectExtentPresent?: boolean;
 }
 
 /**
@@ -94,8 +98,19 @@ export interface NonVisualPropertiesOptions extends NonVisualDrawingPropertiesOp
 export interface CoreMediaData extends BaseMediaEntry {
   /** Transformation settings for display */
   transformation: MediaTransformation;
+  /** Whether pic:pic carried pic:nvPicPr; round-trip only. */
+  nonVisualPropertiesPresent?: boolean;
+  /** Whether pic:pic carried pic:spPr; round-trip only. */
+  shapePropertiesPresent?: boolean;
   /** Source rectangle for image cropping */
   sourceRectangle?: SourceRectangleOptions;
+  /**
+   * Fill rectangle inside `a:stretch`; `false` preserves a source bare
+   * `<a:stretch/>`, while omitted uses the fresh-authoring default fill rect.
+   */
+  fillRectangle?: SourceRectangleOptions | false;
+  /** Whether pic:blipFill carries a:stretch; false preserves an omitted element. */
+  stretch?: boolean;
   /** Rendering resolution in DPI (pic:blipFill/@dpi). */
   dpi?: number;
   /** Whether the image rotates with its shape frame (pic:blipFill/@rotWithShape). */
@@ -114,6 +129,10 @@ export interface CoreMediaData extends BaseMediaEntry {
   compression?: BlipCompression;
   /** Black-and-white rendering mode on pic:spPr (`@bwMode`); absent = omitted. */
   blackWhiteMode?: BlackWhiteMode;
+  /** Raw inner XML of a:blip/a:extLst for non-SVG/non-useLocalDpi extensions (round-trip). */
+  blipExt?: string;
+  /** Typed a:extLst/a:ext children of pic:spPr (round-trip). */
+  shapeExtensions?: { uri: string; content?: string }[];
   /**
    * External image source URL (a:blip @r:link) — registered as an External
    * image relationship of the owning part when the picture is emitted.
@@ -150,14 +169,29 @@ export interface LinkedPictureMediaData {
   type: RegularMediaData["type"];
   sourceUrl: string;
   transformation: MediaTransformation;
+  /** Whether pic:pic carried pic:nvPicPr; round-trip only. */
+  nonVisualPropertiesPresent?: boolean;
+  /** Whether pic:pic carried pic:spPr; round-trip only. */
+  shapePropertiesPresent?: boolean;
   /** Rendering resolution in DPI (pic:blipFill/@dpi). */
   dpi?: number;
   /** Whether the image rotates with its shape frame (pic:blipFill/@rotWithShape). */
   rotWithShape?: boolean;
   /** Black-and-white rendering mode on pic:spPr (`@bwMode`); absent = omitted. */
   blackWhiteMode?: BlackWhiteMode;
+  /** Raw inner XML of a:blip/a:extLst for non-SVG/non-useLocalDpi extensions (round-trip). */
+  blipExt?: string;
+  /** Typed a:extLst/a:ext children of pic:spPr (round-trip). */
+  shapeExtensions?: { uri: string; content?: string }[];
   /** Blip crop (a:srcRect). */
   sourceRectangle?: SourceRectangleOptions;
+  /**
+   * Fill rectangle inside `a:stretch`; `false` preserves a source bare
+   * `<a:stretch/>`, while omitted uses the fresh-authoring default fill rect.
+   */
+  fillRectangle?: SourceRectangleOptions | false;
+  /** Whether pic:blipFill carries a:stretch; false preserves an omitted element. */
+  stretch?: boolean;
   /** Picture non-visual properties (pic:cNvPr) for round-trip fidelity. */
   nonVisualProperties?: NonVisualPropertiesOptions;
   /** Blip rendering hint `a14:useLocalDpi` (round-trip). */
@@ -195,21 +229,40 @@ export type GroupChildMediaData = (
 export interface GroupMediaData {
   type: "wpg";
   transformation: MediaTransformation;
+  /** Identity of a nested `wpg:grpSp/wpg:cNvPr`; top-level identity stays on altText. */
+  nonVisualProperties?: GroupNonVisualPropertiesOptions;
+  /** Source nested group carried wpg:cNvPr; round-trip only. */
+  nonVisualPropertiesPresent?: boolean;
+  /** Group extent from the group a:xfrm/a:ext when different from the wrapper extent. */
+  groupExtent?: { width: number; height: number };
   children: GroupChildMediaData[];
   /** Child coordinate system offset X (a:chOff @x, EMU). */
   childOffsetX?: number;
   /** Child coordinate system offset Y (a:chOff @y, EMU). */
   childOffsetY?: number;
+  /** Source carried a:chOff; round-trip only. */
+  childOffsetPresent?: boolean;
   /** Child coordinate system extent width (a:chExt @cx, EMU). */
   childExtentWidth?: number;
   /** Child coordinate system extent height (a:chExt @cy, EMU). */
   childExtentHeight?: number;
+  /** Source carried a:chExt; round-trip only. */
+  childExtentPresent?: boolean;
   /** Group fill */
   fill?: FillOptions;
+  /** Black-and-white rendering mode on wpg:grpSpPr (`@bwMode`). */
+  blackWhiteMode?: BlackWhiteMode;
   /** Group effects */
   effects?: EffectListOptions;
   /** Group shape locks (wpg:cNvGrpSpPr/a:grpSpLocks) for round-trip. */
   groupShapeLocks?: GroupShapeLocksOptions;
+  /** Group property extensions (wpg:grpSpPr/a:extLst). */
+  extensions?: OfficeArtExtensionOptions[];
+}
+
+/** Nested group cNvPr: shared DrawingML attrs plus the runtime `@id`. */
+export interface GroupNonVisualPropertiesOptions extends NonVisualDrawingPropertiesOptions {
+  id?: number;
 }
 
 export interface CanvasMediaData {

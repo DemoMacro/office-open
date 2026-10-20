@@ -111,6 +111,11 @@ function isOn(value: string): boolean {
   return lower === "1" || lower === "true" || lower === "on" || lower === "t";
 }
 
+function isOff(value: string): boolean {
+  const lower = value.length <= 5 ? value.toLowerCase() : value;
+  return lower === "0" || lower === "false" || lower === "off" || lower === "f";
+}
+
 /**
  * Text content of a leaf element's inner XML slice: text is unescaped and
  * CDATA sections carry their inner characters verbatim. Self-closing / empty
@@ -197,7 +202,10 @@ function inlineStringText(
         const run: RichTextRunOptions = { text: textOf(runT) ?? "" };
         if (attr(runT, "xml:space") !== undefined) run.textSpaceRaw = attr(runT, "xml:space");
         const rPrEl = findChild(runEl, "rPr");
-        if (rPrEl) run.properties = parseRPr(rPrEl);
+        if (rPrEl) {
+          run.properties = parseRPr(rPrEl);
+          run.propertiesPresent = true;
+        }
         (runs ??= []).push(run);
       }
       q = close + 4;
@@ -265,6 +273,7 @@ export function parseSheetDataRows(
           if (value !== undefined) {
             const customFormat = parseOnOff(value);
             if (customFormat !== undefined) row.customFormat = customFormat;
+            row.customFormatDeclared = true;
           }
           break;
         case "customHeight": {
@@ -307,6 +316,8 @@ export function parseSheetDataRows(
     if (rowStyleIdx !== undefined) {
       row.style = rowStyleIdx;
     }
+    if (row.customFormat !== undefined) row.customFormatDeclared = true;
+    else row.customFormatDeclared = false;
     const cells: CellOptions[] = [];
     if (!selfClosing) {
       rowClose = raw.indexOf("</row>", tagEnd + 1);
@@ -390,6 +401,7 @@ export function parseSheetDataRows(
           let vText: string | undefined;
           let vNum: number | undefined;
           let vRaw: string | undefined;
+          let vTypeRaw: string | undefined;
           let vPreserve = false;
           let inline:
             | {
@@ -422,6 +434,7 @@ export function parseSheetDataRows(
               const vSelfClosing = raw.charCodeAt(tEnd - 1) === 0x2f;
               scanAttrs(raw, nameEnd, vSelfClosing ? tEnd - 1 : tEnd, (name, value) => {
                 if (name === "xml:space" && value === "preserve") vPreserve = true;
+                else if (name === "t") vTypeRaw = value;
               });
               if (vSelfClosing) {
                 if (vText === undefined) vText = "";
@@ -483,33 +496,47 @@ export function parseSheetDataRows(
                     if (!isNaN(n)) f.sharedIndex = n;
                     break;
                   }
-                  case "aca":
-                    if (isOn(v3)) f.aca = true;
+                  case "aca": {
+                    const v = isOn(v3) ? true : isOff(v3) ? false : undefined;
+                    if (v !== undefined) f.aca = v;
                     break;
-                  case "dt2D":
-                    if (isOn(v3)) f.dt2D = true;
+                  }
+                  case "dt2D": {
+                    const v = isOn(v3) ? true : isOff(v3) ? false : undefined;
+                    if (v !== undefined) f.dt2D = v;
                     break;
-                  case "dtr":
-                    if (isOn(v3)) f.dtr = true;
+                  }
+                  case "dtr": {
+                    const v = isOn(v3) ? true : isOff(v3) ? false : undefined;
+                    if (v !== undefined) f.dtr = v;
                     break;
-                  case "del1":
-                    if (isOn(v3)) f.del1 = true;
+                  }
+                  case "del1": {
+                    const v = isOn(v3) ? true : isOff(v3) ? false : undefined;
+                    if (v !== undefined) f.del1 = v;
                     break;
-                  case "del2":
-                    if (isOn(v3)) f.del2 = true;
+                  }
+                  case "del2": {
+                    const v = isOn(v3) ? true : isOff(v3) ? false : undefined;
+                    if (v !== undefined) f.del2 = v;
                     break;
+                  }
                   case "r1":
                     f.inputCell1 = v3;
                     break;
                   case "r2":
                     f.inputCell2 = v3;
                     break;
-                  case "ca":
-                    if (isOn(v3)) f.calculateCell = true;
+                  case "ca": {
+                    const v = isOn(v3) ? true : isOff(v3) ? false : undefined;
+                    if (v !== undefined) f.calculateCell = v;
                     break;
-                  case "bx":
-                    if (isOn(v3)) f.arrayContext = true;
+                  }
+                  case "bx": {
+                    const v = isOn(v3) ? true : isOff(v3) ? false : undefined;
+                    if (v !== undefined) f.arrayContext = v;
                     break;
+                  }
                 }
               });
               if (fSelfClosing) {
@@ -540,11 +567,11 @@ export function parseSheetDataRows(
               cell.sharedIndex = idx;
             }
           } else if (type === "b" && (vText !== undefined || vNum !== undefined)) {
-            cell.value = vNum !== undefined ? vNum === 1 : vText === "1";
+            cell.value = vNum !== undefined ? vNum === 1 : isOn(vText!);
           } else if (type === "e" && (vText !== undefined || vNum !== undefined)) {
             cell.error = vNum !== undefined ? String(vNum) : vText!;
-          } else if (type === "str" && vText !== undefined) {
-            cell.value = vText;
+          } else if (type === "str" && (vText !== undefined || vNum !== undefined)) {
+            cell.value = vText ?? String(vNum);
             cell.typeRaw = "str";
           } else if (type === "d" && (vText !== undefined || vNum !== undefined)) {
             cell.value = vNum !== undefined ? String(vNum) : vText!;
@@ -590,11 +617,16 @@ export function parseSheetDataRows(
           ) {
             cell.typeRaw = type;
           }
+          if (formula !== undefined && type !== undefined && type !== "n" && type !== "d") {
+            cell.typeRaw = type;
+          }
           if (formula !== undefined) cell.formula = formula;
+          if (vTypeRaw !== undefined) cell.cachedValueTypeRaw = vTypeRaw;
           if (
-            vPreserve &&
-            vText !== undefined &&
-            (type === undefined || type === "str" || type === "d")
+            (type === "b" && (vText === "true" || vText === "false")) ||
+            (vPreserve &&
+              vText !== undefined &&
+              (type === undefined || type === "str" || type === "d"))
           )
             cell.valueRaw = vText;
           if (vRaw !== undefined && (type === undefined || type === "n")) cell.valueRaw = vRaw;

@@ -1,5 +1,5 @@
 import type { LongHexNumber } from "@office-open/core";
-import { TargetModeType } from "@office-open/core";
+import { TargetModeType } from "@office-open/core/opc";
 import type { Element } from "@office-open/xml";
 import { stringifyElement } from "@office-open/xml";
 import type { BackgroundRawMediaOptions } from "@parts/document/document-background/document-background";

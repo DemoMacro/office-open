@@ -34,6 +34,8 @@ export interface BlipFillOptions {
   sourceRectangle?: SourceRectangleOptions;
   /** Tile fill mode (if omitted, defaults to stretch) */
   tile?: TileOptions;
+  /** Explicit stretch mode; `true` preserves a bare `<a:stretch/>`. */
+  stretch?: boolean | SourceRectangleOptions;
 }
 
 /**

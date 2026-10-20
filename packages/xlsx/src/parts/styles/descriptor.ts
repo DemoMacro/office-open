@@ -7,13 +7,15 @@
 import { parseOnOff } from "@office-open/core";
 import type { CustomDescriptor, WriteContext } from "@office-open/core/descriptor";
 import { attr, attrNum, findChild, stringifyElement } from "@office-open/xml";
+import type { Element as XmlElement } from "@office-open/xml";
 
 import {
+  foreignAttributesOf,
   parseAlignment,
   parseBorder,
-  parseColorHex,
   parseFill,
   parseFont,
+  parseFontAlternateContent,
   parseProtection,
 } from "./parse";
 import type {
@@ -31,6 +33,7 @@ import type {
   StyleExtensionOptions,
   StylesDocOptions,
   StylesParseResult,
+  ThemeColorOptions,
   TableStyleElementOptions,
   TableStyleElementType,
   TableStylesInfo,
@@ -40,13 +43,29 @@ function parseExplicitOnOff(raw: string | number | boolean | undefined): boolean
   return raw === undefined ? undefined : parseOnOff(raw);
 }
 
+const XF_KNOWN_ATTRIBUTES = new Set([
+  "numFmtId",
+  "fontId",
+  "fillId",
+  "borderId",
+  "xfId",
+  "applyNumberFormat",
+  "applyFont",
+  "applyFill",
+  "applyBorder",
+  "applyAlignment",
+  "applyProtection",
+  "quotePrefix",
+  "pivotButton",
+]);
+
 // ── Descriptor ──
 
 export const stylesDesc: CustomDescriptor<StylesDocOptions, WriteContext, StylesParseResult> = {
   kind: "custom",
 
   stringify(opts, _ctx) {
-    return opts.styles.serialize();
+    return opts.styles.serialize(opts.rootXmlSpace);
   },
 
   parse(el, _ctx) {
@@ -79,6 +98,13 @@ export const stylesDesc: CustomDescriptor<StylesDocOptions, WriteContext, Styles
     const fontsEl = findChild(el, "fonts");
     if (fontsEl) {
       for (const f of fontsEl.elements ?? []) {
+        if (f.name === "mc:AlternateContent") {
+          const alternateFont = parseFontAlternateContent(f);
+          if (alternateFont) {
+            fonts.push(alternateFont);
+            continue;
+          }
+        }
         if (f.name !== "font") continue;
         fonts.push(parseFont(f));
       }
@@ -131,6 +157,8 @@ export const stylesDesc: CustomDescriptor<StylesDocOptions, WriteContext, Styles
           if (code !== undefined && code !== "") entry.numFmt = code;
           else entry.numFmtId = numFmtId;
         }
+        const xfId = attrNum(xf, "xfId");
+        if (xfId !== undefined) entry.xfId = xfId;
         const alignmentEl = findChild(xf, "alignment");
         if (alignmentEl) entry.alignment = parseAlignment(alignmentEl);
         const protectionEl = findChild(xf, "protection");
@@ -151,6 +179,17 @@ export const stylesDesc: CustomDescriptor<StylesDocOptions, WriteContext, Styles
         const pivotButton = parseExplicitOnOff(attr(xf, "pivotButton"));
         if (quotePrefix !== undefined) entry.quotePrefix = quotePrefix;
         if (pivotButton !== undefined) entry.pivotButton = pivotButton;
+        const foreignAttrs = foreignAttributesOf(xf);
+        for (const [name, value] of Object.entries(xf.attributes ?? {})) {
+          if (!name.includes(":") && !XF_KNOWN_ATTRIBUTES.has(name) && value !== undefined) {
+            foreignAttrs.push({ name, value: String(value) });
+          }
+        }
+        if (foreignAttrs.length > 0) entry.foreignAttributes = foreignAttrs;
+        const foreignChildren = (xf.elements ?? [])
+          .filter((child) => child.name?.includes(":"))
+          .map((child) => ({ name: child.name!, xml: stringifyElement(child) }));
+        if (foreignChildren.length > 0) entry.foreignChildren = foreignChildren;
         xfs.push(entry);
       }
       result.cellStyleXfs = xfs;
@@ -160,8 +199,7 @@ export const stylesDesc: CustomDescriptor<StylesDocOptions, WriteContext, Styles
     const cellXfsEl = findChild(el, "cellXfs");
     if (cellXfsEl) {
       const xfs: IndexedXfEntry[] = [];
-      for (const xf of cellXfsEl.elements ?? []) {
-        if (xf.name !== "xf") continue;
+      const parseXfEntry = (xf: XmlElement): IndexedXfEntry => {
         const fontId = attrNum(xf, "fontId") ?? 0;
         const fillId = attrNum(xf, "fillId") ?? 0;
         const borderId = attrNum(xf, "borderId") ?? 0;
@@ -206,8 +244,45 @@ export const stylesDesc: CustomDescriptor<StylesDocOptions, WriteContext, Styles
         if (applyNumberFormat !== undefined) style.applyNumberFormat = applyNumberFormat;
         if (applyAlignment !== undefined) style.applyAlignment = applyAlignment;
         if (applyProtection !== undefined) style.applyProtection = applyProtection;
+        const foreignAttrs = foreignAttributesOf(xf);
+        for (const [name, value] of Object.entries(xf.attributes ?? {})) {
+          if (!name.includes(":") && !XF_KNOWN_ATTRIBUTES.has(name) && value !== undefined) {
+            foreignAttrs.push({ name, value: String(value) });
+          }
+        }
+        if (foreignAttrs.length > 0) style.foreignAttributes = foreignAttrs;
+        const foreignChildren = (xf.elements ?? [])
+          .filter((child) => child.name?.includes(":"))
+          .map((child) => ({ name: child.name!, xml: stringifyElement(child) }));
+        if (foreignChildren.length > 0) style.foreignChildren = foreignChildren;
 
-        xfs.push(style);
+        return style;
+      };
+      for (const xf of cellXfsEl.elements ?? []) {
+        if (xf.name === "mc:AlternateContent") {
+          const choice = findChild(xf, "mc:Choice");
+          const choiceXf = choice?.elements?.find((child) => child.name === "xf");
+          if (!choice || !choiceXf) continue;
+          const entry = parseXfEntry(choiceXf);
+          const namespaces: Record<string, string> = {};
+          for (const [name, value] of Object.entries(choice.attributes ?? {})) {
+            if (name.startsWith("xmlns:") && typeof value === "string") {
+              namespaces[name.slice("xmlns:".length)] = value;
+            }
+          }
+          const fallbackXf = findChild(xf, "mc:Fallback")?.elements?.find(
+            (child) => child.name === "xf",
+          );
+          entry.alternateContent = {
+            requires: attr(choice, "Requires"),
+            ...(Object.keys(namespaces).length > 0 ? { namespaces } : {}),
+            ...(fallbackXf ? { fallback: parseXfEntry(fallbackXf) } : {}),
+          };
+          xfs.push(entry);
+          continue;
+        }
+        if (xf.name !== "xf") continue;
+        xfs.push(parseXfEntry(xf));
       }
       result.cellXfs = xfs;
     }
@@ -222,7 +297,9 @@ export const stylesDesc: CustomDescriptor<StylesDocOptions, WriteContext, Styles
         if (attr(cs, "name")) style.name = attr(cs, "name");
         const xfId = attrNum(cs, "xfId");
         if (xfId !== undefined) style.xfId = xfId;
-        const builtinId = attrNum(cs, "builtinId");
+        // Producers (LibreOffice) write the attribute as `builtInId`; the XSD
+        // name is `builtinId` — accept both on read, emit the XSD form.
+        const builtinId = attrNum(cs, "builtinId") ?? attrNum(cs, "builtInId");
         if (builtinId !== undefined) style.builtinId = builtinId;
         const customBuiltin = parseOnOff(attr(cs, "customBuiltin"));
         const hidden = parseOnOff(attr(cs, "hidden"));
@@ -240,9 +317,10 @@ export const stylesDesc: CustomDescriptor<StylesDocOptions, WriteContext, Styles
     const dxfsEl = findChild(el, "dxfs");
     if (dxfsEl) {
       const dxfs: DxfOptions[] = [];
-      for (const dxf of dxfsEl.elements ?? []) {
-        if (dxf.name !== "dxf") continue;
+      const parseDxfEntry = (dxf: XmlElement): DxfOptions => {
         const d: DxfOptions = {};
+        const foreignAttrs = foreignAttributesOf(dxf);
+        if (foreignAttrs.length > 0) d.foreignAttributes = foreignAttrs;
         const fontEl = findChild(dxf, "font");
         if (fontEl) d.font = parseFont(fontEl);
         const fillEl = findChild(dxf, "fill");
@@ -282,7 +360,33 @@ export const stylesDesc: CustomDescriptor<StylesDocOptions, WriteContext, Styles
           }
           if (extensions.length > 0) d.extensions = extensions;
         }
-        dxfs.push(d);
+        return d;
+      };
+      for (const dxf of dxfsEl.elements ?? []) {
+        if (dxf.name === "mc:AlternateContent") {
+          const choice = findChild(dxf, "mc:Choice");
+          const choiceDxf = choice?.elements?.find((child) => child.name === "dxf");
+          if (!choice || !choiceDxf) continue;
+          const entry = parseDxfEntry(choiceDxf);
+          const namespaces: Record<string, string> = {};
+          for (const [name, value] of Object.entries(choice.attributes ?? {})) {
+            if (name.startsWith("xmlns:") && typeof value === "string") {
+              namespaces[name.slice("xmlns:".length)] = value;
+            }
+          }
+          const fallbackDxf = findChild(dxf, "mc:Fallback")?.elements?.find(
+            (child) => child.name === "dxf",
+          );
+          entry.alternateContent = {
+            requires: attr(choice, "Requires"),
+            ...(Object.keys(namespaces).length > 0 ? { namespaces } : {}),
+            ...(fallbackDxf ? { fallback: parseDxfEntry(fallbackDxf) } : {}),
+          };
+          dxfs.push(entry);
+          continue;
+        }
+        if (dxf.name !== "dxf") continue;
+        dxfs.push(parseDxfEntry(dxf));
       }
       result.dxfs = dxfs;
     }
@@ -332,14 +436,17 @@ export const stylesDesc: CustomDescriptor<StylesDocOptions, WriteContext, Styles
       const colors: ColorsOptions = {};
       const themeEl = findChild(colorsEl, "themeColors");
       if (themeEl) {
-        const values: number[] = [];
+        const values: ThemeColorOptions[] = [];
         for (const rgb of themeEl.elements ?? []) {
-          if (rgb.name === "rgbColor") {
-            const value = Number(attr(rgb, "val"));
-            if (!Number.isNaN(value)) values.push(value);
+          const value = attr(rgb, "val");
+          const hex = attr(rgb, "rgb");
+          if (rgb.name === "rgbColor" && value !== undefined) {
+            values.push({ value });
+          } else if (rgb.name === "rgbColor" && hex) {
+            values.push({ rgb: hex as IndexedColorOptions["rgb"] });
           }
         }
-        colors.themeColors = values;
+        if (values.length > 0) colors.themeColors = values;
       }
       const icEl = findChild(colorsEl, "indexedColors");
       if (icEl) {
@@ -362,8 +469,8 @@ export const stylesDesc: CustomDescriptor<StylesDocOptions, WriteContext, Styles
               value: attr(c, "val") ?? "",
             });
           } else if (c.name === "color") {
-            const hex = parseColorHex(c);
-            if (hex) mru.push(hex);
+            const rgb = attr(c, "rgb");
+            if (rgb) mru.push(rgb);
           }
         }
         colors.mruColors = mru;

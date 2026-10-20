@@ -85,6 +85,44 @@ describe("parsePict", () => {
     });
     expect(opts.media).toBeUndefined();
   });
+
+  it("round-trips an ActiveX control anchored by the pict", () => {
+    const el = parsePictXml(
+      `<v:shape id="_x0000_s1027" o:ole=""/>` +
+        `<w:control r:id="rId4" w:name="CheckBox1" w:shapeid="_x0000_s1027"/>`,
+    );
+    const opts = parsePict(
+      el,
+      readCtx({ rId4: { path: "word/activeX/activeX1.xml", bytes: new Uint8Array(1) } }),
+    );
+    expect(opts.control).toEqual({
+      relationshipId: "rId4",
+      name: "CheckBox1",
+      shapeId: "_x0000_s1027",
+      sourceTarget: "word/activeX/activeX1.xml",
+    });
+
+    const added: unknown[] = [];
+    const ctx = {
+      file: {
+        document: {
+          relationships: {
+            hasId: () => false,
+            addRelationship: (...args: unknown[]) => added.push(args),
+          },
+        },
+      },
+    } as unknown as BodyContext;
+    const xml = stringifyPict(opts, ctx);
+    expect(xml).toContain('<w:control r:id="rId4" w:name="CheckBox1" w:shapeid="_x0000_s1027"/>');
+    expect(added).toEqual([
+      [
+        "rId4",
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/control",
+        "activeX/activeX1.xml",
+      ],
+    ]);
+  });
 });
 
 describe("stringifyPict", () => {

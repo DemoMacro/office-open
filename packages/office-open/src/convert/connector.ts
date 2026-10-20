@@ -16,11 +16,12 @@
  * @module
  */
 
-import { pickConnectorBase, type UniversalMeasure } from "@office-open/core";
+import type { UniversalMeasure } from "@office-open/core";
 import type { ShapePropertiesOptions } from "@office-open/core/drawing";
 import type { ConnectorOptions as PptxConnectorOptions } from "@office-open/pptx";
 import type { ConnectorOptions as XlsxConnectorOptions } from "@office-open/xlsx";
 
+import { pickConnectorBase } from "./helpers";
 import { boxFromXlsxAnchor, boxToXlsx, toEmu } from "./position";
 import type { AbsoluteBox } from "./position";
 import { pickContent } from "./shape";

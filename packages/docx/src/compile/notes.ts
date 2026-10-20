@@ -10,11 +10,8 @@
  * @module
  */
 
-import {
-  type XmlifyedFile,
-  optionalRelsPart,
-  replaceNumberingPlaceholders,
-} from "@office-open/core";
+import { replaceNumberingPlaceholders } from "@office-open/core";
+import { optionalRelsPart, type XmlifyedFile } from "@office-open/core/opc";
 
 import type { PartCtxFactory } from "../compiler";
 import type { DocxWriteContext } from "../context";
@@ -93,6 +90,7 @@ export function compileNotesParts(
     (footnotesDesc.stringify(
       {
         notes: ctx.footNotes.notes,
+        autoReferenceMarks: ctx.footNotes.autoReferenceMarks,
         separator: ctx.footNotes.separator,
         continuationSeparator: ctx.footNotes.continuationSeparator,
         continuationNotice: ctx.footNotes.continuationNotice,
@@ -139,6 +137,7 @@ export function compileNotesParts(
       (endnotesDesc.stringify(
         {
           notes: ctx.endnotes.notes,
+          autoReferenceMarks: ctx.endnotes.autoReferenceMarks,
           separator: ctx.endnotes.separator,
           continuationSeparator: ctx.endnotes.continuationSeparator,
           continuationNotice: ctx.endnotes.continuationNotice,

@@ -31,8 +31,8 @@ export interface InternalHyperlinkOptions {
 export interface ExternalHyperlinkOptions {
   /** URL to link to outside the document */
   url: string;
-  /** Source document relationship number; round-trip only. */
-  sourceRelationshipId?: number;
+  /** Source document relationship id; round-trip only. */
+  sourceRelationshipId?: string;
   /** Screen tip text shown when hovering over the hyperlink */
   tooltip?: string;
   /** Target frame for the hyperlink (e.g., "_blank", "_self") */

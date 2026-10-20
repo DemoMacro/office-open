@@ -4,6 +4,7 @@ import type {
   BlipCompression,
   BlackWhiteMode,
   EffectListOptions,
+  CustomGeometryOptions,
   PictureLockingOptions,
   UniversalMeasure,
 } from "@office-open/core";
@@ -12,9 +13,11 @@ import type {
   FillOptions,
   OutlineOptions,
   Scene3DOptions,
+  ShapePropertiesExtensionOptions,
   Shape3DOptions,
   SourceRectangleOptions,
 } from "@office-open/core/drawing";
+import type { PresetGeometryOptions } from "@office-open/core/drawing";
 import type { TextHyperlinkOptions } from "@office-open/core/drawing";
 import type { NvPrPlaceholderOptions } from "@parts/descriptors/graphic-frame";
 import type { ShapeStyleOptions } from "@shared/shape/shape";
@@ -56,6 +59,8 @@ export interface PictureOptions extends BasePictureOptions, NvPrPlaceholderOptio
   effects?: EffectListOptions;
   /** Raw a:extLst inner XML on p:spPr; round-trip only. */
   shapePropertiesExt?: string;
+  /** Structured shape-property extensions (`a:extLst/a:ext`). */
+  shapePropertiesExtensions?: ShapePropertiesExtensionOptions[];
   /** Crop rectangle (a:srcRect) — integer percent insets. */
   sourceRectangle?: SourceRectangleOptions;
   /**
@@ -66,8 +71,11 @@ export interface PictureOptions extends BasePictureOptions, NvPrPlaceholderOptio
   fillRectangle?: SourceRectangleOptions | false;
   /** Blip color effects (a:lum, a:duotone, … children of a:blip). */
   blipEffects?: BlipEffectsOptions;
+  /** Mac/producer alternate-content picture fill (`mc:AlternateContent`). */
+  alternateBlipFill?: AlternatePictureBlipFillOptions;
   /** Local-DPI display hint (a14:useLocalDpi in the a:blip extension list). */
-  useLocalDpi?: boolean;
+  /** Omitted val on source is preserved as `"default"`. */
+  useLocalDpi?: boolean | "default";
   /** Verbatim a:blip extension-list children beyond modeled hints (round-trip only). */
   blipExt?: string;
   /** Fill on p:spPr (a:noFill on cropped pictures is common). */
@@ -78,7 +86,14 @@ export interface PictureOptions extends BasePictureOptions, NvPrPlaceholderOptio
    * Preset geometry on p:spPr. Fresh pictures always carry a rect frame;
    * null suppresses the element for sources that omit it.
    */
-  geometry?: ShapeType | null;
+  geometry?: ShapeType | PresetGeometryOptions | null;
+  /** Custom geometry (`a:custGeom`) on p:spPr. Takes precedence over `geometry`. */
+  customGeometry?: CustomGeometryOptions;
+  /**
+   * Presence form of optional `p:blipFill`: `false` suppresses the element,
+   * `"empty"` preserves a source-only `<p:blipFill/>`.
+   */
+  blipFillPresent?: boolean | "empty";
   /** Picture locks (a:picLocks inside p:cNvPicPr). */
   locking?: PictureLockingOptions;
   /** Resize relative to the original image rather than the frame (p:cNvPicPr attribute). */
@@ -96,4 +111,32 @@ export interface PictureOptions extends BasePictureOptions, NvPrPlaceholderOptio
   style?: ShapeStyleOptions;
   /** @bwMode on p:spPr — black-and-white render mode. */
   blackWhiteMode?: BlackWhiteMode;
+}
+
+/** One `mc:Choice` or `mc:Fallback` p:blipFill branch. */
+export interface AlternatePictureFillBranchOptions {
+  /** Source image relationship id (`a:blip/@r:embed`). */
+  relationshipId: string;
+  /** Branch compression state (`a:blip/@cstate`). */
+  compression?: BlipCompression;
+  /** Crop insets (`a:srcRect`). `null` preserves the bare source element. */
+  sourceRectangle?: SourceRectangleOptions | null;
+  /** Stretch fill rectangle; `false` preserves a bare `a:stretch`. */
+  fillRectangle?: SourceRectangleOptions | false;
+  /** Branch blip color effects. */
+  blipEffects?: BlipEffectsOptions;
+  /** Verbatim `a:blip` extension-list children. */
+  blipExt?: string;
+}
+
+/** Typed `mc:AlternateContent` wrapping two p:blipFill forms. */
+export interface AlternatePictureBlipFillOptions {
+  /** Namespace prefix required by `mc:Choice/@Requires`. */
+  choiceRequires: string;
+  /** Namespace URI bound to `choiceRequires` on the choice element. */
+  choiceRequiresNamespace: string;
+  /** Preferred fill read by applications that support the extension. */
+  choice: AlternatePictureFillBranchOptions;
+  /** Compatibility fill for older readers. */
+  fallback: AlternatePictureFillBranchOptions;
 }

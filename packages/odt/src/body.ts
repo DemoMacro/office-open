@@ -1,7 +1,15 @@
-import { toUint8Array, type DataType } from "@office-open/core";
+import {
+  convertOutput,
+  toUint8Array,
+  toUint8ArrayAsync,
+  streamUint8Array,
+  type DataType,
+  type OutputByType,
+  type OutputType,
+} from "@office-open/core";
 import type {
   ChartSpaceOptions,
-  FormContainerOptions,
+  OfficeFormsOptions,
   SequenceDeclarationOptions,
   VariableDeclarationOptions,
 } from "@office-open/core";
@@ -14,7 +22,7 @@ import type {
 import {
   attributeString,
   CHART_MIME,
-  chartBodyXml,
+  chartSubdocumentFiles,
   childNamed,
   childrenNamed,
   descendantElements,
@@ -23,10 +31,11 @@ import {
   metaXml,
   ODF_NAMESPACES,
   OdfSchemaError,
+  parseOfficeForms,
   parseEmbeddedCharts,
   parseGraphicStyles,
   parseMeta,
-  readOcf,
+  readOcfSync,
   readXml,
   unknownAttributeNames,
   unknownChildElement,
@@ -52,12 +61,18 @@ import {
   parseCommonStyles,
 } from "./common-styles";
 import {
+  isShapeElement,
+  parseChartFrame,
+  parseGroup,
+  parsePictureFrame,
   parseShape,
   parseShapeHyperlink,
+  parseTextBoxFrame,
   shapeBlock,
   type OdtChart,
   type OdtImage,
 } from "./drawing";
+import type { OdtEmbeddedObjectOptions } from "./embedded-objects";
 import { OdtParseError } from "./error";
 import {
   listParagraphLevel,
@@ -69,7 +84,7 @@ import {
 } from "./list";
 import { parseMasterHeaderFooter, parsePageLayout } from "./master-pages";
 import { parseNotesConfiguration } from "./notes";
-import type { OdtEmbeddedObjectOptions } from "./package";
+import type { OdtDocumentOptions } from "./options";
 import {
   bookmarkEndXml,
   declarationsXml,
@@ -80,26 +95,29 @@ import {
   parseSequenceDeclarations,
   parseTrackedChanges,
   parseVariableDeclarations,
+  parseUserFieldDeclarations,
+  parseDdeConnectionDeclarations,
   withPageBreakBefore,
-  type ChangedProperties,
+  type ParsedTrackChange,
 } from "./paragraph";
 import {
   bibliographyIndexXml,
   encodeSectionTag,
   indexXml,
   nextBookmarkId,
-  parseAnnotation,
+  parseAnnotationEnd,
+  parseAnnotationStart,
   parseBibliography,
-  parseForms,
+  parseContentIndex,
   parseIndex,
   type NoteChildren,
   type NoteEntry,
   type NotesContext,
 } from "./section";
-import type { OdtDocumentOptions } from "./semantics";
 import { parseTable, tableXml } from "./table";
 
 export const MIME = "application/vnd.oasis.opendocument.text";
+export const TEMPLATE_MIME = "application/vnd.oasis.opendocument.text-template";
 
 export const NAMESPACES = `${ODF_NAMESPACES} xmlns:form="urn:oasis:names:tc:opendocument:xmlns:form:1.0" xmlns:script="urn:oasis:names:tc:opendocument:xmlns:script:1.0" xmlns:xforms="http://www.w3.org/2002/xforms"`;
 
@@ -118,22 +136,24 @@ export interface ParseContext {
   notes: {
     footnotes: NoteEntry[];
     endnotes: NoteEntry[];
-    forms: FormContainerOptions[];
+    forms: OfficeFormsOptions;
   };
+  comments: NonNullable<DocumentOptions["comments"]>;
+  annotationIds: Map<string, number>;
   bookmarkIds: Map<string, number>;
-  changes: Map<
-    string,
-    ChangedProperties & { kind: "insertion" | "deletion"; children?: Element[] }
-  >;
+  changes: Map<string, ParsedTrackChange>;
+  changeAlternatives: Map<string, ParsedTrackChange>;
+  pendingInsertions: Set<string>;
   declaredSequences: SequenceDeclarationOptions[];
   declaredVariables: VariableDeclarationOptions[];
+  documentVariables: NonNullable<NonNullable<DocumentOptions["settings"]>["docVars"]>;
   pendingSequences: Set<string>;
   pendingVariables: Map<string, "float" | "string">;
   nextEmbeddedShapeId: number;
   trackRevisions?: boolean;
 }
 
-export function generateDocument(options: OdtDocumentOptions): Uint8Array {
+function generateOdtPackage(options: OdtDocumentOptions): Uint8Array {
   const { packageManifest, embeddedObjects, packageMembers, styleOverlays } = options;
   const styles: string[] = automaticStyleOverlaysXml(styleOverlays);
   const blocks = options.sections.flatMap((section) => section.children);
@@ -171,7 +191,8 @@ export function generateDocument(options: OdtDocumentOptions): Uint8Array {
     "meta.xml": metaXml(options),
   };
   for (const image of images) files[image.path] = image.data;
-  for (const entry of charts) files[`${entry.path}/content.xml`] = chartBodyXml(entry.chart);
+  for (const entry of charts)
+    Object.assign(files, chartSubdocumentFiles(`${entry.path}/`, entry.chart));
   const mediaTypes: Record<string, string> = Object.fromEntries(
     charts.map((entry) => [`${entry.path}/`, CHART_MIME]),
   );
@@ -192,6 +213,24 @@ export function generateDocument(options: OdtDocumentOptions): Uint8Array {
     }
   }
   return generateOcf(MIME, files, mediaTypes, packageManifest);
+}
+
+export function generateDocumentSync<T extends OutputType = "nodebuffer">(
+  options: OdtDocumentOptions,
+  output?: T,
+): OutputByType[T] {
+  return convertOutput(generateOdtPackage(options), (output ?? "nodebuffer") as T, MIME);
+}
+
+export async function generateDocument<T extends OutputType = "nodebuffer">(
+  options: OdtDocumentOptions,
+  output?: T,
+): Promise<OutputByType[T]> {
+  return generateDocumentSync(options, output);
+}
+
+export function generateDocumentStream(options: OdtDocumentOptions): ReadableStream<Uint8Array> {
+  return streamUint8Array(generateOdtPackage(options));
 }
 
 function addPackageFile(files: OdfPackageFiles, path: string, data: DataType): void {
@@ -244,8 +283,15 @@ export function notesContext(options: DocumentOptions): NotesContext {
         declaration.valueType,
       ]),
     ),
-    forms: options.forms ?? [],
+    forms: {
+      automaticFocus: options.forms?.automaticFocus,
+      designMode: options.forms?.designMode,
+      containers: [...(options.forms?.containers ?? [])],
+      models: options.forms?.models,
+    },
     revisions: new Map(),
+    comments: new Map((options.comments ?? []).map((comment) => [comment.id, comment])),
+    annotationNames: new Map(),
   };
 }
 
@@ -319,9 +365,13 @@ export function blocksXml(
   return parts.join("");
 }
 
-export function parseDocument(data: Uint8Array): OdtDocumentOptions {
+export async function parseDocument(data: DataType): Promise<OdtDocumentOptions> {
+  return parseDocumentSync(await toUint8ArrayAsync(data));
+}
+
+export function parseDocumentSync(data: DataType): OdtDocumentOptions {
   try {
-    return parseOdtBody(data);
+    return parseOdtPackage(toUint8Array(data));
   } catch (cause) {
     if (cause instanceof OdtParseError) throw cause;
     if (cause instanceof OdfSchemaError) {
@@ -340,14 +390,14 @@ export function parseDocument(data: Uint8Array): OdtDocumentOptions {
   }
 }
 
-function parseOdtBody(data: Uint8Array): OdtDocumentOptions {
-  const { files, binaries, manifest } = readOcf(data, MIME);
+function parseOdtPackage(data: Uint8Array): OdtDocumentOptions {
+  const { files, binaries, manifest } = readOcfSync(data, [MIME, TEMPLATE_MIME]);
   const content = readXml(files, "content.xml");
   const body = childNamed(childNamed(content, "office:body"), "office:text");
   const styleContainer = childNamed(content, "office:automatic-styles");
   const styleMap = parseStyles(styleContainer);
   const graphicStyles = parseGraphicStyles(styleContainer);
-  const chartBodies = parseEmbeddedCharts(manifest, files);
+  const chartBodies = parseEmbeddedCharts(manifest, files, binaries);
   const objectMediaTypes = new Map(
     manifest.entries
       .filter((entry) => entry.fullPath.endsWith("/"))
@@ -376,11 +426,16 @@ function parseOdtBody(data: Uint8Array): OdtDocumentOptions {
     outline: parseOutlineStyle(files),
     binaries,
     usedBinaryPaths: new Set(),
-    notes: { footnotes: [], endnotes: [], forms: [] },
+    notes: { footnotes: [], endnotes: [], forms: { containers: [] } },
+    comments: [],
+    annotationIds: new Map(),
     bookmarkIds: new Map(),
     changes: new Map(),
+    changeAlternatives: new Map(),
+    pendingInsertions: new Set(),
     declaredSequences: [],
     declaredVariables: [],
+    documentVariables: [],
     pendingSequences: new Set(),
     pendingVariables: new Map(),
     nextEmbeddedShapeId: 1,
@@ -416,9 +471,18 @@ function parseOdtBody(data: Uint8Array): OdtDocumentOptions {
     }));
   if (styleOverlays.length > 0) result.styleOverlays = styleOverlays;
   if (hasOcfManifestOverlay(manifest)) result.packageManifest = manifest;
-  if (context.notes.forms.length > 0) result.forms = context.notes.forms;
+  if (
+    context.notes.forms.containers.length > 0 ||
+    context.notes.forms.models?.length ||
+    context.notes.forms.automaticFocus !== undefined ||
+    context.notes.forms.designMode !== undefined
+  )
+    result.forms = context.notes.forms;
+  if (context.comments.length > 0) result.comments = context.comments;
   if (context.declaredSequences.length > 0) result.sequenceDeclarations = context.declaredSequences;
   if (context.declaredVariables.length > 0) result.variableDeclarations = context.declaredVariables;
+  if (context.documentVariables.length > 0)
+    result.settings = { ...result.settings, docVars: context.documentVariables };
   if (context.notes.footnotes.length > 0) result.footnotes = context.notes.footnotes;
   if (context.notes.endnotes.length > 0) result.endnotes = context.notes.endnotes;
   const fonts = childrenNamed(childNamed(content, "office:font-face-decls"), "style:font-face").map(
@@ -668,15 +732,35 @@ export function parseBlocks(
       continue;
     }
     if (element.name === "office:annotation") {
-      result.push({
-        paragraph: {
-          children: [parseAnnotation(element)],
-        },
-      });
+      result.push({ paragraph: { children: parseAnnotationStart(element, context) } });
+      continue;
+    }
+    if (element.name === "office:annotation-end") {
+      result.push({ paragraph: { children: parseAnnotationEnd(element, context) } });
       continue;
     }
     if (element.name === "text:illustration-index") {
       result.push({ toc: parseIndex(element) });
+      continue;
+    }
+    if (
+      element.name === "text:table-of-content" ||
+      element.name === "text:table-index" ||
+      element.name === "text:object-index" ||
+      element.name === "text:user-index" ||
+      element.name === "text:alphabetical-index"
+    ) {
+      const sourceName =
+        element.name === "text:table-of-content"
+          ? "text:table-of-content-source"
+          : element.name === "text:table-index"
+            ? "text:table-index-source"
+            : element.name === "text:object-index"
+              ? "text:object-index-source"
+              : element.name === "text:user-index"
+                ? "text:user-index-source"
+                : "text:alphabetical-index-source";
+      result.push({ toc: parseContentIndex(element, sourceName) });
       continue;
     }
     if (element.name === "text:bibliography") {
@@ -685,12 +769,21 @@ export function parseBlocks(
       });
       continue;
     }
-    if (element.name === "draw:ellipse") {
+    if (isShapeElement(element.name)) {
       result.push(shapeBlock(parseShape(element)));
       continue;
     }
-    if (element.name === "draw:rect") {
-      result.push(shapeBlock(parseShape(element)));
+    if (element.name === "draw:g") {
+      result.push({ paragraph: { children: [parseGroup(element, context)] } });
+      continue;
+    }
+    if (element.name === "draw:frame") {
+      if (childNamed(element, "draw:text-box")) {
+        result.push({ paragraph: { children: [parseTextBoxFrame(element, context)] } });
+        continue;
+      }
+      const child = parseFrame(element, context);
+      if (child) result.push(child);
       continue;
     }
     if (element.name === "draw:a") {
@@ -698,7 +791,7 @@ export function parseBlocks(
       continue;
     }
     if (element.name === "office:forms") {
-      result.push(...parseForms(element, context));
+      context.notes.forms = parseOfficeForms(element);
       continue;
     }
     if (element.name === "text:sequence-decls") {
@@ -707,6 +800,14 @@ export function parseBlocks(
     }
     if (element.name === "text:variable-decls") {
       parseVariableDeclarations(element, context);
+      continue;
+    }
+    if (element.name === "text:user-field-decls") {
+      parseUserFieldDeclarations(element, context);
+      continue;
+    }
+    if (element.name === "text:dde-connection-decls") {
+      parseDdeConnectionDeclarations(element, context);
       continue;
     }
     if (element.name === "text:tracked-changes") {
@@ -718,6 +819,8 @@ export function parseBlocks(
         "office:forms",
         "text:sequence-decls",
         "text:variable-decls",
+        "text:user-field-decls",
+        "text:dde-connection-decls",
         "text:tracked-changes",
       ].includes(element.name ?? "")
     ) {
@@ -752,6 +855,14 @@ export function parseBlocks(
     );
   }
   return result;
+}
+
+function parseFrame(element: Element, context: ParseContext): SectionChild | undefined {
+  const children = childNamed(element, "draw:object")
+    ? parseChartFrame(element, context)
+    : parsePictureFrame(element, context);
+  if (children.length === 0) return undefined;
+  return { paragraph: { children } };
 }
 
 export function blockChildren(children: SectionChild[]): BlockContentChild[] {

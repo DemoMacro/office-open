@@ -213,6 +213,13 @@ async function compressOneAsync(
 
 // ── Phase 2+3: calculate sizes + write ZIP buffer ──
 
+/** ZIP general-purpose bit 11: filename and comment are UTF-8. */
+const UTF8_FLAG = 0x0800;
+
+function zipFlags(filename: Uint8Array): number {
+  return filename.some((byte) => byte > 0x7f) ? UTF8_FLAG : 0;
+}
+
 function writeZipBuffer(entries: Entry[]): Uint8Array {
   let totalSize = 0;
   for (const e of entries) {
@@ -233,7 +240,7 @@ function writeZipBuffer(entries: Entry[]): Uint8Array {
     e.localOffset = offset;
     wU32(buf, offset, 0x04034b50); // signature
     wU16(buf, offset + 4, 20); // version needed
-    wU16(buf, offset + 6, 0); // flags
+    wU16(buf, offset + 6, zipFlags(e.filename));
     wU16(buf, offset + 8, e.method); // compression method
     // DOS epoch (1980-01-01 00:00 → time 0x0000, date 0x0021) — fixed so native
     // archives are reproducible and byte-match the fflate reproducible stamp
@@ -259,7 +266,7 @@ function writeZipBuffer(entries: Entry[]): Uint8Array {
     wU32(buf, offset, 0x02014b50); // signature
     wU16(buf, offset + 4, 20); // version made by
     wU16(buf, offset + 6, 20); // version needed
-    wU16(buf, offset + 8, 0); // flags
+    wU16(buf, offset + 8, zipFlags(e.filename));
     wU16(buf, offset + 10, e.method);
     wU16(buf, offset + 12, 0); // mod time (DOS epoch, see local header)
     wU16(buf, offset + 14, 0x21); // mod date

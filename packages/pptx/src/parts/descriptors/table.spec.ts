@@ -111,8 +111,8 @@ describe("tableDesc round-trip", () => {
     const [row0] = rows;
     const row0Cells = row0!.cells!;
     expect(row0Cells).toHaveLength(2);
-    expect(row0Cells[0]?.text).toBe("A1");
-    expect(row0Cells[1]?.text).toBe("B1");
+    expect(row0Cells[0]?.children?.[0]).toMatchObject({ text: "A1" });
+    expect(row0Cells[1]?.children?.[0]).toMatchObject({ text: "B1" });
   });
 
   it("round-trips table with position", () => {
@@ -415,6 +415,30 @@ describe("tableDesc round-trip", () => {
     expect(xml).toContain('<a:tcPr marL="182880" marR="365760" marT="274320" marB="457200"/>');
   });
 
+  it("preserves a table cell without a text body", () => {
+    const source =
+      '<p:graphicFrame xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><p:nvGraphicFramePr><p:cNvPr id="1" name="Table"/><p:cNvGraphicFramePr/><p:nvPr/></p:nvGraphicFramePr><p:xfrm><a:off x="0" y="0"/><a:ext cx="1000" cy="1000"/></p:xfrm><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/table"><a:tbl><a:tblPr/><a:tblGrid><a:gridCol w="1000"/></a:tblGrid><a:tr h="1000"><a:tc><a:tcPr/></a:tc></a:tr></a:tbl></a:graphicData></a:graphic></p:graphicFrame>';
+    const root = parseXml(source).elements?.[0];
+    if (!root) throw new Error("parsed document has no root element");
+    const parsed = tableDesc.parse(root, readCtx);
+    expect(parsed.rows?.[0]?.cells?.[0]?.textBodyPresent).toBe(false);
+    const xml = tableDesc.stringify(parsed, new MockWriteContext() as unknown as WriteContext)!;
+    expect(xml).toContain("<a:tc><a:tcPr/></a:tc>");
+  });
+
+  it("preserves a parsed text-only cell without end-paragraph properties", () => {
+    const source =
+      '<p:graphicFrame xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><p:nvGraphicFramePr><p:cNvPr id="1" name="Table"/><p:cNvGraphicFramePr/><p:nvPr/></p:nvGraphicFramePr><p:xfrm><a:off x="0" y="0"/><a:ext cx="1000" cy="1000"/></p:xfrm><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/table"><a:tbl><a:tblPr/><a:tblGrid><a:gridCol w="1000"/></a:tblGrid><a:tr h="1000"><a:tc><a:txBody><a:bodyPr/><a:lstStyle/><a:p><a:r><a:t>A1</a:t></a:r></a:p></a:txBody><a:tcPr/></a:tc></a:tr></a:tbl></a:graphicData></a:graphic></p:graphicFrame>';
+    const root = parseXml(source).elements?.[0];
+    if (!root) throw new Error("parsed document has no root element");
+    const parsed = tableDesc.parse(root, readCtx);
+    const cell = parsed.rows?.[0]?.cells?.[0];
+    expect(cell?.children?.[0]).toMatchObject({ text: "A1", endParagraphProperties: false });
+
+    const xml = tableDesc.stringify(parsed, new MockWriteContext() as unknown as WriteContext)!;
+    expect(xml).not.toContain("<a:endParaRPr");
+  });
+
   it("round-trips cell margins with UniversalMeasure (mm)", () => {
     const opts: TableOptions = {
       rows: [
@@ -461,6 +485,26 @@ describe("tableDesc round-trip", () => {
       bevel: { w: 25400, h: 19050, prst: "circle" },
       lightRig: { rig: "threePt", direction: "top" },
     });
+  });
+
+  it("round-trips right-to-left tables and complete cell body properties", () => {
+    const opts: TableOptions = {
+      rightToLeft: true,
+      rows: [
+        {
+          cells: [
+            {
+              text: "A1",
+              bodyProperties: { anchor: "center" },
+            },
+          ],
+        },
+      ],
+    };
+    const result = roundTrip(opts);
+
+    expect(result.rightToLeft).toBe(true);
+    expect(result.rows[0]!.cells[0]!.bodyProperties).toMatchObject({ anchor: "center" });
   });
 
   it("round-trips inline table style (a:tableStyle in a:tblPr)", () => {

@@ -93,12 +93,10 @@ export const textBodyDesc: CustomDescriptor<TextBodyOptions> = {
       parts.push("<a:bodyPr/>");
     }
 
-    // a:lstStyle — always emit (matches MS Office byte layout).
-    parts.push(
-      opts.listStyle
-        ? `<a:lstStyle>${textListStyleDesc.stringify(opts.listStyle, ctx) ?? ""}</a:lstStyle>`
-        : "<a:lstStyle/>",
-    );
+    if (opts.listStyle) {
+      const styleXml = textListStyleDesc.stringify(opts.listStyle, ctx);
+      parts.push(styleXml ? `<a:lstStyle>${styleXml}</a:lstStyle>` : "<a:lstStyle/>");
+    }
 
     // a:p[] — CT_TextBody requires at least one paragraph. `text` is a
     // single-paragraph shorthand; `paragraphs` accepts string entries that
@@ -125,12 +123,7 @@ export const textBodyDesc: CustomDescriptor<TextBodyOptions> = {
     const lstStyle = findChild(el, "a:lstStyle");
     if (lstStyle) {
       const parsed = textListStyleDesc.parse(lstStyle, ctx);
-      // An empty <a:lstStyle/> parses to an empty list; skip it so stringify
-      // re-emits the self-closing form (matches MS Office byte layout for
-      // bare text bodies).
-      if (parsed.defaultParagraph || parsed.ext !== undefined || (parsed.levels?.length ?? 0) > 0) {
-        result.listStyle = parsed;
-      }
+      result.listStyle = parsed;
     }
 
     const paragraphs: ParagraphDescriptorOptions[] = [];

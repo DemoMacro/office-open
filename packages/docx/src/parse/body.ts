@@ -5,13 +5,19 @@
  *
  * @module
  */
-import { partPathToRelsPath, resolveRelationshipTarget } from "@office-open/core";
+import { partPathToRelsPath, resolveRelationshipTarget } from "@office-open/core/opc";
 import { attr, findChild, findDeep, findFirst, textOf } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import { parseAltChunk } from "@parts/alt-chunk/alt-chunk-parse";
 import { parseCustomXmlBlock } from "@parts/custom-xml/custom-xml-parse";
 import { parseSectionPropertiesEl } from "@parts/document/body/section-properties/descriptor";
 import type { SectionPropertiesOptions } from "@parts/document/body/section-properties/section-properties";
+import type {
+  ComplexFieldInstructionMember,
+  ParagraphChild,
+  ParagraphOptions,
+  TrackChangeChild,
+} from "@parts/paragraph/paragraph";
 import { parseSdtBlock } from "@parts/sdt/sdt-parse";
 import { parseSubDoc } from "@parts/sub-doc/sub-doc-parse";
 import type { TableOfContentsOptions } from "@parts/table-of-contents/table-of-contents-properties";
@@ -72,7 +78,7 @@ function parseSectionProperties(el: Element, ctx: DocxReadContext): ParsedSectio
       const rId = attr(child, "r:id");
       const type = attr(child, "w:type");
       if (!rId || !type) continue;
-      const slot = type as "default" | "first" | "even";
+      const slot = type as "default" | "odd" | "first" | "even";
       const parsed = parseHeaderFooterRef(rId, ctx);
       if (!parsed) continue;
       const kind = child.name === "w:headerReference" ? "header" : "footer";
@@ -100,7 +106,7 @@ function parseSectionProperties(el: Element, ctx: DocxReadContext): ParsedSectio
   const emitted = (
     kind: "header" | "footer",
   ): NonNullable<SectionPropertiesOptions["headerFooterReferenceOrder"]> =>
-    (["default", "first", "even"] as const)
+    (["default", "odd", "first", "even"] as const)
       .map((slot) => `${kind}-${slot}` as const)
       .filter((entry) => referenceOrder.includes(entry));
   const canonical = [...emitted("header"), ...emitted("footer")];
@@ -158,7 +164,6 @@ function parseHeaderFooterRef(
   if (!path) return undefined;
 
   const children = parseHeaderFooterPartChildren(path, ctx);
-  if (children.length === 0) return undefined;
   const partName = path.split("/").pop() ?? path;
   return { children, partName };
 }
@@ -267,7 +272,9 @@ export function parseSectionChild(el: Element, ctx: DocxReadContext): SectionChi
         return { rawXml: stringifyElement(el) };
       }
 
-      return { paragraph: parseParagraph(el, ctx) };
+      const paragraph = parseParagraph(el, ctx);
+      if (ctx.nestedSectionHostDepth > 0) attachInlineSectionProperties(paragraph, el, ctx);
+      return { paragraph };
     }
     case "w:tbl":
       return { table: tableDesc.parse(el, ctx) as TableOptions };
@@ -288,7 +295,16 @@ export function parseSectionChild(el: Element, ctx: DocxReadContext): SectionChi
             return { rawXml: stringifyElement(entryEl) };
           }
           return entryEl.name === "w:p"
-            ? { paragraph: parseParagraph(entryEl, entryCtx) }
+            ? {
+                paragraph: attachInlineSectionProperties(
+                  parseParagraph(entryEl, entryCtx, {
+                    incompleteFields: "defer",
+                    preserveOrphanMarkers: true,
+                  }),
+                  entryEl,
+                  entryCtx,
+                ),
+              }
             : parseSectionChild(entryEl, entryCtx);
         });
         if (hasRawFieldEnd) hasPendingRawFieldEnd = true;
@@ -300,14 +316,21 @@ export function parseSectionChild(el: Element, ctx: DocxReadContext): SectionChi
         return { toc: tocResult };
       }
       // Otherwise parse as generic SDT block
-      const sdtResult = parseSdtBlock(el, ctx, parseSectionChildrenElements);
-      return {
-        sdt: {
-          properties: sdtResult.properties,
-          endProperties: sdtResult.endProperties,
-          children: sdtResult.children as BlockContentChild[] | undefined,
-        },
-      };
+      ctx.nestedSectionHostDepth += 1;
+      let result: SectionChild;
+      try {
+        const sdtResult = parseSdtBlock(el, ctx, parseSectionChildrenElements);
+        result = {
+          sdt: {
+            properties: sdtResult.properties,
+            endProperties: sdtResult.endProperties,
+            children: sdtResult.children as BlockContentChild[] | undefined,
+          },
+        };
+      } finally {
+        ctx.nestedSectionHostDepth -= 1;
+      }
+      return result;
     }
     case "w:altChunk":
       return { altChunk: parseAltChunk(el, ctx) };
@@ -329,6 +352,38 @@ export function parseSectionChild(el: Element, ctx: DocxReadContext): SectionChi
     default:
       return { rawXml: stringifyElement(el) };
   }
+}
+
+function attachInlineSectionProperties(
+  paragraph: ParagraphOptions,
+  element: Element,
+  ctx: DocxReadContext,
+): ParagraphOptions {
+  const paragraphProperties = findChild(element, "w:pPr");
+  const section = paragraphProperties ? findChild(paragraphProperties, "w:sectPr") : undefined;
+  if (!section) return paragraph;
+  const parsed = parseSectionProperties(section, ctx);
+  const {
+    parsedHeaders,
+    parsedFooters,
+    parsedHeaderPartNames,
+    parsedFooterPartNames,
+    ...properties
+  } = parsed;
+  paragraph.sectionProperties = properties;
+  if (parsedHeaders || parsedHeaderPartNames) {
+    paragraph.sectionHeaders = {
+      ...parsedHeaders,
+      ...(parsedHeaderPartNames ? { partNames: parsedHeaderPartNames } : {}),
+    };
+  }
+  if (parsedFooters || parsedFooterPartNames) {
+    paragraph.sectionFooters = {
+      ...parsedFooters,
+      ...(parsedFooterPartNames ? { partNames: parsedFooterPartNames } : {}),
+    };
+  }
+  return paragraph;
 }
 
 // ── Body parsing with section splitting ───────────────────────────────────────
@@ -433,6 +488,16 @@ export function parseBody(body: Element, ctx: DocxReadContext): SectionOptions[]
     start = boundary.index;
   }
 
+  // Lenient producers can append block content after a body-level sectPr.
+  // The final body sectPr is a boundary, not part of bodyChildren; preserve
+  // any tolerated trailing children with the preceding section instead of
+  // silently dropping them during canonical parsing.
+  const trailing = bodyChildren.slice(start);
+  if (trailing.length > 0 && sections.length > 0) {
+    const lastSection = sections[sections.length - 1]!;
+    lastSection.children.push(...parseBodyChildren(trailing, ctx));
+  }
+
   // If there are elements after the last boundary, they form the last section
   // with the body-level w:sectPr (already captured)
   // Actually the body-level sectPr IS the last boundary
@@ -475,16 +540,21 @@ function isTocFieldBegin(el: Element): boolean {
   // accumulator as a single { field } child — aggregating it here would emit
   // it twice (an entry-less TOC plus the paragraph itself).
   if (countFieldDelta(el) === 0) return false;
+  const fieldRuns: Element[] = [];
+  const collectRuns = (node: Element): void => {
+    if (isRevisionWrapper(node)) return;
+    if (node.name === "w:r") fieldRuns.push(node);
+    for (const child of node.elements ?? []) collectRuns(child);
+  };
+  collectRuns(el);
   let hasBegin = false;
   let instr = "";
-  const walk = (node: Element): void => {
-    if (node.name === "w:fldChar" && attr(node, "w:fldCharType") === "begin") hasBegin = true;
-    if (node.name === "w:instrText") instr += textOf(node);
-    for (const c of node.elements ?? []) {
-      if (c.type === "element") walk(c);
-    }
-  };
-  walk(el);
+  for (const run of fieldRuns) {
+    const fieldChar = findChild(run, "w:fldChar");
+    if (fieldChar && attr(fieldChar, "w:fldCharType") === "begin") hasBegin = true;
+    const instruction = findChild(run, "w:instrText");
+    if (instruction) instr += textOf(instruction);
+  }
   return hasBegin && instr.trim().toUpperCase().startsWith("TOC");
 }
 
@@ -567,6 +637,12 @@ export function isFieldEndContinuation(el: Element): boolean {
  */
 function parseBodyChildren(elements: Element[], ctx: DocxReadContext): SectionChild[] {
   const children: SectionChild[] = [];
+  const containsMoveRange =
+    elements.some((el) => findDeep(el, "w:moveFromRangeStart").length > 0) ||
+    elements.some((el) => findDeep(el, "w:moveToRangeStart").length > 0);
+  if (containsMoveRange || ctx.activeMoveRangeDepth > 0) {
+    return elements.map((el) => parseSectionChild(el, ctx));
+  }
   let tocBuffer: Element[] | null = null;
   let tocDepth = 0;
 
@@ -588,8 +664,8 @@ function parseBodyChildren(elements: Element[], ctx: DocxReadContext): SectionCh
     const returnsToBody = closed && !keptInEntries && findFirst(lastEl, "w:t") !== undefined;
     if (returnsToBody) {
       // Direct parseParagraph: the paragraph lives inside the field span, its
-      // orphan end fldChar run is consumed by the accumulator, and the
-      // cross-paragraph pre-check must not flip it to verbatim.
+      // orphan end fldChar run is preserved so TOC's endInBody writer can
+      // pair it with the field opened by headRunsXml.
       children.push(
         lastEl.name === "w:p"
           ? { paragraph: parseParagraph(lastEl, ctx) }
@@ -612,6 +688,26 @@ function parseBodyChildren(elements: Element[], ctx: DocxReadContext): SectionCh
     // Whitespace text nodes survive captureSpacesBetweenElements parsing;
     // block content is element-only, so skip anything without an element name.
     if (el.type !== "element") continue;
+    if (
+      el.name === "w:customXmlMoveFromRangeStart" ||
+      el.name === "w:moveFromRangeStart" ||
+      el.name === "w:customXmlMoveToRangeStart" ||
+      el.name === "w:moveToRangeStart"
+    ) {
+      ctx.activeMoveRangeDepth += 1;
+    }
+    if (
+      el.name === "w:customXmlMoveFromRangeEnd" ||
+      el.name === "w:moveFromRangeEnd" ||
+      el.name === "w:customXmlMoveToRangeEnd" ||
+      el.name === "w:moveToRangeEnd"
+    ) {
+      ctx.activeMoveRangeDepth = Math.max(0, ctx.activeMoveRangeDepth - 1);
+    }
+    if (ctx.activeMoveRangeDepth > 0) {
+      children.push(parseSectionChild(el, ctx));
+      continue;
+    }
     if (tocBuffer !== null) {
       tocBuffer.push(el);
       tocDepth += countFieldDelta(el);
@@ -663,22 +759,120 @@ function buildTocChild(els: Element[], ctx: DocxReadContext): SectionChild {
   ) {
     tocOpts.endInBody = true;
   }
+  captureTocFieldRPr(els, tocOpts);
+  let lastParagraph: ParagraphOptions | undefined;
   if (entryEls.length > 0) {
     // Entry paragraphs live INSIDE the field: the per-paragraph accumulator
     // consumes their fldChar control runs and keeps the rest. They must not go
     // through parseSectionChild's cross-paragraph pre-check — the closing
     // paragraph's unbalanced `end` would flip it to verbatim rawXml and lose
     // the structured pPr (pStyle/divId) this capture exists to preserve.
-    tocOpts.entries = entryEls.map((el) =>
-      el.name === "w:p" ? { paragraph: parseParagraph(el, ctx) } : parseSectionChild(el, ctx),
-    );
+    tocOpts.entries = entryEls.map((el, index) => {
+      if (el.name !== "w:p") return parseSectionChild(el, ctx);
+      const paragraph = parseParagraph(el, ctx, {
+        incompleteFields: "defer",
+        preserveOrphanMarkers: true,
+      });
+      if (index === 0) {
+        paragraph.children = stripOuterTocField(paragraph.children);
+        if (tocOpts.headResultInFirstRun) paragraph.children?.shift();
+      }
+      lastParagraph = paragraph;
+      return { paragraph };
+    });
   }
-  const lastEntry = entryEls[entryEls.length - 1];
-  if (lastEntry && hasTocFieldEndBeforeChildren(lastEntry)) {
+  if (hasTocEndMarker(lastParagraph?.children)) {
+    tocOpts.endMarkerInEntries = true;
+  }
+  if (entryEls.length > 0 && hasTocFieldEndBeforeChildren(entryEls[entryEls.length - 1]!)) {
     tocOpts.fieldEndBeforeChildren = true;
   }
-  captureTocFieldRPr(els, tocOpts);
   return { toc: tocOpts };
+}
+
+function hasTocEndMarker(children: (ParagraphChild | string)[] | undefined): boolean {
+  return (children ?? []).some(
+    (child) =>
+      typeof child === "object" &&
+      child !== null &&
+      "fieldMarker" in child &&
+      child.fieldMarker.type === "end",
+  );
+}
+
+/**
+ * A self-contained TOC field can be both the aggregate's first entry and the
+ * field opened by its head runs. Keep only the field result as entry content;
+ * the TOC descriptor owns the outer control chain.
+ */
+export function stripOuterTocField(
+  children: (ParagraphChild | string)[] | undefined,
+): (ParagraphChild | string)[] {
+  const strippedChildren = stripDeferredTocHead(children ?? []);
+  const [child] = strippedChildren;
+  if (!child || typeof child === "string" || !("complexField" in child)) return strippedChildren;
+  const field = child.complexField;
+  if (!field.instruction.trim().toUpperCase().startsWith("TOC")) return strippedChildren;
+  return field.resultMembers?.map(fieldMemberToChild) ?? [];
+}
+
+function stripDeferredTocHead(children: TrackChangeChild[]): TrackChangeChild[];
+function stripDeferredTocHead(children: (ParagraphChild | string)[]): (ParagraphChild | string)[];
+function stripDeferredTocHead(children: (ParagraphChild | string)[]): (ParagraphChild | string)[] {
+  const [first, ...rest] = children;
+  if (typeof first === "object" && first !== null && "rawXml" in first) {
+    return isTocFieldHeadXml(first.rawXml) ? rest : children;
+  }
+  if (typeof first !== "object" || first === null) return children;
+  if ("insertion" in first) {
+    const stripped = stripDeferredTocHead(first.insertion.children);
+    if (stripped === first.insertion.children) return children;
+    return [{ insertion: { ...first.insertion, children: stripped } }, ...rest];
+  }
+  if ("deletion" in first) {
+    const stripped = stripDeferredTocHead(first.deletion.children);
+    if (stripped === first.deletion.children) return children;
+    return [{ deletion: { ...first.deletion, children: stripped } }, ...rest];
+  }
+  return children;
+}
+
+function isTocFieldHeadXml(xml: string): boolean {
+  return (
+    xml.includes('<w:fldChar w:fldCharType="begin"/>') &&
+    xml.includes('<w:fldChar w:fldCharType="separate"/>') &&
+    /<w:(?:del)?[Ii]nstrText[^>]*>[^<]*TOC\b/u.test(xml)
+  );
+}
+
+function fieldMemberToChild(member: ComplexFieldInstructionMember): ParagraphChild {
+  if ("run" in member) return member.run;
+  if ("simpleField" in member) return { simpleField: member.simpleField };
+  if ("bookmarkStart" in member) return { bookmarkStart: member.bookmarkStart };
+  if ("bookmarkEnd" in member) return { bookmarkEnd: member.bookmarkEnd };
+  if ("proofErr" in member) return { proofErr: member.proofErr };
+  if ("formField" in member) return { ...member };
+  if ("complexField" in member) return { complexField: member.complexField };
+  if ("fieldMarker" in member) return { fieldMarker: member.fieldMarker };
+  if ("sdt" in member) return { sdt: member.sdt };
+  if ("insertion" in member) return { insertion: member.insertion };
+  if ("deletion" in member) return { deletion: member.deletion };
+  if ("movedFrom" in member) return { movedFrom: member.movedFrom };
+  if ("movedTo" in member) return { movedTo: member.movedTo };
+  return { hyperlink: member.hyperlink };
+}
+
+function elementOpenTag(element: Element): string {
+  const full = stringifyElement(element);
+  const end = full.indexOf(">");
+  return end === -1 ? full : full.slice(0, end + 1);
+}
+
+function isRevisionWrapper(element: Element): boolean {
+  return (
+    element.name !== undefined &&
+    ["w:ins", "w:del", "w:moveFrom", "w:moveTo"].includes(element.name)
+  );
 }
 
 /**
@@ -697,10 +891,10 @@ export function captureTocFieldRPr(els: Element[], tocOpts: TableOfContentsOptio
   // single re-composed instruction run.
   let headOpen = false;
   const headRuns: string[] = [];
-  const walk = (node: Element): void => {
+  const walk = (node: Element, wrappers: Element[] = []): void => {
     if (closed || node.name !== "w:r" || !node.elements) {
       for (const c of node.elements ?? []) {
-        if (c.type === "element") walk(c);
+        if (c.type === "element") walk(c, isRevisionWrapper(c) ? [...wrappers, c] : wrappers);
       }
       return;
     }
@@ -713,11 +907,29 @@ export function captureTocFieldRPr(els: Element[], tocOpts: TableOfContentsOptio
           controlRPr = runRPrXml(node);
           headOpen = true;
           headRuns.push(stringifyElement(node));
+          tocOpts.headRunsXml = wrappers.map(elementOpenTag).join("") + headRuns.join("");
+          if (
+            node.elements.some(
+              (c) => c.name === "w:fldChar" && attr(c, "w:fldCharType") === "separate",
+            ) &&
+            node.elements.some((c) => c.name === "w:t")
+          ) {
+            tocOpts.headResultInFirstRun = true;
+          }
           return;
         }
       } else if (type === "separate" && headOpen) {
+        if (depth === 1 && wrappers.length === 0 && node.elements.some((c) => c.name === "w:t")) {
+          tocOpts.headResultInFirstRun = true;
+        }
         headRuns.push(stringifyElement(node));
-        tocOpts.headRunsXml = headRuns.join("");
+        tocOpts.headRunsXml =
+          wrappers.map(elementOpenTag).join("") +
+          headRuns.join("") +
+          wrappers
+            .reverse()
+            .map((wrapper) => `</${wrapper.name}>`)
+            .join("");
         headOpen = false;
         return;
       } else if (type === "end") {
@@ -729,6 +941,12 @@ export function captureTocFieldRPr(els: Element[], tocOpts: TableOfContentsOptio
           const endRPr = runRPrXml(node);
           if (controlRPr) tocOpts.rPrXml = controlRPr;
           if (endRPr !== controlRPr) tocOpts.endRPrXml = endRPr ?? "";
+          const endAdditionRsid = attr(node, "w:rsidR");
+          if (endAdditionRsid) tocOpts.endAdditionRsid = endAdditionRsid;
+          const endRunPropertiesRsid = attr(node, "w:rsidRPr");
+          if (endRunPropertiesRsid) tocOpts.endRunPropertiesRsid = endRunPropertiesRsid;
+          const endDeletionRsid = attr(node, "w:rsidDel");
+          if (endDeletionRsid) tocOpts.endDeletionRsid = endDeletionRsid;
           closed = true;
           return;
         }
@@ -739,7 +957,7 @@ export function captureTocFieldRPr(els: Element[], tocOpts: TableOfContentsOptio
       return;
     }
     for (const c of node.elements ?? []) {
-      if (c.type === "element") walk(c);
+      if (c.type === "element") walk(c, isRevisionWrapper(c) ? [...wrappers, c] : wrappers);
     }
   };
   for (const el of els) {

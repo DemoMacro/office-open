@@ -187,6 +187,24 @@ export interface BlipBlurEffectOptions {
   grow?: boolean;
 }
 
+/** Modeled blip effect field; `effectOrder` preserves source XML child order. */
+export type BlipEffectKind =
+  | "grayscale"
+  | "luminance"
+  | "hsl"
+  | "tint"
+  | "duotone"
+  | "biLevel"
+  | "alphaCeiling"
+  | "alphaFloor"
+  | "alphaInverse"
+  | "alphaModulateFixed"
+  | "alphaReplace"
+  | "alphaBiLevel"
+  | "colorChange"
+  | "colorReplace"
+  | "blur";
+
 /**
  * All blip image adjustment effects.
  */
@@ -221,6 +239,11 @@ export interface BlipEffectsOptions {
   colorReplace?: ColorReplaceEffectOptions;
   /** Blur effect on blip. */
   blur?: BlipBlurEffectOptions;
+  /**
+   * Source child order for modeled effects. CT_Blip's effect choice is
+   * unbounded and order-preserving for round-trip; fresh effects may omit it.
+   */
+  effectOrder?: readonly BlipEffectKind[];
 }
 
 // ─── Factory functions ───────────────────────────────────────────────
@@ -232,6 +255,11 @@ export interface BlipEffectsOptions {
  */
 export const createBlipEffects = (options: BlipEffectsOptions): string[] => {
   const children: string[] = [];
+
+  const emit = (kind: BlipEffectKind): string[] => createBlipEffects({ [kind]: options[kind] });
+  if (options.effectOrder) {
+    return options.effectOrder.flatMap((kind) => (options[kind] === undefined ? [] : emit(kind)));
+  }
 
   if (options.grayscale) {
     children.push(`<a:grayscl/>`);
@@ -308,8 +336,10 @@ export const createBlipEffects = (options: BlipEffectsOptions): string[] => {
   }
 
   if (options.alphaModulateFixed) {
-    const amt = emitPercent(options.alphaModulateFixed.amount ?? 100);
-    children.push(`<a:alphaModFix amt="${amt}"/>`);
+    const amt = options.alphaModulateFixed.amount;
+    children.push(
+      amt === undefined ? "<a:alphaModFix/>" : `<a:alphaModFix amt="${emitPercent(amt)}"/>`,
+    );
   }
 
   if (options.alphaReplace) {

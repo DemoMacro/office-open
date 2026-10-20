@@ -115,6 +115,8 @@ export interface PresetTextShapeOptions {
   preset: TextShapePreset;
   /** Optional adjustment values. */
   adjustments?: { name: string; formula: string }[];
+  /** Source omitted the optional `a:avLst` child; round-trip only. */
+  avLstOmitted?: boolean;
 }
 
 /** Flat text options (CT_FlatText). */
@@ -188,6 +190,9 @@ const filterAttrs = (
 };
 
 const createPresetTextShape = (options: PresetTextShapeOptions): string => {
+  if (options.avLstOmitted && !options.adjustments) {
+    return element("a:prstTxWarp", { prst: options.preset });
+  }
   const adjChildren: string[] = [];
   if (options.adjustments) {
     for (const adj of options.adjustments) {
@@ -348,6 +353,7 @@ export const parseBodyProperties = (el: Element, ctx: ReadContext): BodyProperti
     result.prstTxWarp = {
       preset: preset as TextShapePreset,
       ...(adjustments.length > 0 ? { adjustments } : {}),
+      ...(avLst === undefined ? { avLstOmitted: true } : {}),
     };
   }
 

@@ -115,6 +115,7 @@ const options: PresentationOptions = {
     showSpeakerNotes: true,
     title: "Published Slides",
     rId: "rId1",
+    slideScope: { kind: "all" },
   },
   // Color MRU (recent colors)
   colorMru: ["FF0000", "00FF00", "0000FF"],

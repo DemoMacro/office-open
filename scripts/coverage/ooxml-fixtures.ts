@@ -304,18 +304,19 @@ const w15SdtExtensionsCase: OoxmlExecutableCaseInput = {
     return child && "sdt" in child ? child.sdt.properties : undefined;
   },
   expected: {
+    childOrder: ["w15DataBinding", "w15Color"],
+    propertiesPresent: true,
     w15Color: {
-      val: "FF0000",
       themeColor: "accent1",
-      themeTint: "99",
       themeShade: "BF",
+      themeTint: "99",
+      val: "FF0000",
     },
     w15DataBinding: {
-      xpath: "/invoice/customer",
-      storeItemID: "C9C24E26-8E6D-4C10-9B52-5A9D1C37D92E",
       prefixMappings: "xmlns:invoice='http://example.com/invoice'",
+      storeItemID: "C9C24E26-8E6D-4C10-9B52-5A9D1C37D92E",
+      xpath: "/invoice/customer",
     },
-    childOrder: ["w15DataBinding", "w15Color"],
   },
 };
 
@@ -362,13 +363,14 @@ const w15SdtRepeatingSectionCase: OoxmlExecutableCaseInput = {
   },
   expected: {
     appearance: "tags",
-    repeatingSection: {
-      sectionTitle: "Executable",
-      doNotAllowInsertDeleteSection: false,
-    },
-    webExtensionLinked: true,
-    webExtensionCreated: false,
     childOrder: ["appearance", "repeatingSection", "webExtensionLinked", "webExtensionCreated"],
+    propertiesPresent: true,
+    repeatingSection: {
+      doNotAllowInsertDeleteSection: false,
+      sectionTitle: "Executable",
+    },
+    webExtensionCreated: false,
+    webExtensionLinked: true,
   },
 };
 
@@ -392,7 +394,11 @@ const w15SdtRepeatingSectionItemCase: OoxmlExecutableCaseInput = {
     const child = options.sections?.[0]?.children?.[0];
     return child && "sdt" in child ? child.sdt.properties : undefined;
   },
-  expected: { repeatingSectionItem: true, childOrder: ["repeatingSectionItem"] },
+  expected: {
+    childOrder: ["repeatingSectionItem"],
+    propertiesPresent: true,
+    repeatingSectionItem: true,
+  },
 };
 
 const w15CommentsExtendedCase: OoxmlExecutableCaseInput = {
@@ -618,34 +624,51 @@ const w14TrackChangesCase: OoxmlExecutableCaseInput = {
   expected: [
     {
       customXmlConflictInsRangeStart: {
-        id: 9,
         author: "Ada",
         date: "2021-03-04T00:00:00Z",
+        id: 9,
       },
     },
-    { customXmlConflictInsRangeEnd: 9 },
+    {
+      customXmlConflictInsRangeEnd: 9,
+    },
     {
       customXmlConflictDelRangeStart: {
-        id: 10,
         author: "Ben",
         date: "2021-03-05T00:00:00Z",
+        id: 10,
       },
     },
-    { customXmlConflictDelRangeEnd: 10 },
+    {
+      customXmlConflictDelRangeEnd: 10,
+    },
     {
       conflictIns: {
-        id: 7,
         author: "Ada",
+        children: [
+          {
+            text: "inserted",
+          },
+        ],
         date: "2021-03-04T00:00:00Z",
-        children: [{ text: "inserted" }],
+        id: 7,
       },
     },
     {
       conflictDel: {
-        id: 8,
         author: "Ben",
+        children: [
+          {
+            children: [
+              {
+                deletedText: "deleted",
+              },
+            ],
+            preserveSpace: false,
+          },
+        ],
         date: "2021-03-05T00:00:00Z",
-        children: [{ text: "deleted", preserveSpace: false }],
+        id: 8,
       },
     },
   ],
@@ -690,8 +713,16 @@ const w14CheckboxCase: OoxmlExecutableCaseInput = {
   },
   expected: {
     checked: false,
-    checkedState: { val: "2612", font: "MS Gothic" },
-    uncheckedState: { val: "2610", font: "MS Gothic" },
+    checkedState: {
+      font: "MS Gothic",
+      val: "2612",
+    },
+    checkedStatePresent: true,
+    uncheckedState: {
+      font: "MS Gothic",
+      val: "2610",
+    },
+    uncheckedStatePresent: true,
   },
 };
 
@@ -1815,8 +1846,9 @@ const chartDrawingPictureCase: OoxmlExecutableCaseInput = {
           macro: "Picture.Macro",
           published: true,
           referenceId: "image1.png",
+          rawReferenceId: "image1.png",
           preferRelativeResize: false,
-          blipFill: { dpi: 300, rotWithShape: true },
+          blipFill: { dpi: 300, rotWithShape: true, stretch: {} },
           blackWhiteMode: "gray",
           shapeProperties: { width: 914400, height: 914400 },
         },
@@ -1841,8 +1873,9 @@ const chartDrawingPictureCase: OoxmlExecutableCaseInput = {
           macro: "Picture.Macro",
           published: true,
           referenceId: "image1.png",
+          rawReferenceId: "image1.png",
           preferRelativeResize: false,
-          blipFill: { dpi: 300, rotWithShape: true },
+          blipFill: { dpi: 300, rotWithShape: true, stretch: {} },
           blackWhiteMode: "gray",
           shapeProperties: { width: 914400, height: 914400 },
         },
@@ -1961,39 +1994,51 @@ const chartDrawingGroupCase: OoxmlExecutableCaseInput = {
   validationDirectory: "ooxml-schemas/transitional",
   projection: chartUserShapesProjection,
   expected: {
-    relationshipId: "rId1",
-    rootElement: "chart",
     anchors: [
       {
-        from: { x: 0, y: 0 },
-        extent: { width: 1828800, height: 1828800 },
+        extent: {
+          height: 1828800,
+          width: 1828800,
+        },
+        from: {
+          x: 0,
+          y: 0,
+        },
         object: {
-          type: "group",
-          id: 5,
-          nonVisualProperties: { name: "User Shape" },
           blackWhiteMode: "gray",
-          groupShapeProperties: {
-            width: 1828800,
-            height: 1828800,
-            childOffsetX: 0,
-            childOffsetY: 0,
-            childExtentWidth: 1828800,
-            childExtentHeight: 1828800,
-          },
           children: [
             {
-              type: "shape",
               id: 6,
-              nonVisualProperties: { name: "User Shape" },
-              shapeProperties: {
-                width: 914400,
-                height: 914400,
+              nonVisualProperties: {
+                name: "User Shape",
               },
+              shapeProperties: {
+                height: 914400,
+                width: 914400,
+              },
+              type: "shape",
             },
           ],
+          groupShapeProperties: {
+            childExtentHeight: 1828800,
+            childExtentPresent: true,
+            childExtentWidth: 1828800,
+            childOffsetPresent: true,
+            childOffsetX: 0,
+            childOffsetY: 0,
+            height: 1828800,
+            width: 1828800,
+          },
+          id: 5,
+          nonVisualProperties: {
+            name: "User Shape",
+          },
+          type: "group",
         },
       },
     ],
+    relationshipId: "rId1",
+    rootElement: "chart",
   },
 };
 
@@ -2220,7 +2265,9 @@ const wpShapeDescriptor = {
   stringify: (value: DrawingDescriptorOptions) =>
     drawingDesc.stringify(value, coverageBodyWriteContext),
   parse: (element: Parameters<typeof drawingDesc.parse>[0]) => {
-    const parsed = drawingDesc.parse(element, {} as never) as { wpsShape?: ParsedWpsShape };
+    const parsed = drawingDesc.parse(element, coverageDrawingReadContext) as {
+      wpsShape?: ParsedWpsShape;
+    };
     if (!parsed.wpsShape) return {} as DrawingDescriptorOptions;
     const { altText, graphicFrameLocks, transformation, ...data } = parsed.wpsShape;
     return {
@@ -2232,6 +2279,7 @@ const wpShapeDescriptor = {
 };
 
 const coverageDrawingReadContext = {
+  docx: {},
   currentPart: "word/document.xml",
   consumedPartPaths: new Set<string>(),
 } as unknown as ReadContext;
@@ -2286,34 +2334,72 @@ const wordprocessingShapeCase = descriptorCase({
     },
   },
   expected: {
-    docProperties: { id: "11", name: "Coverage Shape" },
-    graphicFrameLocks: { noChangeAspect: true },
+    docProperties: {
+      id: "11",
+      name: "Coverage Shape",
+    },
+    graphicFrameLocks: {
+      noChangeAspect: true,
+    },
     mediaData: {
-      type: "wps",
       data: {
-        normalEastAsianFlow: true,
         blackWhiteMode: "gray",
-        geometry: { preset: "rect" },
-        children: [{ text: "Coverage text" }],
-        style: {
-          lineReference: { index: 2 },
-          fillReference: { index: 3 },
-          effectReference: { index: 4 },
-          fontReference: { collection: "minor" },
-        },
         bodyProperties: {
-          rotation: 15,
-          lIns: 100,
           anchor: "center",
+          lIns: 100,
+          rotation: 15,
         },
-        nonVisualProperties: { id: 31, name: "Coverage Shape", textBox: "true" },
+        children: [
+          {
+            text: "Coverage text",
+          },
+        ],
+        geometry: {
+          preset: "rect",
+        },
+        nonVisualProperties: {
+          id: 31,
+          name: "Coverage Shape",
+          textBox: "true",
+        },
+        normalEastAsianFlow: true,
+        shapeOffset: {
+          x: 0,
+          y: 0,
+        },
+        style: {
+          effectReference: {
+            index: 4,
+          },
+          fillReference: {
+            index: 3,
+          },
+          fontReference: {
+            collection: "minor",
+          },
+          lineReference: {
+            index: 2,
+          },
+        },
+        transformPresent: true,
       },
       transformation: {
-        effectExtent: { left: 0, top: 0, right: 0, bottom: 0 },
-        inlineDistances: { left: 0, top: 0, right: 0, bottom: 0 },
-        width: 914400,
+        effectExtent: {
+          bottom: 0,
+          left: 0,
+          right: 0,
+          top: 0,
+        },
         height: 914400,
+        inlineDistances: {
+          bottom: 0,
+          left: 0,
+          right: 0,
+          top: 0,
+        },
+        width: 914400,
       },
+      type: "wps",
     },
   },
   validationSchema: "dml-wordprocessingDrawing.xsd",
@@ -2349,29 +2435,64 @@ const wordprocessingLinkedShapeCase = descriptorCase({
     },
   },
   expected: {
-    docProperties: { id: "12", name: "Coverage Linked Shape" },
-    graphicFrameLocks: { noChangeAspect: true },
+    docProperties: {
+      id: "12",
+      name: "Coverage Linked Shape",
+    },
+    graphicFrameLocks: {
+      noChangeAspect: true,
+    },
     mediaData: {
-      type: "wps",
       data: {
-        children: [],
-        geometry: { preset: "rect" },
-        linkedTextBox: { id: 7, sequence: 2 },
-        nonVisualProperties: { textBox: "1" },
-        style: {
-          lineReference: { index: 1 },
-          fillReference: { index: 2 },
-          effectReference: { index: 3 },
-          fontReference: { collection: "major" },
-        },
         bodyProperties: {},
+        children: [],
+        geometry: {
+          preset: "rect",
+        },
+        linkedTextBox: {
+          id: 7,
+          sequence: 2,
+        },
+        nonVisualProperties: {
+          textBox: "1",
+        },
+        shapeOffset: {
+          x: 0,
+          y: 0,
+        },
+        style: {
+          effectReference: {
+            index: 3,
+          },
+          fillReference: {
+            index: 2,
+          },
+          fontReference: {
+            collection: "major",
+          },
+          lineReference: {
+            index: 1,
+          },
+        },
+        transformPresent: true,
       },
       transformation: {
-        effectExtent: { left: 0, top: 0, right: 0, bottom: 0 },
-        inlineDistances: { left: 0, top: 0, right: 0, bottom: 0 },
-        width: 914400,
+        effectExtent: {
+          bottom: 0,
+          left: 0,
+          right: 0,
+          top: 0,
+        },
         height: 914400,
+        inlineDistances: {
+          bottom: 0,
+          left: 0,
+          right: 0,
+          top: 0,
+        },
+        width: 914400,
       },
+      type: "wps",
     },
   },
   validationSchema: "dml-wordprocessingDrawing.xsd",
@@ -2412,33 +2533,65 @@ const wordprocessingConnectorCase = descriptorCase({
     },
   },
   expected: {
-    docProperties: { id: "13", name: "Coverage Connector" },
-    graphicFrameLocks: { noChangeAspect: true },
+    docProperties: {
+      id: "13",
+      name: "Coverage Connector",
+    },
+    graphicFrameLocks: {
+      noChangeAspect: true,
+    },
     mediaData: {
-      type: "wps",
       data: {
+        bodyProperties: {},
         children: [],
-        geometry: { preset: "rect" },
+        geometry: {
+          preset: "rect",
+        },
         nonVisualProperties: {
+          connector: true,
+          connectorLocking: {
+            noChangeAspect: true,
+          },
           id: 42,
           name: "Coverage Connector",
-          connector: true,
-          connectorLocking: { noChangeAspect: true },
+        },
+        shapeOffset: {
+          x: 0,
+          y: 0,
         },
         style: {
-          lineReference: { index: 1 },
-          fillReference: { index: 2 },
-          effectReference: { index: 3 },
-          fontReference: { collection: "none" },
+          effectReference: {
+            index: 3,
+          },
+          fillReference: {
+            index: 2,
+          },
+          fontReference: {
+            collection: "none",
+          },
+          lineReference: {
+            index: 1,
+          },
         },
-        bodyProperties: {},
+        transformPresent: true,
       },
       transformation: {
-        effectExtent: { left: 0, top: 0, right: 0, bottom: 0 },
-        inlineDistances: { left: 0, top: 0, right: 0, bottom: 0 },
-        width: 914400,
+        effectExtent: {
+          bottom: 0,
+          left: 0,
+          right: 0,
+          top: 0,
+        },
         height: 914400,
+        inlineDistances: {
+          bottom: 0,
+          left: 0,
+          right: 0,
+          top: 0,
+        },
+        width: 914400,
       },
+      type: "wps",
     },
   },
   validationSchema: "dml-wordprocessingDrawing.xsd",
@@ -2538,60 +2691,87 @@ const wordprocessingShapeMetadataCase = descriptorCase({
   },
   expected: {
     docProperties: {
+      description: "Shape metadata",
+      hidden: true,
       id: "15",
       name: "Coverage Shape Metadata",
-      description: "Shape metadata",
       title: "Metadata",
-      hidden: true,
     },
-    graphicFrameLocks: { noChangeAspect: true },
+    graphicFrameLocks: {
+      noChangeAspect: true,
+    },
     mediaData: {
-      type: "wps",
       data: {
-        children: [],
-        geometry: { preset: "rect" },
-        nonVisualProperties: {
-          id: 51,
-          name: "Coverage Shape Metadata",
-          description: "Nested metadata",
-          title: "Nested",
-          hidden: true,
-        },
-        style: {
-          lineReference: { index: 1 },
-          fillReference: { index: 2 },
-          effectReference: { index: 3 },
-          fontReference: { collection: "minor" },
-        },
         bodyProperties: {
-          spcFirstLastPara: true,
-          vertOverflow: "ellipsis",
-          horzOverflow: "overflow",
-          vertical: "vertical",
-          wrap: "square",
-          lIns: 45720,
-          tIns: 45720,
-          rIns: 45720,
-          bIns: 45720,
-          numCol: 2,
-          spcCol: 914400,
-          rtlCol: true,
-          fromWordArt: true,
           anchor: "bottom",
           anchorCtr: true,
-          forceAA: true,
-          upright: true,
+          bIns: 45720,
           compatLnSpc: true,
+          forceAA: true,
+          fromWordArt: true,
+          horzOverflow: "overflow",
+          lIns: 45720,
+          numCol: 2,
+          rIns: 45720,
+          rtlCol: true,
+          spcCol: 914400,
+          spcFirstLastPara: true,
+          tIns: 45720,
+          upright: true,
+          vertical: "vertical",
+          vertOverflow: "ellipsis",
+          wrap: "square",
         },
+        children: [],
+        geometry: {
+          preset: "rect",
+        },
+        nonVisualProperties: {
+          description: "Nested metadata",
+          hidden: true,
+          id: 51,
+          name: "Coverage Shape Metadata",
+          title: "Nested",
+        },
+        shapeOffset: {
+          x: 0,
+          y: 0,
+        },
+        style: {
+          effectReference: {
+            index: 3,
+          },
+          fillReference: {
+            index: 2,
+          },
+          fontReference: {
+            collection: "minor",
+          },
+          lineReference: {
+            index: 1,
+          },
+        },
+        transformPresent: true,
       },
       transformation: {
-        effectExtent: { left: 0, top: 0, right: 0, bottom: 0 },
-        inlineDistances: { left: 0, top: 0, right: 0, bottom: 0 },
+        effectExtent: {
+          bottom: 0,
+          left: 0,
+          right: 0,
+          top: 0,
+        },
         flipHorizontal: true,
         flipVertical: true,
-        width: 914400,
         height: 914400,
+        inlineDistances: {
+          bottom: 0,
+          left: 0,
+          right: 0,
+          top: 0,
+        },
+        width: 914400,
       },
+      type: "wps",
     },
   },
   validationSchema: "dml-wordprocessingDrawing.xsd",
@@ -2751,52 +2931,90 @@ const wordprocessingGroupCase = descriptorCase({
     },
   },
   expected: {
-    docProperties: { id: "14", name: "Coverage Group" },
-    graphicFrameLocks: { noChangeAspect: true },
+    docProperties: {
+      id: "14",
+      name: "Coverage Group",
+    },
+    graphicFrameLocks: {
+      noChangeAspect: true,
+    },
     mediaData: {
-      type: "wpg",
-      transformation: {
-        effectExtent: { left: 0, top: 0, right: 0, bottom: 0 },
-        inlineDistances: { left: 0, top: 0, right: 0, bottom: 0 },
-        width: 1828800,
-        height: 1828800,
-      },
+      childExtentHeight: 1828800,
+      childExtentPresent: true,
+      childExtentWidth: 1828800,
+      childOffsetPresent: true,
       childOffsetX: 0,
       childOffsetY: 0,
-      childExtentWidth: 1828800,
-      childExtentHeight: 1828800,
-      groupShapeLocks: { noChangeAspect: true },
-      fill: { type: "solid", color: { value: "accent1" } },
       children: [
         {
-          type: "wpg",
-          transformation: {
-            offset: { x: 0, y: 0 },
-            width: 914400,
-            height: 914400,
-          },
+          childExtentHeight: 914400,
+          childExtentPresent: true,
+          childExtentWidth: 914400,
+          childOffsetPresent: true,
           childOffsetX: 0,
           childOffsetY: 0,
-          childExtentWidth: 914400,
-          childExtentHeight: 914400,
           children: [],
-        },
-        {
-          type: "contentPart",
-          referenceId: "rId9",
-          blackWhiteMode: "gray",
           nonVisualProperties: {
-            id: 52,
-            name: "Coverage Content Part",
-            contentPart: { isComment: false },
+            id: 0,
+            name: "",
           },
           transformation: {
-            offset: { x: 0, y: 0 },
-            width: 914400,
             height: 914400,
+            offset: {
+              x: 0,
+              y: 0,
+            },
+            width: 914400,
           },
+          type: "wpg",
+        },
+        {
+          blackWhiteMode: "gray",
+          nonVisualProperties: {
+            contentPart: {
+              isComment: false,
+            },
+            id: 52,
+            name: "Coverage Content Part",
+          },
+          referenceId: "rId9",
+          transformation: {
+            height: 914400,
+            offset: {
+              x: 0,
+              y: 0,
+            },
+            width: 914400,
+          },
+          type: "contentPart",
         },
       ],
+      fill: {
+        color: {
+          value: "accent1",
+        },
+        type: "solid",
+      },
+      groupShapeLocks: {
+        noChangeAspect: true,
+      },
+      transformation: {
+        effectExtent: {
+          bottom: 0,
+          left: 0,
+          right: 0,
+          top: 0,
+        },
+        height: 1828800,
+        inlineDistances: {
+          bottom: 0,
+          left: 0,
+          right: 0,
+          top: 0,
+        },
+        width: 1828800,
+      },
+      type: "wpg",
     },
   },
   validationSchema: "dml-wordprocessingDrawing.xsd",
@@ -2872,72 +3090,109 @@ const wordprocessingGroupChartCase: OoxmlExecutableCaseInput = {
     return paragraphChild.wpgGroup;
   },
   expected: {
-    altText: { id: "1", name: "Coverage Group" },
+    altText: {
+      id: "1",
+      name: "Coverage Group",
+    },
+    childExtentHeight: 1828800,
+    childExtentPresent: true,
+    childExtentWidth: 1828800,
+    childOffsetPresent: true,
+    childOffsetX: 0,
+    childOffsetY: 0,
     children: [
       {
-        type: "chart",
         chartOptions: {
-          type: "column",
+          axes: [
+            {
+              auto: true,
+              crossAxisId: 20,
+              crosses: "zero",
+              delete: false,
+              id: 10,
+              kind: "category",
+              labelOffset: 100,
+              noMultiLevelLabel: false,
+              position: "bottom",
+              scaling: {
+                orientation: "ascending",
+              },
+            },
+            {
+              crossAxisId: 10,
+              crosses: "zero",
+              delete: false,
+              id: 20,
+              kind: "value",
+              numberFormat: "General",
+              position: "left",
+              scaling: {
+                orientation: "ascending",
+              },
+            },
+          ],
+          axisIds: [10, 20],
+          categoryAbsent: true,
+          groupingDeclared: true,
+          legendPosition: "bottom",
+          plotAreaLayout: true,
+          plotVisOnly: true,
+          plotVisOnlyPresent: true,
           series: [
             {
+              categoryAbsent: true,
               formatCode: "General",
               index: 0,
+              indexDeclared: true,
               order: 0,
+              orderDeclared: true,
               valueCache: true,
+              valueFormula: "",
               valuePointCount: 3,
               values: [1, 2, 3],
             },
           ],
           showLegend: true,
-          legendPosition: "bottom",
-          plotVisOnly: true,
-          axes: [
-            {
-              id: 10,
-              kind: "category",
-              crossAxisId: 20,
-              auto: true,
-              delete: false,
-              labelOffset: 100,
-              noMultiLevelLabel: false,
-              position: "bottom",
-              scaling: { orientation: "ascending" },
-              crosses: "zero",
-            },
-            {
-              id: 20,
-              kind: "value",
-              crossAxisId: 10,
-              delete: false,
-              numberFormat: "General",
-              position: "left",
-              scaling: { orientation: "ascending" },
-              crosses: "zero",
-            },
-          ],
-          axisIds: [10, 20],
+          type: "column",
         },
-        nonVisualProperties: { id: 61, name: "Coverage Group Chart" },
-        graphicFrameLocks: { noMove: true },
+        graphicFrameLocks: {
+          noMove: true,
+        },
+        nonVisualProperties: {
+          id: 61,
+          name: "Coverage Group Chart",
+        },
         transformation: {
-          offset: { x: 0, y: 0 },
+          height: 914400,
+          offset: {
+            x: 0,
+            y: 0,
+          },
           rotation: 30,
           width: 914400,
-          height: 914400,
         },
+        type: "chart",
       },
     ],
-    transformation: {
-      effectExtent: { left: 0, top: 0, right: 0, bottom: 0 },
-      inlineDistances: { left: 0, top: 0, right: 0, bottom: 0 },
-      width: 1828800,
-      height: 1828800,
+    graphicFrameLocks: {
+      noChangeAspect: true,
     },
-    childOffsetX: 0,
-    childOffsetY: 0,
-    childExtentWidth: 1828800,
-    childExtentHeight: 1828800,
-    graphicFrameLocks: { noChangeAspect: true },
+    transformation: {
+      effectExtent: {
+        bottom: 0,
+        left: 0,
+        right: 0,
+        top: 0,
+      },
+      height: 1828800,
+      inlineDistances: {
+        bottom: 0,
+        left: 0,
+        right: 0,
+        top: 0,
+      },
+      width: 1828800,
+    },
   },
 };
 
@@ -4030,7 +4285,258 @@ const mathStructuresCase = descriptorCase({
   namespaceAttributes: MATH_NAMESPACE,
   descriptor: mathEquationDescriptor,
   options: mathStructureFixture,
-  expected: mathStructureFixture,
+  expected: [
+    {
+      fraction: {
+        controlProperties: {},
+        denominator: ["d"],
+        denominatorArgumentProperties: {
+          size: 2,
+        },
+        fractionType: "skw",
+        numerator: ["n"],
+        numeratorArgumentProperties: {
+          size: 1,
+        },
+      },
+    },
+    {
+      superScript: {
+        baseArgumentProperties: {
+          size: 1,
+        },
+        children: ["x"],
+        controlProperties: {},
+        superScript: ["2"],
+        superScriptArgumentProperties: {
+          size: 2,
+        },
+      },
+    },
+    {
+      subScript: {
+        baseArgumentProperties: {
+          size: 1,
+        },
+        children: ["x"],
+        controlProperties: {},
+        subScript: ["1"],
+        subScriptArgumentProperties: {
+          size: 2,
+        },
+      },
+    },
+    {
+      subSuperScript: {
+        alignScript: true,
+        baseArgumentProperties: {
+          size: 1,
+        },
+        children: ["x"],
+        controlProperties: {},
+        subScript: ["1"],
+        subScriptArgumentProperties: {
+          size: 2,
+        },
+        superScript: ["2"],
+        superScriptArgumentProperties: {
+          size: 1,
+        },
+      },
+    },
+    {
+      preSubSuperScript: {
+        baseArgumentProperties: {
+          size: 1,
+        },
+        children: ["x"],
+        controlProperties: {},
+        subScript: ["1"],
+        subScriptArgumentProperties: {
+          size: 2,
+        },
+        superScript: ["2"],
+        superScriptArgumentProperties: {
+          size: 1,
+        },
+      },
+    },
+    {
+      radical: {
+        children: ["x"],
+        controlProperties: {},
+        degree: ["3"],
+        properties: {
+          hideDegree: false,
+        },
+      },
+    },
+    {
+      nary: {
+        character: "∏",
+        children: ["x"],
+        controlProperties: {},
+        properties: {
+          grow: true,
+          growRaw: "on",
+          hideSubscript: false,
+          hideSubscriptRaw: "off",
+          hideSuperscript: false,
+          hideSuperscriptRaw: "off",
+          limitLocation: "undOvr",
+        },
+        subScript: ["1"],
+        superScript: ["n"],
+      },
+    },
+    {
+      limitLower: {
+        children: ["x"],
+        controlProperties: {},
+        limit: ["min"],
+      },
+    },
+    {
+      limitUpper: {
+        children: ["x"],
+        controlProperties: {},
+        limit: ["max"],
+      },
+    },
+    {
+      function: {
+        children: ["x"],
+        controlProperties: {},
+        name: ["sin"],
+      },
+    },
+    {
+      squareBrackets: {
+        children: ["x"],
+        properties: {
+          beginCharacter: "[",
+          controlProperties: {},
+          endCharacter: "]",
+          grow: true,
+          separatorCharacter: "|",
+          shape: "match",
+        },
+      },
+    },
+    {
+      matrix: {
+        controlProperties: {},
+        properties: {
+          baseline: "center",
+          columnGap: 160,
+          columnGapRule: 3,
+          columns: [
+            {
+              count: 2,
+              justification: "center",
+            },
+          ],
+          columnSpacing: 140,
+          hidePlaceholder: true,
+          rowSpacing: 120,
+          rowSpacingRule: 2,
+        },
+        rows: [
+          [["a"], ["b"]],
+          [["c"], ["d"]],
+        ],
+      },
+    },
+    {
+      borderBox: {
+        children: ["x"],
+        controlProperties: {},
+        properties: {
+          hideBottom: false,
+          hideLeft: true,
+          hideRight: false,
+          hideTop: true,
+          strikeDiagonalDown: false,
+          strikeDiagonalUp: true,
+          strikeHorizontal: true,
+          strikeVertical: false,
+        },
+      },
+    },
+    {
+      box: {
+        children: ["x"],
+        controlProperties: {},
+        properties: {
+          align: true,
+          differential: true,
+          noBreak: true,
+          operatorEmulation: true,
+        },
+      },
+    },
+    {
+      groupChr: {
+        children: ["x"],
+        controlProperties: {},
+        properties: {
+          character: "⏟",
+          position: "bot",
+          vertical: "top",
+        },
+      },
+    },
+    {
+      phant: {
+        children: ["x"],
+        controlProperties: {},
+        properties: {
+          show: false,
+          transparent: false,
+          zeroAscent: true,
+          zeroDescent: true,
+          zeroWidth: true,
+        },
+      },
+    },
+    {
+      eqArr: {
+        controlProperties: {},
+        properties: {
+          baseline: "top",
+          distributeRows: true,
+          objectDistance: true,
+          rowSpacing: 100,
+          rowSpacingRule: 1,
+        },
+        rows: [["a"], ["b"]],
+      },
+    },
+    {
+      accent: {
+        accentCharacter: "^",
+        children: ["x"],
+        controlProperties: {},
+      },
+    },
+    {
+      bar: {
+        children: ["x"],
+        controlProperties: {},
+        type: "top",
+      },
+    },
+    {
+      properties: {
+        align: false,
+        breakAlignment: 120,
+        literal: true,
+        script: "fraktur",
+        style: "boldItalic",
+      },
+      text: "y",
+    },
+  ],
 });
 
 const mathParagraphFixture = {
@@ -4051,7 +4557,263 @@ const mathParagraphCase = descriptorCase({
     parse: parseMathParagraph,
   },
   options: mathParagraphFixture,
-  expected: mathParagraphFixture,
+  expected: {
+    equations: [
+      [
+        {
+          fraction: {
+            controlProperties: {},
+            denominator: ["d"],
+            denominatorArgumentProperties: {
+              size: 2,
+            },
+            fractionType: "skw",
+            numerator: ["n"],
+            numeratorArgumentProperties: {
+              size: 1,
+            },
+          },
+        },
+        {
+          superScript: {
+            baseArgumentProperties: {
+              size: 1,
+            },
+            children: ["x"],
+            controlProperties: {},
+            superScript: ["2"],
+            superScriptArgumentProperties: {
+              size: 2,
+            },
+          },
+        },
+        {
+          subScript: {
+            baseArgumentProperties: {
+              size: 1,
+            },
+            children: ["x"],
+            controlProperties: {},
+            subScript: ["1"],
+            subScriptArgumentProperties: {
+              size: 2,
+            },
+          },
+        },
+        {
+          subSuperScript: {
+            alignScript: true,
+            baseArgumentProperties: {
+              size: 1,
+            },
+            children: ["x"],
+            controlProperties: {},
+            subScript: ["1"],
+            subScriptArgumentProperties: {
+              size: 2,
+            },
+            superScript: ["2"],
+            superScriptArgumentProperties: {
+              size: 1,
+            },
+          },
+        },
+        {
+          preSubSuperScript: {
+            baseArgumentProperties: {
+              size: 1,
+            },
+            children: ["x"],
+            controlProperties: {},
+            subScript: ["1"],
+            subScriptArgumentProperties: {
+              size: 2,
+            },
+            superScript: ["2"],
+            superScriptArgumentProperties: {
+              size: 1,
+            },
+          },
+        },
+        {
+          radical: {
+            children: ["x"],
+            controlProperties: {},
+            degree: ["3"],
+            properties: {
+              hideDegree: false,
+            },
+          },
+        },
+        {
+          nary: {
+            character: "∏",
+            children: ["x"],
+            controlProperties: {},
+            properties: {
+              grow: true,
+              growRaw: "on",
+              hideSubscript: false,
+              hideSubscriptRaw: "off",
+              hideSuperscript: false,
+              hideSuperscriptRaw: "off",
+              limitLocation: "undOvr",
+            },
+            subScript: ["1"],
+            superScript: ["n"],
+          },
+        },
+        {
+          limitLower: {
+            children: ["x"],
+            controlProperties: {},
+            limit: ["min"],
+          },
+        },
+        {
+          limitUpper: {
+            children: ["x"],
+            controlProperties: {},
+            limit: ["max"],
+          },
+        },
+        {
+          function: {
+            children: ["x"],
+            controlProperties: {},
+            name: ["sin"],
+          },
+        },
+        {
+          squareBrackets: {
+            children: ["x"],
+            properties: {
+              beginCharacter: "[",
+              controlProperties: {},
+              endCharacter: "]",
+              grow: true,
+              separatorCharacter: "|",
+              shape: "match",
+            },
+          },
+        },
+        {
+          matrix: {
+            controlProperties: {},
+            properties: {
+              baseline: "center",
+              columnGap: 160,
+              columnGapRule: 3,
+              columns: [
+                {
+                  count: 2,
+                  justification: "center",
+                },
+              ],
+              columnSpacing: 140,
+              hidePlaceholder: true,
+              rowSpacing: 120,
+              rowSpacingRule: 2,
+            },
+            rows: [
+              [["a"], ["b"]],
+              [["c"], ["d"]],
+            ],
+          },
+        },
+        {
+          borderBox: {
+            children: ["x"],
+            controlProperties: {},
+            properties: {
+              hideBottom: false,
+              hideLeft: true,
+              hideRight: false,
+              hideTop: true,
+              strikeDiagonalDown: false,
+              strikeDiagonalUp: true,
+              strikeHorizontal: true,
+              strikeVertical: false,
+            },
+          },
+        },
+        {
+          box: {
+            children: ["x"],
+            controlProperties: {},
+            properties: {
+              align: true,
+              differential: true,
+              noBreak: true,
+              operatorEmulation: true,
+            },
+          },
+        },
+        {
+          groupChr: {
+            children: ["x"],
+            controlProperties: {},
+            properties: {
+              character: "⏟",
+              position: "bot",
+              vertical: "top",
+            },
+          },
+        },
+        {
+          phant: {
+            children: ["x"],
+            controlProperties: {},
+            properties: {
+              show: false,
+              transparent: false,
+              zeroAscent: true,
+              zeroDescent: true,
+              zeroWidth: true,
+            },
+          },
+        },
+        {
+          eqArr: {
+            controlProperties: {},
+            properties: {
+              baseline: "top",
+              distributeRows: true,
+              objectDistance: true,
+              rowSpacing: 100,
+              rowSpacingRule: 1,
+            },
+            rows: [["a"], ["b"]],
+          },
+        },
+        {
+          accent: {
+            accentCharacter: "^",
+            children: ["x"],
+            controlProperties: {},
+          },
+        },
+        {
+          bar: {
+            children: ["x"],
+            controlProperties: {},
+            type: "top",
+          },
+        },
+        {
+          properties: {
+            align: false,
+            breakAlignment: 120,
+            literal: true,
+            script: "fraktur",
+            style: "boldItalic",
+          },
+          text: "y",
+        },
+      ],
+    ],
+    justification: "centerGroup",
+  },
 });
 
 const mathSettingsOptions = {

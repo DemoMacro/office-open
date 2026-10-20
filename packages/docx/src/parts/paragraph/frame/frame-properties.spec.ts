@@ -20,6 +20,10 @@ function roundTripFrame(frame: Record<string, unknown>): Record<string, unknown>
 }
 
 describe("framePr parse round-trip", () => {
+  it("preserves an empty framePr container", () => {
+    expect(roundTripFrame({})).toEqual({});
+  });
+
   it("round-trips alignment.x/y (xAlign/yAlign)", () => {
     const result = roundTripFrame({
       type: "alignment",

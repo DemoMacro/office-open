@@ -3,9 +3,10 @@
  *
  * @module
  */
-import { DOCX_NS, createTraverser, strFromU8, toJson, unzipSync } from "@office-open/core";
+import { createTraverser, DOCX_NS, toJson } from "@office-open/core";
 import { toUint8Array } from "@office-open/core";
 import type { DataType } from "@office-open/core";
+import { strFromU8, unzipSync } from "@office-open/core/opc";
 
 /**
  * Options for patch detection.

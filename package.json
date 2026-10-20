@@ -36,6 +36,7 @@
     "postinstall": "pnpm build && vp config && basis git setup",
     "corpus:setup": "tsx scripts/corpus/check.ts --setup",
     "corpus:check": "tsx scripts/corpus/check.ts",
+    "corpus:triage": "tsx scripts/corpus/triage.ts --limit 40 --json .temp/corpus-triage.json",
     "corpus:legacy": "tsx scripts/corpus/legacy.ts",
     "coverage:xsd": "tsx scripts/coverage/xsd.ts --summary",
     "coverage:xsd-runtime": "tsx scripts/coverage/xsd-runtime.ts",

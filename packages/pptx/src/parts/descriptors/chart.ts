@@ -8,16 +8,16 @@
  * @module
  */
 
-import { partPathToRelsPath, resolveRelationshipTarget } from "@office-open/core";
 import { convertToEmu } from "@office-open/core";
 import { buildUserShapesData, chartSpaceDesc, userShapesDesc } from "@office-open/core/chart";
 import type { ChartSpaceOptions } from "@office-open/core/chart";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { stringify } from "@office-open/core/descriptor";
+import { partPathToRelsPath, resolveRelationshipTarget } from "@office-open/core/opc";
 import { themeOverrideDesc } from "@office-open/core/theme";
 import { attr, findChild, findFirst } from "@office-open/xml";
 
-import type { PptxWriteContext } from "../../context";
+import { PptxReadContext, type PptxWriteContext } from "../../context";
 import type { ChartOptions } from "../chart-frame";
 import {
   readGraphicFrameLocking,
@@ -34,6 +34,47 @@ import { nextSlideDrawingId } from "./slide-drawing-ids";
 
 let _nextChartId = 2048;
 
+/**
+ * Separates the graphic-frame identity from the chart payload. Fields such as
+ * cNvPr `ext` collide with ChartSpaceOptions `ext`, which owns a different
+ * `c:extLst`; forwarding the combined object incorrectly moves frame
+ * extensions into the chart part.
+ */
+export function toChartSpaceOptions(options: ChartOptions): ChartSpaceOptions {
+  const {
+    title,
+    name: _name,
+    description: _description,
+    hidden: _hidden,
+    creationId: _creationId,
+    creationIdExtension: _creationIdExtension,
+    ext: _extension,
+    hyperlink: _hyperlink,
+    placeholder: _placeholder,
+    placeholderIndex: _placeholderIndex,
+    placeholderSize: _placeholderSize,
+    placeholderOrientation: _placeholderOrientation,
+    hasCustomPrompt: _hasCustomPrompt,
+    isPhoto: _isPhoto,
+    userDrawn: _userDrawn,
+    modId: _modId,
+    customerData: _customerData,
+    id: _id,
+    locking: _locking,
+    x: _x,
+    y: _y,
+    width: _width,
+    height: _height,
+    chartKey: _chartKey,
+    sourcePath: _sourcePath,
+    sourceRelationships: _sourceRelationships,
+    userShapesSourceTarget: _userShapesSourceTarget,
+    themeOverride: _themeOverride,
+    ...chartSpace
+  } = options;
+  return { ...chartSpace, title };
+}
+
 // ── Chart descriptor ──
 
 export const chartDesc: CustomDescriptor<ChartOptions> = {
@@ -47,14 +88,24 @@ export const chartDesc: CustomDescriptor<ChartOptions> = {
     const chartKey = opts.chartKey ?? pptxCtx.nextChartKey();
 
     // Register chart data with context
-    const chartXml = stringify(chartSpaceDesc, opts as ChartSpaceOptions, ctx);
+    const chartXml = stringify(chartSpaceDesc, toChartSpaceOptions(opts), ctx);
     if (chartXml) {
       pptxCtx.addChart(chartKey, {
         key: chartKey,
         chartSpaceXml: chartXml,
         ...(opts.sourcePath ? { sourcePath: opts.sourcePath } : {}),
         ...(opts.sourceRelationships ? { sourceRelationships: opts.sourceRelationships } : {}),
-        ...(opts.userShapes ? { userShapes: buildUserShapesData(opts.userShapes) } : {}),
+        ...(opts.userShapes
+          ? {
+              userShapes: {
+                ...buildUserShapesData(opts.userShapes),
+                ...(opts.userShapes.path ? { path: opts.userShapes.path } : {}),
+                ...(opts.userShapesSourceTarget
+                  ? { sourceTarget: opts.userShapesSourceTarget }
+                  : {}),
+              },
+            }
+          : {}),
         ...(opts.themeOverride ? { themeOverride: opts.themeOverride } : {}),
       });
     }
@@ -116,10 +167,22 @@ export const chartDesc: CustomDescriptor<ChartOptions> = {
         if (chartPath) {
           const chartXml = _ctx.getPart(chartPath);
           if (chartXml) {
-            Object.assign(result, chartSpaceDesc.parse(chartXml, _ctx));
+            const chartRelsEl = _ctx.getPart(partPathToRelsPath(chartPath));
+            const chartRelsMap = new Map(
+              (chartRelsEl?.elements ?? [])
+                .filter((element) => element.name === "Relationship")
+                .flatMap((element) => {
+                  const relationshipId = attr(element, "Id");
+                  const target = attr(element, "Target");
+                  if (!relationshipId || !target) return [];
+                  return [[relationshipId, resolveRelationshipTarget(chartPath, target)]];
+                }),
+            );
+            const chartContext =
+              _ctx instanceof PptxReadContext ? _ctx.withRelationships(chartRelsMap) : _ctx;
+            Object.assign(result, chartSpaceDesc.parse(chartXml, chartContext));
             // c:userShapes body hangs off the chart part's own rels — the
             // core descriptor reads the r:id only, fill the anchors here
-            const chartRelsEl = _ctx.getPart(partPathToRelsPath(chartPath));
             const relationships =
               chartRelsEl?.elements?.filter((element) => element.name === "Relationship") ?? [];
             const us = result.userShapes;
@@ -134,11 +197,21 @@ export const chartDesc: CustomDescriptor<ChartOptions> = {
             const userShapesPath = target
               ? resolveRelationshipTarget(chartPath, target)
               : undefined;
-            if (us && us.anchors.length === 0) {
+            if (us) {
               const bodyEl = userShapesPath ? _ctx.getPart(userShapesPath) : undefined;
-              if (bodyEl) us.anchors = userShapesDesc.parse(bodyEl, _ctx).anchors;
+              if (bodyEl) {
+                const parsed = userShapesDesc.parse(bodyEl, chartContext);
+                us.rootElement = parsed.rootElement;
+                us.anchors = parsed.anchors;
+              } else if (_ctx.getRaw(userShapesPath ?? "")?.length === 0) us.empty = true;
             }
-            if (us && userShapesPath) us.path = userShapesPath;
+            if (userShapesPath) {
+              const updatedUserShapes = result.userShapes;
+              if (updatedUserShapes) updatedUserShapes.path = userShapesPath;
+            } else {
+              delete result.userShapes;
+            }
+            if (target) result.userShapesSourceTarget = target;
             const themeOverrideRel = relationships?.find((element) =>
               (attr(element, "Type") ?? "").endsWith("/themeOverride"),
             );
@@ -151,7 +224,7 @@ export const chartDesc: CustomDescriptor<ChartOptions> = {
             const themeOverrideEl = themeOverridePath ? _ctx.getPart(themeOverridePath) : undefined;
             if (themeOverrideRel && themeOverridePath && themeOverrideEl) {
               result.themeOverride = {
-                options: themeOverrideDesc.parse(themeOverrideEl, _ctx),
+                options: themeOverrideDesc.parse(themeOverrideEl, chartContext),
                 path: themeOverridePath,
               };
             }

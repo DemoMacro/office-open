@@ -1,4 +1,5 @@
-import { unzipSync } from "../../../packages/core/dist/index.mjs";
+import { unzipSync } from "@office-open/core/opc";
+
 import { generateDocument, parseDocument } from "../../../packages/docx/dist/index.mjs";
 import { generatePresentation, parsePresentation } from "../../../packages/pptx/dist/index.mjs";
 import { generateWorkbook, parseWorkbook } from "../../../packages/xlsx/dist/index.mjs";

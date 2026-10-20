@@ -1,5 +1,5 @@
-import { unzipSync, zipSync } from "@office-open/core";
 import type { ReadContext } from "@office-open/core/descriptor";
+import { unzipSync, zipSync } from "@office-open/core/opc";
 import { parse as parseXml } from "@office-open/xml";
 import { describe, expect, it } from "vite-plus/test";
 
@@ -305,6 +305,8 @@ describe("glossary companion parts", () => {
   const numberingType = `${GLOSSARY_COMPANION_REL_TYPE}/numbering`;
   const settingsType = `${GLOSSARY_COMPANION_REL_TYPE}/settings`;
   const stylesType = `${GLOSSARY_COMPANION_REL_TYPE}/styles`;
+  const stylesWithEffectsType =
+    "http://schemas.microsoft.com/office/2007/relationships/stylesWithEffects";
   const webSettingsType = `${GLOSSARY_COMPANION_REL_TYPE}/webSettings`;
   const fontTableType = `${GLOSSARY_COMPANION_REL_TYPE}/fontTable`;
   const fontType = `${GLOSSARY_COMPANION_REL_TYPE}/font`;
@@ -339,6 +341,7 @@ describe("glossary companion parts", () => {
             `<Relationship Id="rId1" Type="${numberingType}" Target="numbering.xml"/>` +
             `<Relationship Id="rId2" Type="${settingsType}" Target="settings.xml"/>` +
             `<Relationship Id="rId3" Type="${stylesType}" Target="styles.xml"/>` +
+            `<Relationship Id="rId6" Type="${stylesWithEffectsType}" Target="stylesWithEffects.xml"/>` +
             `<Relationship Id="rId4" Type="${webSettingsType}" Target="webSettings.xml"/>` +
             `<Relationship Id="rId5" Type="${fontTableType}" Target="fontTable.xml"/>`,
         ),
@@ -366,6 +369,10 @@ describe("glossary companion parts", () => {
         '<?xml version="1.0"?>' +
           '<w:webSettings xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"/>',
       ),
+      "word/glossary/stylesWithEffects.xml": enc.encode(
+        '<?xml version="1.0"?>' +
+          '<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"/>',
+      ),
       "word/glossary/fontTable.xml": enc.encode(
         '<?xml version="1.0"?>' +
           '<w:fonts xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" ' +
@@ -385,6 +392,7 @@ describe("glossary companion parts", () => {
           '<Default Extension="odttf" ContentType="application/vnd.openxmlformats-officedocument.obfuscatedFont"/>' +
           '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>' +
           '<Override PartName="/word/glossary/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.glossary+xml"/>' +
+          '<Override PartName="/word/glossary/stylesWithEffects.xml" ContentType="application/vnd.ms-word.stylesWithEffects+xml"/>' +
           "</Types>",
       ),
     });
@@ -398,6 +406,12 @@ describe("glossary companion parts", () => {
     expect(glossary?.stylesPartName).toBe("glossary/styles.xml");
     expect(glossary?.webSettingsPartName).toBe("glossary/webSettings.xml");
     expect(glossary?.fontTablePartName).toBe("glossary/fontTable.xml");
+    expect(options.passthroughRelationships).toContainEqual({
+      source: "word/glossary/document.xml",
+      relationshipType: stylesWithEffectsType,
+      target: "stylesWithEffects.xml",
+      rId: "rId6",
+    });
     expect(glossary?.settings?.defaultTabStop).toBe(720);
     expect(glossary?.styles?.paragraphStyles?.[0]?.id).toBe("GH");
     expect(glossary?.webSettings).toEqual({});
@@ -410,12 +424,16 @@ describe("glossary companion parts", () => {
     expect(output["word/glossary/settings.xml"]).toBeDefined();
     expect(output["word/glossary/styles.xml"]).toBeDefined();
     expect(output["word/glossary/webSettings.xml"]).toBeDefined();
+    expect(output["word/glossary/stylesWithEffects.xml"]).toBeDefined();
     expect(output["word/glossary/fontTable.xml"]).toBeDefined();
     expect(output["word/glossary/numbering.xml"]).toBeDefined();
     expect(output["word/glossary/fonts/emb.odttf"]).toEqual(odttfBytes);
 
     const glossaryRels = decode(output["word/glossary/_rels/document.xml.rels"]!);
     expect(glossaryRels).toContain('Id="rId9"');
+    expect(glossaryRels).toContain(
+      `Id="rId6" Type="${stylesWithEffectsType}" Target="stylesWithEffects.xml"`,
+    );
     expect(glossaryRels).toContain(`Type="${hyperlinkType}"`);
     expect(glossaryRels).toContain('Target="https://example.test/" TargetMode="External"');
     for (const [type, target] of [
@@ -437,6 +455,9 @@ describe("glossary companion parts", () => {
     );
     expect(contentTypes).toContain(
       '<Override PartName="/word/glossary/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>',
+    );
+    expect(contentTypes).toContain(
+      '<Override PartName="/word/glossary/stylesWithEffects.xml" ContentType="application/vnd.ms-word.stylesWithEffects+xml"/>',
     );
     expect(contentTypes).toContain(
       '<Override PartName="/word/glossary/webSettings.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.webSettings+xml"/>',

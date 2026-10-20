@@ -5,8 +5,8 @@ import {
   parseRc4CryptoApiHeader,
   verifyLegacyRc4Password,
   verifyRc4CryptoApiPassword,
-} from "@office-open/core";
-import type { CompoundFileReader } from "@office-open/core";
+} from "@office-open/core/cfb";
+import type { CompoundFileReader } from "@office-open/core/cfb";
 
 import { readUint16 } from "../binary";
 import { DocParseError } from "../errors";

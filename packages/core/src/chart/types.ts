@@ -7,16 +7,28 @@
  * @module
  */
 
+import type { BlackWhiteMode } from "../drawing/black-white-mode";
 import type { ShapePropertiesOptions } from "../drawing/shape-properties-desc";
 import type { TextBodyOptions } from "../drawing/text/text-body";
 import type { ColorMappingOptions } from "../theme/theme-options";
 import type { DataType } from "../util/data-type";
+import type { OdfChartStyleOptions, OdfChartStyleResources } from "./odf-style";
 import type {
   AbsoluteSizeAnchorOptions,
   RelativeSizeAnchorOptions,
 } from "./user-shapes/user-shapes";
 
 // ── Series common (CT_Ser shared children) ──
+
+/** Chart-owned shape properties, including the container's `@bwMode`. */
+export interface ChartShapePropertiesOptions extends ShapePropertiesOptions {
+  /** Black-and-white rendering mode (`c:spPr/@bwMode`). */
+  blackWhiteMode?: BlackWhiteMode;
+  /** Source ODF style name (`@chart:style-name`); ODF output only. */
+  odfStyleName?: string;
+  /** Source ODF fill/outline fields retained beside their canonical projection. */
+  odfStyle?: OdfChartStyleOptions;
+}
 
 /** Fields shared by every chart series type (name + optional decorations). */
 export interface ChartSeriesCommon {
@@ -26,13 +38,26 @@ export interface ChartSeriesCommon {
    * number by array position.
    */
   index?: number;
+  /** Source `c:idx` presence; `false` preserves an omitted legacy element. */
+  indexDeclared?: boolean;
   /**
    * Display order across the chart's series (c:order). Omit to number by
    * array position.
    */
   order?: number;
-  /** Series name; absent when the source series carried no c:tx. */
-  name?: string;
+  /** Source `c:order` presence; `false` preserves an omitted legacy element. */
+  orderDeclared?: boolean;
+  /**
+   * Series name. A dense cache value stays a string; a sparse or empty
+   * `c:strCache` point uses the typed point form to preserve its slot.
+   */
+  name?: string | CategoryPointOptions;
+  /** Source `c:strCache` presence for the series name (round-trip). */
+  nameCache?: boolean;
+  /** Series name cache point count (`c:strCache > c:ptCount`); false keeps it absent. */
+  namePointCount?: number | false;
+  /** All series-name cache points; preserves sparse `c:strCache` slots. */
+  namePoints?: readonly CategoryPointOptions[];
   /** Series name reference formula (c:tx > c:strRef > c:f) — round-trip. */
   nameFormula?: string;
   /**
@@ -40,6 +65,14 @@ export interface ChartSeriesCommon {
    * dominant Excel form; parse sets this when the source carried a bare c:v.
    */
   nameLiteral?: boolean;
+  /** Source category cache presence; `false` emits a reference without a cache. */
+  categoryCache?: boolean;
+  /** Category cache point count; `false` keeps `c:ptCount` absent. */
+  categoryPointCount?: number | false;
+  /** Per-series category source; overrides the chart-level source. */
+  categorySource?: ChartCategorySourceOptions;
+  /** Source series omitted `c:cat`; `true` keeps it omitted on generate. */
+  categoryAbsent?: boolean;
   /** Values reference formula (c:val > c:numRef > c:f) — round-trip. */
   valueFormula?: string;
   /**
@@ -54,12 +87,12 @@ export interface ChartSeriesCommon {
   /** Source `c:numCache` presence (round-trip); `false` emits the numRef without a cache. */
   valueCache?: boolean;
   trendlines?: readonly TrendlineOptions[];
-  errorBars?: ErrorBarOptions;
+  errorBars?: readonly ErrorBarOptions[];
   dataLabels?: DataLabelsOptions;
   /** Per-point overrides (c:dPt), emitted after spPr in ser order. */
   dataPoints?: readonly DataPointOptions[];
   /** Line/scatter/radar marker (c:marker). */
-  marker?: MarkerOptions;
+  marker?: MarkerOptions | true;
   /** Invert fill for negative values (c:invertIfNegative, bar/bubble). */
   invertIfNegative?: boolean;
   /** Smooth the line (c:smooth, line/scatter). */
@@ -69,7 +102,7 @@ export interface ChartSeriesCommon {
   /** Picture-fill options (c:pictureOptions, bar/area). */
   pictureOptions?: ChartPictureOptions;
   /** Series shape properties (c:ser > c:spPr: fill/outline/effects) — round-trip. */
-  shapeProperties?: ShapePropertiesOptions;
+  shapeProperties?: ChartShapePropertiesOptions;
   /** 3D bar column shape (c:shape, bar3D). */
   shape?: BarShape;
   /** 3D bubble (c:bubble3D on the bubble series). */
@@ -103,6 +136,22 @@ export interface ScatterSeriesData extends ChartSeriesCommon {
   xValues: readonly ChartValue[];
   /** X values reference formula (c:xVal > c:numRef > c:f) — round-trip. */
   xFormula?: string;
+  /** Source X values use the `c:numLit` form rather than a reference. */
+  xLiteral?: boolean;
+  /** Source X cache presence; `false` emits a reference without a cache. */
+  xCache?: boolean;
+  /** X cache format code; an empty string keeps the child absent. */
+  xFormatCode?: string;
+  /** X cache point count; `false` keeps `c:ptCount` absent. */
+  xPointCount?: number | false;
+  /** Source Y values use the `c:numLit` form rather than a reference. */
+  yLiteral?: boolean;
+  /** Source Y cache presence; `false` emits a reference without a cache. */
+  yCache?: boolean;
+  /** Y cache format code; an empty string keeps the child absent. */
+  yFormatCode?: string;
+  /** Y cache point count; `false` keeps `c:ptCount` absent. */
+  yPointCount?: number | false;
   yValues: readonly ChartValue[];
 }
 
@@ -112,6 +161,12 @@ export interface BubbleSeriesData extends ScatterSeriesData {
   bubbleSize: readonly ChartValue[];
   /** Bubble-size reference formula (c:bubbleSize > c:numRef > c:f) — round-trip. */
   bubbleSizeFormula?: string;
+  /** Bubble sizes are inline literals (c:bubbleSize > c:numLit) — round-trip. */
+  bubbleSizeLiteral?: boolean;
+  /** Bubble-size number format (c:numLit > c:formatCode) — round-trip. */
+  bubbleSizeFormatCode?: string;
+  /** Bubble-size literal point count (c:numLit > c:ptCount); false keeps it absent. */
+  bubbleSizePointCount?: number | false;
 }
 
 // ── Trendline ──
@@ -128,7 +183,13 @@ export type TrendlineType =
 /** Trendline label formatting (CT_TrendlineLbl — all children optional). */
 export interface TrendlineLabelOptions {
   /** Number format applied to the trendline label (c:numFmt formatCode). */
-  numberFormat?: string;
+  numberFormat?: string | ChartNumberFormatOptions;
+  /** Label placement (c:layout); true preserves the bare element. */
+  layout?: boolean | ManualLayoutOptions;
+  /** Label fill/outline (c:spPr). */
+  shapeProperties?: ChartShapePropertiesOptions;
+  /** Label text formatting (c:txPr). */
+  textProperties?: TextBodyOptions;
 }
 
 export interface TrendlineOptions {
@@ -141,6 +202,8 @@ export interface TrendlineOptions {
   intercept?: number;
   dispRSqr?: boolean;
   dispEq?: boolean;
+  /** Trendline outline/fill/effects (c:spPr). */
+  shapeProperties?: ChartShapePropertiesOptions;
   /** Per-trendline label formatting (emitted as c:trendlineLbl). */
   label?: TrendlineLabelOptions;
 }
@@ -169,8 +232,41 @@ export interface ErrorBarOptions {
   noEndCap?: boolean;
   /** Custom plus error value (emitted as c:plus > c:numLit). */
   plusValue?: number;
+  /** Custom plus error cache values (c:plus > c:numRef or c:numLit). */
+  plus?: readonly ChartValue[];
+  /** Plus error source formula (c:plus > c:numRef > c:f). */
+  plusFormula?: string;
+  /** Plus error source uses the `c:numLit` form. */
+  plusLiteral?: boolean;
+  /** Plus error cache format code; an empty string keeps the child absent. */
+  plusFormatCode?: string;
+  /** Plus error cache point count; `false` keeps `c:ptCount` absent. */
+  plusPointCount?: number | false;
+  /** Plus error cache presence; `false` emits a reference without a cache. */
+  plusCache?: boolean;
   /** Custom minus error value (emitted as c:minus > c:numLit). */
   minusValue?: number;
+  /** Custom minus error cache values (c:minus > c:numRef or c:numLit). */
+  minus?: readonly ChartValue[];
+  /** Minus error source formula (c:minus > c:numRef > c:f). */
+  minusFormula?: string;
+  /** Minus error source uses the `c:numLit` form. */
+  minusLiteral?: boolean;
+  /** Minus error cache format code; an empty string keeps the child absent. */
+  minusFormatCode?: string;
+  /** Minus error cache point count; `false` keeps `c:ptCount` absent. */
+  minusPointCount?: number | false;
+  /** Minus error cache presence; `false` emits a reference without a cache. */
+  minusCache?: boolean;
+  /** Error-bar line/fill/effects (c:spPr). */
+  shapeProperties?: ChartShapePropertiesOptions;
+}
+
+/** Explicit chart number format with a decoupled sourceLinked flag. */
+export interface ChartNumberFormatOptions {
+  formatCode: string;
+  /** 1 (default) links the format to source data; 0 decouples it. */
+  sourceLinked?: boolean;
 }
 
 // ── Data labels ──
@@ -205,9 +301,9 @@ export interface DataLabelOptions {
   layout?: ManualLayoutOptions | true;
   position?: DataLabelPosition;
   /** Number format override (c:numFmt inside EG_DLblShared). */
-  numberFormat?: string;
+  numberFormat?: string | ChartNumberFormatOptions;
   /** Label fill/outline (c:dLbl > c:spPr) — round-trip. */
-  shapeProperties?: ShapePropertiesOptions;
+  shapeProperties?: ChartShapePropertiesOptions;
   /** Label text formatting (c:dLbl > c:txPr) — round-trip. */
   textProperties?: TextBodyOptions;
   showLegendKey?: boolean;
@@ -228,10 +324,12 @@ export interface DataLabelsOptions {
    * emits its element only when no setting is set (round-trip).
    */
   delete?: boolean;
+  /** Shared label placement (c:layout); true preserves the bare element. */
+  layout?: boolean | ManualLayoutOptions;
   /** Label number format (c:numFmt formatCode, before the position). */
-  numberFormat?: string;
+  numberFormat?: string | ChartNumberFormatOptions;
   /** Shared label fill/outline (c:dLbls > c:spPr) — round-trip. */
-  shapeProperties?: ShapePropertiesOptions;
+  shapeProperties?: ChartShapePropertiesOptions;
   /** Shared label text formatting (c:dLbls > c:txPr) — round-trip. */
   textProperties?: TextBodyOptions;
   position?: DataLabelPosition;
@@ -246,7 +344,7 @@ export interface DataLabelsOptions {
   /** Per-point label overrides (c:dLbl, emitted before the shared settings). */
   labels?: readonly DataLabelOptions[];
   /** Emit a c:leaderLines element for default-styled leader lines. */
-  leaderLines?: boolean;
+  leaderLines?: boolean | ChartLinesOptions;
   /** Raw inner XML of the group's trailing c:extLst — c15 label extensions. */
   ext?: string;
 }
@@ -290,12 +388,26 @@ export interface ChartTitleOptions {
    * carries the full c:rich body (paragraph alignment, run properties).
    */
   text?: string | TextBodyOptions;
+  /**
+   * Source `c:rich > a:lstStyle` presence for the plain-string text form;
+   * `false` preserves a source that omitted it. Omitted authoring input
+   * keeps the library's current default rich-title shape.
+   */
+  richListStyle?: boolean;
+  /** Title reference formula (`c:tx > c:strRef > c:f`). */
+  referenceFormula?: string;
+  /** Reference cache text; sparse points preserve non-zero `c:pt` slots. */
+  reference?: string | CategoryPointOptions;
+  /** Source `c:strCache` presence; `false` emits the reference without cache. */
+  referenceCache?: boolean;
+  /** Reference cache point count (`c:strCache > c:ptCount`). */
+  referencePointCount?: number | false;
   /** Title layout (c:layout) — `true` emits the bare `<c:layout/>` Office
    *  writes; an object is the manual layout. */
   layout?: boolean | ManualLayoutOptions;
   /** Title overlaps the plot (c:overlay). */
   overlay?: boolean;
-  shapeProperties?: ShapePropertiesOptions;
+  shapeProperties?: ChartShapePropertiesOptions;
   textProperties?: TextBodyOptions;
 }
 
@@ -313,7 +425,17 @@ export interface ChartStyle2010Options {
 /** Chart lines with formatting (CT_ChartLines: spPr only). */
 export interface ChartLinesOptions {
   /** Line fill/outline (spPr). */
-  shapeProperties?: ShapePropertiesOptions;
+  shapeProperties?: ChartShapePropertiesOptions;
+}
+
+/** Up/down bar pair with independent formatting (CT_UpDownBars). */
+export interface UpDownBarsOptions {
+  /** Gap width as percent (c:gapWidth). */
+  gapWidth?: number;
+  /** Bar shown above category maxima (c:upBars). */
+  upBars?: boolean | ChartLinesOptions;
+  /** Bar shown below category minima (c:downBars). */
+  downBars?: boolean | ChartLinesOptions;
 }
 
 /** Series grouping mode (c:grouping val) — bar/column/line/area groups. */
@@ -340,6 +462,8 @@ export interface SecondaryChartGroupOptions {
   series: readonly ChartSeriesData[];
   /** Series grouping (c:grouping); defaults per type like the main group. */
   grouping?: ChartGrouping;
+  /** Source `c:grouping` presence; `false` preserves an omitted legacy group. */
+  groupingDeclared?: boolean;
   /** Scatter plot style (c:scatterStyle, scatter group); defaults to `line`. */
   scatterStyle?: ScatterStyle;
   /** Vary data-point colors (group-level c:varyColors). */
@@ -354,6 +478,10 @@ export interface SecondaryChartGroupOptions {
   gapWidth?: number;
   /** Bar/column overlap as percent (c:overlap, 2D bar group). */
   overlap?: number;
+  /** Pie/doughnut first slice angle in degrees (c:firstSliceAng). */
+  firstSliceAngle?: number;
+  /** Pie/doughnut doughnut hole size as percent (c:holeSize). */
+  holeSize?: number;
   /** 3D gap depth as percent (c:gapDepth). */
   gapDepth?: number;
   /** Series connector lines (c:serLines, bar/ofPie groups). */
@@ -362,8 +490,8 @@ export interface SecondaryChartGroupOptions {
   dropLines?: boolean | ChartLinesOptions;
   /** High-low lines (c:hiLowLines, line/stock). */
   highLowLines?: boolean | ChartLinesOptions;
-  /** Up/down bars container (c:upDownBars, line). */
-  upDownBars?: boolean;
+  /** Up/down bars container (c:upDownBars, line/stock). */
+  upDownBars?: boolean | UpDownBarsOptions;
   /** Gap width inside the up/down bars container (c:upDownBars > c:gapWidth). */
   upDownBarsGapWidth?: number;
   /** axId pair referencing entries of the shared axes list. */
@@ -393,6 +521,20 @@ export interface CategoryPointOptions {
   text: string;
 }
 
+/** Category source carried by an individual series (c:cat / scatter c:xVal). */
+export interface ChartCategorySourceOptions {
+  categories?: readonly (string | CategoryPointOptions)[];
+  categoryFormula?: string;
+  categoryFormatCode?: string;
+  /** Source string cache presence; `false` emits a reference without a cache. */
+  categoryCache?: boolean;
+  /** Category cache point count; `false` keeps `c:ptCount` absent. */
+  categoryPointCount?: number | false;
+  numericCategories?: boolean;
+  categoryLabels?: readonly string[];
+  multiLevelCategories?: readonly (readonly (MultiLevelCategoryPoint | null)[])[];
+}
+
 export interface ChartSpaceOptions {
   /**
    * Namespace dialect of the chart part — a strict (ISO/IEC 29500 Strict)
@@ -400,11 +542,17 @@ export interface ChartSpaceOptions {
    * stringify re-declares the matching namespace set.
    */
   dialect?: "transitional" | "strict";
+  /** Named style resources from an ODF chart subdocument; ODF output only. */
+  odfStyleResources?: OdfChartStyleResources;
   /**
    * Chart title (c:title). An empty string round-trips a title placeholder
    * that carries no text (bare `<c:title/>`, the legacy-Word auto-title form).
    */
   title?: string | ChartTitleOptions;
+  /** ODF chart subtitle (`chart:subtitle`); OOXML charts have no equivalent. */
+  subtitle?: string | ChartTitleOptions;
+  /** ODF chart footer (`chart:footer`); OOXML charts have no equivalent. */
+  footer?: string | ChartTitleOptions;
   /** 1904 date system (c:date1904) — emitted only when the source had it. */
   date1904?: boolean;
   /** Chart UI language (c:lang, e.g. "en-US") — emitted only when set. */
@@ -420,7 +568,7 @@ export interface ChartSpaceOptions {
   /** Auto-generated title suppressed (c:autoTitleDeleted) — emitted only when set. */
   autoTitleDeleted?: boolean;
   /** Chart-area shape properties (c:spPr after c:chart) — round-trip. */
-  shapeProperties?: ShapePropertiesOptions;
+  shapeProperties?: ChartShapePropertiesOptions;
   /** Chart-space default text (c:txPr, a CT_TextBody) — round-trip. */
   textProperties?: TextBodyOptions;
   type: ChartType;
@@ -439,6 +587,8 @@ export interface ChartSpaceOptions {
   multiLevelCategories?: readonly (readonly (MultiLevelCategoryPoint | null)[])[];
   /** Literal category labels, emitted as c:strLit (c:cat > c:strLit). */
   categoryLabels?: readonly string[];
+  /** Source chart omitted `c:cat`; `true` keeps it omitted on generate. */
+  categoryAbsent?: boolean;
   // Bubble stays an explicit union arm: TS would accept a BubbleSeriesData[]
   // as ScatterSeriesData[] (structural subtype), but the generated schema's
   // closed-world properties reject the extra bubbleSize field.
@@ -453,6 +603,8 @@ export interface ChartSpaceOptions {
    * header always wrote (clustered for bar/column, standard for line/area).
    */
   grouping?: ChartGrouping;
+  /** Source `c:grouping` presence; `false` preserves an omitted legacy group. */
+  groupingDeclared?: boolean;
   /** Scatter plot style (c:scatterStyle, scatter group); defaults to `line`. */
   scatterStyle?: ScatterStyle;
   /**
@@ -492,10 +644,16 @@ export interface ChartSpaceOptions {
    * series and group-level flags.
    */
   secondaryGroups?: readonly SecondaryChartGroupOptions[];
+  /** ODF chart:coordinate-region (or chartooo equivalent) geometry. */
+  coordinateRegion?: ChartCoordinateRegionOptions;
   /** Manual plot-area layout (c:plotArea > c:layout > c:manualLayout). */
-  plotAreaLayout?: ManualLayoutOptions;
+  /**
+   * Plot-area layout: `false` preserves a source without c:layout, `true`
+   * preserves an empty c:layout, and undefined uses the fresh-authoring default.
+   */
+  plotAreaLayout?: boolean | ManualLayoutOptions;
   /** Plot-area fill and outline (c:plotArea's trailing c:spPr) — round-trip. */
-  plotAreaShapeProperties?: ShapePropertiesOptions;
+  plotAreaShapeProperties?: ChartShapePropertiesOptions;
   /** 3D floor (c:floor). */
   floor?: SurfaceOptions;
   /** 3D side wall (c:sideWall). */
@@ -504,6 +662,8 @@ export interface ChartSpaceOptions {
   backWall?: SurfaceOptions;
   /** Plot visible cells only (c:plotVisOnly, defaults to true when omitted). */
   plotVisOnly?: boolean;
+  /** Source `c:plotVisOnly` presence; false keeps the optional element absent. */
+  plotVisOnlyPresent?: boolean;
   /** How blank cells are plotted (c:dispBlanksAs). */
   displayBlanksAs?: DisplayBlanksAs;
   /** Show data labels over the chart maximum (c:showDLblsOverMax). */
@@ -529,7 +689,7 @@ export interface ChartSpaceOptions {
   /** High-low lines (c:hiLowLines, line/stock 2D). */
   highLowLines?: boolean | ChartLinesOptions;
   /** Up/down bars container (c:upDownBars, line/stock 2D). */
-  upDownBars?: boolean;
+  upDownBars?: boolean | UpDownBarsOptions;
   /** Gap width inside the up/down bars container (c:upDownBars > c:gapWidth). */
   upDownBarsGapWidth?: number;
   /** Drop lines (c:dropLines, line/area/stock). */
@@ -569,7 +729,7 @@ export interface ChartSpaceOptions {
   /** Legend overlaps the plot (c:overlay). */
   legendOverlay?: boolean;
   /** Legend fill and outline (c:legend's c:spPr) — round-trip. */
-  legendShapeProperties?: ShapePropertiesOptions;
+  legendShapeProperties?: ChartShapePropertiesOptions;
   /**
    * Legend manual layout (c:legend's c:layout) — true emits the bare
    * `<c:layout/>` form, an object the manual layout.
@@ -610,6 +770,8 @@ export interface ChartUserShapesOptions {
   rootElement?: "chart" | "drawing";
   /** Anchored shapes (the cdr:userShapes part body). */
   anchors: (RelativeSizeAnchorOptions | AbsoluteSizeAnchorOptions)[];
+  /** A zero-byte companion part is valid and must not be re-created. */
+  empty?: boolean;
 }
 
 // ── 3D view ──
@@ -747,7 +909,7 @@ export interface AxisOptions {
   crossBetween?: AxisCrossBetween;
   displayUnits?: DisplayUnitsOptions;
   /** Axis shape properties (c:spPr between tickLblPos and crossAx) — round-trip. */
-  shapeProperties?: ShapePropertiesOptions;
+  shapeProperties?: ChartShapePropertiesOptions;
   /** Axis text (c:txPr, a CT_TextBody) — round-trip. */
   textProperties?: TextBodyOptions;
 }
@@ -774,7 +936,7 @@ export interface MarkerOptions {
   /** Marker size, 2-72 (c:size val). */
   size?: number;
   /** Marker fill/outline (c:marker > c:spPr) — round-trip. */
-  shapeProperties?: ShapePropertiesOptions;
+  shapeProperties?: ChartShapePropertiesOptions;
 }
 
 /** Per-point override (CT_DPt). Field order follows the XSD content model. */
@@ -782,13 +944,13 @@ export interface DataPointOptions {
   /** Point index (c:idx, required). */
   index: number;
   invertIfNegative?: boolean;
-  marker?: MarkerOptions;
+  marker?: MarkerOptions | true;
   /** 3D bubble on this point (c:bubble3D). */
   bubble3D?: boolean;
   /** Pie explosion offset for this point (c:explosion). */
   explosion?: number;
   /** Per-point fill/outline (c:dPt > c:spPr) — round-trip. */
-  shapeProperties?: ShapePropertiesOptions;
+  shapeProperties?: ChartShapePropertiesOptions;
   pictureOptions?: ChartPictureOptions;
   /** Raw inner XML of the trailing c:extLst — Office extension round-trip. */
   ext?: string;
@@ -835,12 +997,24 @@ export interface ManualLayoutOptions {
   h?: number | string;
 }
 
+/** ODF chart plot coordinate region (common-draw position and size attributes). */
+export interface ChartCoordinateRegionOptions {
+  /** Left offset in EMU or a universal length string. */
+  x?: number | string;
+  /** Top offset in EMU or a universal length string. */
+  y?: number | string;
+  /** Region width in EMU or a universal length string. */
+  width?: number | string;
+  /** Region height in EMU or a universal length string. */
+  height?: number | string;
+}
+
 /** 3D wall/floor surface (CT_Surface: thickness → spPr → pictureOptions). */
 export interface SurfaceOptions {
   /** Surface thickness — plain number or percentage string ("N%"). */
   thickness?: number | string;
   /** Wall/floor fill and outline (c:spPr). */
-  shapeProperties?: ShapePropertiesOptions;
+  shapeProperties?: ChartShapePropertiesOptions;
 }
 
 // ── Chart-level scalars (CT_Chart tail + CT_xxxChart type-specific heads) ──
@@ -858,7 +1032,7 @@ export interface DataTableOptions {
   showOutline?: boolean;
   showLegendKeys?: boolean;
   /** Table line/fill (c:spPr). */
-  shapeProperties?: ShapePropertiesOptions;
+  shapeProperties?: ChartShapePropertiesOptions;
   /** Table text (c:txPr). */
   textProperties?: TextBodyOptions;
 }
@@ -886,6 +1060,8 @@ export interface ExternalDataOptions {
   data?: DataType;
   /** Source embeddings file basename, e.g. "Microsoft_Excel_Worksheet1.xlsx". */
   fileName?: string;
+  /** Source relationship kind; round-trip only, defaults to package. */
+  relationshipType?: "oleObject" | "package";
 }
 
 // ── Print settings (CT_PrintSettings) ──
@@ -983,10 +1159,10 @@ export interface PivotSourceOptions {
 export interface ChartPivotFormatOptions {
   index: number;
   /** Marker style/size/shape (c:spPr outside dLbl). */
-  shapeProperties?: ShapePropertiesOptions;
+  shapeProperties?: ChartShapePropertiesOptions;
   /** Pivot format text properties (c:txPr). */
   textProperties?: TextBodyOptions;
-  marker?: MarkerOptions;
+  marker?: MarkerOptions | true;
   /** Per-point label override (c:dLbl); its own c:idx is included. */
   dataLabel?: DataLabelOptions;
   /** Raw inner XML of the trailing c:extLst — Office extension round-trip. */
@@ -995,9 +1171,11 @@ export interface ChartPivotFormatOptions {
 
 // ── Surface band formats (CT_BandFmts) ──
 
-/** Surface chart color band format (CT_BandFmt: idx). */
+/** Surface chart color band format (CT_BandFmt: idx and spPr). */
 export interface BandFormatOptions {
   index: number;
+  /** Band fill/outline (c:spPr). */
+  shapeProperties?: ChartShapePropertiesOptions;
 }
 
 // ── Legend entries (CT_Legend / CT_LegendEntry) ──

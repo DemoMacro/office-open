@@ -22,3 +22,22 @@ export type BlackWhiteMode =
   | "black"
   | "white"
   | "hidden";
+
+const blackWhiteModes: readonly BlackWhiteMode[] = [
+  "clr",
+  "auto",
+  "gray",
+  "ltGray",
+  "invGray",
+  "grayWhite",
+  "blackGray",
+  "blackWhite",
+  "black",
+  "white",
+  "hidden",
+];
+
+export function parseBlackWhiteMode(value: unknown): BlackWhiteMode | undefined {
+  const mode = typeof value === "string" ? value : value?.toString();
+  return blackWhiteModes.find((candidate) => candidate === mode);
+}

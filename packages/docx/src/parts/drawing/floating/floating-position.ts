@@ -226,7 +226,10 @@ export interface Floating {
   layoutInCell?: boolean;
   margins?: Margins;
   wrap?: TextWrapping;
-  zIndex?: number;
+  /** Whether the source anchor carried a wrap choice; round-trip only. */
+  wrapPresent?: boolean;
+  /** Z ordering (`wp:anchor/@relativeHeight`); null preserves a source-omitted attribute. */
+  zIndex?: number | null;
   /** Marker coordinates and simplePos switch (EMU or universal measure); coordinates default to 0,0. */
   simplePos?: {
     /** Explicit wp:anchor/@simplePos value; omitted when the source attribute is absent. */
@@ -236,6 +239,12 @@ export interface Floating {
     /** Marker Y coordinate in EMUs or universal measure. */
     y?: number | UniversalMeasure;
   };
+  /** Whether the source anchor carried wp:simplePos; round-trip only. */
+  simplePosPresent?: boolean;
+  /** Whether the source anchor carried wp:positionH; round-trip only. */
+  horizontalPositionPresent?: boolean;
+  /** Whether the source anchor carried wp:positionV; round-trip only. */
+  verticalPositionPresent?: boolean;
   /**
    * Horizontal size as a percentage of a base (wp14:sizeRelH, Word 2010+).
    * `percent` is a whole-number percentage (0 = auto-size from the extent).

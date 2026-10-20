@@ -4,7 +4,7 @@
 ![npm downloads](https://img.shields.io/npm/dw/@office-open/odp)
 ![npm license](https://img.shields.io/npm/l/@office-open/odp)
 
-> Generate and parse OpenDocument Presentation `.odp` files using canonical `PresentationOptions` JSON.
+> Generate and parse OpenDocument Presentation (`.odp`) files from plain `PresentationOptions` JSON — no Microsoft Office or LibreOffice required.
 
 ## Features
 
@@ -17,7 +17,17 @@
 ## Installation
 
 ```bash
+# pnpm
 pnpm add @office-open/odp
+
+# npm
+npm install @office-open/odp
+
+# yarn
+yarn add @office-open/odp
+
+# bun
+bun add @office-open/odp
 ```
 
 ## Quick Start
@@ -25,17 +35,19 @@ pnpm add @office-open/odp
 ```typescript
 import { generatePresentation, parsePresentation } from "@office-open/odp";
 
-const odp = generatePresentation({
+const odp = await generatePresentation({
   slides: [{ children: [] }],
 });
-const options = parsePresentation(odp);
+const options = await parsePresentation(odp);
 ```
 
 ## API
 
-- `generatePresentation(options)` — generate an `.odp` package from `PresentationOptions`
-- `parsePresentation(data)` — parse an `.odp` package into `PresentationOptions`
+- `generatePresentation(options, output?)` — generate an `.odp` package from `PresentationOptions` as `Promise` (`Uint8Array` by default); `generatePresentationSync` covers synchronous output and `generatePresentationStream` returns a `ReadableStream<Uint8Array>`
+- `parsePresentation(data)` — parse bytes, Base64/data-URL strings, `Blob`, or `ReadableStream` into `PresentationOptions` as `Promise`; `parsePresentationSync` covers synchronous parsing (rejects `Blob` and `ReadableStream` inputs)
 - `OdpParseError` — structured parse failure with part, path, and reason diagnostics
+
+Every input is a plain JSON object (`PresentationOptions` and its option types). The full typed API reference lives in the [documentation](https://www.office-open.com/en/getting-started/more-formats).
 
 ## Errors and Limitations
 

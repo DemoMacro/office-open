@@ -7,7 +7,8 @@
 import { parseOnOff } from "@office-open/core";
 import { xsdOrient } from "@office-open/core";
 import type { CustomDescriptor, ReadContext, WriteContext } from "@office-open/core/descriptor";
-import { attr, findChild, stringify } from "@office-open/xml";
+import { parseNonVisualDrawingProperties } from "@office-open/core/drawing";
+import { attr, attrNum, findChild, stringify } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 import { parseControls, parseCustDataLst } from "@parts/slide/c-sld";
 import type { SlideChild } from "@parts/slide/slide-child";
@@ -43,9 +44,12 @@ export const slideDesc: CustomDescriptor<SlideOptions, PptxWriteContext> = {
     if (el.attributes) {
       if (el.attributes["showMasterSp"] !== undefined)
         result.showMasterShapes = parseOnOff(el.attributes["showMasterSp"]) ?? true;
+      if (el.attributes["showMasterSp"] !== undefined) result.showMasterShapesPresent = true;
       if (el.attributes["showMasterPhAnim"] !== undefined)
         result.showMasterPlaceholderAnimations =
           parseOnOff(el.attributes["showMasterPhAnim"]) ?? true;
+      if (el.attributes["showMasterPhAnim"] !== undefined)
+        result.showMasterPlaceholderAnimationsPresent = true;
       const show = el.attributeRawValues?.["show"] ?? el.attributes?.["show"];
       if (show !== undefined) {
         const isHidden = show === "0" || parseOnOff(show) === false;
@@ -70,6 +74,19 @@ export const slideDesc: CustomDescriptor<SlideOptions, PptxWriteContext> = {
         if (spTreeGroupProperties && findChild(spTreeGroupProperties, "a:xfrm") === undefined) {
           result.groupTransformless = true;
         }
+        const spTreeBwMode = spTreeGroupProperties?.attributes?.["bwMode"] as string | undefined;
+        if (spTreeBwMode !== undefined) result.shapeTreeBlackWhiteMode = spTreeBwMode;
+        const nvGrpSpPr = findChild(spTree, "p:nvGrpSpPr");
+        const rootCnvPr = nvGrpSpPr ? findChild(nvGrpSpPr, "p:cNvPr") : undefined;
+        const rootProperties = parseNonVisualDrawingProperties(rootCnvPr);
+        if (rootCnvPr) {
+          const shapeTreeId = attrNum(rootCnvPr, "id");
+          if (shapeTreeId !== undefined) result.shapeTreeId = shapeTreeId;
+          if (rootProperties.name !== undefined) result.shapeTreeName = rootProperties.name;
+          if (rootProperties.creationId !== undefined)
+            result.shapeTreeCreationId = rootProperties.creationId;
+          if (rootProperties.ext !== undefined) result.shapeTreeExt = rootProperties.ext;
+        }
         const children: SlideChild[] = [];
         if (spTree.elements) {
           for (const child of spTree.elements) {
@@ -88,7 +105,10 @@ export const slideDesc: CustomDescriptor<SlideOptions, PptxWriteContext> = {
       // custDataLst / controls — children of cSld per CT_CommonSlideData
       // (its own stringify writes them there; read from the same place).
       result.customerData = parseCustDataLst(findChild(cSld, "p:custDataLst"));
-      result.controls = parseControls(findChild(cSld, "p:controls"));
+      result.controls = parseControls(findChild(cSld, "p:controls"), (picture) => {
+        const child = parseChild(picture, _ctx);
+        return child && "picture" in child ? child.picture : undefined;
+      });
 
       // cSld-tail extLst (p14:creationId's home) — verbatim, distinct from the
       // root-level extLst read below (two separate XSD slots).
@@ -103,20 +123,7 @@ export const slideDesc: CustomDescriptor<SlideOptions, PptxWriteContext> = {
     const clrMapOvr = findChild(el, "p:clrMapOvr");
     if (clrMapOvr) result.colorMappingOverride = colorMappingOverrideDesc.parse(clrMapOvr, _ctx);
 
-    // p:transition — a plain child parses structured; one wrapped in a
-    // markup-compatibility block (mc:Choice p14:dur + mc:Fallback twin) is
-    // not a direct child at all, so the whole block rides verbatim.
-    const transition = findChild(el, "p:transition");
-    if (transition) {
-      result.transition = readTransition(transition, _ctx);
-    } else {
-      const mcBlock = (el.elements ?? []).find(
-        (c) => c.name === "mc:AlternateContent" && hasDescendant(c, "p:transition"),
-      );
-      // stringify treats its argument as a document root and serializes only
-      // its children — wrap the block to serialize the block itself.
-      if (mcBlock) result.transition = stringify({ elements: [mcBlock] });
-    }
+    result.transition = parseTransitionElement(el, _ctx);
 
     // p:timing → animations (structured entries, or verbatim inner XML when
     // the source tree exceeds the model)
@@ -153,6 +160,21 @@ export function stringifyTransition(opts: TransitionOptions | string, ctx?: Writ
   // A typeless transition stays legal — buildTransition emits the bare
   // <p:transition/> (attributes only) the CT_SlideTransition content model allows.
   return buildTransition(opts, ctx);
+}
+
+/** Parse either a direct transition or its markup-compatibility block verbatim. */
+export function parseTransitionElement(
+  el: XmlElement,
+  ctx?: ReadContext,
+): TransitionOptions | string | undefined {
+  const transition = findChild(el, "p:transition");
+  if (transition) return readTransition(transition, ctx);
+
+  const markupCompatibilityBlock = (el.elements ?? []).find(
+    (child) => child.name === "mc:AlternateContent" && hasDescendant(child, "p:transition"),
+  );
+  if (!markupCompatibilityBlock) return undefined;
+  return stringify({ elements: [markupCompatibilityBlock] });
 }
 
 // Reverse of DIRECTION_MAP in @shared/transition (dir attribute → semantic direction).
@@ -196,6 +218,8 @@ const TRANSITION_ELEMENT_TYPES = [
   "cut",
 ] as const;
 
+const ORIENTATION_TRANSITION_TYPES = new Set(["blinds", "checker", "comb", "randomBar"]);
+
 export function readTransition(el: XmlElement, ctx?: ReadContext): TransitionOptions {
   const result: TransitionOptions = {};
 
@@ -207,6 +231,7 @@ export function readTransition(el: XmlElement, ctx?: ReadContext): TransitionOpt
       result.advanceOnClick = parseOnOff(el.attributes["advClick"]) ?? false;
     if (el.attributes["advTm"] !== undefined)
       result.advanceAfterTime = Number(el.attributes["advTm"]);
+    if (el.attributes["p14:dur"] !== undefined) result.duration = Number(el.attributes["p14:dur"]);
   }
 
   // Detect transition type from the first matching child, then read its
@@ -217,7 +242,9 @@ export function readTransition(el: XmlElement, ctx?: ReadContext): TransitionOpt
     result.type = t;
     const attrs = child.attributes ?? {};
     const dir = attrs["dir"];
-    if (dir !== undefined) {
+    if (dir !== undefined && ORIENTATION_TRANSITION_TYPES.has(t)) {
+      result.orient = xsdOrient.from(String(dir)) as "horizontal" | "vertical";
+    } else if (dir !== undefined) {
       const direction = XML_DIR_TO_DIRECTION[String(dir)];
       if (direction) result.direction = direction;
     }
@@ -240,11 +267,12 @@ export function readTransition(el: XmlElement, ctx?: ReadContext): TransitionOpt
       if (rId && ctx) {
         const mediaPath = ctx.resolveRelationship(rId);
         const raw = mediaPath ? ctx.getRaw(mediaPath) : undefined;
-        const type = mediaPath?.split(".").pop();
+        const type = mediaPath === undefined ? undefined : mediaPath.split(".").pop();
         if (raw && (type === "mp3" || type === "wav" || type === "wma" || type === "aac")) {
           const startSound: NonNullable<TransitionOptions["startSound"]> = {
             data: raw,
             type,
+            fileName: mediaPath === undefined ? undefined : mediaPath.split("/").pop(),
           };
           const name = attr(snd, "name");
           if (name) startSound.name = name;

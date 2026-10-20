@@ -4,7 +4,7 @@
 ![npm downloads](https://img.shields.io/npm/dw/@office-open/odt)
 ![npm license](https://img.shields.io/npm/l/@office-open/odt)
 
-> Generate and parse OpenDocument Text `.odt` files using canonical `DocumentOptions` JSON.
+> Generate and parse OpenDocument Text (`.odt`) files from plain `DocumentOptions` JSON — no Microsoft Office or LibreOffice required.
 
 ## Features
 
@@ -17,7 +17,17 @@
 ## Installation
 
 ```bash
+# pnpm
 pnpm add @office-open/odt
+
+# npm
+npm install @office-open/odt
+
+# yarn
+yarn add @office-open/odt
+
+# bun
+bun add @office-open/odt
 ```
 
 ## Quick Start
@@ -25,17 +35,19 @@ pnpm add @office-open/odt
 ```typescript
 import { generateDocument, parseDocument } from "@office-open/odt";
 
-const odt = generateDocument({
+const odt = await generateDocument({
   sections: [{ children: [{ paragraph: "Hello ODT" }] }],
 });
-const options = parseDocument(odt);
+const options = await parseDocument(odt);
 ```
 
 ## API
 
-- `generateDocument(options)` — generate an `.odt` package from `DocumentOptions`
-- `parseDocument(data)` — parse an `.odt` package into `DocumentOptions`
+- `generateDocument(options, output?)` — generate an `.odt` package from `DocumentOptions` as `Promise` (`Uint8Array` by default); `generateDocumentSync` covers synchronous output and `generateDocumentStream` returns a `ReadableStream<Uint8Array>`
+- `parseDocument(data)` — parse bytes, Base64/data-URL strings, `Blob`, or `ReadableStream` into `DocumentOptions` as `Promise`; `parseDocumentSync` covers synchronous parsing (rejects `Blob` and `ReadableStream` inputs)
 - `OdtParseError` — structured parse failure with part, path, and reason diagnostics
+
+Every input is a plain JSON object (`DocumentOptions` and its option types). The full typed API reference lives in the [documentation](https://www.office-open.com/en/getting-started/more-formats).
 
 ## Errors and Limitations
 

@@ -10,6 +10,7 @@ import { setBodyParseChild } from "../bodychildren";
 import { drawingDesc, resetDrawingIdGen } from "./descriptor";
 import type { DrawingDescriptorOptions } from "./descriptor";
 import type { Floating } from "./floating";
+import type { ShapeCoreOptions } from "./inline/graphic/graphic-data/wps/wps-shape";
 import { TextWrappingType } from "./text-wrap";
 
 const writeCtx = {
@@ -44,6 +45,9 @@ const readContextData = {
       media: new Map(),
       charts: new Map(),
       diagramData: new Map(),
+      partHyperlinks: new Map([
+        ["word/document.xml", new Map([["rId1", "https://example.invalid/shape"]])],
+      ]),
     },
     doc: {
       get: () => undefined,
@@ -118,12 +122,13 @@ describe("drawingDesc round-trip", () => {
           hyperlink: {
             click: "https://example.invalid/open",
             clickTooltip: "Open image",
+            clickTargetFrame: "_blank",
           },
         },
       },
       ctx,
     )!;
-    expect(xml).toContain('r:id="rId1" tooltip="Open image"');
+    expect(xml).toContain('r:id="rId1" tgtFrame="_blank" tooltip="Open image"');
     expect(
       relationships.idOf(
         "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
@@ -139,6 +144,36 @@ describe("drawingDesc round-trip", () => {
     expect(xml).toContain("<w:drawing>");
     expect(xml).toContain("<wp:inline");
     expect(xml).toContain("</w:drawing>");
+  });
+
+  it("round-trips a WPS shape cNvPr hyperlink", () => {
+    const xml = stringify({
+      mediaData: {
+        type: "wps" as const,
+        transformation: { width: 914400, height: 914400 },
+        data: {
+          children: [],
+          nonVisualProperties: {
+            id: 1,
+            name: "Linked shape",
+            hyperlink: { click: "https://example.invalid/shape" },
+          },
+        },
+      },
+    });
+    expect(xml).toContain('<a:hlinkClick r:id="rId1"');
+
+    const doc = parseXml(xml);
+    const el = doc.elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const result = drawingDesc.parse(el, readCtx) as {
+      wpsShape?: {
+        nonVisualProperties?: { hyperlink?: { click?: string } };
+      };
+    };
+    expect(result.wpsShape?.nonVisualProperties?.hyperlink?.click).toBe(
+      "https://example.invalid/shape",
+    );
   });
 
   it("stringifies inline image with correct extent", () => {
@@ -380,6 +415,32 @@ describe("drawingDesc round-trip", () => {
     });
   });
 
+  it("preserves picture stretch state and fill rectangle", () => {
+    resetDrawingIdGen();
+    const bareStretchXml = stringify({
+      mediaData: { ...makeImageMediaData(), stretch: false },
+    });
+    expect(bareStretchXml).not.toContain("<a:stretch");
+    const bareStretchElement = parseXml(bareStretchXml).elements?.[0];
+    if (!bareStretchElement) throw new Error("parsed document has no root element");
+    const bareStretchResult = drawingDesc.parse(bareStretchElement, mediaReadCtx) as {
+      picture?: { stretch?: boolean };
+    };
+    expect(bareStretchResult.picture?.stretch).toBe(false);
+
+    resetDrawingIdGen();
+    const fillRectangleXml = stringify({
+      mediaData: { ...makeImageMediaData(), fillRectangle: { left: 1000, right: 2000 } },
+    });
+    expect(fillRectangleXml).toContain('<a:fillRect l="1000" r="2000"/>');
+    const fillRectangleElement = parseXml(fillRectangleXml).elements?.[0];
+    if (!fillRectangleElement) throw new Error("parsed document has no root element");
+    const fillRectangleResult = drawingDesc.parse(fillRectangleElement, mediaReadCtx) as {
+      picture?: { fillRectangle?: { left?: number; right?: number } };
+    };
+    expect(fillRectangleResult.picture?.fillRectangle).toEqual({ left: 1, right: 2 });
+  });
+
   it("stringifies wps shape with preset geometry (not hardcoded rect)", () => {
     const xml = stringify({
       mediaData: {
@@ -461,6 +522,31 @@ describe("drawingDesc round-trip", () => {
     };
     expect(result.wpsShape?.linkedTextBox).toEqual({ id: 7, sequence: 2 });
     expect(result.wpsShape?.normalEastAsianFlow).toBe(true);
+  });
+
+  it("keeps the outer anchor when a text box contains an inline drawing", () => {
+    const xml =
+      '<w:drawing xmlns:w="urn:w" xmlns:wp="urn:wp" xmlns:a="urn:a" ' +
+      'xmlns:wps="urn:wps"><wp:anchor distT="1" distB="2" distL="3" distR="4" ' +
+      'simplePos="0" allowOverlap="1" behindDoc="0" locked="0" layoutInCell="0" relativeHeight="7">' +
+      '<wp:simplePos x="0" y="0"/><wp:positionH relativeFrom="column"><wp:posOffset>10</wp:posOffset></wp:positionH>' +
+      '<wp:positionV relativeFrom="paragraph"><wp:posOffset>20</wp:posOffset></wp:positionV>' +
+      '<wp:extent cx="300" cy="400"/><wp:effectExtent l="0" t="0" r="0" b="0"/><wp:wrapSquare/>' +
+      '<wp:docPr id="1" name="Outer"/><a:graphic><a:graphicData uri="http://schemas.microsoft.com/office/word/2010/wordprocessingShape">' +
+      '<wps:wsp><wps:cNvSpPr/><wps:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="300" cy="400"/></a:xfrm></wps:spPr>' +
+      "<wps:txbx><w:txbxContent><w:p><w:r><w:drawing><wp:inline>" +
+      '<wp:extent cx="100" cy="200"/><wp:docPr id="2" name="Inner"/>' +
+      '<a:graphic><a:graphicData uri="urn:unsupported"/></a:graphic></wp:inline></w:drawing></w:r></w:p>' +
+      "</w:txbxContent></wps:txbx></wps:wsp></a:graphicData></a:graphic></wp:anchor></w:drawing>";
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const result = drawingDesc.parse(el, readCtx) as {
+      wpsShape?: { floating?: Floating };
+    };
+    expect(result.wpsShape?.floating).toMatchObject({
+      zIndex: 7,
+      margins: { top: 1, bottom: 2, left: 3, right: 4 },
+    });
   });
 
   it("preserves wps black-white mode only when present", () => {
@@ -747,6 +833,153 @@ describe("drawingDesc round-trip", () => {
     expect(output).toContain(`<a:graphicData uri="${legacyUri}" xmlns:wps="${legacyUri}">`);
   });
 
+  it("preserves a legacy wps:nvSpPr wrapper", () => {
+    const xml =
+      '<w:drawing xmlns:w="urn:w" xmlns:wp="urn:wp" xmlns:a="urn:a" ' +
+      'xmlns:wps="http://schemas.microsoft.com/office/word/2010/wordprocessingShape">' +
+      '<wp:inline><wp:extent cx="100" cy="200"/><wp:docPr id="1" name="Shape"/>' +
+      '<a:graphic><a:graphicData uri="http://schemas.microsoft.com/office/word/2010/wordprocessingShape">' +
+      '<wps:wsp><wps:nvSpPr><wps:cNvPr id="7" name="Box"/><wps:cNvSpPr txBox="1"/>' +
+      "</wps:nvSpPr><wps:spPr/><wps:bodyPr/></wps:wsp>" +
+      "</a:graphicData></a:graphic></wp:inline></w:drawing>";
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const parsed = drawingDesc.parse(el, mediaReadCtx) as {
+      wpsShape?: {
+        nonVisualPropertiesWrapped?: boolean;
+        nonVisualProperties?: { id?: number; name?: string };
+      };
+    };
+
+    expect(parsed.wpsShape?.nonVisualPropertiesWrapped).toBe(true);
+    expect(parsed.wpsShape?.nonVisualProperties).toMatchObject({ id: 7, name: "Box" });
+    expect(
+      stringify({
+        mediaData: {
+          type: "wps" as const,
+          transformation: { width: 100, height: 200 },
+          data: {
+            children: [],
+            nonVisualProperties: { id: 7, name: "Box", textBox: "1" },
+            nonVisualPropertiesWrapped: true,
+          },
+        },
+      }),
+    ).toContain("<wps:nvSpPr><wps:cNvPr");
+  });
+
+  it("preserves duplicate legacy wps non-visual forms", () => {
+    const xml =
+      '<w:drawing xmlns:w="urn:w" xmlns:wp="urn:wp" xmlns:a="urn:a" ' +
+      'xmlns:wps="http://schemas.microsoft.com/office/word/2010/wordprocessingShape">' +
+      '<wp:inline><wp:extent cx="100" cy="200"/><wp:docPr id="1" name="Shape"/>' +
+      '<a:graphic><a:graphicData uri="http://schemas.microsoft.com/office/word/2010/wordprocessingShape">' +
+      '<wps:wsp><wps:cNvSpPr/><wps:nvSpPr><wps:cNvPr id="7" name="Box"/><wps:cNvSpPr/>' +
+      "</wps:nvSpPr><wps:spPr/><wps:bodyPr/></wps:wsp>" +
+      "</a:graphicData></a:graphic></wp:inline></w:drawing>";
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const parsed = drawingDesc.parse(el, mediaReadCtx) as {
+      wpsShape?: {
+        nonVisualProperties?: object;
+        wrappedNonVisualProperties?: { id?: number; name?: string };
+      };
+    };
+    expect(parsed.wpsShape?.nonVisualProperties).toEqual({});
+    expect(parsed.wpsShape?.wrappedNonVisualProperties).toMatchObject({ id: 7, name: "Box" });
+
+    const output = stringify({
+      mediaData: {
+        type: "wps" as const,
+        transformation: { width: 100, height: 200 },
+        data: {
+          children: [],
+          nonVisualProperties: {},
+          wrappedNonVisualProperties: { id: 7, name: "Box" },
+        },
+      },
+    });
+    expect(output).toContain('<wps:cNvSpPr/><wps:nvSpPr><wps:cNvPr id="7"');
+  });
+
+  it("preserves absent wps non-visual and shape properties", () => {
+    const xml =
+      '<w:drawing xmlns:w="urn:w" xmlns:wp="urn:wp" xmlns:a="urn:a" ' +
+      'xmlns:wps="http://schemas.microsoft.com/office/word/2010/wordprocessingShape">' +
+      '<wp:inline><wp:extent cx="100" cy="200"/><wp:docPr id="1" name="Shape"/>' +
+      '<a:graphic><a:graphicData uri="http://schemas.microsoft.com/office/word/2010/wordprocessingShape">' +
+      "<wps:wsp><wps:txbx><w:txbxContent><w:p/></w:txbxContent></wps:txbx><wps:bodyPr/></wps:wsp>" +
+      "</a:graphicData></a:graphic></wp:inline></w:drawing>";
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const parsed = drawingDesc.parse(el, mediaReadCtx) as {
+      wpsShape?: {
+        nonVisualPropertiesPresent?: boolean;
+        shapePropertiesPresent?: boolean;
+      };
+    };
+    expect(parsed.wpsShape?.nonVisualPropertiesPresent).toBe(false);
+    expect(parsed.wpsShape?.shapePropertiesPresent).toBe(false);
+
+    const output = stringify({
+      mediaData: {
+        type: "wps" as const,
+        transformation: { width: 100, height: 200 },
+        data: {
+          children: [{ paragraph: { children: [] } }],
+          nonVisualPropertiesPresent: false,
+          shapePropertiesPresent: false,
+        },
+      },
+    });
+    expect(output).not.toContain("<wps:cNvSpPr");
+    expect(output).not.toContain("<wps:spPr");
+  });
+
+  it("preserves absent picture non-visual and shape properties", () => {
+    const xml = `<?xml version="1.0"?><w:drawing xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:wp="http://schemas.openxmlformats.org/wordprocessingDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><wp:inline><wp:extent cx="100" cy="200"/><wp:docPr id="1" name="Image"/><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic><pic:blipFill><a:blip r:embed="{image1.png}"/></pic:blipFill></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing>`;
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const parsed = drawingDesc.parse(el, mediaReadCtx) as {
+      picture?: {
+        nonVisualPropertiesPresent?: boolean;
+        shapePropertiesPresent?: boolean;
+      };
+    };
+    expect(parsed.picture?.nonVisualPropertiesPresent).toBe(false);
+    expect(parsed.picture?.shapePropertiesPresent).toBe(false);
+
+    const output = stringify({
+      mediaData: {
+        type: "jpg",
+        data: new Uint8Array([1, 2, 3]),
+        fileName: "image.jpg",
+        transformation: { width: 100, height: 200 },
+        nonVisualPropertiesPresent: false,
+        shapePropertiesPresent: false,
+      },
+    });
+    expect(output).not.toContain("<pic:nvPicPr");
+    expect(output).not.toContain("<pic:spPr");
+  });
+
+  it("preserves the presence of wps shape transforms", () => {
+    const output = stringify({
+      mediaData: {
+        type: "wps" as const,
+        transformation: { width: 100, height: 200 },
+        data: {
+          children: [],
+          nonVisualProperties: {},
+          shapePropertiesPresent: true,
+          transformPresent: false,
+        },
+      },
+    });
+    expect(output).toContain("<wps:spPr>");
+    expect(output).not.toContain("<a:xfrm");
+  });
+
   it("emits and re-reads flipH/flipV on pic:spPr/a:xfrm", () => {
     const transformation = {
       width: 914400,
@@ -837,6 +1070,32 @@ describe("drawingDesc round-trip", () => {
     });
     expect(output).toContain('<wp:extent cx="100" cy="200"/>');
     expect(output).toContain('<a:ext cx="300" cy="400"/>');
+  });
+
+  it("preserves a WPS shape that omitted body properties", () => {
+    const xml =
+      `<?xml version="1.0"?><w:drawing xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" ` +
+      `xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" ` +
+      `xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" ` +
+      `xmlns:wps="http://schemas.microsoft.com/office/word/2010/wordprocessingShape">` +
+      `<wp:inline><wp:extent cx="100" cy="200"/><wp:docPr id="1" name="Shape"/>` +
+      `<a:graphic><a:graphicData uri="http://schemas.microsoft.com/office/word/2010/wordprocessingShape">` +
+      `<wps:wsp><wps:cNvSpPr/><wps:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="300" cy="400"/></a:xfrm>` +
+      `<a:prstGeom prst="rect"><a:avLst/></a:prstGeom></wps:spPr></wps:wsp>` +
+      `</a:graphicData></a:graphic></wp:inline></w:drawing>`;
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const result = drawingDesc.parse(el, mediaReadCtx) as {
+      wpsShape?: { bodyPropertiesPresent?: boolean };
+    };
+
+    expect(result.wpsShape?.bodyPropertiesPresent).toBe(false);
+    const mediaData = {
+      type: "wps" as const,
+      transformation: { width: 100, height: 200 },
+      data: result.wpsShape as ShapeCoreOptions,
+    };
+    expect(stringify({ mediaData })).not.toContain("<wps:bodyPr");
   });
 
   it("parses picture tile fills without substituting stretch", () => {
@@ -1119,5 +1378,207 @@ describe("drawingDesc round-trip", () => {
     };
     // 16200000 / 60000 = 270 degrees
     expect(result.picture?.transformation?.rotation).toBe(270);
+  });
+
+  it("preserves the anchor wrapper when it has only positional defaults", () => {
+    const NS =
+      'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" ' +
+      'xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" ' +
+      'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" ' +
+      'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"';
+    const xml = `<w:drawing ${NS}><wp:anchor distT="0" distB="0" distL="0" distR="0" simplePos="0" allowOverlap="0" behindDoc="0" locked="0" layoutInCell="0"><wp:simplePos x="0" y="0"/><wp:positionH relativeFrom="column"><wp:posOffset>0</wp:posOffset></wp:positionH><wp:positionV relativeFrom="paragraph"><wp:posOffset>0</wp:posOffset></wp:positionV><wp:extent cx="914400" cy="914400"/><wp:effectExtent l="0" t="0" r="0" b="0"/><wp:wrapNone/><wp:docPr id="1" name="Shape"/><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="1" name="Shape"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="{image1.png}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="914400" cy="914400"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:anchor></w:drawing>`;
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const result = drawingDesc.parse(el, mediaReadCtx) as { picture?: { floating?: Floating } };
+    expect(result.picture?.floating).toBeDefined();
+    expect(result.picture?.floating?.zIndex).toBeNull();
+    const roundTrip = stringify({
+      mediaData: makeImageMediaData(),
+      floating: result.picture?.floating,
+    });
+    expect(roundTrip).toContain("<wp:anchor");
+    expect(roundTrip).not.toContain("relativeHeight=");
+    const fresh = stringify({
+      mediaData: makeImageMediaData(),
+      floating: { horizontalPosition: {}, verticalPosition: {} },
+    });
+    expect(fresh).toContain('relativeHeight="914400"');
+  });
+
+  it("round-trips wps connector endpoints", () => {
+    const xml = stringify({
+      mediaData: {
+        type: "wps" as const,
+        transformation: { width: 914400, height: 914400 },
+        data: {
+          children: [],
+          nonVisualProperties: {
+            id: 1,
+            name: "Connector",
+            connector: true,
+            startConnection: { id: 2, index: 3 },
+            endConnection: { id: 4, index: 5 },
+          },
+        },
+      },
+    });
+    expect(xml).toContain('<a:stCxn id="2" idx="3"/>');
+    expect(xml).toContain('<a:endCxn id="4" idx="5"/>');
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const result = drawingDesc.parse(el, readCtx) as {
+      wpsShape?: { nonVisualProperties?: { startConnection?: unknown; endConnection?: unknown } };
+    };
+    expect(result.wpsShape?.nonVisualProperties?.startConnection).toEqual({ id: 2, index: 3 });
+    expect(result.wpsShape?.nonVisualProperties?.endConnection).toEqual({ id: 4, index: 5 });
+  });
+
+  it("round-trips wps shape rotation and cNvPr extensions", () => {
+    const xml = stringify({
+      mediaData: {
+        type: "wps" as const,
+        transformation: { width: 914400, height: 914400, rotation: 45 },
+        data: {
+          children: [],
+          nonVisualProperties: {
+            id: 1,
+            name: "Rotated",
+            ext: '<a:ext uri="{GUID}"><a14:imgProps xmlns:a14="http://schemas.microsoft.com/office/drawing/2010/main"/></a:ext>',
+          },
+        },
+      },
+    });
+    expect(xml).toContain('rot="2700000"');
+    expect(xml).toContain("a14:imgProps");
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const result = drawingDesc.parse(el, readCtx) as {
+      wpsShape?: {
+        transformation?: { rotation?: number };
+        nonVisualProperties?: { ext?: string };
+      };
+    };
+    expect(result.wpsShape?.transformation?.rotation).toBe(45);
+    expect(result.wpsShape?.nonVisualProperties?.ext).toContain("a14:imgProps");
+  });
+
+  it("round-trips child shape offsets separately from anchor placement", () => {
+    const xml = stringify({
+      mediaData: {
+        type: "wps" as const,
+        transformation: { width: 914400, height: 914400 },
+        data: {
+          children: [],
+          nonVisualProperties: { id: 1, name: "Offset" },
+          shapeOffset: { x: 4143960, y: 121320 },
+        },
+      },
+    });
+    expect(xml).toContain('<a:off x="4143960" y="121320"/>');
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const result = drawingDesc.parse(el, readCtx) as {
+      wpsShape?: { shapeOffset?: { x?: number; y?: number } };
+    };
+    expect(result.wpsShape?.shapeOffset).toEqual({ x: 4143960, y: 121320 });
+  });
+
+  it("round-trips group rotation and black-white mode", () => {
+    const xml = stringify({
+      mediaData: {
+        type: "wpg" as const,
+        transformation: { width: 1828800, height: 914400, rotation: 90 },
+        blackWhiteMode: "gray" as const,
+        children: [],
+      },
+    });
+    expect(xml).toContain('<wpg:grpSpPr bwMode="gray">');
+    expect(xml).toContain('rot="5400000"');
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const result = drawingDesc.parse(el, readCtx) as {
+      wpgGroup?: {
+        blackWhiteMode?: string;
+        transformation?: { rotation?: number };
+      };
+    };
+    expect(result.wpgGroup?.blackWhiteMode).toBe("gray");
+    expect(result.wpgGroup?.transformation?.rotation).toBe(90);
+  });
+
+  it("preserves a group extent that differs from the wrapper extent", () => {
+    const xml = stringify({
+      mediaData: {
+        type: "wpg" as const,
+        transformation: { width: 869950, height: 377825 },
+        groupExtent: { width: 869400, height: 377280 },
+        children: [],
+      },
+    });
+    expect(xml).toContain('<a:ext cx="869400" cy="377280"/>');
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const result = drawingDesc.parse(el, readCtx) as {
+      wpgGroup?: {
+        transformation?: { width?: number; height?: number };
+        groupExtent?: { width?: number; height?: number };
+      };
+    };
+    expect(result.wpgGroup?.transformation).toMatchObject({ width: 869950, height: 377825 });
+    expect(result.wpgGroup?.groupExtent).toEqual({ width: 869400, height: 377280 });
+  });
+
+  it("preserves nested group identity", () => {
+    const xml = stringify({
+      mediaData: {
+        type: "wpg" as const,
+        transformation: { width: 1000, height: 500 },
+        children: [
+          {
+            type: "wpg" as const,
+            transformation: { width: 500, height: 250 },
+            nonVisualProperties: { id: 25, name: "Nested 25" },
+            blackWhiteMode: "gray" as const,
+            children: [],
+          },
+        ],
+      },
+    });
+    expect(xml).toContain('<wpg:grpSp><wpg:cNvPr id="25" name="Nested 25"/>');
+    expect(xml).toContain('<wpg:grpSpPr bwMode="gray">');
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const result = drawingDesc.parse(el, readCtx) as {
+      wpgGroup?: {
+        children?: Array<{
+          nonVisualProperties?: { id?: number; name?: string };
+          blackWhiteMode?: string;
+        }>;
+      };
+    };
+    expect(result.wpgGroup?.children?.[0]?.nonVisualProperties).toEqual({
+      id: 25,
+      name: "Nested 25",
+    });
+    expect(result.wpgGroup?.children?.[0]?.blackWhiteMode).toBe("gray");
+  });
+
+  it("omits nested group identity only when the source omitted it", () => {
+    const xml = stringify({
+      mediaData: {
+        type: "wpg" as const,
+        transformation: { width: 1000, height: 500 },
+        children: [
+          {
+            type: "wpg" as const,
+            transformation: { width: 500, height: 250 },
+            nonVisualPropertiesPresent: false,
+            children: [],
+          },
+        ],
+      },
+    });
+    expect(xml).toContain("<wpg:grpSp><wpg:cNvGrpSpPr/>");
+    expect(xml).not.toContain("<wpg:cNvPr");
   });
 });

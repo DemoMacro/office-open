@@ -1,4 +1,5 @@
-import type { UniversalMeasure } from "@office-open/core";
+import type { PositiveUniversalMeasure, UniversalMeasure } from "@office-open/core";
+import { convertToPt } from "@office-open/core";
 import type { LongHexNumber } from "@office-open/core";
 /**
  * Run properties parser for DOCX documents.
@@ -18,7 +19,11 @@ import {
 } from "@office-open/xml";
 import { findFirst } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
-import { parseDrawingRun, parseUnsupportedDrawingRun } from "@parts/drawing/drawing-parse";
+import {
+  attachDrawingVmlFallback,
+  parseDrawingRun,
+  parseUnsupportedDrawingRun,
+} from "@parts/drawing/drawing-parse";
 import type { DrawingChild } from "@parts/drawing/drawing-parse";
 import { objectDesc } from "@parts/object";
 import type { ObjectElementOptions } from "@parts/object";
@@ -35,6 +40,7 @@ import type { PictOptions } from "@parts/pict";
 import { parseShading } from "@shared/shading";
 
 import type { DocxReadContext } from "../../../context";
+import { DocxParseError } from "../../../errors";
 import { replaceRelsWithPlaceholders } from "../../../util/replace-media-placeholders";
 import { stringifyElement } from "../../../util/stringify-element";
 import type { LanguageOptions } from "./language";
@@ -63,12 +69,32 @@ const ON_OFF_RUN_PROPS: readonly (readonly [string, keyof RunPropertiesOptions &
   ["w:specVanish", "specVanish"],
   ["w:oMath", "math"],
 ];
+
+function isPositiveHpsMeasure(value: string): value is PositiveUniversalMeasure {
+  return /^\d+(?:\.\d+)?(?:mm|cm|in|pt|pc|pi)$/.test(value);
+}
+
+function parseFontPoints(value: number | string): number {
+  if (typeof value === "number") return value / 2;
+  if (isPositiveHpsMeasure(value)) return convertToPt(value);
+  throw new DocxParseError(
+    `Invalid font size measurement "${value}".`,
+    "unknown",
+    "/w:r/w:rPr/w:sz",
+    "invalid-measure",
+  );
+}
 const ON_OFF_RUN_PROPS_MAP: ReadonlyMap<string, string> = new Map(ON_OFF_RUN_PROPS);
 
 /** Preserve the source `w:val` spelling for an explicit on/off run toggle. */
 function setOnOffLexeme(
   options: Record<string, unknown>,
-  key: "boldRaw" | "boldComplexScriptRaw" | "italicRaw" | "italicComplexScriptRaw",
+  key:
+    | "boldRaw"
+    | "boldComplexScriptRaw"
+    | "italicRaw"
+    | "italicComplexScriptRaw"
+    | "rightToLeftRaw",
   element: Element,
 ): void {
   const value = attr(element, "w:val");
@@ -114,6 +140,7 @@ export function parseRunProperties(el: Element): RunPropertiesOptions {
           break;
         case "w:rFonts": {
           const ascii = attr(child, "w:ascii");
+          const hAscii = attr(child, "w:hAscii");
           const eastAsia = attr(child, "w:eastAsia");
           const hAnsi = attr(child, "w:hAnsi");
           const complexScript = attr(child, "w:cs");
@@ -125,6 +152,7 @@ export function parseRunProperties(el: Element): RunPropertiesOptions {
 
           const fontObj: FontProperties = {};
           if (ascii !== undefined) fontObj.ascii = ascii;
+          if (hAscii !== undefined) fontObj.hAscii = hAscii;
           if (eastAsia !== undefined) fontObj.eastAsia = eastAsia;
           if (hAnsi !== undefined) fontObj.hAnsi = hAnsi;
           if (complexScript !== undefined) fontObj.complexScript = complexScript;
@@ -158,8 +186,10 @@ export function parseRunProperties(el: Element): RunPropertiesOptions {
           const ul: Record<string, string | undefined> = {};
           const uType = attr(child, "w:val");
           if (uType) ul.type = uType;
-          const uColor = colorAttr(child, "w:color");
+          const rawUColor = colorAttr(child, "w:color");
+          const uColor = rawUColor?.startsWith("#") ? rawUColor.slice(1) : rawUColor;
           if (uColor) ul.color = uColor;
+          if (rawUColor !== undefined && rawUColor !== uColor) ul.colorRaw = rawUColor;
           const uThemeColor = attr(child, "w:themeColor");
           if (uThemeColor) ul.themeColor = uThemeColor;
           const uThemeTint = attr(child, "w:themeTint");
@@ -170,30 +200,33 @@ export function parseRunProperties(el: Element): RunPropertiesOptions {
           break;
         }
         case "w:color": {
-          const c = colorAttr(child, "w:val");
+          const rawColor = colorAttr(child, "w:val");
+          const c = rawColor?.startsWith("#") ? rawColor.slice(1) : rawColor;
           const themeColor = attr(child, "w:themeColor");
           const themeTint = attr(child, "w:themeTint");
           const themeShade = attr(child, "w:themeShade");
           if (themeColor || themeTint || themeShade) {
             const colorObj: Record<string, string | undefined> = {};
             if (c) colorObj.val = c;
+            if (rawColor !== undefined && rawColor !== c) colorObj.valRaw = rawColor;
             if (themeColor) colorObj.themeColor = themeColor;
             if (themeTint) colorObj.themeTint = themeTint;
             if (themeShade) colorObj.themeShade = themeShade;
             opts.color = colorObj;
           } else if (c) {
-            opts.color = c;
+            const rawVal = rawColor;
+            opts.color = rawVal !== undefined && rawVal !== c ? { val: c, valRaw: rawVal } : c;
           }
           break;
         }
         case "w:sz": {
-          const halfPts = attrNum(child, "w:val");
-          if (halfPts !== undefined) opts.size = halfPts / 2;
+          const value = attrMeasure(child, "w:val");
+          if (value !== undefined) opts.size = parseFontPoints(value);
           break;
         }
         case "w:szCs": {
-          const halfPts = attrNum(child, "w:val");
-          if (halfPts !== undefined) opts.sizeComplexScript = halfPts / 2;
+          const value = attrMeasure(child, "w:val");
+          if (value !== undefined) opts.sizeComplexScript = parseFontPoints(value);
           break;
         }
         case "w:highlight": {
@@ -250,6 +283,8 @@ export function parseRunProperties(el: Element): RunPropertiesOptions {
         case "w:fitText": {
           const val = attrNum(child, "w:val");
           if (val !== undefined) opts.fitText = val;
+          const id = attrNum(child, "w:id");
+          if (id !== undefined) opts.fitTextId = id;
           break;
         }
         case "w:lang": {
@@ -290,6 +325,20 @@ export function parseRunProperties(el: Element): RunPropertiesOptions {
           const innerRPr = findChild(child, "w:rPr");
           if (innerRPr) {
             Object.assign(rev, parseRunProperties(innerRPr));
+            for (const [elementName, optionName] of [
+              ["w:ins", "insertion"],
+              ["w:del", "deletion"],
+              ["w:moveFrom", "movedFrom"],
+              ["w:moveTo", "movedTo"],
+            ] as const) {
+              const marker = findChild(innerRPr, elementName);
+              if (!marker) continue;
+              rev[optionName] = {
+                id: attrNum(marker, "w:id") ?? 0,
+                author: attr(marker, "w:author") ?? "",
+                date: attr(marker, "w:date"),
+              };
+            }
           }
           if (Object.keys(rev).length > 0) opts.revision = rev;
           break;
@@ -305,6 +354,7 @@ export function parseRunProperties(el: Element): RunPropertiesOptions {
           const optKey = ON_OFF_RUN_PROPS_MAP.get(name);
           if (optKey !== undefined) {
             opts[optKey] = attrBool(child, "w:val") ?? true;
+            if (optKey === "rightToLeft") setOnOffLexeme(opts, "rightToLeftRaw", child);
           } else if (name.startsWith("w14:")) {
             const parsed = parseW14RunEffect(name, child);
             if (parsed) {
@@ -447,6 +497,7 @@ export type ParsedRunChild =
   | { text: string; preserveSpace?: boolean }
   | { instructionText: string; preserveSpace?: boolean }
   | { deletedInstructionText: string; preserveSpace?: boolean }
+  | { deletedText: string; preserveSpace?: boolean }
   | DrawingChild
   | { pict: PictOptions }
   | { symbolRun: SymbolRunOptions }
@@ -542,7 +593,7 @@ export function parseRun(
 } {
   // Duplicate rPr elements are schema-invalid, but legacy files carry them;
   // Word applies the last one, so the parse follows the same precedence.
-  const runChildren = el.elements ?? [];
+  const runChildren = flattenNestedRunElements(el.elements ?? []);
   let rPr: Element | undefined;
   for (const child of runChildren) {
     if (child.type === "element" && child.name === "w:rPr") rPr = child;
@@ -565,7 +616,7 @@ export function parseRun(
         ] as RunChildOrder[])
       : undefined;
 
-  for (const child of el.elements ?? []) {
+  for (const child of runChildren) {
     switch (child.name) {
       case "w:rPr":
         // already handled above
@@ -600,8 +651,15 @@ export function parseRun(
       case "w:delText": {
         // Deleted text in track changes (same format as w:t)
         const text = textOf(child);
-        if (text) children.push(text);
-        preserveSpace ||= attr(child, "xml:space") === "preserve";
+        if (text) {
+          const preserve = attr(child, "xml:space") === "preserve";
+          const needsMarker = preserve || /^[\t\n\r ]|[\t\n\r ]$/.test(text);
+          children.push({
+            deletedText: text,
+            ...(needsMarker ? { preserveSpace: preserve } : {}),
+          });
+          preserveSpace ||= preserve;
+        }
         break;
       }
       case "w:br": {
@@ -664,6 +722,29 @@ export function parseRun(
       // verbatim — the same split the drawing AlternateContent path uses.
       case "mc:AlternateContent": {
         const choice = findChild(child, "mc:Choice");
+        const drawingEl = choice ? findChild(choice, "w:drawing") : undefined;
+        if (drawingEl) {
+          const graphicData = findFirst(drawingEl, "a:graphicData");
+          const drawingChild =
+            parseDrawingRun(drawingEl, _ctx) ??
+            (graphicData ? parseUnsupportedDrawingRun(drawingEl, graphicData, _ctx) : undefined);
+          if (drawingChild) {
+            const fallback = findChild(child, "mc:Fallback");
+            if (fallback) {
+              const { rawXml, rawMedia } = replaceRelsWithPlaceholders(
+                stringifyElement(fallback),
+                _ctx,
+              );
+              attachDrawingVmlFallback(
+                drawingChild,
+                rawXml,
+                rawMedia.length > 0 ? rawMedia : undefined,
+              );
+            }
+            children.push(drawingChild);
+            break;
+          }
+        }
         const pictEl = choice ? findChild(choice, "w:pict") : undefined;
         if (!pictEl) {
           // Strict OLE object: the Choice wraps the VML w:object and the
@@ -760,13 +841,11 @@ export function parseRun(
       case "w:footnoteReference": {
         const id = attrNum(child, "w:id");
         if (id !== undefined) {
-          const customMarkFollows = attrBool(child, "w:customMarkFollows") === true;
+          const customMarkFollows = attrBool(child, "w:customMarkFollows");
           children.push(
-            customMarkFollows
-              ? {
-                  footnoteReference: { id, customMarkFollows: true },
-                }
-              : { footnoteReference: id },
+            customMarkFollows === undefined
+              ? { footnoteReference: id }
+              : { footnoteReference: { id, customMarkFollows } },
           );
         }
         break;
@@ -774,11 +853,11 @@ export function parseRun(
       case "w:endnoteReference": {
         const id = attrNum(child, "w:id");
         if (id !== undefined) {
-          const customMarkFollows = attrBool(child, "w:customMarkFollows") === true;
+          const customMarkFollows = attrBool(child, "w:customMarkFollows");
           children.push(
-            customMarkFollows
-              ? { endnoteReference: { id, customMarkFollows: true } }
-              : { endnoteReference: id },
+            customMarkFollows === undefined
+              ? { endnoteReference: id }
+              : { endnoteReference: { id, customMarkFollows } },
           );
         }
         break;
@@ -856,6 +935,14 @@ export function parseRun(
     preserveSpace,
     childOrder,
   };
+}
+
+function flattenNestedRunElements(elements: Element[]): Element[] {
+  return elements.flatMap((child) =>
+    child.type === "element" && child.name === "w:r"
+      ? flattenNestedRunElements(child.elements ?? [])
+      : [child],
+  );
 }
 
 /**
@@ -943,10 +1030,13 @@ export function parsedRunToOptions(
   if (parsed.preserveSpace !== undefined) opts.preserveSpace = parsed.preserveSpace;
 
   // Check if this run is a pure reference run (commentReference, footnoteReference, endnoteReference)
-  const isRefChild = (c: unknown): c is Record<string, number> =>
-    typeof c === "object" &&
-    c !== null &&
-    ("commentReference" in c || "footnoteReference" in c || "endnoteReference" in c);
+  type ParsedReferenceChild =
+    | Extract<ParsedRunChild, { commentReference: number }>
+    | Extract<ParsedRunChild, { footnoteReference: number | FootnoteEndnoteReferenceOptions }>
+    | Extract<ParsedRunChild, { endnoteReference: number | FootnoteEndnoteReferenceOptions }>;
+  const isRefChild = (child: ParsedRunChild): child is ParsedReferenceChild =>
+    typeof child === "object" &&
+    ("commentReference" in child || "footnoteReference" in child || "endnoteReference" in child);
 
   const refChildren = contentChildren.filter(isRefChild);
   const nonRefChildren = contentChildren.filter((c) => !isRefChild(c));
@@ -959,16 +1049,22 @@ export function parsedRunToOptions(
   // run properties and run-level identity attributes separate: the former
   // serializes as w:rPr, the latter as attributes on w:r.
   if (refChildren.length > 0 && nonRefChildren.length === 0) {
-    const ref = refChildren[0] as { commentReference?: number };
-    const { additionRsid, runPropertiesRsid, deletionRsid, ...properties } = opts;
-    return {
-      ...ref,
+    const referenceContext: RunOptions = {
+      ...(parsed.properties ? { properties: parsed.properties } : {}),
       ...(parsed.childOrder ? { childOrder: parsed.childOrder } : {}),
-      ...(Object.keys(properties).length > 0 ? { properties } : {}),
-      ...(additionRsid ? { additionRsid } : {}),
-      ...(runPropertiesRsid ? { runPropertiesRsid } : {}),
-      ...(deletionRsid ? { deletionRsid } : {}),
-    } as RunOptions | { commentReference: number };
+      ...(parsed.additionRsid ? { additionRsid: parsed.additionRsid } : {}),
+      ...(parsed.runPropertiesRsid ? { runPropertiesRsid: parsed.runPropertiesRsid } : {}),
+      ...(parsed.deletionRsid ? { deletionRsid: parsed.deletionRsid } : {}),
+    };
+    if (refChildren.length === 1) return { ...refChildren[0], ...referenceContext };
+    return {
+      ...parsed.properties,
+      children: refChildren,
+      ...(parsed.childOrder ? { childOrder: parsed.childOrder } : {}),
+      ...(parsed.additionRsid ? { additionRsid: parsed.additionRsid } : {}),
+      ...(parsed.runPropertiesRsid ? { runPropertiesRsid: parsed.runPropertiesRsid } : {}),
+      ...(parsed.deletionRsid ? { deletionRsid: parsed.deletionRsid } : {}),
+    };
   }
 
   // If the run only contains a symbolRun, return it directly. SymbolRunOptions
@@ -976,7 +1072,7 @@ export function parsedRunToOptions(
   // the stringify path serializes them from there. Without this a sym run
   // carrying w:rPr falls through to the text collection loop and is dropped.
   const symbolChild = nonRefChildren.find(isSymbolRunChild);
-  if (symbolChild && nonRefChildren.length === 1) {
+  if (symbolChild && nonRefChildren.length === 1 && refChildren.length === 0) {
     const sym = symbolChild.symbolRun;
     return {
       symbolRun: {
@@ -993,7 +1089,7 @@ export function parsedRunToOptions(
   // any run properties — an OLE object occupies its own run. Mixed with other
   // content it stays in children[] (handled below, order-preserving).
   const objectChild = nonRefChildren.find(isObjectChild);
-  if (objectChild && nonRefChildren.length === 1) {
+  if (objectChild && nonRefChildren.length === 1 && refChildren.length === 0) {
     return {
       ...parsed.properties,
       ...objectChild,
@@ -1005,7 +1101,7 @@ export function parsedRunToOptions(
 
   // A VML picture (w:pict) likewise occupies its own run when alone.
   const pictChild = nonRefChildren.find(isPictChild);
-  if (pictChild && nonRefChildren.length === 1) {
+  if (pictChild && nonRefChildren.length === 1 && refChildren.length === 0) {
     if (parsed.additionRsid) pictChild.pict.runAdditionRsid = parsed.additionRsid;
     if (parsed.runPropertiesRsid) pictChild.pict.runPropertiesRsid = parsed.runPropertiesRsid;
     if (parsed.deletionRsid) pictChild.pict.runDeletionRsid = parsed.deletionRsid;

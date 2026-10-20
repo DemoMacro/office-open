@@ -6,6 +6,8 @@
 import type {
   BasePictureOptions,
   ChartSpaceOptions,
+  ChartExSpaceOptions,
+  ChartSourceRelationship,
   CellGraphicOptions,
   CoveredCellOptions,
   DataType,
@@ -43,6 +45,7 @@ import type {
   DrawingContentPartOptions,
   DrawingAnchorOptions,
   DrawingWebExtensionFallbackOptions,
+  GroupShapeChildOptions,
   GroupOptions,
   ShapeOptions,
 } from "../drawing";
@@ -92,6 +95,8 @@ export interface RowOptions {
   spans?: string;
   /** Custom format applied (CT_Row `@customFormat`) */
   customFormat?: boolean;
+  /** Source `@customFormat` presence; false preserves an omitted attribute. Round-trip only. */
+  customFormatDeclared?: boolean;
   /** Thick top border (CT_Row `@thickTop`) */
   thickTop?: boolean;
   /** Thick bottom border (CT_Row `@thickBot`) */
@@ -176,6 +181,8 @@ export interface RichTextRunPropertiesOptions {
 export interface RichTextRunOptions {
   /** Run properties (optional = inherits from parent) */
   properties?: RichTextRunPropertiesOptions;
+  /** True when the source declared `<rPr/>`, including an empty container; round-trip only. */
+  propertiesPresent?: boolean;
   /** Run text content */
   text: string;
   /** Source xml:space lexical form of the run `t`; round-trip only. */
@@ -262,6 +269,8 @@ export interface CellOptions {
   sharedIndex?: number;
   /** Source numeric/text lexical form for `<v>`; round-trip only. */
   valueRaw?: string;
+  /** Source `<v/@t>` cached-value token (e.g. a formula result typed inlineStr); round-trip only. */
+  cachedValueTypeRaw?: string;
   /** Explicit source `@t` token that matches the defaulted form (`t="n"`).
    * Also carries declared types with no canonical value carrier (`t="s"` and
    * the like on empty cells). Round-trip only: do not hand-author. */
@@ -294,6 +303,48 @@ export interface CellOptions {
   covered?: CoveredCellOptions;
   /** Graphics anchored to this spreadsheet cell. */
   graphics?: CellGraphicOptions[];
+  /** ODF linked external cell range (`table:cell-range-source`). */
+  cellRangeSource?: CellRangeSourceOptions;
+  /** ODF dependency visualization (`table:detective`). */
+  detective?: TableDetectiveOptions;
+}
+
+/** Linked external source range for an ODF cell. */
+export interface CellRangeSourceOptions {
+  name: string;
+  lastColumnSpanned: number;
+  lastRowSpanned: number;
+  href: string;
+  actuate?: "onRequest";
+  filterName?: string;
+  filterOptions?: string;
+  refreshDelay?: string;
+}
+
+/** An ODF detective dependency range or invalid-cell marker. */
+export type DetectiveHighlightedRangeOptions =
+  | {
+      cellRangeAddress?: string;
+      direction: "fromAnotherTable" | "toAnotherTable" | "fromSameTable";
+      containsError?: boolean;
+    }
+  | { markedInvalid: boolean };
+
+/** Trace operation recorded by an ODF spreadsheet. */
+export interface DetectiveOperationOptions {
+  name:
+    | "traceDependents"
+    | "removeDependents"
+    | "tracePrecedents"
+    | "removePrecedents"
+    | "traceErrors";
+  index: number;
+}
+
+/** ODF `table:detective` content attached to one cell. */
+export interface TableDetectiveOptions {
+  highlightedRanges?: DetectiveHighlightedRangeOptions[];
+  operations?: DetectiveOperationOptions[];
 }
 
 export type { CellGraphicOptions };
@@ -464,6 +515,10 @@ export interface FreezePaneOptions {
   topLeftCell?: string;
   /** Active pane (CT_Pane `@activePane`); defaults to the pane past the split */
   activePane?: "bottomRight" | "topRight" | "bottomLeft" | "topLeft";
+  /** Source `@activePane` presence; round-trip only. */
+  activePanePresent?: boolean;
+  /** Source `@state` presence; round-trip only. */
+  statePresent?: boolean;
 }
 
 /**
@@ -473,13 +528,23 @@ export interface FreezePaneOptions {
  */
 export interface PictureOptions extends Omit<BasePictureOptions, "type">, DrawingAnchorOptions {
   /** Image format of the `data` bytes; wmf/emf are Windows metafiles. */
-  type: "png" | "jpg" | "webp" | "wmf" | "emf";
+  type: "png" | "jpg" | "gif" | "webp" | "wmf" | "emf";
+  /** Macro reference (xdr:pic/@macro); empty string round-trips. */
+  macro?: string;
   /** Source package path of embedded bytes; round-trip only — do not hand-author. */
   sourcePath?: string;
   /** Round-tripped pic/spPr (rotation/flip/bwMode/fill beyond position). */
   properties?: ShapePropertiesOptions;
   /** Blip crop (a:srcRect); an empty object round-trips the bare marker. */
   sourceRectangle?: SourceRectangleOptions;
+  /**
+   * Stretch fill rectangle (a:stretch/a:fillRect). `false` preserves a source
+   * that omitted stretch, `true` a bare stretch marker; an object round-trips
+   * attributes.
+   */
+  fillRectangle?: SourceRectangleOptions | true | false;
+  /** Source pic omitted xdr:blipFill; `false` preserves that legacy shape. */
+  blipFillPresent?: false;
   /** Display resolution hint (blipFill/@dpi), e.g. 300 = 300 DPI. */
   dpi?: number;
   /** Whether the fill rotates with the shape (blipFill/@rotWithShape). */
@@ -495,8 +560,11 @@ export interface PictureOptions extends Omit<BasePictureOptions, "type">, Drawin
   blipEffects?: BlipEffectsOptions;
   /** Compression state (a:blip/@cstate); absent = attribute omitted. */
   compression?: BlipCompression;
-  /** Local-DPI display hint (a14:useLocalDpi in the a:blip extension list). */
-  useLocalDpi?: boolean;
+  /**
+   * Local-DPI display hint (a14:useLocalDpi in the a:blip extension list);
+   * `"default"` preserves a source element with no val attribute.
+   */
+  useLocalDpi?: boolean | "default";
   /**
    * Verbatim a:blip `a:extLst` inner XML for extensions beyond the useLocalDpi
    * hint (a14 imgProps artistic effects, …). Round-trip only; when the source
@@ -534,16 +602,29 @@ export interface WorksheetChartOptions
     ChartSpaceOptions,
     DrawingAnchorOptions,
     Omit<NonVisualDrawingPropertiesOptions, "title"> {
+  /**
+   * Whether the graphic frame carries a placement transform. `false`
+   * preserves a source frame that omitted `xdr:xfrm` (round-trip only).
+   */
+  frameTransform?: boolean;
   /** Graphic-frame transform width (a:xfrm/a:ext/@cx, EMU). */
   frameExtentCx?: number;
   /** Graphic-frame transform height (a:xfrm/a:ext/@cy, EMU). */
   frameExtentCy?: number;
+  /** Graphic-frame transform offset from left (a:xfrm/a:off/@x, EMU). */
+  frameOffsetX?: number;
+  /** Graphic-frame transform offset from top (a:xfrm/a:off/@y, EMU). */
+  frameOffsetY?: number;
   /** Graphic-frame rotation in degrees (xdr:xfrm/@rot). */
   frameRotation?: number;
   /** Horizontal flip (xdr:xfrm/@flipH). */
   frameFlipHorizontal?: boolean;
   /** Vertical flip (xdr:xfrm/@flipV). */
   frameFlipVertical?: boolean;
+  /** Graphic-frame accessibility title; separate from the chart title. */
+  frameTitle?: string;
+  /** Graphic-frame hidden flag. */
+  frameHidden?: boolean;
   /** Frame locks (cNvGraphicFramePr/a:graphicFrameLocks); absent = empty. */
   frameLocks?: GraphicFrameLockingOptions;
   /**
@@ -572,6 +653,43 @@ export interface WorksheetChartOptions
   themeOverridePath?: string;
   /** Parsed theme override content — round-trip only. */
   themeOverride?: ThemeOverrideOptions;
+}
+
+/** ChartEx anchored to a worksheet. The full ChartEx part is canonical. */
+export interface WorksheetChartExOptions
+  extends ChartExSpaceOptions, DrawingAnchorOptions, NonVisualDrawingPropertiesOptions {
+  /** Graphic-frame transform width (a:xfrm/a:ext/@cx, EMU). */
+  frameExtentCx?: number;
+  /** Graphic-frame transform height (a:xfrm/a:ext/@cy, EMU). */
+  frameExtentCy?: number;
+  /** Graphic-frame transform offset from left (a:xfrm/a:off/@x, EMU). */
+  frameOffsetX?: number;
+  /** Graphic-frame transform offset from top (a:xfrm/a:off/@y, EMU). */
+  frameOffsetY?: number;
+  /** Graphic-frame rotation in degrees (xdr:xfrm/@rot). */
+  frameRotation?: number;
+  /** Horizontal flip (xdr:xfrm/@flipH). */
+  frameFlipHorizontal?: boolean;
+  /** Vertical flip (xdr:xfrm/@flipV). */
+  frameFlipVertical?: boolean;
+  /** Frame locks (cNvGraphicFramePr/a:graphicFrameLocks); absent = empty. */
+  frameLocks?: GraphicFrameLockingOptions;
+  /** Click hyperlink on the frame (a:hlinkClick inside xdr:cNvPr). */
+  hyperlink?: TextHyperlinkOptions;
+  /** Document-order position inside the drawing part (round-trip only). */
+  zOrder?: number;
+  /** Original cNvPr id (round-trip only). */
+  shapeId?: number;
+  /** Macro reference (CT_GraphicFrame/@macro); empty string round-trips. */
+  macro?: string;
+  /** Published-object flag (graphicFrame/@fPublished); explicit true/false round-trips. */
+  fPublished?: boolean;
+  /** Source ChartEx part path; round-trip only and preserves sparse names. */
+  sourcePath?: string;
+  /** Source ChartEx-part relationships preserved with their original rIds. */
+  sourceRelationships?: ChartSourceRelationship[];
+  /** Legacy `mc:Fallback` placeholder shape; round-trip only. */
+  fallbackShape?: GroupShapeChildOptions;
 }
 
 /** Anchored external content part with its source drawing relationship. */
@@ -1250,6 +1368,11 @@ export interface FilterItemsOptions {
   values?: string[];
   /** Date group filters (CT_Filters `dateGroupItem` children) */
   dateGroupItems?: DateGroupFilterOptions[];
+  /**
+   * Source child interleaving of `filter` and `dateGroupItem` entries;
+   * round-trip only — the XSD sequence is filter-first.
+   */
+  entryOrder?: ("value" | "dateGroupItem")[];
 }
 
 /** Dynamic filter (CT_DynamicFilter) */
@@ -1684,6 +1807,9 @@ export interface DrawingHfOptions {
 export interface WorksheetOptions {
   /** Source part path (xl/worksheets/sheet26.xml) — round-trip only. */
   sourcePath?: string;
+  /** Source rels path when its casing differs from the part-derived default
+   * (xl/worksheets/_rels/sheet1.xml.rels for Sheet1.xml) — round-trip only. */
+  sourceRelsPath?: string;
   name?: string;
   /** Revision UID (CT_Worksheet `@xr:uid`); preserved when the source emitted it. */
   uid?: string;
@@ -1693,6 +1819,8 @@ export interface WorksheetOptions {
    * writer defaults to `xr:`.
    */
   uidPrefix?: "xr2" | "xr3" | "xr6";
+  /** Root `xml:space` lexical form (CT_Worksheet `@xml:space`); round-trip only. */
+  rootXmlSpace?: "default" | "preserve";
   /** Workbook sheet id (CT_Sheet `@sheetId`) — unique but not necessarily sequential. */
   sheetId?: number;
   /** Visibility (CT_Sheet `@state`) */
@@ -1700,6 +1828,8 @@ export interface WorksheetOptions {
   rows?: RowOptions[];
   columns?: ColumnOptions[];
   mergeCells?: MergeCellOptions[];
+  /** Source `mergeCells/@count`; `false` preserves an omitted count. */
+  mergeCellsCount?: number | false;
   freezePanes?: FreezePaneOptions;
   protection?: SheetProtectionOptions;
   /** Named protected ranges within this sheet */
@@ -1712,6 +1842,8 @@ export interface WorksheetOptions {
   sortState?: SortStateOptions;
   images?: PictureOptions[];
   charts?: WorksheetChartOptions[];
+  /** ChartEx frames anchored to this sheet. */
+  chartExs?: WorksheetChartExOptions[];
   /** Anchored SmartArt frames (xdr:graphicFrame with dgm:relIds). */
   smartArts?: WorksheetSmartArtOptions[];
   /** Anchored WebExtension frames (we:webextensionref). */
@@ -1725,8 +1857,14 @@ export interface WorksheetOptions {
   /** Anchored external content references (xdr:contentPart). */
   contentParts?: WorksheetContentPartOptions[];
   dataValidations?: DataValidationOptions[];
+  /** Source `dataValidations/@count`; `false` preserves an omitted count. */
+  dataValidationsCount?: number | false;
   /** Disable data validation prompts (CT_DataValidations `@disablePrompts`) */
   dataValidationsDisablePrompts?: boolean;
+  /** Source `dataValidations/@xWindow` (pixels). */
+  dataValidationsXWindow?: number;
+  /** Source `dataValidations/@yWindow` (pixels). */
+  dataValidationsYWindow?: number;
   conditionalFormats?: ConditionalFormatOptions[];
   hyperlinks?: HyperlinkOptions[];
   comments?: CommentOptions[];
@@ -1762,6 +1900,8 @@ export interface WorksheetOptions {
    * do not hand-author.
    */
   preserveEmptyTableParts?: boolean;
+  /** Source `tableParts/@count`; `false` preserves an omitted count. */
+  tablePartsCount?: number | false;
   /** Row page breaks (CT_PageBreaks) */
   rowBreaks?: PageBreakOptions[];
   /** Column page breaks (CT_PageBreaks) */
@@ -1800,6 +1940,8 @@ export interface WorksheetOptions {
    * relationship, and its content-type override alive through a round-trip.
    */
   drawingPresent?: boolean;
+  /** False when the source carried a drawing part and relationship without a `<drawing>` body reference. Round-trip only. */
+  drawingReferencePresent?: boolean;
   /** True when the source sheet declared `<dimension>` (even with an unusable
    * ref). Round-trip only: distinguishes an omitted element from fresh
    * authoring that has not set one yet. */
