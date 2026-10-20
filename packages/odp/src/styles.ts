@@ -119,6 +119,8 @@ const ODP_STYLE_PROPERTIES: Record<string, string[]> = {
   "table-row": ["style:table-row-properties"],
   "table-cell": [
     "style:table-cell-properties",
+    "style:graphic-properties",
+    "loext:graphic-properties",
     "style:paragraph-properties",
     "style:text-properties",
   ],

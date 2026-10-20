@@ -154,7 +154,7 @@ function metadataError(name: string, reason: string): OdfSchemaError {
 
 function rejectUnknownMetadata(meta: Element | undefined): void {
   const unknownAttributes = Object.keys(meta?.attributes ?? {}).filter(
-    (name) => name !== "xmlns:office",
+    (name) => !name.startsWith("xmlns:"),
   );
   if (unknownAttributes.length > 0) {
     const name = unknownAttributes[0] ?? "";

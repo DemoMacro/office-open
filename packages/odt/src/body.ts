@@ -92,6 +92,7 @@ import {
   normalizeParagraph,
   paragraphXml,
   parseParagraph,
+  parseRuns,
   parseSequenceDeclarations,
   parseTrackedChanges,
   parseVariableDeclarations,
@@ -733,6 +734,19 @@ export function parseBlocks(
     }
     if (element.name === "office:annotation") {
       result.push({ paragraph: { children: parseAnnotationStart(element, context) } });
+      continue;
+    }
+    if (
+      [
+        "text:alphabetical-index-mark",
+        "text:user-index-mark",
+        "text:change",
+        "text:insertion",
+        "text:deletion",
+        "field:fieldmark-start",
+      ].includes(element.name ?? "")
+    ) {
+      result.push({ paragraph: { children: parseRuns(element, context) } });
       continue;
     }
     if (element.name === "office:annotation-end") {

@@ -229,7 +229,11 @@ function assignTiming(target: AnimationEntry, element: Element, allowed: readonl
         target.targetSubItem = value;
         break;
       case "smil:targetElement":
-        target.shapeName = value;
+        {
+          const shapeId = /^id(\d+)$/u.exec(value);
+          if (shapeId) target.shapeId = Number(shapeId[1]);
+          else target.shapeName = value;
+        }
         break;
       case "smil:by":
         target.animBy = value;
@@ -460,7 +464,8 @@ function animationAttributes(options: AnimationEntry): Record<string, string | n
     "smil:repeatDur": durationXml(options.repeatDuration),
     "smil:restart": options.restart,
     "smil:sub-item": options.targetSubItem,
-    "smil:targetElement": options.shapeName,
+    "smil:targetElement":
+      options.shapeId === undefined ? options.shapeName : `id${options.shapeId}`,
     "smil:attributeName": options.attributeName,
     "smil:by": options.animBy,
     "smil:calcMode": options.calcMode,

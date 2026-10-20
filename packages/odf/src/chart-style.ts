@@ -162,7 +162,14 @@ export function chartMediaFiles(basePath: string, resources: ChartStyleResources
 }
 
 function emptyResources(): ChartStyleResources {
-  return { styles: [], gradients: [], hatches: [], fillImages: [], strokeDashes: [] };
+  return {
+    styles: [],
+    gradients: [],
+    hatches: [],
+    fillImages: [],
+    strokeDashes: [],
+    dr3dLights: [],
+  };
 }
 
 function elementAttributes(element: Element | undefined): Record<string, string> {
@@ -246,12 +253,37 @@ function projectFill(
   }
   if (token === "hatch") {
     const name = graphic["draw:fill-hatch-name"];
-    if (!name || !findResource(resources.hatches, name))
+    const resource = name === undefined ? undefined : findResource(resources.hatches, name);
+    if (name !== undefined && !resource)
       throw projectionError(style, "draw:fill-hatch-name", "unresolved-style-reference");
-    return undefined;
+    return hatchFill(resource);
   }
   if (token === "bitmap") return bitmapFill(style, resources, basePath);
   throw projectionError(style, "draw:fill", "unsupported-odf-fill");
+}
+
+function hatchFill(resource: DrawingStyleResource | undefined): FillOptions {
+  if (!resource)
+    return {
+      type: "pattern",
+      pattern: "percent5",
+      foregroundColor: "000000",
+      backgroundColor: "FFFFFF",
+    };
+  const style = resource.attributes["draw:style"];
+  const rotation = ((Number(resource.attributes["draw:rotation"] ?? 0) % 3600) + 3600) % 3600;
+  const foreground = stripColor(resource.attributes["draw:color"]) ?? "000000";
+  const pattern =
+    style === "double"
+      ? "cross"
+      : style === "triple"
+        ? "diagonalCross"
+        : rotation === 450 || rotation === 1350
+          ? "downDiagonal"
+          : rotation === 900 || rotation === 2700
+            ? "vertical"
+            : "horizontal";
+  return { type: "pattern", pattern, foregroundColor: foreground, backgroundColor: "FFFFFF" };
 }
 
 function bitmapFill(style: ChartStyle, resources: ChartStyleResources, basePath: string) {
@@ -362,13 +394,13 @@ function customDash(resource: DrawingStyleResource, style: ChartStyle): readonly
   if (Number.isFinite(firstCount) && firstCount > 0)
     for (let index = 0; index < firstCount; index++)
       stops.push({
-        d: dashLength(resource.attributes["draw:dots1-length"], width, style),
+        d: dashLength(resource.attributes["draw:dots1-length"] ?? "100%", width, style),
         sp: distance,
       });
   if (Number.isFinite(secondCount) && secondCount > 0)
     for (let index = 0; index < secondCount; index++)
       stops.push({
-        d: dashLength(resource.attributes["draw:dots2-length"], width, style),
+        d: dashLength(resource.attributes["draw:dots2-length"] ?? "100%", width, style),
         sp: distance,
       });
   return stops;

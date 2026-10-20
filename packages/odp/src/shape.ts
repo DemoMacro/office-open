@@ -20,6 +20,7 @@ import type {
   SlideChild,
 } from "@office-open/pptx";
 import type { Element } from "@office-open/xml";
+import { stringifyElement } from "@office-open/xml";
 
 import { endpointConnection, parseChartFrame, parsePictureFrame } from "./drawing";
 import { OdpParseError } from "./error";
@@ -28,6 +29,134 @@ import { parseSlideTable } from "./slide";
 import { parseParagraph, textBodyXml, type TextProperties } from "./text-run";
 
 /** Shape with preset geometry renders as draw:custom-shape + enhanced-geometry. */
+export function odfShapeId(element: Element): number | undefined {
+  const match = /^id(\d+)$/u.exec(attributeString(element, "draw:id") ?? "");
+  const id = match === null ? undefined : Number(match[1]);
+  return id !== undefined && id > 0 ? id : undefined;
+}
+
+export function odfShapeIdXml(id: number | undefined): string | undefined {
+  return id === undefined ? undefined : `id${id}`;
+}
+
+/** Collect every ODF shape identifier and project it onto PPTX numeric ids. */
+export function collectOdfShapeIds(root: Element): Map<string, number> {
+  const rawIds: string[] = [];
+  const textAliases: [string, string | undefined][] = [];
+  const visit = (element: Element, shapeId: string | undefined): void => {
+    const drawId = attributeString(element, "draw:id");
+    const currentShapeId = isShapeElement(element) ? drawId : shapeId;
+    if (drawId !== undefined) rawIds.push(drawId);
+    const textId = attributeString(element, "text:id");
+    if (textId !== undefined) {
+      rawIds.push(textId);
+      textAliases.push([textId, currentShapeId]);
+    }
+    for (const child of element.elements ?? [])
+      if (child.type === "element") visit(child, currentShapeId);
+  };
+  visit(root, undefined);
+
+  let nextId = 1;
+  const references = new Map<string, number>();
+  for (const raw of rawIds) {
+    const numbered = /^id(\d+)$/u.exec(raw);
+    const id = numbered === null ? undefined : Number(numbered[1]);
+    if (id !== undefined && id > 0) {
+      references.set(raw, id);
+      nextId = Math.max(nextId, id + 1);
+    }
+  }
+  for (const raw of rawIds) {
+    if (references.has(raw)) continue;
+    references.set(raw, nextId++);
+  }
+  for (const [textId, shapeId] of textAliases) {
+    const resolved = shapeId === undefined ? undefined : references.get(shapeId);
+    if (resolved !== undefined) references.set(textId, resolved);
+  }
+  return references;
+}
+
+function isShapeElement(element: Element): boolean {
+  const [namespace, localName] = element.name?.split(":", 2) ?? [];
+  return (
+    namespace === "draw" &&
+    [
+      "circle",
+      "connector",
+      "control",
+      "custom-shape",
+      "ellipse",
+      "frame",
+      "g",
+      "line",
+      "path",
+      "polygon",
+      "polyline",
+      "rect",
+    ].includes(localName ?? "")
+  );
+}
+
+function shapeReferenceKey(element: Element): string | undefined {
+  return attributeString(element, "draw:id") ?? descendantTextId(element);
+}
+
+function descendantTextId(element: Element): string | undefined {
+  const direct = attributeString(element, "text:id");
+  if (direct !== undefined) return direct;
+  for (const child of element.elements ?? []) {
+    const id = descendantTextId(child);
+    if (id !== undefined) return id;
+  }
+  return undefined;
+}
+
+/** Assign parsed ODF shape identifiers to the matching canonical shape union. */
+export function assignOdfShapeIds(
+  element: Element,
+  children: readonly SlideChild[],
+  references: Map<string, number>,
+): void {
+  const assignShape = (child: SlideChild): void => {
+    if (!("shape" in child)) return;
+    const id = references.get(shapeReferenceKey(element) ?? "");
+    if (id !== undefined) child.shape.id = id;
+  };
+  if (element.name === "draw:g") {
+    const group = children.find(
+      (child): child is Extract<SlideChild, { group: object }> => "group" in child,
+    )?.group;
+    if (group) {
+      const id = references.get(shapeReferenceKey(element) ?? "");
+      if (id !== undefined) group.id = id;
+      const sourceChildren = (element.elements ?? []).filter(
+        (child): child is Element => child.type === "element",
+      );
+      let childIndex = 0;
+      for (const source of sourceChildren) {
+        if (
+          source.name !== "presentation:notes" &&
+          source.name !== "office:forms" &&
+          source.name !== "officeooo:annotation" &&
+          source.name !== undefined &&
+          !isAnimationElementName(source.name)
+        ) {
+          assignOdfShapeIds(source, group.children.slice(childIndex), references);
+          childIndex++;
+        }
+      }
+    }
+    return;
+  }
+  assignShape((children[0] ?? {}) as SlideChild);
+}
+
+function isAnimationElementName(name: string): boolean {
+  return name.startsWith("anim:") || name === "loext:animatePhysics";
+}
+
 export function customShapeXml(shape: ShapeOptions, styles: string[]): string {
   if (shape.controlId !== undefined) return controlShapeXml(shape, styles);
   const geometry = shape.properties?.geometry;
@@ -37,6 +166,7 @@ export function customShapeXml(shape: ShapeOptions, styles: string[]): string {
     return xmlElement(
       "draw:path",
       {
+        "draw:id": odfShapeIdXml(shape.id),
         "draw:style-name": pushShapeStyle(
           shape.properties?.fill ?? undefined,
           shape.properties?.outline ?? undefined,
@@ -54,6 +184,7 @@ export function customShapeXml(shape: ShapeOptions, styles: string[]): string {
   return xmlElement(
     "draw:custom-shape",
     {
+      "draw:id": odfShapeIdXml(shape.id),
       "draw:style-name": pushShapeStyle(
         shape.properties?.fill ?? undefined,
         shape.properties?.outline ?? undefined,
@@ -123,6 +254,7 @@ export function shapeXml(shape: ShapeOptions, styles: string[]): string {
   return xmlElement(
     "draw:frame",
     {
+      "draw:id": odfShapeIdXml(shape.id),
       "draw:name": shape.name,
       "svg:x": emuToLength(shape.x),
       "svg:y": emuToLength(shape.y),
@@ -181,13 +313,14 @@ export function parseShape(
 ): ShapeOptions {
   const textBox = childNamed(frame, "draw:text-box");
   const paragraphs = childrenNamed(textBox, "text:p");
+  const shapeId = id ?? odfShapeId(frame);
   return {
     name: attributeString(frame, "draw:name"),
     x: lengthToEmu(attributeString(frame, "svg:x")),
     y: lengthToEmu(attributeString(frame, "svg:y")),
     width: lengthToEmu(attributeString(frame, "svg:width")),
     height: lengthToEmu(attributeString(frame, "svg:height")),
-    ...(id === undefined ? {} : { id }),
+    ...(shapeId === undefined ? {} : { id: shapeId }),
     ...(paragraphs.length > 0
       ? {
           textBody: {
@@ -208,6 +341,7 @@ export function parseControlSlideShape(
   const paragraphs = childrenNamed(element, "text:p");
   return {
     controlId: attributeString(element, "draw:control"),
+    ...(odfShapeId(element) === undefined ? {} : { id: odfShapeId(element) }),
     name: attributeString(element, "draw:name"),
     x: lengthToEmu(attributeString(element, "svg:x")),
     y: lengthToEmu(attributeString(element, "svg:y")),
@@ -242,6 +376,7 @@ export function parseCustomSlideShape(
   const fill = graphicFill(graphic);
   const outline = graphicOutline(graphic);
   return {
+    ...(odfShapeId(element) === undefined ? {} : { id: odfShapeId(element) }),
     name: attributeString(element, "draw:name"),
     x: lengthToEmu(attributeString(element, "svg:x")),
     y: lengthToEmu(attributeString(element, "svg:y")),
@@ -286,6 +421,7 @@ export function parsePrimitiveSlideShape(
         ? ("ellipse" as const)
         : undefined;
   return {
+    ...(odfShapeId(element) === undefined ? {} : { id: odfShapeId(element) }),
     name: attributeString(element, "draw:name"),
     x,
     y,
@@ -355,6 +491,7 @@ export function parseGroup(
       const picture = parsePictureFrame(child, binaries, usedBinaryPaths);
       if (picture) return [picture];
       if (childNamed(child, "draw:text-box")) return [{ shape: parseShape(child, textStyles) }];
+      if (child.name === "draw:frame") return [{ rawXml: stringifyElement(child) }];
       throw unknownSlideChild(child, "/draw:g");
     }
     if (child.name === "draw:custom-shape")
@@ -376,11 +513,13 @@ export function parseGroup(
         usedBinaryPaths,
       );
     if (child.name === "table:table") return [parseSlideTable(child, textStyles, columnWidths)];
+    if (child.name === "dr3d:scene") return [{ rawXml: stringifyElement(child) }];
     throw unknownSlideChild(child, "/draw:g");
   });
   return [
     {
       group: {
+        ...(odfShapeId(element) === undefined ? {} : { id: odfShapeId(element) }),
         name: attributeString(element, "draw:name"),
         children,
       },

@@ -1,3 +1,5 @@
+import type { AnimationEntry } from "./timing";
+
 /** Shape effect family (entrance/exit presets): "randomBars" random bars, "strips" diagonal strips, "wheel" radial wheel segments; the rest are self-evident. */
 export type AnimationType =
   | "appear"
@@ -363,7 +365,7 @@ export interface AnimationOptions {
   /** Behavior element for generic timing sources; PowerPoint writers project it into presets. */
   behavior?: AnimationBehavior;
   /** Nested timing children; only valid with timeNode. */
-  children?: AnimationOptions[];
+  children?: AnimationEntry[];
   /** Timing-tree node role (presentation:node-type). */
   timingNodeRole?: string;
   /** Format-specific preset identifier (presentation:preset-id). */

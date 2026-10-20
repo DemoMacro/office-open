@@ -40,6 +40,14 @@ export interface FillImageResource extends DrawingStyleResource {
   data?: DataType;
 }
 
+/** ODF 3-D scene light retained for ODF-only chart round-trip. */
+export interface OdfDr3dLightResource {
+  diffuseColor?: string;
+  direction?: string;
+  enabled?: boolean;
+  specular?: boolean;
+}
+
 /** Named style resources retained beside canonical chart projections. */
 export interface ChartStyleResources {
   styles: ChartStyleResource[];
@@ -47,4 +55,5 @@ export interface ChartStyleResources {
   hatches: DrawingStyleResource[];
   fillImages: FillImageResource[];
   strokeDashes: DrawingStyleResource[];
+  dr3dLights?: OdfDr3dLightResource[];
 }

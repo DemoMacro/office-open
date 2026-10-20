@@ -14,10 +14,11 @@ import {
   type GraphicStyle,
 } from "@office-open/odf";
 import type {
+  AnimationEntry,
   SlideChild,
   SlideCommentOptions,
-  SlideOptions,
   TableOptions,
+  TransitionOptions,
 } from "@office-open/pptx";
 import type { Element } from "@office-open/xml";
 
@@ -37,8 +38,12 @@ import {
   parseEmbeddedObjectFrame,
   type OdpEmbeddedObjectPool,
 } from "./embedded-frames";
+import { isOpaqueSlideNode, opaqueSlideNode, type OdpOpaqueSlideNodeOptions } from "./opaque-node";
+import type { OdpSlideOptions } from "./options";
 import { formsXml, parseForms, unknownSlideChild } from "./presentation";
 import {
+  assignOdfShapeIds,
+  collectOdfShapeIds,
   controlShapeXml,
   connectorXml,
   customShapeXml,
@@ -50,6 +55,7 @@ import {
   parseLine,
   parsePrimitiveSlideShape,
   parseShape,
+  odfShapeIdXml,
   shapeXml,
   toOdfLength,
 } from "./shape";
@@ -57,7 +63,7 @@ import { addColumnStyle } from "./styles";
 import { parseParagraph, textBodyXml, type TextProperties } from "./text-run";
 
 export function slideXml(
-  slide: SlideOptions,
+  slide: OdpSlideOptions,
   index: number,
   styles: string[],
   images: OdpImage[],
@@ -68,6 +74,10 @@ export function slideXml(
   const frames = (slide.children ?? []).map((child) =>
     slideChildXml(child, styles, images, mediaFiles, embeddedObjects, charts),
   );
+  for (const node of [...(slide.opaqueNodes ?? [])].sort(
+    (left, right) => left.position - right.position,
+  ))
+    frames.splice(Math.min(node.position, frames.length), 0, node.xml);
   const notes = typeof slide.notes === "string" ? slide.notes : slide.notes?.text;
   const notesXml = notes
     ? xmlElement("presentation:notes", undefined, [
@@ -151,11 +161,12 @@ export function slideChildXml(
   if ("group" in child)
     return xmlElement(
       "draw:g",
-      { "draw:name": child.group.name },
+      { "draw:id": odfShapeIdXml(child.group.id), "draw:name": child.group.name },
       child.group.children.map((nested) =>
         slideChildXml(nested, styles, images, mediaFiles, embeddedObjects, charts),
       ),
     );
+  if ("rawXml" in child) return child.rawXml;
   return "";
 }
 
@@ -170,91 +181,201 @@ export function parseSlide(
   embeddedObjects: OdpEmbeddedObjectPool,
   manifestMediaTypes: Map<string, string | undefined>,
   nextEmbeddedShapeId: { value: number },
-): SlideOptions {
+): OdpSlideOptions {
   const forms = parseForms(page);
-  const animations = (page.elements ?? [])
+  const animationRoots = (page.elements ?? [])
     .filter((child): child is Element => child.name !== undefined && isAnimationElement(child.name))
     .map(parseAnimation);
+  const shapeReferences = collectOdfShapeIds(page);
   const notes = childNamed(
     childNamed(childNamed(page, "presentation:notes"), "draw:frame"),
     "draw:text-box",
   );
   const notesText = notes ? textOf(childNamed(notes, "text:p")) : undefined;
   const comments = childrenNamed(page, "officeooo:annotation").map(parseAnnotation);
-  const slideOptions = {
+  const opaqueNodes: OdpOpaqueSlideNodeOptions[] = [];
+  const opaqueSources = new Set<Element>();
+  const children =
+    page.elements?.flatMap((child): SlideChild[] => {
+      if (child.name === "draw:frame") {
+        const chart = parseChartFrame(child, chartPool);
+        if (chart) return [chart];
+        const embeddedObject = parseEmbeddedObjectFrame(
+          child,
+          embeddedObjects,
+          binaries,
+          manifestMediaTypes,
+          () => nextEmbeddedShapeId.value++,
+          textStyles,
+        );
+        if (embeddedObject) return [embeddedObject];
+        const media = parseMediaFrame(child, binaries, usedBinaryPaths);
+        if (media) return [media];
+        if (childNamed(child, "draw:object-ole")) return [];
+        const picture = parsePictureFrame(child, binaries, usedBinaryPaths);
+        if (picture) return [picture];
+        if (childNamed(child, "draw:text-box")) return [{ shape: parseShape(child, textStyles) }];
+        opaqueNodes.push(opaqueSlideNode(child, visibleChildIndex(page, child)));
+        opaqueSources.add(child);
+        return [];
+      }
+      if (child.name === "draw:custom-shape")
+        return [{ shape: parseCustomSlideShape(child, textStyles, graphicStyles) }];
+      if (child.name === "draw:control")
+        return [{ shape: parseControlSlideShape(child, textStyles, graphicStyles) }];
+      if (
+        child.name === "draw:rect" ||
+        child.name === "draw:circle" ||
+        child.name === "draw:ellipse" ||
+        child.name === "draw:path" ||
+        child.name === "draw:polygon" ||
+        child.name === "draw:polyline"
+      )
+        return [{ shape: parsePrimitiveSlideShape(child, textStyles, graphicStyles) }];
+      if (child.name === "draw:line") return [parseLine(child)];
+      if (child.name === "draw:g")
+        return parseGroup(
+          child,
+          textStyles,
+          graphicStyles,
+          columnWidths,
+          binaries,
+          chartPool,
+          usedBinaryPaths,
+        );
+      if (child.name === "draw:connector") return [parseConnector(child)];
+      if (child.name === "table:table") return [parseSlideTable(child, textStyles, columnWidths)];
+      if (isOpaqueSlideNode(child)) {
+        opaqueNodes.push(opaqueSlideNode(child, visibleChildIndex(page, child)));
+        opaqueSources.add(child);
+        return [];
+      }
+      if (
+        child.name !== "presentation:notes" &&
+        child.name !== "office:forms" &&
+        child.name !== "officeooo:annotation" &&
+        !(child.name !== undefined && isAnimationElement(child.name))
+      )
+        throw unknownSlideChild(
+          child,
+          "/office:document-content/office:body/office:presentation/draw:page",
+        );
+      return [];
+    }) ?? [];
+  const animations = animationRoots.map((entry) => resolveAnimationTargets(entry, shapeReferences));
+  const transition = parseTransition(animationRoots);
+  let childIndex = 0;
+  let opaqueNodeCount = 0;
+  for (const source of page.elements ?? []) {
+    if (source.type !== "element") continue;
+    if (
+      source.name !== "presentation:notes" &&
+      source.name !== "office:forms" &&
+      source.name !== "officeooo:annotation" &&
+      source.name !== undefined &&
+      !isAnimationElement(source.name)
+    ) {
+      if (opaqueSources.has(source)) {
+        opaqueNodeCount++;
+      } else {
+        assignOdfShapeIds(source, children.slice(childIndex - opaqueNodeCount), shapeReferences);
+      }
+      childIndex++;
+    }
+  }
+  const slideOptions: OdpSlideOptions = {
     ...(attributeString(page, "draw:name") ? { name: attributeString(page, "draw:name") } : {}),
     ...(attributeString(page, "draw:master-page-name")
       ? { master: attributeString(page, "draw:master-page-name") }
       : {}),
     ...(forms !== undefined ? { forms } : {}),
-    children:
-      page.elements?.flatMap((child): SlideChild[] => {
-        if (child.name === "draw:frame") {
-          const chart = parseChartFrame(child, chartPool);
-          if (chart) return [chart];
-          const embeddedObject = parseEmbeddedObjectFrame(
-            child,
-            embeddedObjects,
-            binaries,
-            manifestMediaTypes,
-            () => nextEmbeddedShapeId.value++,
-            textStyles,
-          );
-          if (embeddedObject) return [embeddedObject];
-          const media = parseMediaFrame(child, binaries, usedBinaryPaths);
-          if (media) return [media];
-          if (childNamed(child, "draw:object-ole")) return [];
-          const picture = parsePictureFrame(child, binaries, usedBinaryPaths);
-          if (picture) return [picture];
-          if (childNamed(child, "draw:text-box")) return [{ shape: parseShape(child, textStyles) }];
-          throw unknownSlideChild(
-            child,
-            "/office:document-content/office:body/office:presentation/draw:page",
-          );
-        }
-        if (child.name === "draw:custom-shape")
-          return [{ shape: parseCustomSlideShape(child, textStyles, graphicStyles) }];
-        if (child.name === "draw:control")
-          return [{ shape: parseControlSlideShape(child, textStyles, graphicStyles) }];
-        if (
-          child.name === "draw:rect" ||
-          child.name === "draw:circle" ||
-          child.name === "draw:ellipse" ||
-          child.name === "draw:path" ||
-          child.name === "draw:polygon" ||
-          child.name === "draw:polyline"
-        )
-          return [{ shape: parsePrimitiveSlideShape(child, textStyles, graphicStyles) }];
-        if (child.name === "draw:line") return [parseLine(child)];
-        if (child.name === "draw:g")
-          return parseGroup(
-            child,
-            textStyles,
-            graphicStyles,
-            columnWidths,
-            binaries,
-            chartPool,
-            usedBinaryPaths,
-          );
-        if (child.name === "draw:connector") return [parseConnector(child)];
-        if (child.name === "table:table") return [parseSlideTable(child, textStyles, columnWidths)];
-        if (
-          child.name !== "presentation:notes" &&
-          child.name !== "office:forms" &&
-          child.name !== "officeooo:annotation" &&
-          !(child.name !== undefined && isAnimationElement(child.name))
-        )
-          throw unknownSlideChild(
-            child,
-            "/office:document-content/office:body/office:presentation/draw:page",
-          );
-        return [];
-      }) ?? [],
+    children,
+    ...(transition !== undefined ? { transition } : {}),
     ...(animations.length > 0 ? { animations } : {}),
     ...(comments.length > 0 ? { comments } : {}),
     ...(notesText ? { notes: notesText } : {}),
+    ...(opaqueNodes.length > 0 ? { opaqueNodes } : {}),
   };
   return slideOptions;
+}
+
+function visibleChildIndex(page: Element, child: Element): number {
+  let index = 0;
+  for (const candidate of page.elements ?? []) {
+    if (candidate.type !== "element") continue;
+    if (
+      candidate.name === "presentation:notes" ||
+      candidate.name === "office:forms" ||
+      candidate.name === "officeooo:annotation" ||
+      (candidate.name !== undefined && isAnimationElement(candidate.name))
+    )
+      continue;
+    if (candidate === child) return index;
+    index++;
+  }
+  return index;
+}
+
+function findTransitionFilter(entry: AnimationEntry): AnimationEntry | undefined {
+  if (entry.behavior === "transitionFilter") return entry;
+  for (const child of entry.children ?? []) {
+    const transition = findTransitionFilter(child);
+    if (transition !== undefined) return transition;
+  }
+  return undefined;
+}
+
+const TRANSITION_TYPES = {
+  barWipe: "wipe",
+  blindsWipe: "blinds",
+  checkerBoardWipe: "checker",
+  dissolve: "dissolve",
+  ellipseWipe: "circle",
+  fade: "fade",
+  fanWipe: "wedge",
+  fourBoxWipe: "plus",
+  irisWipe: "diamond",
+  pushWipe: "push",
+  randomBarWipe: "randomBar",
+  slideWipe: "cover",
+} as const satisfies Record<string, TransitionOptions["type"]>;
+
+function parseTransition(entries: readonly AnimationEntry[]): TransitionOptions | undefined {
+  const filter = entries.map(findTransitionFilter).find(Boolean);
+  if (filter === undefined) return undefined;
+  const type = TRANSITION_TYPES[(filter.transitionType as keyof typeof TRANSITION_TYPES) ?? ""];
+  if (type === undefined) return undefined;
+  const subtype = filter.transitionSubType;
+  return {
+    type,
+    ...(filter.duration !== undefined && typeof filter.duration === "number"
+      ? { duration: filter.duration }
+      : filter.duration === "indefinite"
+        ? {}
+        : {}),
+    ...(subtype?.includes("horizontal") || subtype === "across" ? { orient: "horizontal" } : {}),
+    ...(subtype?.includes("vertical") || subtype === "down" ? { orient: "vertical" } : {}),
+    ...(subtype === "fadeOverColor" || subtype === "rectangle" ? { thruBlk: true } : {}),
+    ...(subtype === "fromRight" ? { direction: "left" } : {}),
+    ...(subtype === "fromLeft" ? { direction: "right" } : {}),
+    ...(subtype === "fromBottom" ? { direction: "up" } : {}),
+    ...(subtype === "fromTop" ? { direction: "down" } : {}),
+  } satisfies TransitionOptions;
+}
+
+function resolveAnimationTargets(
+  entry: AnimationEntry,
+  references: Map<string, number>,
+): AnimationEntry {
+  const rawId = entry.shapeName === undefined ? undefined : references.get(entry.shapeName);
+  const resolved: AnimationEntry =
+    rawId === undefined ? entry : { ...entry, shapeId: rawId, shapeName: undefined };
+  return resolved.children?.length
+    ? {
+        ...resolved,
+        children: resolved.children.map((child) => resolveAnimationTargets(child, references)),
+      }
+    : resolved;
 }
 
 function parseAnnotation(element: Element): SlideCommentOptions {

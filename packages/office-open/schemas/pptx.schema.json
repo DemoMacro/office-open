@@ -561,7 +561,7 @@
         "children": {
           "description": "Nested timing children; only valid with timeNode.",
           "items": {
-            "$ref": "#/definitions/AnimationOptions"
+            "$ref": "#/definitions/AnimationEntry"
           },
           "type": "array"
         },
@@ -4788,6 +4788,12 @@
       "additionalProperties": false,
       "description": "Named style resources retained beside canonical chart projections.",
       "properties": {
+        "dr3dLights": {
+          "items": {
+            "$ref": "#/definitions/OdfDr3dLightResource"
+          },
+          "type": "array"
+        },
         "fillImages": {
           "items": {
             "$ref": "#/definitions/FillImageResource"
@@ -4819,7 +4825,7 @@
           "type": "array"
         }
       },
-      "required": ["styles", "gradients", "hatches", "fillImages", "strokeDashes"],
+      "required": ["styles", "gradients", "hatches", "fillImages", "strokeDashes", "dr3dLights"],
       "type": "object"
     },
     "ChartThemeOverrideData": {
@@ -12324,6 +12330,25 @@
         "textDefault": {
           "$ref": "#/definitions/DefaultShapeDefinitionOptions",
           "description": "Text default (txDef)."
+        }
+      },
+      "type": "object"
+    },
+    "OdfDr3dLightResource": {
+      "additionalProperties": false,
+      "description": "ODF 3-D scene light retained for ODF-only chart round-trip.",
+      "properties": {
+        "diffuseColor": {
+          "type": "string"
+        },
+        "direction": {
+          "type": "string"
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "specular": {
+          "type": "boolean"
         }
       },
       "type": "object"

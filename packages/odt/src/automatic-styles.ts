@@ -112,7 +112,7 @@ export function parseStyles(container: Element | undefined): StyleMap {
       if (!allowedProperties.includes(property.name ?? ""))
         throw styleError(style, property.name ?? "", "unknown style property element");
       for (const attribute of Object.keys(property.attributes ?? {})) {
-        if (!ATTRIBUTE_PREFIXES[family].test(attribute))
+        if (!ODF_STYLE_ATTRIBUTE.test(attribute))
           throw styleError(style, attribute, "attribute has no ODF RNG mapping");
       }
     }
@@ -228,19 +228,7 @@ const FAMILY_PROPERTIES: Record<StyleFamily, string[]> = {
   ruby: ["style:ruby-properties"],
 };
 
-const ATTRIBUTE_PREFIXES: Record<StyleFamily, RegExp> = Object.fromEntries([
-  ["paragraph", /^(fo|style|text|svg|draw|officeooo|loext):/],
-  ["text", /^(fo|style|text|officeooo|loext):/],
-  ["graphic", /^(fo|style|draw|svg|dr3d|smil|officeooo|loext):/],
-  ["table", /^(fo|style|table|officeooo|loext):/],
-  ["table-column", /^(fo|style|officeooo|loext):/],
-  ["table-row", /^(fo|style|officeooo|loext):/],
-  ["table-cell", /^(fo|style|officeooo|loext):/],
-  ["section", /^(fo|style|text|officeooo|loext):/],
-  ["page-layout", /^(fo|style|text|svg|officeooo|loext):/],
-  ["drawing-page", /^(fo|style|draw|svg|dr3d|presentation|smil|officeooo|loext):/],
-  ["ruby", /^(fo|style|text|officeooo|loext):/],
-]) as Record<StyleFamily, RegExp>;
+const ODF_STYLE_ATTRIBUTE = /^(?:[a-z][a-z0-9]*:[^:]+|[^:]+)$/;
 
 function parseFamily(value: string | undefined, style: Element): StyleFamily {
   const families: StyleFamily[] = [

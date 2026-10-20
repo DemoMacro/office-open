@@ -235,7 +235,7 @@ function parseOdpPackage(data: Uint8Array): OdpPresentationOptions {
   const width = lengthToEmu(attributeString(pageLayout, "fo:page-width"));
   const height = lengthToEmu(attributeString(pageLayout, "fo:page-height"));
   const graphicStyles = parseGraphicStyles(childNamed(content, "office:automatic-styles"));
-  const chartPool = parseEmbeddedCharts(manifest, files, binaries);
+  const chartPool = parseEmbeddedCharts(manifest, files, binaries, files["styles.xml"]);
   const embeddedObjects = embeddedObjectPool(manifest, files, binaries, chartPool);
   const manifestMediaTypes = new Map(
     manifest.entries.map((entry) => [entry.fullPath, entry.mediaType] as const),

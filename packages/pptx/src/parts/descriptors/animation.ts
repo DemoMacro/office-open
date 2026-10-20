@@ -314,6 +314,33 @@ function extractTargetShapeId(el: XmlElement): number | undefined {
   return attrNum(spTgt, "spid");
 }
 
+/**
+ * ODF stores timing as nested SMIL containers. PowerPoint's simplified timing
+ * model needs one entry per animated shape, so project container timing and
+ * target references onto each behavior leaf before resolving ids.
+ */
+function flattenAnimationTree(
+  entry: AnimationEntry,
+  inherited: AnimationEntry = {},
+): AnimationEntry[] {
+  const timing: AnimationEntry = { ...inherited, ...entry };
+  const { children, timeNode, ...current } = timing;
+  if (current.behavior === "transitionFilter") return [];
+  if (!children?.length || !timeNode) return [{ ...current }];
+
+  return children.flatMap((child) =>
+    flattenAnimationTree(child, {
+      ...current,
+      ...(child.shapeId === undefined && current.shapeId !== undefined
+        ? { shapeId: current.shapeId }
+        : {}),
+      ...(child.shapeName === undefined && current.shapeName !== undefined
+        ? { shapeName: current.shapeName }
+        : {}),
+    }),
+  );
+}
+
 function readSubDuration(sub: XmlElement, opts: Record<string, unknown>): void {
   if (opts.duration !== undefined) return;
   const cBhvr = findChild(sub, "p:cBhvr");
@@ -364,6 +391,7 @@ function resolveAnimationShapeIds(
   entries: AnimationEntry[],
   ctx: PptxWriteContext,
 ): ResolvedAnimationEntry[] {
+  const flattened = entries.flatMap((entry) => flattenAnimationTree(entry));
   const resolveShape = (ref: { shapeId?: number; shapeName?: string }): number => {
     if (ref.shapeId !== undefined) return ref.shapeId;
     if (ref.shapeName !== undefined) return ctx.resolveShapeName(ref.shapeName);
@@ -371,7 +399,7 @@ function resolveAnimationShapeIds(
       "Animation entry needs a target: set shapeName (preferred) or shapeId on the shape it animates.",
     );
   };
-  return entries.map((entry): ResolvedAnimationEntry => {
+  return flattened.map((entry): ResolvedAnimationEntry => {
     const { shapeId, shapeName, builds, ...rest } = entry;
     const resolved: ResolvedAnimationEntry = {
       ...rest,

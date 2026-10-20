@@ -1,18 +1,23 @@
 import type {
   AxisOptions,
   ChartCoordinateRegionOptions,
+  ChartLinesOptions,
   ChartShapePropertiesOptions,
   ChartSeriesData,
   ChartSpaceOptions,
   ChartTitleOptions,
   ChartValue,
+  OdfDr3dLightResource,
+  DataLabelsOptions,
   ErrorBarOptions,
   DataType,
+  DataTableOptions,
   ChartStyleResources,
   ScatterSeriesData,
   ShapePropertiesOptions,
   TrendlineOptions,
   TrendlineType,
+  UpDownBarsOptions,
 } from "@office-open/core";
 import { parse, type Element } from "@office-open/xml";
 
@@ -53,7 +58,8 @@ const MIME = "application/vnd.oasis.opendocument.chart";
 export const CHART_MIME = MIME;
 const NAMESPACES =
   `${ODF_NAMESPACES} xmlns:chart="urn:oasis:names:tc:opendocument:xmlns:chart:1.0"` +
-  ' xmlns:chartooo="urn:org:documentfoundation:names:experimental:chart:xmlns:loext:1.0"';
+  ' xmlns:chartooo="urn:org:documentfoundation:names:experimental:chart:xmlns:loext:1.0"' +
+  ' xmlns:loext="urn:org:documentfoundation:names:experimental:office:xmlns:loext:1.0"';
 const CONTENT_PATH = "content.xml";
 
 /** Standalone ODF chart subdocument using the shared chart model. */
@@ -70,8 +76,9 @@ interface ChartSeriesSource {
   labelRange?: string;
   attachedAxis?: string;
   styleName?: string;
+  dataLabelStyleName?: string;
   domains: string[];
-  repeatedPoints: Array<{ repeated: number; styleName?: string }>;
+  repeatedPoints: Array<{ repeated: number; styleName?: string; labelStyleName?: string }>;
 }
 
 const CHART_CLASSES: Record<ChartSpaceOptions["type"], string> = {
@@ -203,8 +210,12 @@ export function parseEmbeddedCharts(
   manifest: OcfManifestOptions,
   files: OdfFiles,
   binaries: Record<string, Uint8Array> = {},
+  packageStylesXml?: string,
 ): Map<string, ChartSpaceOptions> {
   const result = new Map<string, ChartSpaceOptions>();
+  const packageStyles = packageStylesXml
+    ? [{ part: "styles.xml", root: xmlRoot(packageStylesXml) }]
+    : [];
   for (const entry of manifest.entries) {
     const fullPath = entry.fullPath;
     if (fullPath === "/" || !fullPath.endsWith("/")) continue;
@@ -227,6 +238,7 @@ export function parseEmbeddedCharts(
       [
         { part: `${fullPath}content.xml`, root: contentRoot },
         ...(stylesRoot ? [{ part: `${fullPath}styles.xml`, root: stylesRoot }] : []),
+        ...packageStyles,
       ],
       binaries,
       fullPath,
@@ -303,6 +315,7 @@ function chartXml(chart: ChartSpaceOptions, styles: string[]): string {
       titleXml("chart:subtitle", chart.subtitle, styles),
       titleXml("chart:footer", chart.footer, styles),
       legendXml(chart, styles),
+      dataTableXml(chart.dataTable, styles),
       plotAreaXml(chart, table, styles),
       ...(table ? [serializeTable(table)] : []),
     ],
@@ -376,11 +389,50 @@ function plotAreaXml(
     [
       coordinateRegionXml(chart.coordinateRegion),
       ...(chart.axes ?? defaultAxes()).map((axis) => axisXml(axis, chart, table, styles)),
+      stockBarsXml(typeof chart.upDownBars === "object" ? chart.upDownBars : undefined, styles),
       ...allSeries(chart).map((series, index) => seriesXml(chart, series, index, table, styles)),
       wallXml(chart.sideWall ?? chart.backWall, styles),
       wallXml(chart.floor, styles, "chart:floor"),
+      ...(chart.styleResources?.dr3dLights ?? []).map(dr3dLightXml),
     ],
   );
+}
+
+function stockBarsXml(bars: UpDownBarsOptions | undefined, styles: string[]): string {
+  return [
+    bars?.upBars === false ? "" : stockBarXml("chart:stock-gain-marker", bars?.upBars, styles),
+    bars?.downBars === false ? "" : stockBarXml("chart:stock-loss-marker", bars?.downBars, styles),
+  ].join("");
+}
+
+function stockBarXml(
+  name: string,
+  line: boolean | ChartLinesOptions | undefined,
+  styles: string[],
+): string {
+  return xmlElement(name, {
+    "chart:style-name": pushChartShapeStyle(
+      typeof line === "object" ? line.shapeProperties : undefined,
+      styles,
+      "stock",
+    ),
+  });
+}
+
+function dr3dLightXml(light: OdfDr3dLightResource): string {
+  return xmlElement("dr3d:light", {
+    "dr3d:diffuse-color": light.diffuseColor,
+    "dr3d:direction": light.direction,
+    "dr3d:enabled": light.enabled,
+    "dr3d:specular": light.specular,
+  });
+}
+
+function dataTableXml(table: DataTableOptions | undefined, styles: string[]): string {
+  if (!table) return "";
+  return xmlElement("loext:data-table", {
+    "chart:style-name": pushChartShapeStyle(table.shapeProperties, styles, "table"),
+  });
 }
 
 function coordinateRegionXml(region: ChartCoordinateRegionOptions | undefined): string {
@@ -690,6 +742,9 @@ function parseChart(
     "chart:series",
     "chart:wall",
     "chart:floor",
+    "chart:stock-gain-marker",
+    "chart:stock-loss-marker",
+    "dr3d:light",
   ]);
   rejectUnknown(element, [
     "chart:title",
@@ -698,6 +753,7 @@ function parseChart(
     "chart:legend",
     "chart:plot-area",
     "table:table",
+    "loext:data-table",
   ]);
   const sources = childrenNamed(plotArea, "chart:series").map(parseSeriesSource);
   for (const source of sources) {
@@ -706,8 +762,22 @@ function parseChart(
   const series = sources.map((source, index) =>
     parseSeries(source, index, element, styleMap, sources, type, context.resources, basePath),
   );
+  for (const light of childrenNamed(plotArea, "dr3d:light"))
+    (context.resources.dr3dLights ??= []).push({
+      diffuseColor: attributeString(light, "dr3d:diffuse-color"),
+      direction: attributeString(light, "dr3d:direction"),
+      enabled: attributeString(light, "dr3d:enabled") === "true",
+      specular: attributeString(light, "dr3d:specular") === "true",
+    });
   const axes = childrenNamed(plotArea, "chart:axis").map((axis) =>
     parseAxis(axis, styleMap, context.resources, basePath),
+  );
+  const upDownBars = parseStockBars(plotArea, styleMap, context.resources, basePath);
+  const dataTable = parseDataTable(
+    childNamed(element, "loext:data-table"),
+    styleMap,
+    context.resources,
+    basePath,
   );
   const categories = parseCategories(plotArea, element);
   return {
@@ -734,6 +804,8 @@ function parseChart(
     ),
     shapeProperties: chartShape(element, styleMap, context.resources, basePath),
     axes,
+    ...(upDownBars ? { upDownBars } : {}),
+    ...(dataTable ? { dataTable } : {}),
     coordinateRegion: parseCoordinateRegion(
       childNamed(plotArea, "chart:coordinate-region") ??
         childNamed(plotArea, "chartooo:coordinate-region"),
@@ -742,6 +814,52 @@ function parseChart(
     sideWall: parseWall(childNamed(plotArea, "chart:wall"), styleMap, context.resources, basePath),
     floor: parseWall(childNamed(plotArea, "chart:floor"), styleMap, context.resources, basePath),
   };
+}
+
+function parseStockBars(
+  plotArea: Element,
+  styleMap: Map<string, ChartStyle>,
+  resources: ChartStyleResources,
+  basePath: string,
+): UpDownBarsOptions | undefined {
+  const gain = childNamed(plotArea, "chart:stock-gain-marker");
+  const loss = childNamed(plotArea, "chart:stock-loss-marker");
+  if (!gain && !loss) return undefined;
+  return {
+    upBars: chartLine(gain, styleMap, resources, basePath),
+    downBars: chartLine(loss, styleMap, resources, basePath),
+  };
+}
+
+function parseDataTable(
+  element: Element | undefined,
+  styleMap: Map<string, ChartStyle>,
+  resources: ChartStyleResources,
+  basePath: string,
+): DataTableOptions | undefined {
+  if (!element) return undefined;
+  return {
+    shapeProperties: styleShape(
+      requiredStyle(styleMap, attributeString(element, "chart:style-name"), element, basePath),
+      resources,
+      basePath,
+    ),
+  };
+}
+
+function chartLine(
+  element: Element | undefined,
+  styleMap: Map<string, ChartStyle>,
+  resources: ChartStyleResources,
+  basePath: string,
+): boolean | ChartLinesOptions {
+  if (!element) return false;
+  const shapeProperties = styleShape(
+    requiredStyle(styleMap, attributeString(element, "chart:style-name"), element, basePath),
+    resources,
+    basePath,
+  );
+  return shapeProperties ? { shapeProperties } : true;
 }
 
 function parseCoordinateRegion(
@@ -789,7 +907,7 @@ function parseSeriesSource(element: Element): ChartSeriesSource {
     "chart:error-indicator",
     "chart:data-label",
   ]);
-  for (const name of ["chart:mean-value", "chart:data-label"]) {
+  for (const name of ["chart:mean-value"]) {
     if (childNamed(element, name))
       throw unsupported(
         CONTENT_PATH,
@@ -806,12 +924,17 @@ function parseSeriesSource(element: Element): ChartSeriesSource {
     labelRange: attributeString(element, "chart:label-cell-address"),
     attachedAxis: attributeString(element, "chart:attached-axis"),
     styleName: attributeString(element, "chart:style-name"),
+    dataLabelStyleName: attributeString(
+      childNamed(element, "chart:data-label"),
+      "chart:style-name",
+    ),
     domains: childrenNamed(element, "chart:domain")
       .map((domain) => attributeString(domain, "table:cell-range-address") ?? "")
       .filter(Boolean),
     repeatedPoints: childrenNamed(element, "chart:data-point").map((point) => ({
       repeated: Number(attributeString(point, "chart:repeated") ?? "1"),
       styleName: attributeString(point, "chart:style-name"),
+      labelStyleName: attributeString(childNamed(point, "chart:data-label"), "chart:style-name"),
     })),
   };
 }
@@ -848,6 +971,45 @@ function seriesShape(
   );
 }
 
+function seriesDataLabels(
+  source: ChartSeriesSource,
+  styleMap: Map<string, ChartStyle>,
+  resources: ChartStyleResources,
+  basePath: string,
+): DataLabelsOptions | undefined {
+  const seriesLabel = source.dataLabelStyleName;
+  let index = 0;
+  const labels = source.repeatedPoints.flatMap((point) =>
+    Array.from({ length: Math.max(1, point.repeated) }, () => {
+      const current = index++;
+      if (!point.labelStyleName) return undefined;
+      return {
+        index: current,
+        shapeProperties: styleShape(
+          requiredStyle(styleMap, point.labelStyleName, source.element, basePath),
+          resources,
+          basePath,
+        ),
+      };
+    }),
+  );
+  const shapeProperties = seriesLabel
+    ? styleShape(
+        requiredStyle(styleMap, seriesLabel, source.element, basePath),
+        resources,
+        basePath,
+      )
+    : undefined;
+  if (!seriesLabel && labels.length === 0) return undefined;
+  const pointLabels = labels.filter(
+    (label): label is NonNullable<typeof label> => label !== undefined,
+  );
+  return {
+    ...(shapeProperties ? { shapeProperties } : {}),
+    ...(pointLabels.length > 0 ? { labels: pointLabels } : {}),
+  };
+}
+
 function parseSeries(
   source: ChartSeriesSource,
   index: number,
@@ -878,6 +1040,7 @@ function parseSeries(
       shapeProperties: seriesShape(source, styleMap, resources, basePath),
       trendlines: parseTrendlines(styleMap.get(source.styleName ?? "")),
       errorBars: parseErrorBars(source.element, styleMap.get(source.styleName ?? "")),
+      dataLabels: seriesDataLabels(source, styleMap, resources, basePath),
     };
     if (type === "bubble") {
       return { ...result, bubbleSize: values, bubble3D: false };
@@ -892,6 +1055,7 @@ function parseSeries(
     shapeProperties: seriesShape(source, styleMap, resources, basePath),
     trendlines: parseTrendlines(styleMap.get(source.styleName ?? "")),
     errorBars: parseErrorBars(source.element, styleMap.get(source.styleName ?? "")),
+    dataLabels: seriesDataLabels(source, styleMap, resources, basePath),
     dataPoints: expandDataPoints(source, styleMap, resources, basePath),
   };
 }
@@ -1198,7 +1362,14 @@ function xmlRoot(xml: string): Element {
 }
 
 function emptyChartStyleResources(): ChartStyleResources {
-  return { styles: [], gradients: [], hatches: [], fillImages: [], strokeDashes: [] };
+  return {
+    styles: [],
+    gradients: [],
+    hatches: [],
+    fillImages: [],
+    strokeDashes: [],
+    dr3dLights: [],
+  };
 }
 
 function hasChartStyleResources(resources: ChartStyleResources): boolean {
@@ -1207,6 +1378,7 @@ function hasChartStyleResources(resources: ChartStyleResources): boolean {
     resources.gradients.length > 0 ||
     resources.hatches.length > 0 ||
     resources.fillImages.length > 0 ||
-    resources.strokeDashes.length > 0
+    resources.strokeDashes.length > 0 ||
+    (resources.dr3dLights?.length ?? 0) > 0
   );
 }
