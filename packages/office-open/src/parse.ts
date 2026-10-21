@@ -1,5 +1,6 @@
 import { toUint8ArrayAsync, type DataType } from "@office-open/core";
 import type { DocumentOptions } from "@office-open/docx";
+import type { OdpPresentationOptions } from "@office-open/odp";
 import type { OdsWorkbookOptions } from "@office-open/ods";
 import type { OdtDocumentOptions } from "@office-open/odt";
 import type { PresentationOptions } from "@office-open/pptx";
@@ -33,7 +34,7 @@ export type ParsedOffice =
       format: Exclude<PresentationParseFormat, "odp">;
       options: PresentationOptions;
     }
-  | { format: "odp"; options: PresentationOptions };
+  | { format: "odp"; options: OdpPresentationOptions };
 
 export async function parseOffice(
   input: DataType,

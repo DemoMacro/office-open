@@ -40,18 +40,20 @@ const options: PresentationOptions = {
 const templateBuffer = await generatePresentation(options);
 
 // Step 2: Patch — replace {{name}}, replace the second slide, append a new one.
-//          slides.replace keys are 0-based indices in sldIdLst order;
-//          slides.append adds slides after the last existing one. Appended
-//          slides inherit the template's first slide layout.
+//          Appended slides inherit the template's first slide layout.
 const patchedBuffer = await patchPresentation({
   outputType: "nodebuffer",
   data: templateBuffer,
-  placeholders: {
-    name: [{ text: "World", bold: true, size: 24 }],
-  },
-  slides: {
-    replace: {
-      1: {
+  commands: [
+    {
+      type: "replace",
+      at: { field: "slides", route: [{ index: 0 }], text: { placeholder: "name" } },
+      value: "World",
+    },
+    {
+      type: "replace",
+      at: { field: "slides", route: [{ index: 1 }] },
+      value: {
         children: [
           {
             shape: {
@@ -65,22 +67,27 @@ const patchedBuffer = await patchPresentation({
         ],
       },
     },
-    append: [
-      {
-        children: [
-          {
-            shape: {
-              x: "2.1cm",
-              y: "3.2cm",
-              width: "19.1cm",
-              height: "2.1cm",
-              textBody: { paragraphs: [{ children: [{ text: "Appended third slide" }] }] },
+    {
+      type: "insert",
+      at: { field: "slides" },
+      position: "end",
+      value: [
+        {
+          children: [
+            {
+              shape: {
+                x: "2.1cm",
+                y: "3.2cm",
+                width: "19.1cm",
+                height: "2.1cm",
+                textBody: { paragraphs: [{ children: [{ text: "Appended third slide" }] }] },
+              },
             },
-          },
-        ],
-      },
-    ],
-  },
+          ],
+        },
+      ],
+    },
+  ],
 });
 
 mkdirSync(".temp", { recursive: true });

@@ -70,6 +70,30 @@ const FORMATS: FormatConfig[] = [
   },
 ];
 
+const PATCH_FORMATS: FormatConfig[] = [
+  {
+    format: "docx.patch",
+    entryType: "DocumentPatchCommand",
+    srcDir: "packages/docx",
+    title: "office-open DOCX patch request",
+    description: "Ordered canonical-model commands for patching a WordprocessingML package.",
+  },
+  {
+    format: "pptx.patch",
+    entryType: "PresentationPatchCommand",
+    srcDir: "packages/pptx",
+    title: "office-open PPTX patch request",
+    description: "Ordered canonical-model commands for patching a PresentationML package.",
+  },
+  {
+    format: "xlsx.patch",
+    entryType: "WorkbookPatchCommand",
+    srcDir: "packages/xlsx",
+    title: "office-open XLSX patch request",
+    description: "Ordered canonical-model commands for patching a SpreadsheetML package.",
+  },
+];
+
 /**
  * P1 overrides: ts-json-schema-generator degrades template-literal types with
  * `${number}` holes to plain `{"type":"string"}` (literal enumeration aborts on
@@ -318,6 +342,13 @@ function postProcess(schema: Record<string, unknown>) {
       else delete obj.description;
     }
 
+    // P5b: source-only fields are never valid authoring input. Draft-07
+    // readOnly lets generators ignore them while parse-output users still see
+    // the lexical metadata needed for package comparison.
+    if (typeof obj.description === "string" && /round-trip only/i.test(obj.description)) {
+      obj.readOnly = true;
+    }
+
     // P6: provenance references (ST_*/CT_* names) are developer anchors to the
     // XSD; an LLM filling the options needs the semantics, not the spec ids.
     // Parenthesised attributions go whole; bare ids go alone; dangling
@@ -540,6 +571,9 @@ function shareDuplicatedProperties(definitions: Record<string, Record<string, un
         if (canonical.length >= SHARED_PROPERTY_MIN_BYTES) {
           const anchor = anchors.get(canonical);
           if (anchor !== undefined) {
+            // A property must not point to itself: AJV resolves the cycle
+            // while compiling and overflows. Leave this occurrence inline.
+            if (anchor === `#${childPath}`) continue;
             sharedProperties++;
             sharedPropertyBytes += canonical.length;
             (properties as Record<string, unknown>)[name] = { $ref: anchor };
@@ -705,6 +739,7 @@ function canonicalJson(value: unknown): string {
 interface FormatResult {
   format: string;
   metrics: ReturnType<typeof postProcess>;
+  schema: Record<string, unknown>;
   output: string;
 }
 
@@ -724,7 +759,13 @@ function generateFormat(config: FormatConfig): FormatResult {
     skipTypeCheck: false,
   });
 
-  const schema = generator.createSchema(config.entryType) as Record<string, unknown>;
+  // Materialize JS object aliases as duplicated JSON nodes. Otherwise property
+  // sharing can rewrite an alias and accidentally create a self `$ref`.
+  // The text form also isolates generator caches across successive formats.
+  const schema = JSON.parse(JSON.stringify(generator.createSchema(config.entryType))) as Record<
+    string,
+    unknown
+  >;
 
   const definitions = (schema.definitions ?? {}) as Record<string, unknown>;
   // P0: collision detection via ref resolution
@@ -741,7 +782,73 @@ function generateFormat(config: FormatConfig): FormatResult {
   schema.title = config.title;
   schema.description = config.description;
 
-  return { format: config.format, metrics, output: canonicalJson(schema) };
+  return { format: config.format, metrics, schema, output: canonicalJson(schema) };
+}
+
+/**
+ * Patch schemas describe the same canonical model as their base schema. Keep
+ * only patch-specific definitions locally and refer equivalent model
+ * definitions to the published base schema, which is installed alongside this
+ * file and published under a sibling `$id`.
+ */
+function externalizeSharedDefinitions(
+  patchSchema: Record<string, unknown>,
+  baseSchema: Record<string, unknown>,
+  baseFormat: string,
+): void {
+  const patchDefinitions = patchSchema.definitions as Record<string, Record<string, unknown>>;
+  const baseDefinitions = baseSchema.definitions as Record<string, Record<string, unknown>>;
+  const sharedNames = new Set(
+    Object.keys(patchDefinitions).filter((name) => name in baseDefinitions),
+  );
+
+  for (const name of sharedNames) {
+    const patchDefinition = JSON.stringify(sortKeys(patchDefinitions[name]!));
+    const baseDefinition = JSON.stringify(sortKeys(baseDefinitions[name]!));
+    if (patchDefinition !== baseDefinition) {
+      throw new Error(`Patch schema diverges from ${baseFormat} definition: ${name}`);
+    }
+  }
+
+  const externalize = (value: unknown): void => {
+    if (Array.isArray(value)) {
+      value.forEach(externalize);
+      return;
+    }
+    if (!value || typeof value !== "object") return;
+
+    const reference = (value as { $ref?: unknown }).$ref;
+    if (typeof reference === "string" && reference.startsWith("#/definitions/")) {
+      const name = decodeURIComponent(reference.slice("#/definitions/".length).split("/")[0]!);
+      if (sharedNames.has(name)) {
+        (value as { $ref: string }).$ref =
+          `${baseFormat}.schema.json#/definitions/${reference.slice("#/definitions/".length)}`;
+      }
+    }
+    Object.values(value).forEach(externalize);
+  };
+  externalize(patchSchema);
+
+  for (const name of sharedNames) delete patchDefinitions[name];
+
+  const unresolved = new Set<string>();
+  const collect = (value: unknown): void => {
+    if (Array.isArray(value)) {
+      value.forEach(collect);
+      return;
+    }
+    if (!value || typeof value !== "object") return;
+    const reference = (value as { $ref?: unknown }).$ref;
+    if (typeof reference === "string" && reference.startsWith("#/definitions/")) {
+      const name = decodeURIComponent(reference.slice("#/definitions/".length).split("/")[0]!);
+      if (!(name in patchDefinitions)) unresolved.add(name);
+    }
+    Object.values(value).forEach(collect);
+  };
+  collect(patchSchema);
+  if (unresolved.size > 0) {
+    throw new Error(`Patch schema has unresolved local refs: ${[...unresolved].join(", ")}`);
+  }
 }
 
 function main() {
@@ -749,10 +856,10 @@ function main() {
   const checkOnly = args.includes("--check");
   const jsonOnly = args.includes("--json");
 
-  const results: FormatResult[] = [];
   let failed = false;
 
-  for (const config of FORMATS) {
+  const results: FormatResult[] = [];
+  for (const config of [...FORMATS, ...PATCH_FORMATS]) {
     process.stderr.write(`  generating ${config.format}...`);
     const result = generateFormat(config);
     results.push(result);
@@ -765,6 +872,16 @@ function main() {
         `${result.metrics.sharedSubschemas} shared subtrees ` +
         `(−${Math.round(result.metrics.sharedSubschemaBytes / 1024)} KB)\n`,
     );
+  }
+
+  for (const [index, result] of results.entries()) {
+    if (!result.format.endsWith(".patch")) continue;
+    const config = [...FORMATS, ...PATCH_FORMATS][index]!;
+    const baseFormat = config.format.replace(/\.patch$/, "");
+    const baseResult = results.find((candidate) => candidate.format === baseFormat);
+    if (!baseResult) throw new Error(`Missing base schema for ${config.format}`);
+    externalizeSharedDefinitions(result.schema, baseResult.schema, baseFormat);
+    result.output = canonicalJson(result.schema);
   }
 
   if (jsonOnly) {

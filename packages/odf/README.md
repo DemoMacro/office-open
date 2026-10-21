@@ -36,13 +36,13 @@ bun add @office-open/odf
 ```typescript
 import { readOcf } from "@office-open/odf";
 
-const archive = await readOcf(file);
+const archive = await readOcf(file, "application/vnd.oasis.opendocument.text");
 ```
 
 ## API
 
-- `readOcf(data)` — inspect and parse bytes, Base64/data-URL strings, `Blob`, or `ReadableStream` as an OCF package
-- `generateOcf(options)` — generate an OCF package
+- `readOcf(data, expectedMimeType)` — inspect and parse bytes, Base64/data-URL strings, `Blob`, or `ReadableStream` as an OCF package
+- `generateOcf(mimeType, files, mediaTypes?, packageManifest?)` — generate an OCF package
 - `parseManifestOptions(xml)` / `manifestOptionsXml(options)` — map manifest XML
 - `parseMeta(xml)` / `metaXml(options)` — map ODF metadata to core properties
 - `OcfError` and `OdfSchemaError` — structured container and schema failures

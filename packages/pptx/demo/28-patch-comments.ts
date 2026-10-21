@@ -2,9 +2,8 @@ import { mkdirSync, writeFileSync } from "node:fs";
 
 import { generatePresentation, patchPresentation } from "@office-open/pptx";
 
-// Patch comments onto existing slides. comments keys are 0-based slide indices
-// (sldIdLst order). Authors are merged into commentAuthors.xml (deduped by name,
-// ids continued); per-slide comments are merged into ppt/comments/commentN.xml.
+// Patch comments onto existing slides. Authors are merged into
+// commentAuthors.xml and per-slide comments into ppt/comments/commentN.xml.
 const buffer = await generatePresentation({
   title: "Comment Patch Demo",
   slides: [
@@ -43,10 +42,18 @@ writeFileSync(".temp/28-patch-comments.pptx", buffer);
 const patched = await patchPresentation({
   outputType: "nodebuffer",
   data: buffer,
-  comments: {
-    0: [{ author: "Alice", text: "Review the opening", x: "2.6cm", y: "4.0cm" }],
-    1: [{ author: "Bob", text: "Add a chart here", x: "2.6cm", y: "4.0cm" }],
-  },
+  commands: [
+    {
+      type: "insert",
+      at: { field: "slides", route: [{ index: 0 }, { collection: "comments" }] },
+      value: [{ author: "Alice", text: "Review the opening", x: "2.6cm", y: "4.0cm" }],
+    },
+    {
+      type: "insert",
+      at: { field: "slides", route: [{ index: 1 }, { collection: "comments" }] },
+      value: [{ author: "Bob", text: "Add a chart here", x: "2.6cm", y: "4.0cm" }],
+    },
+  ],
 });
 
 mkdirSync(".temp", { recursive: true });

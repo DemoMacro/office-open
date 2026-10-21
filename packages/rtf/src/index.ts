@@ -1,5 +1,6 @@
 export { parseDocument, type RtfParseOptions } from "./parser";
 export { generateDocument } from "./generate";
+export { patchDocument, type RtfPatchCommand, type RtfPatchOptions } from "./patch";
 export { RtfGenerateError, RtfParseError } from "./errors";
 export type { DocumentOptions } from "@office-open/docx";
 export type { RtfGenerateContext, RtfParseContext } from "./errors";

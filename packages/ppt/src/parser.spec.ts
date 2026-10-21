@@ -1453,9 +1453,12 @@ describe("parsePresentation", () => {
         if (typeof paragraph !== "object") throw new TypeError("Expected a paragraph object");
         const run = paragraph.children?.[0];
         if (typeof run !== "object" || !("text" in run)) throw new TypeError("Expected a text run");
-        return run.text;
+        return { text: run.text, placeholder: child.shape?.placeholder };
       }),
-    ).toEqual(["1/1/1", "1"]);
+    ).toEqual([
+      { text: "1/1/1", placeholder: "date" },
+      { text: "1", placeholder: "slideNumber" },
+    ]);
   });
 
   it("rejects input that is not CFB", () => {

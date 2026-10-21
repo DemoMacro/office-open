@@ -26,24 +26,80 @@ mkdirSync(".temp", { recursive: true });
 writeFileSync(".temp/9-patch.xlsx", buffer);
 
 // Step 2: Patch placeholders, replace the "Notes" sheet, and append a "Summary".
-//          worksheets.replace keys are sheet names (as declared in workbook.xml);
-//          worksheets.append adds sheets after the last existing one. The
-//          shared-strings table is rebuilt so indexing continues correctly.
+//          Text targets keep operation order; worksheet replacement preserves
+//          source wiring and the shared-strings table is rebuilt.
 const patched = await patchWorkbook({
   outputType: "uint8array",
   data: readFileSync(".temp/9-patch.xlsx"),
-  placeholders: {
-    number: "INV-2024-001",
-    customer: "Acme Corp",
-    amount: 1500, // number → typed numeric cell (t="n")
-    date: new Date("2024-12-31"), // Date → numeric serial cell
-  },
-  worksheets: {
-    replace: {
-      Notes: { rows: [{ cells: [{ value: "Replaced notes" }] }] },
+  commands: [
+    {
+      type: "replace",
+      at: {
+        field: "worksheets",
+        route: [
+          { name: "Invoice" },
+          { property: "rows" },
+          { index: 0 },
+          { property: "cells" },
+          { index: 1 },
+        ],
+      },
+      value: { value: "INV-2024-001" },
     },
-    append: [{ name: "Summary", rows: [{ cells: [{ value: "Appended summary sheet" }] }] }],
-  },
+    {
+      type: "replace",
+      at: {
+        field: "worksheets",
+        route: [
+          { name: "Invoice" },
+          { property: "rows" },
+          { index: 1 },
+          { property: "cells" },
+          { index: 1 },
+        ],
+      },
+      value: { value: "Acme Corp" },
+    },
+    {
+      type: "replace",
+      at: {
+        field: "worksheets",
+        route: [
+          { name: "Invoice" },
+          { property: "rows" },
+          { index: 2 },
+          { property: "cells" },
+          { index: 1 },
+        ],
+      },
+      value: { value: 1500 },
+    },
+    {
+      type: "replace",
+      at: {
+        field: "worksheets",
+        route: [
+          { name: "Invoice" },
+          { property: "rows" },
+          { index: 3 },
+          { property: "cells" },
+          { index: 1 },
+        ],
+      },
+      value: { value: new Date("2024-12-31") },
+    },
+    {
+      type: "replace",
+      at: { field: "worksheets", route: [{ name: "Notes" }] },
+      value: { name: "Notes", rows: [{ cells: [{ value: "Replaced notes" }] }] },
+    },
+    {
+      type: "insert",
+      at: { field: "worksheets" },
+      position: "end",
+      value: [{ name: "Summary", rows: [{ cells: [{ value: "Appended summary sheet" }] }] }],
+    },
+  ],
 });
 
 mkdirSync(".temp", { recursive: true });

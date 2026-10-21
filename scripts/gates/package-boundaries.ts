@@ -44,7 +44,7 @@ const ARCHITECTURE: Record<string, ArchitectureRule> = {
     type: new Set(["core", "xml", "docx"]),
   },
   ods: {
-    runtime: new Set(["odf"]),
+    runtime: new Set(["core", "odf"]),
     type: new Set(["core", "xml", "xlsx"]),
   },
   odp: {
@@ -90,27 +90,40 @@ function importedPackages(source: string): Array<{ name: string; typeOnly: boole
     /(?:^|\n)\s*import\s+(type\s+)?[\w*$\s{},]+?\s+from\s+["'](@office-open\/[^"']+)["']/g,
   )) {
     const name = packageName(match[2]!);
-    imports.set(name, { name, typeOnly: Boolean(match[1]) });
+    markImport(imports, name, Boolean(match[1]));
   }
 
   for (const match of code.matchAll(/(?:^|\n)\s*import\s+["'](@office-open\/[^"']+)["']/g)) {
     const name = packageName(match[1]!);
-    imports.set(name, { name, typeOnly: false });
+    markImport(imports, name, false);
   }
 
   for (const match of code.matchAll(/import\(\s*["'](@office-open\/[^"']+)["']\s*\)/g)) {
     const name = packageName(match[1]!);
-    imports.set(name, { name, typeOnly: false });
+    markImport(imports, name, false);
   }
 
   for (const match of code.matchAll(
     /(?:^|\n)\s*export\s+(type\s+)?(?:\*(?:\s+as\s+[\w$]+)?|\{[^}]*\})\s+from\s+["'](@office-open\/[^"']+)["']/g,
   )) {
     const name = packageName(match[2]!);
-    imports.set(name, { name, typeOnly: Boolean(match[1]) });
+    markImport(imports, name, Boolean(match[1]));
   }
 
   return [...imports.values()];
+}
+
+function markImport(
+  imports: Map<string, { name: string; typeOnly: boolean }>,
+  name: string,
+  typeOnly: boolean,
+): void {
+  const existing = imports.get(name);
+  if (existing) {
+    existing.typeOnly = existing.typeOnly && typeOnly;
+    return;
+  }
+  imports.set(name, { name, typeOnly });
 }
 
 function exportedStars(source: string): string[] {

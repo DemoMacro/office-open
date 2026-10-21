@@ -1,5 +1,6 @@
 import type { OutputByType, OutputType, ReproducibleGenerationOptions } from "@office-open/core";
 import type { DocumentOptions } from "@office-open/docx";
+import type { OdpPresentationOptions } from "@office-open/odp";
 import type { OdsWorkbookOptions } from "@office-open/ods";
 import type { OdtDocumentOptions } from "@office-open/odt";
 import type { PresentationOptions } from "@office-open/pptx";
@@ -31,7 +32,7 @@ export interface OfficeOptionsFor {
   pptm: PresentationOptions;
   potx: PresentationOptions;
   potm: PresentationOptions;
-  odp: PresentationOptions;
+  odp: OdpPresentationOptions;
 }
 
 type OdfGenerateFormat = "odt" | "ods" | "odp";

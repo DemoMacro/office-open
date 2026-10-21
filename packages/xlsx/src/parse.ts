@@ -84,7 +84,7 @@ import { tableDesc } from "@parts/table";
 import type { TableOptions } from "@parts/table";
 import { parseVolTypesEl } from "@parts/vol-types";
 import { webExtensionPartDesc, type WebExtensionPartOptions } from "@parts/web-extension";
-import { workbookDesc } from "@parts/workbook";
+import { workbookDesc, type SheetDefinition } from "@parts/workbook";
 import type { RichTextOptions } from "@parts/worksheet";
 import { worksheetDesc } from "@parts/worksheet";
 import type {
@@ -161,6 +161,21 @@ function sortByNumber(paths: string[]): string[] {
     .map((p) => ({ p, n: parseInt(p.match(LEADING_PATH_NUMBER)?.[1] ?? "0", 10) }))
     .sort((a, b) => a.n - b.n)
     .map(({ p }) => p);
+}
+
+function orderWorksheets(
+  worksheets: readonly WorksheetOptions[],
+  definitions: readonly SheetDefinition[] | undefined,
+): WorksheetOptions[] {
+  if (!definitions || definitions.length !== worksheets.length) return [...worksheets];
+  const identity = (worksheet: WorksheetOptions) => worksheet.sheetId;
+  const definitionIdentity = (definition: SheetDefinition) =>
+    definition.sheetId ?? definition.tabId;
+  const ordered = definitions.map((definition) =>
+    worksheets.find((worksheet) => identity(worksheet) === definitionIdentity(definition)),
+  );
+  const matched = ordered.filter((worksheet) => worksheet !== undefined);
+  return matched.length === worksheets.length ? matched : [...worksheets];
 }
 
 function parseSmartArtNodes(
@@ -1629,7 +1644,7 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
     worksheets.push(wsOpts as WorksheetOptions);
   }
 
-  opts.worksheets = worksheets;
+  opts.worksheets = orderWorksheets(worksheets, opts.sheetDefinitions);
 
   // Chartsheets — parse chartsheet parts. Sort numerically: doc.keys() yields
   // ZIP entry order, while sheetNames indexes rely on sheetN.xml numbering.

@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
+import { Ajv } from "ajv";
 import { describe, expect, it } from "vite-plus/test";
 
 import { docxSchema, pptxSchema, SCHEMAS, validateDocumentInput, xlsxSchema } from "./index";
@@ -9,6 +10,13 @@ const demoDir = join(import.meta.dirname, "../../demo");
 const docxDemo = JSON.parse(readFileSync(join(demoDir, "1-docx.json"), "utf8"));
 const pptxDemo = JSON.parse(readFileSync(join(demoDir, "2-pptx.json"), "utf8"));
 const xlsxDemo = JSON.parse(readFileSync(join(demoDir, "3-xlsx.json"), "utf8"));
+const schemaDir = join(import.meta.dirname, "../../schemas");
+const patchSchemas = Object.fromEntries(
+  ["docx", "pptx", "xlsx"].map((type) => [
+    type,
+    JSON.parse(readFileSync(join(schemaDir, `${type}.patch.schema.json`), "utf8")),
+  ]),
+);
 
 describe("schema artifacts", () => {
   it("should be draft-07 schemas with a $ref envelope", () => {
@@ -20,6 +28,25 @@ describe("schema artifacts", () => {
       expect(Object.keys(schema.definitions as object).length).toBeGreaterThan(100);
     }
   });
+});
+
+describe("patch schema artifacts", () => {
+  it("should resolve model refs from their base schema", () => {
+    const fields = { docx: "sections", pptx: "slides", xlsx: "worksheets" } as const;
+
+    for (const type of ["docx", "pptx", "xlsx"] as const) {
+      const ajv = new Ajv({ allErrors: true, logger: false, strict: false });
+      ajv.addSchema(SCHEMAS[type]);
+      const validate = ajv.compile(patchSchemas[type]);
+      const command = {
+        at: { field: fields[type], route: [{ index: 0 }] },
+        type: "remove",
+      };
+
+      expect(validate(command)).toBe(true);
+      expect(validate({ type: "bogus" })).toBe(false);
+    }
+  }, 30_000);
 });
 
 describe("validateDocumentInput", () => {

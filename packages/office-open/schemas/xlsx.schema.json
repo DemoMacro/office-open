@@ -272,6 +272,7 @@
         },
         "indentRaw": {
           "description": "Source lexical form of `indent` (invalid producer values included); round-trip only — do not hand-author.",
+          "readOnly": true,
           "type": "string"
         },
         "justifyLastLine": {
@@ -429,6 +430,7 @@
         "apPrefix": {
           "const": true,
           "description": "Emit the extended-properties vocabulary under the ap: prefix — the ISO strict binding, where the source declares xmlns:ap explicitly instead of using the namespace as the default. Round-trip only.",
+          "readOnly": true,
           "type": "boolean"
         },
         "appVersion": {
@@ -478,7 +480,8 @@
               "type": "null"
             }
           ],
-          "description": "Hyperlink metadata (HLinks) — Word's internal per-link records (six entries per link). Round-trip only: flat variant values are carried as-is; `null` preserves a source HLinks container with no vt:vector child."
+          "description": "Hyperlink metadata (HLinks) — Word's internal per-link records (six entries per link). Round-trip only: flat variant values are carried as-is; `null` preserves a source HLinks container with no vt:vector child.",
+          "readOnly": true
         },
         "hyperlinkBase": {
           "description": "Hyperlink base URL",
@@ -491,6 +494,7 @@
         "legacyMicrosoft": {
           "const": true,
           "description": "Legacy Microsoft extended-properties namespace; round-trip only.",
+          "readOnly": true,
           "type": "boolean"
         },
         "lines": {
@@ -585,6 +589,7 @@
         },
         "uid": {
           "description": "Revision UID; round-trip only.",
+          "readOnly": true,
           "type": "string"
         }
       },
@@ -1382,6 +1387,11 @@
       },
       "type": "object"
     },
+    "BooleanLexicalValue": {
+      "description": "XSD `xsd:boolean` lexical forms accepted by OOXML boolean attributes.",
+      "enum": ["true", "false", "1", "0"],
+      "type": "string"
+    },
     "BooleanPivotCacheRecord": {
       "additionalProperties": false,
       "properties": {
@@ -1462,6 +1472,7 @@
           "items": {
             "type": "string"
           },
+          "readOnly": true,
           "type": "array"
         },
         "diagonal": {
@@ -2268,6 +2279,7 @@
           "items": {
             "$ref": "#/definitions/ForeignAttributeOptions"
           },
+          "readOnly": true,
           "type": "array"
         },
         "fullCalcOnLoad": {
@@ -2503,6 +2515,7 @@
         },
         "legacyPatternElement": {
           "description": "Legacy SpreadsheetML `<pattern>` element spelling; round-trip only.",
+          "readOnly": true,
           "type": "boolean"
         },
         "legacyPatternType": {
@@ -2536,6 +2549,7 @@
         },
         "patternTypeDeclared": {
           "description": "True when the source declared `@patternType`. Round-trip only.",
+          "readOnly": true,
           "type": "boolean"
         },
         "stops": {
@@ -2781,6 +2795,7 @@
       "properties": {
         "cachedValueTypeRaw": {
           "description": "Source `<v/@t>` cached-value token (e.g. a formula result typed inlineStr); round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "cellMetadataId": {
@@ -2827,6 +2842,7 @@
         },
         "inlineValueRaw": {
           "description": "Source `<v>` text on an `inlineStr` cell (malformed-but-readable input keeps both children); round-trip only — do not hand-author.",
+          "readOnly": true,
           "type": "string"
         },
         "phonetic": {
@@ -2838,6 +2854,7 @@
         },
         "sharedIndex": {
           "description": "Source shared-string table index for a `t=\"s\"` cell. Round-trip only: duplicate si entries keep their source references stable instead of re-deduplicating to the first occurrence.",
+          "readOnly": true,
           "type": "number"
         },
         "style": {
@@ -2853,10 +2870,12 @@
         },
         "styleRaw": {
           "description": "Source `@s` lexical form when non-numeric (e.g. an empty string); round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "typeRaw": {
           "description": "Explicit source `@t` token that matches the defaulted form (`t=\"n\"`). Also carries declared types with no canonical value carrier (`t=\"s\"` and the like on empty cells). Round-trip only: do not hand-author.",
+          "readOnly": true,
           "type": "string"
         },
         "value": {
@@ -2888,6 +2907,7 @@
         },
         "valueRaw": {
           "description": "Source numeric/text lexical form for `<v>`; round-trip only.",
+          "readOnly": true,
           "type": "string"
         }
       },
@@ -3031,6 +3051,7 @@
         },
         "borderIdDeclared": {
           "description": "True when the source xf declared `@borderId`. Round-trip only.",
+          "readOnly": true,
           "type": "boolean"
         },
         "fill": {
@@ -3038,6 +3059,7 @@
         },
         "fillIdDeclared": {
           "description": "True when the source xf declared `@fillId`. Round-trip only: attribute presence and absence stay distinct in rebuilt styles.xml.",
+          "readOnly": true,
           "type": "boolean"
         },
         "font": {
@@ -3045,6 +3067,7 @@
         },
         "fontIdRaw": {
           "description": "Source fontId when the index has no resolvable font (dangling reference); round-trip only — do not hand-author.",
+          "readOnly": true,
           "type": "number"
         },
         "foreignAttributes": {
@@ -3052,6 +3075,7 @@
           "items": {
             "$ref": "#/definitions/ForeignAttributeOptions"
           },
+          "readOnly": true,
           "type": "array"
         },
         "foreignChildren": {
@@ -3062,6 +3086,7 @@
         },
         "numFmtId": {
           "description": "Raw numFmtId when the source id has no resolvable format code (round-trip only).",
+          "readOnly": true,
           "type": "number"
         },
         "pivotButton": {
@@ -3102,6 +3127,7 @@
         },
         "gteRaw": {
           "description": "Source lexical form of `gte`; round-trip only — do not hand-author.",
+          "readOnly": true,
           "type": "string"
         },
         "type": {
@@ -4937,6 +4963,7 @@
         },
         "bottomRaw": {
           "description": "Source lexical form of `bottom`; round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "footer": {
@@ -4944,6 +4971,7 @@
         },
         "footerRaw": {
           "description": "Source lexical form of `footer`; round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "header": {
@@ -4951,6 +4979,7 @@
         },
         "headerRaw": {
           "description": "Source lexical form of `header`; round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "left": {
@@ -4958,6 +4987,7 @@
         },
         "leftRaw": {
           "description": "Source lexical form of `left`; round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "right": {
@@ -4965,6 +4995,7 @@
         },
         "rightRaw": {
           "description": "Source lexical form of `right`; round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "top": {
@@ -4972,6 +5003,7 @@
         },
         "topRaw": {
           "description": "Source lexical form of `top`; round-trip only.",
+          "readOnly": true,
           "type": "string"
         }
       },
@@ -5603,6 +5635,7 @@
         },
         "ext": {
           "description": "Raw inner XML of the chart-space trailing c:extLst (after userShapes — c14:pivotOptions' home). Round-trip only, same contract as series ext.",
+          "readOnly": true,
           "type": "string"
         },
         "externalData": {
@@ -6157,6 +6190,7 @@
         },
         "path": {
           "description": "Source companion part path; round-trip only. Fresh authoring omits it.",
+          "readOnly": true,
           "type": "string"
         },
         "relationshipId": {
@@ -6252,19 +6286,16 @@
           "type": "number"
         },
         "externalDataRelationshipTarget": {
-          "description": "Source c:externalData relationship target — round-trip only.",
-          "type": "string"
+          "$ref": "#/definitions/WorksheetChartOptions/properties/externalDataRelationshipTarget"
         },
         "externalDataRelationshipType": {
-          "description": "Source c:externalData relationship type — round-trip only.",
-          "type": "string"
+          "$ref": "#/definitions/WorksheetChartOptions/properties/externalDataRelationshipType"
         },
         "externalLink": {
           "$ref": "#/definitions/WorksheetChartOptions/properties/externalLink"
         },
         "externalLinkPath": {
-          "description": "Source chart-owned external link path — round-trip only.",
-          "type": "string"
+          "$ref": "#/definitions/WorksheetChartOptions/properties/externalLinkPath"
         },
         "frameLocks": {
           "$ref": "#/definitions/GraphicFrameLockingOptions",
@@ -6312,14 +6343,17 @@
         },
         "sourceChartPath": {
           "description": "Source chart part path (xl/charts/chartN.xml) — round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "sourceDrawingPath": {
           "description": "Source drawing part path (xl/drawings/drawingN.xml) — round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "sourceDrawingRelationshipId": {
           "description": "Source `<drawing>` relationship id — round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "state": {
@@ -6341,6 +6375,7 @@
         },
         "uid": {
           "description": "Revision UID; round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "zoomScale": {
@@ -6433,6 +6468,7 @@
         },
         "passwordHashRaw": {
           "description": "Source legacy `@password` hash (4-hex-digit legacy Excel hash); round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "saltValue": {
@@ -7222,6 +7258,7 @@
             "required": ["type", "value"],
             "type": "object"
           },
+          "readOnly": true,
           "type": "array"
         },
         "mruColors": {
@@ -7236,6 +7273,7 @@
           "items": {
             "$ref": "#/definitions/ThemeColorOptions"
           },
+          "readOnly": true,
           "type": "array"
         }
       },
@@ -7256,6 +7294,7 @@
         },
         "customWidthDeclared": {
           "description": "True when the source declared `@customWidth`. Round-trip only: false keeps a width-only column from gaining the derived flag.",
+          "readOnly": true,
           "type": "boolean"
         },
         "hidden": {
@@ -7276,6 +7315,7 @@
         },
         "style": {
           "description": "Source cellStyleXfs index — round-trip only.",
+          "readOnly": true,
           "type": "number"
         },
         "width": {
@@ -7283,6 +7323,7 @@
         },
         "widthRaw": {
           "description": "Source width lexical form (e.g. \"10.0\"); round-trip only.",
+          "readOnly": true,
           "type": "string"
         }
       },
@@ -7423,6 +7464,7 @@
         },
         "shapeId": {
           "description": "Source note shape id. Round-trip only: the live VML note shape is modeled separately.",
+          "readOnly": true,
           "type": "number"
         },
         "size": {
@@ -7460,7 +7502,8 @@
         },
         "vmlShape": {
           "$ref": "#/definitions/VmlShapeOptions",
-          "description": "Full source note shape. Round-trip only; anchor, visible, and size are writable projections and overwrite their source-shape counterparts."
+          "description": "Full source note shape. Round-trip only; anchor, visible, and size are writable projections and overwrite their source-shape counterparts.",
+          "readOnly": true
         }
       },
       "required": ["cell", "author", "text"],
@@ -7593,6 +7636,7 @@
         },
         "bottomRaw": {
           "description": "Source lexical form of `bottom`; round-trip only — do not hand-author.",
+          "readOnly": true,
           "type": "string"
         },
         "colorScale": {
@@ -7635,6 +7679,7 @@
         },
         "percentRaw": {
           "description": "Source lexical form of `percent`; round-trip only — do not hand-author.",
+          "readOnly": true,
           "type": "string"
         },
         "priority": {
@@ -7821,6 +7866,7 @@
         },
         "uid": {
           "description": "Revision UID; round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "web": {
@@ -7963,8 +8009,7 @@
           "$ref": "#/definitions/PictureOptions/properties/rowOffset"
         },
         "shapeId": {
-          "description": "Original cNvPr id (round-trip only; fresh output allocates ids).",
-          "type": "number"
+          "$ref": "#/definitions/GroupShapeChildOptions/properties/shapeId"
         },
         "startConnection": {
           "$ref": "#/definitions/EndpointConnectionOptions",
@@ -8248,6 +8293,7 @@
         },
         "preserveSourceDeclarations": {
           "description": "Preserve every source declaration, including entries for absent parts. Round-trip only.",
+          "readOnly": true,
           "type": "boolean"
         }
       },
@@ -8501,10 +8547,12 @@
       "properties": {
         "fmtid": {
           "description": "Source property format identity (`@fmtid`); round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "linkTarget": {
           "description": "Linked-content target (`@linkTarget`); round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "name": {
@@ -8513,6 +8561,7 @@
         },
         "pid": {
           "description": "Source property id (`@pid`); round-trip only.",
+          "readOnly": true,
           "type": "number"
         },
         "value": {
@@ -8521,6 +8570,7 @@
         },
         "valueLexeme": {
           "description": "Source lexical text of the vt:* element; round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "valueType": {
@@ -8541,6 +8591,7 @@
         },
         "rId": {
           "description": "Relationship ID to the binary property part. Round-trip only: the part is not re-emitted by the compiler.",
+          "readOnly": true,
           "type": "string"
         }
       },
@@ -8869,6 +8920,7 @@
         },
         "showValueRaw": {
           "description": "Source lexical form of `showValue`; round-trip only — do not hand-author.",
+          "readOnly": true,
           "type": "string"
         }
       },
@@ -9470,6 +9522,7 @@
         },
         "target": {
           "description": "Resolved relationship target; round-trip only.",
+          "readOnly": true,
           "type": "string"
         }
       },
@@ -9553,6 +9606,7 @@
         },
         "explicitList": {
           "description": "Verbatim explicit list from the x12ac:list extension (Excel 2010+ mc:Choice form, e.g. `1,\"2,3\",4`), preserving per-item quoting that the plain formula1 fallback would corrupt. Round-trip only — do not hand-author.",
+          "readOnly": true,
           "type": "string"
         },
         "formula1": {
@@ -9606,6 +9660,7 @@
         },
         "uid": {
           "description": "Revision UID; round-trip only.",
+          "readOnly": true,
           "type": "string"
         }
       },
@@ -10005,6 +10060,7 @@
         "xmlSpace": {
           "description": "Source `xml:space` form of the formula text; round-trip only.",
           "enum": ["preserve", "default"],
+          "readOnly": true,
           "type": "string"
         }
       },
@@ -10222,6 +10278,7 @@
         },
         "drawingRId": {
           "description": "Relationship id of the dialog form drawing. Round-trip only: the referenced drawing part is not re-emitted, so the id is not resolvable in a freshly generated workbook.",
+          "readOnly": true,
           "type": "string"
         },
         "extLst": {
@@ -10234,6 +10291,7 @@
         },
         "legacyDrawingRId": {
           "description": "Relationship id of the legacy VML drawing. Round-trip only: the referenced VML part is not re-emitted.",
+          "readOnly": true,
           "type": "string"
         },
         "name": {
@@ -10271,6 +10329,7 @@
         },
         "sourcePath": {
           "description": "Source package path; round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "state": {
@@ -10436,6 +10495,7 @@
         },
         "rId": {
           "description": "Relationship ID for the drawing. Round-trip only: carried from the parsed package's rels; a freshly generated workbook has no matching relationship until an embedding API exists.",
+          "readOnly": true,
           "type": "string"
         },
         "rfe": {
@@ -10575,6 +10635,7 @@
           "type": "string"
         }
       },
+      "readOnly": true,
       "type": "object"
     },
     "DxfNumFmtOptions": {
@@ -10600,7 +10661,8 @@
         },
         "alternateContent": {
           "$ref": "#/definitions/DxfAlternateContentOptions",
-          "description": "Vendor mc:AlternateContent dxf branch; round-trip only."
+          "description": "Vendor mc:AlternateContent dxf branch; round-trip only.",
+          "readOnly": true
         },
         "border": {
           "$ref": "#/definitions/BorderSideOptions"
@@ -10610,6 +10672,7 @@
           "items": {
             "$ref": "#/definitions/StyleExtensionOptions"
           },
+          "readOnly": true,
           "type": "array"
         },
         "fill": {
@@ -10623,6 +10686,7 @@
           "items": {
             "$ref": "#/definitions/ForeignAttributeOptions"
           },
+          "readOnly": true,
           "type": "array"
         },
         "numFmt": {
@@ -10960,6 +11024,7 @@
           "description": "Complete source file bytes (OLE2/CFB container)."
         }
       },
+      "readOnly": true,
       "required": ["data"],
       "type": "object"
     },
@@ -11161,6 +11226,7 @@
         },
         "targetTypeRaw": {
           "description": "Source relationship type of the target (`xlPathMissing` and other producer variants exist); round-trip only.",
+          "readOnly": true,
           "type": "string"
         }
       },
@@ -11188,6 +11254,7 @@
         },
         "valueSpaceRaw": {
           "description": "Source `@xml:space` form of `<v>`; round-trip only — do not hand-author.",
+          "readOnly": true,
           "type": "string"
         }
       },
@@ -11215,6 +11282,7 @@
         "relationshipType": {
           "description": "Source relationship kind; round-trip only, defaults to package.",
           "enum": ["oleObject", "package"],
+          "readOnly": true,
           "type": "string"
         }
       },
@@ -11267,6 +11335,7 @@
         },
         "oleTargetTypeRaw": {
           "description": "Source relationship type of the OLE target; round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "orphanRelationships": {
@@ -11274,10 +11343,12 @@
           "items": {
             "$ref": "#/definitions/ExternalLinkSourceRelationshipOptions"
           },
+          "readOnly": true,
           "type": "array"
         },
         "sourcePath": {
           "description": "Source part path (xl/externalLinks/externalLink3.xml) — round-trip only.",
+          "readOnly": true,
           "type": "string"
         }
       },
@@ -11304,6 +11375,7 @@
           "type": "string"
         }
       },
+      "readOnly": true,
       "required": ["rId", "type", "target"],
       "type": "object"
     },
@@ -11488,6 +11560,7 @@
         },
         "reservationPasswordHashRaw": {
           "description": "Source legacy reservation password hash carried through verbatim — re-hashing would corrupt it. Round-trip only: do not hand-author.",
+          "readOnly": true,
           "type": "string"
         },
         "saltValue": {
@@ -11661,6 +11734,7 @@
             },
             "blipExtensionXml": {
               "description": "Verbatim `a:blip` extension-list inner XML; round-trip only.",
+              "readOnly": true,
               "type": "string"
             },
             "compression": {
@@ -11707,6 +11781,7 @@
             "omitBlip": {
               "const": true,
               "description": "Source a:blipFill omitted its optional a:blip child; writer preserves the attribute/tile-only shape instead of inventing an empty image reference. Round-trip only ? do not hand-author.",
+              "readOnly": true,
               "type": "boolean"
             },
             "rotWithShape": {
@@ -11719,6 +11794,7 @@
             },
             "sourceReferenceId": {
               "description": "Source a:blip relationship id retained when its relationship declaration itself is absent (round-trip only — do not hand-author).",
+              "readOnly": true,
               "type": "string"
             },
             "stretch": {
@@ -11920,6 +11996,7 @@
             "enum": ["value", "dateGroupItem"],
             "type": "string"
           },
+          "readOnly": true,
           "type": "array"
         },
         "values": {
@@ -12023,6 +12100,7 @@
           "type": "string"
         }
       },
+      "readOnly": true,
       "required": ["choice"],
       "type": "object"
     },
@@ -12055,13 +12133,15 @@
       "properties": {
         "alternateContent": {
           "$ref": "#/definitions/FontAlternateContentOptions",
-          "description": "Vendor mc:AlternateContent font branch; round-trip only."
+          "description": "Vendor mc:AlternateContent font branch; round-trip only.",
+          "readOnly": true
         },
         "bold": {
           "type": "boolean"
         },
         "boldRaw": {
           "description": "Source lexical form of `bold/@val`; round-trip only — do not hand-author.",
+          "readOnly": true,
           "type": "string"
         },
         "charset": {
@@ -12073,6 +12153,7 @@
           "items": {
             "type": "string"
           },
+          "readOnly": true,
           "type": "array"
         },
         "color": {
@@ -12085,6 +12166,7 @@
         },
         "condenseRaw": {
           "description": "Source lexical form of `condense/@val`; round-trip only — do not hand-author.",
+          "readOnly": true,
           "type": "string"
         },
         "extend": {
@@ -12093,6 +12175,7 @@
         },
         "extendRaw": {
           "description": "Source lexical form of `extend/@val`; round-trip only — do not hand-author.",
+          "readOnly": true,
           "type": "string"
         },
         "family": {
@@ -12107,6 +12190,7 @@
           "items": {
             "$ref": "#/definitions/ForeignAttributeOptions"
           },
+          "readOnly": true,
           "type": "array"
         },
         "foreignChildren": {
@@ -12114,6 +12198,7 @@
           "items": {
             "$ref": "#/definitions/ForeignChildOptions"
           },
+          "readOnly": true,
           "type": "array"
         },
         "italic": {
@@ -12121,6 +12206,7 @@
         },
         "italicRaw": {
           "description": "Source lexical form of `italic/@val`; round-trip only — do not hand-author.",
+          "readOnly": true,
           "type": "string"
         },
         "outline": {
@@ -12129,6 +12215,7 @@
         },
         "outlineRaw": {
           "description": "Source lexical form of `outline/@val`; round-trip only — do not hand-author.",
+          "readOnly": true,
           "type": "string"
         },
         "scheme": {
@@ -12142,6 +12229,7 @@
         },
         "shadowRaw": {
           "description": "Source lexical form of `shadow/@val`; round-trip only — do not hand-author.",
+          "readOnly": true,
           "type": "string"
         },
         "size": {
@@ -12149,6 +12237,7 @@
         },
         "sizeRaw": {
           "description": "Source lexical form of `size`; round-trip only — do not hand-author.",
+          "readOnly": true,
           "type": "string"
         },
         "strike": {
@@ -12156,6 +12245,7 @@
         },
         "strikeRaw": {
           "description": "Source lexical form of `strike/@val`; round-trip only — do not hand-author.",
+          "readOnly": true,
           "type": "string"
         },
         "underline": {
@@ -12293,6 +12383,7 @@
           "type": "string"
         }
       },
+      "readOnly": true,
       "required": ["name", "value"],
       "type": "object"
     },
@@ -12309,6 +12400,7 @@
           "type": "string"
         }
       },
+      "readOnly": true,
       "required": ["name", "xml"],
       "type": "object"
     },
@@ -13047,6 +13139,7 @@
         },
         "namePresent": {
           "description": "True when the source declared `@name`. Round-trip only: false keeps a source-absent name from gaining the fresh-authoring default.",
+          "readOnly": true,
           "type": "boolean"
         }
       },
@@ -13273,6 +13366,7 @@
         },
         "activePanePresent": {
           "description": "Source `@activePane` presence; round-trip only.",
+          "readOnly": true,
           "type": "boolean"
         },
         "col": {
@@ -13294,6 +13388,7 @@
         },
         "statePresent": {
           "description": "Source `@state` presence; round-trip only.",
+          "readOnly": true,
           "type": "boolean"
         },
         "topLeftCell": {
@@ -13695,8 +13790,7 @@
           "$ref": "#/definitions/ShapePropertiesOptions"
         },
         "shapeId": {
-          "description": "Original cNvPr id (round-trip only; fresh output allocates ids).",
-          "type": "number"
+          "$ref": "#/definitions/GroupShapeChildOptions/properties/shapeId"
         },
         "startConnection": {
           "$ref": "#/definitions/ConnectorOptions/properties/startConnection"
@@ -13906,8 +14000,7 @@
           "$ref": "#/definitions/PictureOptions/properties/rowOffset"
         },
         "shapeId": {
-          "description": "Original cNvPr id (round-trip only; fresh output allocates ids).",
-          "type": "number"
+          "$ref": "#/definitions/GroupShapeChildOptions/properties/shapeId"
         },
         "shapes": {
           "description": "Nested shapes.",
@@ -13953,6 +14046,7 @@
         },
         "blipExt": {
           "description": "Verbatim a:blip `a:extLst` inner XML for extensions beyond useLocalDpi (a14 imgProps artistic effects, …). Round-trip only; subsumes `useLocalDpi` when the source list carries both. Named blipExt to avoid colliding with the inherited cNvPr `ext` channel.",
+          "readOnly": true,
           "type": "string"
         },
         "blipFillPresent": {
@@ -14031,8 +14125,7 @@
           "$ref": "#/definitions/PictureOptions/properties/rotWithShape"
         },
         "shapeId": {
-          "description": "Original cNvPr id (round-trip only; fresh output allocates ids).",
-          "type": "number"
+          "$ref": "#/definitions/GroupShapeChildOptions/properties/shapeId"
         },
         "sourceRectangle": {
           "$ref": "#/definitions/PictureOptions/properties/sourceRectangle"
@@ -14094,6 +14187,7 @@
         },
         "shapeId": {
           "description": "Original cNvPr id (round-trip only; fresh output allocates ids).",
+          "readOnly": true,
           "type": "number"
         },
         "style": {
@@ -14350,6 +14444,7 @@
         },
         "alignWithMarginsRaw": {
           "description": "Source lexical form of `alignWithMargins`; round-trip only — do not hand-author.",
+          "readOnly": true,
           "type": "string"
         },
         "differentFirst": {
@@ -14382,6 +14477,7 @@
         },
         "scaleWithDocRaw": {
           "description": "Source lexical form of `scaleWithDoc`; round-trip only — do not hand-author.",
+          "readOnly": true,
           "type": "string"
         },
         "xmlSpaceByPart": {
@@ -14407,6 +14503,7 @@
               "$ref": "#/definitions/HeaderFooterXmlSpace"
             }
           },
+          "readOnly": true,
           "type": "object"
         }
       },
@@ -14566,6 +14663,7 @@
         },
         "relationshipId": {
           "description": "Worksheet relationship id for url — round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "tooltip": {
@@ -14574,6 +14672,7 @@
         },
         "uid": {
           "description": "Coauthoring identity; round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "url": {
@@ -14870,7 +14969,8 @@
         },
         "alternateContent": {
           "$ref": "#/definitions/XfAlternateContentOptions",
-          "description": "Vendor mc:AlternateContent xf branch; round-trip only."
+          "description": "Vendor mc:AlternateContent xf branch; round-trip only.",
+          "readOnly": true
         },
         "applyAlignment": {
           "type": "boolean"
@@ -14896,6 +14996,7 @@
         },
         "borderIdDeclared": {
           "description": "True when the source declared `@borderId`. Round-trip only.",
+          "readOnly": true,
           "type": "boolean"
         },
         "fillId": {
@@ -14903,6 +15004,7 @@
         },
         "fillIdDeclared": {
           "description": "True when the source declared `@fillId`. Round-trip only.",
+          "readOnly": true,
           "type": "boolean"
         },
         "fontId": {
@@ -14910,6 +15012,7 @@
         },
         "fontIdDeclared": {
           "description": "True when the source declared `@fontId`. Round-trip only.",
+          "readOnly": true,
           "type": "boolean"
         },
         "foreignAttributes": {
@@ -14917,6 +15020,7 @@
           "items": {
             "$ref": "#/definitions/ForeignAttributeOptions"
           },
+          "readOnly": true,
           "type": "array"
         },
         "foreignChildren": {
@@ -14924,6 +15028,7 @@
           "items": {
             "$ref": "#/definitions/ForeignChildOptions"
           },
+          "readOnly": true,
           "type": "array"
         },
         "numFmtId": {
@@ -14931,6 +15036,7 @@
         },
         "numFmtIdDeclared": {
           "description": "True when the source declared `@numFmtId`. Round-trip only.",
+          "readOnly": true,
           "type": "boolean"
         },
         "pivotButton": {
@@ -14948,6 +15054,7 @@
         },
         "xfIdDeclared": {
           "description": "True when the source declared `@xfId`. Round-trip only.",
+          "readOnly": true,
           "type": "boolean"
         }
       },
@@ -15354,6 +15461,7 @@
       "properties": {
         "value": {
           "description": "Legacy numeric color value from `rgbColor/@val`; round-trip only.",
+          "readOnly": true,
           "type": "string"
         }
       },
@@ -15370,6 +15478,7 @@
         },
         "ext": {
           "description": "Raw inner XML of the legend entry trailing c:extLst — round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "index": {
@@ -16140,6 +16249,7 @@
           "items": {
             "$ref": "#/definitions/MetadataBlockOptions"
           },
+          "readOnly": true,
           "type": "array"
         },
         "futureMetadata": {
@@ -16175,6 +16285,7 @@
           "items": {
             "$ref": "#/definitions/MetadataBlockOptions"
           },
+          "readOnly": true,
           "type": "array"
         }
       },
@@ -16460,6 +16571,7 @@
         },
         "ext": {
           "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over `creationId`, which it subsumes when the source list carries both.",
+          "readOnly": true,
           "type": "string"
         },
         "hidden": {
@@ -16721,6 +16833,7 @@
       "properties": {
         "ext": {
           "description": "Verbatim inner XML of a:objectDefaults/a:extLst — round-trip only for unmodeled Office extensions.",
+          "readOnly": true,
           "type": "string"
         },
         "lineDefault": {
@@ -16862,6 +16975,7 @@
         },
         "rId": {
           "description": "Relationship ID. Round-trip only: the embedded object part is not re-emitted, so the id is not resolvable in a freshly generated workbook.",
+          "readOnly": true,
           "type": "string"
         },
         "shapeId": {
@@ -16904,6 +17018,7 @@
         },
         "iconRid": {
           "description": "Relationship ID of the icon image (objectPr `@r:id`). Round-trip only: the icon part is not re-emitted by the compiler.",
+          "readOnly": true,
           "type": "string"
         },
         "locked": {
@@ -17040,6 +17155,7 @@
         },
         "dashPresent": {
           "description": "Preserve a bare `a:prstDash` element produced by lenient sources. Mutually exclusive with `dash` and `customDash`; round-trip only.",
+          "readOnly": true,
           "type": "boolean"
         },
         "ext": {
@@ -17140,6 +17256,7 @@
         },
         "bottomRaw": {
           "description": "Source lexical form of `bottom`; round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "footer": {
@@ -17154,6 +17271,7 @@
         },
         "footerRaw": {
           "description": "Source lexical form of `footer`; round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "header": {
@@ -17168,6 +17286,7 @@
         },
         "headerRaw": {
           "description": "Source lexical form of `header`; round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "left": {
@@ -17182,6 +17301,7 @@
         },
         "leftRaw": {
           "description": "Source lexical form of `left`; round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "right": {
@@ -17196,6 +17316,7 @@
         },
         "rightRaw": {
           "description": "Source lexical form of `right`; round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "top": {
@@ -17210,6 +17331,7 @@
         },
         "topRaw": {
           "description": "Source lexical form of `top`; round-trip only.",
+          "readOnly": true,
           "type": "string"
         }
       },
@@ -17276,10 +17398,12 @@
         },
         "pageSetUpPrPresent": {
           "description": "True when the source declared `<pageSetUpPr>`, even without attributes. Round-trip only: keeps an attribute-free element from being dropped.",
+          "readOnly": true,
           "type": "boolean"
         },
         "pageSetupPresent": {
           "description": "True when the source declared `<pageSetup>`, even without attributes. Round-trip only: distinguishes an omitted element from sheetPr-only state.",
+          "readOnly": true,
           "type": "boolean"
         },
         "paperHeight": {
@@ -17309,6 +17433,7 @@
         },
         "printerSettingsRId": {
           "description": "Relationship id to the printer settings binary part. Round-trip only: the referenced.bin part is not re-emitted, so the id is not resolvable in a freshly generated workbook.",
+          "readOnly": true,
           "type": "string"
         },
         "scale": {
@@ -17821,6 +17946,7 @@
           "items": {
             "$ref": "#/definitions/RichTextRunOptions"
           },
+          "readOnly": true,
           "type": "array"
         },
         "startByte": {
@@ -17935,6 +18061,7 @@
         },
         "blipExt": {
           "description": "Verbatim a:blip `a:extLst` inner XML for extensions beyond the useLocalDpi hint (a14 imgProps artistic effects, …). Round-trip only; when the source list carries both, this element subsumes the hint.",
+          "readOnly": true,
           "type": "string"
         },
         "blipFillPresent": {
@@ -17944,6 +18071,7 @@
         },
         "cNvPicPrExt": {
           "description": "Verbatim cNvPicPr `a:extLst` inner XML for unmodeled extensions (a14:cameraTool, …). Round-trip only — do not hand-author.",
+          "readOnly": true,
           "type": "string"
         },
         "col": {
@@ -18087,10 +18215,12 @@
         },
         "shapeId": {
           "description": "Original cNvPr id (round-trip only).",
+          "readOnly": true,
           "type": "number"
         },
         "sourcePath": {
           "description": "Source package path of embedded bytes; round-trip only — do not hand-author.",
+          "readOnly": true,
           "type": "string"
         },
         "sourceRectangle": {
@@ -18154,6 +18284,7 @@
         },
         "zOrder": {
           "description": "Document-order position inside the drawing part (z-order when objects overlap). Round-trip only; fresh authoring uses insertion order.",
+          "readOnly": true,
           "type": "number"
         }
       },
@@ -18396,6 +18527,7 @@
             "required": ["id", "type", "target"],
             "type": "object"
           },
+          "readOnly": true,
           "type": "array"
         },
         "fieldGroups": {
@@ -18488,10 +18620,12 @@
         },
         "recordsRelationshipSourceId": {
           "description": "Source records relationship id from .rels — round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "recordsRelationshipTarget": {
           "description": "Source records relationship target — filled by parse, round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "refreshOnLoad": {
@@ -18519,6 +18653,7 @@
           "items": {
             "type": "string"
           },
+          "readOnly": true,
           "type": "array"
         },
         "saveData": {
@@ -19278,6 +19413,7 @@
         },
         "rId": {
           "description": "Relationship id (r:id, OLAP pivot selection part). Round-trip only: the referenced part is not re-emitted, so the id is not resolvable in a freshly generated workbook.",
+          "readOnly": true,
           "type": "string"
         },
         "showHeader": {
@@ -19417,14 +19553,17 @@
         },
         "cacheRelationshipId": {
           "description": "Source cache relationship id — filled by parse, round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "cacheRelationshipTarget": {
           "description": "Source cache relationship target — filled by parse, round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "cacheRelationshipType": {
           "description": "Source cache relationship type — filled by parse, round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "chartFormat": {
@@ -19709,10 +19848,12 @@
         },
         "source": {
           "description": "Exact source XML captured by parse — round-trip only, do not hand-author.",
+          "readOnly": true,
           "type": "string"
         },
         "sourcePath": {
           "description": "Source pivotTable part path — filled by parse, round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "subtotalHiddenItems": {
@@ -20183,6 +20324,7 @@
         },
         "avLstOmitted": {
           "description": "Source omitted the a:avLst child; round-trip only — do not hand-author.",
+          "readOnly": true,
           "type": "boolean"
         },
         "preset": {
@@ -20344,6 +20486,7 @@
         },
         "avLstOmitted": {
           "description": "Source omitted the optional `a:avLst` child; round-trip only.",
+          "readOnly": true,
           "type": "boolean"
         },
         "preset": {
@@ -20431,6 +20574,7 @@
         },
         "securityDescriptorElement": {
           "description": "True when the source carried `<securityDescriptor>` rather than `@securityDescriptor`. Round-trip only.",
+          "readOnly": true,
           "type": "boolean"
         },
         "spinCount": {
@@ -20637,6 +20781,7 @@
         },
         "sourcePath": {
           "description": "Source package path; round-trip only.",
+          "readOnly": true,
           "type": "string"
         }
       },
@@ -21650,10 +21795,12 @@
       "properties": {
         "path": {
           "description": "Source part path relative to xl/ — round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "relationshipTarget": {
           "description": "Source relationship target from revisionHeaders.xml.rels — round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "revisions": {
@@ -21778,6 +21925,7 @@
           "description": "Last save uid (@xr10:uidLastSave, a GUID)."
         }
       },
+      "readOnly": true,
       "type": "object"
     },
     "RevisionQueryTableFieldOptions": {
@@ -21941,6 +22089,7 @@
             "type": "string"
           },
           "description": "Attributes from non-DrawingML namespaces (e.g. `a14:legacySpreadsheetColorIndex`). Round-trip only — do not hand-author.",
+          "readOnly": true,
           "type": "object"
         },
         "transforms": {
@@ -21978,10 +22127,12 @@
         },
         "dataPath": {
           "description": "Source package paths; defaults follow Excel's richData layout. Round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "dataRelationshipId": {
           "description": "Source workbook relationship ids. Round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "partRelationships": {
@@ -21989,6 +22140,7 @@
           "items": {
             "$ref": "#/definitions/RichDataPartRelationshipOptions"
           },
+          "readOnly": true,
           "type": "array"
         },
         "relationships": {
@@ -22071,11 +22223,13 @@
         "textSpaceRaw": {
           "description": "Source `<t>` xml:space lexical form when explicitly present, or `default` for whitespace-edged text with an omitted attribute. Round-trip only: an omitted attribute without edge whitespace is not upgraded.",
           "enum": ["default", "preserve"],
+          "readOnly": true,
           "type": "string"
         },
         "wordDrawingExtension": {
           "$ref": "#/definitions/SharedStringExtensionOptions",
-          "description": "Legacy `w14` compatibility content; round-trip only."
+          "description": "Legacy `w14` compatibility content; round-trip only.",
+          "readOnly": true
         }
       },
       "type": "object"
@@ -22090,6 +22244,7 @@
         },
         "propertiesPresent": {
           "description": "True when the source declared `<rPr/>`, including an empty container; round-trip only.",
+          "readOnly": true,
           "type": "boolean"
         },
         "text": {
@@ -22098,6 +22253,7 @@
         },
         "textSpaceRaw": {
           "description": "Source xml:space lexical form of the run `t`; round-trip only.",
+          "readOnly": true,
           "type": "string"
         }
       },
@@ -22111,8 +22267,9 @@
           "type": "boolean"
         },
         "boldValRaw": {
+          "$ref": "#/definitions/BooleanLexicalValue",
           "description": "Source lexical form of `b/@val`; round-trip only — do not hand-author.",
-          "type": "string"
+          "readOnly": true
         },
         "charset": {
           "description": "Character set",
@@ -22125,8 +22282,18 @@
         "condense": {
           "type": "boolean"
         },
+        "condenseValRaw": {
+          "$ref": "#/definitions/BooleanLexicalValue",
+          "description": "Source lexical form of `condense/@val`; round-trip only — do not hand-author.",
+          "readOnly": true
+        },
         "extend": {
           "type": "boolean"
+        },
+        "extendValRaw": {
+          "$ref": "#/definitions/BooleanLexicalValue",
+          "description": "Source lexical form of `extend/@val`; round-trip only — do not hand-author.",
+          "readOnly": true
         },
         "family": {
           "description": "Font family",
@@ -22140,17 +22307,24 @@
           "type": "boolean"
         },
         "italicValRaw": {
+          "$ref": "#/definitions/BooleanLexicalValue",
           "description": "Source lexical form of `i/@val`; round-trip only — do not hand-author.",
-          "type": "string"
+          "readOnly": true
         },
         "outline": {
           "type": "boolean"
+        },
+        "outlineValRaw": {
+          "$ref": "#/definitions/BooleanLexicalValue",
+          "description": "Source lexical form of `outline/@val`; round-trip only — do not hand-author.",
+          "readOnly": true
         },
         "propertyOrder": {
           "description": "Source child order; round-trip only.",
           "items": {
             "$ref": "#/definitions/RichTextRunProperty"
           },
+          "readOnly": true,
           "type": "array"
         },
         "scheme": {
@@ -22161,21 +22335,28 @@
         "shadow": {
           "type": "boolean"
         },
+        "shadowValRaw": {
+          "$ref": "#/definitions/BooleanLexicalValue",
+          "description": "Source lexical form of `shadow/@val`; round-trip only — do not hand-author.",
+          "readOnly": true
+        },
         "size": {
           "description": "Font size in points",
           "type": "number"
         },
         "sizeValRaw": {
           "description": "Source lexical form of `sz/@val`; round-trip only — do not hand-author.",
+          "readOnly": true,
           "type": "string"
         },
         "strike": {
           "description": "Strikethrough",
           "type": "boolean"
         },
-        "strikeVal": {
-          "description": "Source `strike/@val`; round-trip only — do not hand-author.",
-          "type": "string"
+        "strikeValRaw": {
+          "$ref": "#/definitions/BooleanLexicalValue",
+          "description": "Source lexical form of `strike/@val`; round-trip only — do not hand-author.",
+          "readOnly": true
         },
         "underline": {
           "description": "Underline type",
@@ -22184,6 +22365,7 @@
         },
         "underlineValRaw": {
           "description": "Source lexical form of `u/@val`; round-trip only — do not hand-author.",
+          "readOnly": true,
           "type": "string"
         },
         "vertAlign": {
@@ -22496,6 +22678,7 @@
         },
         "customFormatDeclared": {
           "description": "Source `@customFormat` presence; false preserves an omitted attribute. Round-trip only.",
+          "readOnly": true,
           "type": "boolean"
         },
         "customHeight": {
@@ -23391,8 +23574,7 @@
           "$ref": "#/definitions/PictureOptions/properties/rowOffset"
         },
         "shapeId": {
-          "description": "Original cNvPr id (round-trip only; fresh output allocates ids).",
-          "type": "number"
+          "$ref": "#/definitions/GroupShapeChildOptions/properties/shapeId"
         },
         "style": {
           "$ref": "#/definitions/GroupShapeChildOptions/properties/style"
@@ -23428,6 +23610,7 @@
         },
         "zOrder": {
           "description": "Document-order position of this anchor inside the drawing part — the z-order when objects overlap. Round-trip only: stringify emits anchors in this order; fresh authoring keeps the per-type bucket order.",
+          "readOnly": true,
           "type": "number"
         }
       },
@@ -23868,6 +24051,7 @@
         },
         "headersPath": {
           "description": "Source path of revisionHeaders.xml relative to xl/ (e.g. \"revisions/revisionHeaders.xml\"). Round-trip only: fresh authoring writes xl/revisionHeaders.xml.",
+          "readOnly": true,
           "type": "string"
         },
         "logs": {
@@ -23883,6 +24067,7 @@
         },
         "usersPath": {
           "description": "Source path of users.xml relative to xl/. Round-trip only: fresh authoring writes xl/users.xml.",
+          "readOnly": true,
           "type": "string"
         },
         "usersRelationshipType": {
@@ -24012,6 +24197,7 @@
         },
         "outlinePrPresent": {
           "description": "True when the source declared `<outlinePr>`, even without attributes. Round-trip only: keeps an attribute-free element from being dropped.",
+          "readOnly": true,
           "type": "boolean"
         },
         "outlineShowSymbols": {
@@ -24100,6 +24286,7 @@
         },
         "passwordHashRaw": {
           "description": "Source legacy password hash (`@password`); round-trip only — do not hand-author.",
+          "readOnly": true,
           "type": "string"
         },
         "pivotTables": {
@@ -24114,6 +24301,7 @@
         },
         "scenariosRaw": {
           "description": "Source lexical form of `@scenarios`; round-trip only — do not hand-author.",
+          "readOnly": true,
           "type": "string"
         },
         "selectLockedCells": {
@@ -24180,6 +24368,7 @@
         },
         "topLeftCell": {
           "description": "Top-left visible cell; round-trip only meaningful when scrolled",
+          "readOnly": true,
           "type": "string"
         },
         "view": {
@@ -25057,6 +25246,7 @@
         },
         "ext": {
           "description": "Trailing column extension — round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "headerRowCellStyle": {
@@ -25108,6 +25298,7 @@
         },
         "uid": {
           "description": "Coauthoring identity. Round-trip only: the attribute rides in the xr3 revision namespace declared as mc:Ignorable.",
+          "readOnly": true,
           "type": "string"
         },
         "uniqueName": {
@@ -25188,6 +25379,7 @@
         },
         "ext": {
           "description": "Raw inner XML of the table's trailing extLst (x14:table altText lives here). Round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "headerRowBorderDxfId": {
@@ -25204,6 +25396,7 @@
         },
         "headerRowCountDeclared": {
           "description": "True when the source declared `@headerRowCount`. Round-trip only: keeps an explicit default from being dropped.",
+          "readOnly": true,
           "type": "boolean"
         },
         "headerRowDxfId": {
@@ -25244,6 +25437,7 @@
         },
         "sourcePath": {
           "description": "Source package path; round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "style": {
@@ -25256,6 +25450,7 @@
         },
         "tablePartOrder": {
           "description": "Zero-based position in the worksheet's source tableParts child sequence (round-trip only — do not hand-author). The compiler emits tablePart children in this order; the tables array itself keeps relationship pairing.",
+          "readOnly": true,
           "type": "number"
         },
         "tableType": {
@@ -25276,6 +25471,7 @@
         },
         "totalsRowCountDeclared": {
           "description": "True when the source declared `@totalsRowCount`. Round-trip only: keeps an explicit default from being dropped.",
+          "readOnly": true,
           "type": "boolean"
         },
         "totalsRowDxfId": {
@@ -25288,6 +25484,7 @@
         },
         "uid": {
           "description": "Revision UID; round-trip only.",
+          "readOnly": true,
           "type": "string"
         }
       },
@@ -29061,6 +29258,7 @@
         },
         "styleRaw": {
           "description": "Source style attribute lexical form; round-trip only — do not hand-author.",
+          "readOnly": true,
           "type": "string"
         },
         "target": {
@@ -29521,6 +29719,7 @@
         "signinginstructionsAttrRaw": {
           "description": "Source lexical spelling for the signing instruction attribute; round-trip only.",
           "enum": ["signinginstructions", "o:signinginstructions"],
+          "readOnly": true,
           "type": "string"
         },
         "signinginstructionsset": {
@@ -30126,6 +30325,7 @@
         },
         "sourcePath": {
           "description": "Source package path; round-trip only.",
+          "readOnly": true,
           "type": "string"
         }
       },
@@ -30465,6 +30665,7 @@
       "properties": {
         "absPath": {
           "description": "Workbook folder path (x15ac:absPath/@url in an mc:AlternateContent after workbookPr) — round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "absPathLegacyPrefix": {
@@ -30477,6 +30678,7 @@
         },
         "appPropertiesPath": {
           "description": "Source extended-properties part path; preserves non-default OPC layouts. Round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "application": {
@@ -30511,6 +30713,7 @@
           "items": {
             "$ref": "#/definitions/BorderSideOptions"
           },
+          "readOnly": true,
           "type": "array"
         },
         "builtInGroupCount": {
@@ -30539,6 +30742,7 @@
         "calcChainXmlSpace": {
           "description": "Source `<calcChain/@xml:space>`; round-trip only.",
           "enum": ["default", "preserve"],
+          "readOnly": true,
           "type": "string"
         },
         "calculation": {
@@ -30568,6 +30772,7 @@
           "items": {
             "$ref": "#/definitions/IndexedXfEntry"
           },
+          "readOnly": true,
           "type": "array"
         },
         "chartsheets": {
@@ -30600,6 +30805,7 @@
             ],
             "type": "string"
           },
+          "readOnly": true,
           "type": "array"
         },
         "classificationLabels": {
@@ -30608,6 +30814,7 @@
         },
         "classificationLabelsPath": {
           "description": "Source classification-label part path; default docMetadata/LabelInfo.xml. Round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "colors": {
@@ -30635,14 +30842,17 @@
         },
         "contentTypes": {
           "$ref": "#/definitions/ContentTypesInput",
-          "description": "Content types from the source [Content_Types].xml (round-trip only). Present, generate() keeps the source Default/Override entries as the base declaration table and derives only what they leave uncovered."
+          "description": "Content types from the source [Content_Types].xml (round-trip only). Present, generate() keeps the source Default/Override entries as the base declaration table and derives only what they leave uncovered.",
+          "readOnly": true
         },
         "corePropertiesPath": {
           "description": "Source core-properties part path; preserves non-default OPC layouts. Round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "corePropertiesRelationshipType": {
           "description": "Source root-rels core-properties relationship type. Both the `package/2006` and `officeDocument/2006` URI forms appear in real packages; round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "created": {
@@ -30677,6 +30887,7 @@
         },
         "customPropertiesPath": {
           "description": "Source custom-properties part path; preserves non-default OPC layouts. Round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "customWorkbookViews": {
@@ -30689,6 +30900,7 @@
         "defaultNamespace": {
           "const": true,
           "description": "Emit the core-properties vocabulary as the default namespace — the ISO strict binding, where the source root is `<coreProperties xmlns=…>` and cp:-prefixed children appear prefix-less (dc:/dcterms: keep their prefixes). Round-trip only.",
+          "readOnly": true,
           "type": "boolean"
         },
         "definedNames": {
@@ -30721,13 +30933,15 @@
         },
         "encrypted": {
           "$ref": "#/definitions/EncryptedContainerOptions",
-          "description": "Source file is an encrypted OOXML package (OLE2/CFB container). Round-trip only: the original bytes are re-emitted verbatim; all other fields stay empty — mixing sheet content is rejected."
+          "description": "Source file is an encrypted OOXML package (OLE2/CFB container). Round-trip only: the original bytes are re-emitted verbatim; all other fields stay empty — mixing sheet content is rejected.",
+          "readOnly": true
         },
         "extensions": {
           "description": "Trailing extension list (workbook > extLst > ext) — round-trip only.",
           "items": {
             "$ref": "#/definitions/WorkbookExtensionOptions"
           },
+          "readOnly": true,
           "type": "array"
         },
         "externalLinks": {
@@ -30762,6 +30976,7 @@
           "items": {
             "$ref": "#/definitions/CellFillOptions"
           },
+          "readOnly": true,
           "type": "array"
         },
         "fonts": {
@@ -30769,11 +30984,13 @@
           "items": {
             "$ref": "#/definitions/FontOptions"
           },
+          "readOnly": true,
           "type": "array"
         },
         "fontsContainer": {
           "$ref": "#/definitions/FontsContainerOptions",
-          "description": "Fonts container metadata — round-trip only."
+          "description": "Fonts container metadata — round-trip only.",
+          "readOnly": true
         },
         "forms": {
           "$ref": "#/definitions/OfficeFormsOptions",
@@ -30809,11 +31026,13 @@
         },
         "legacyChildOrder": {
           "description": "Legacy SpreadsheetML 2005 workbook child order; round-trip only.",
+          "readOnly": true,
           "type": "boolean"
         },
         "legacyMicrosoft": {
           "const": true,
           "description": "Legacy Microsoft core-property root/element spelling; round-trip only.",
+          "readOnly": true,
           "type": "boolean"
         },
         "macrosheets": {
@@ -30848,6 +31067,7 @@
           "items": {
             "$ref": "#/definitions/NumFmtEntry"
           },
+          "readOnly": true,
           "type": "array"
         },
         "oleSize": {
@@ -30867,6 +31087,7 @@
         },
         "personsPath": {
           "description": "Source persons part path; default xl/persons/person.xml. Round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "pivotCaches": {
@@ -30914,6 +31135,7 @@
         "relationshipNamespace": {
           "description": "OPC relationship/content-type namespace flavor. `microsoft2005` preserves legacy Microsoft package manifests; round-trip only.",
           "enum": ["standard", "microsoft2005"],
+          "readOnly": true,
           "type": "string"
         },
         "revision": {
@@ -30926,7 +31148,8 @@
         },
         "revisionPtr": {
           "$ref": "#/definitions/RevisionPtrOptions",
-          "description": "Coauthoring revision state (xr:revisionPtr) — round-trip only."
+          "description": "Coauthoring revision state (xr:revisionPtr) — round-trip only.",
+          "readOnly": true
         },
         "richData": {
           "$ref": "#/definitions/RichDataPackageOptions",
@@ -30944,6 +31167,7 @@
               }
             ]
           },
+          "readOnly": true,
           "type": "array"
         },
         "sharedStringsCount": {
@@ -30952,23 +31176,28 @@
         },
         "sharedStringsDeclared": {
           "description": "True when the source declared xl/sharedStrings.xml, even with no si entries. Round-trip only.",
+          "readOnly": true,
           "type": "boolean"
         },
         "sharedStringsPath": {
           "description": "Source sharedStrings part path; default xl/sharedStrings.xml. Round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "sharedStringsRelationshipPresent": {
           "description": "False when the source carried a sharedStrings part without its workbook relationship. Round-trip only.",
+          "readOnly": true,
           "type": "boolean"
         },
         "sharedStringsUniqueCount": {
           "description": "Declared unique string count (xl/sharedStrings.xml `@uniqueCount`). Round-trip only when absent in source.",
+          "readOnly": true,
           "type": "number"
         },
         "sharedStringsXmlSpace": {
           "description": "Source `<sst/@xml:space>`; round-trip only.",
           "enum": ["default", "preserve"],
+          "readOnly": true,
           "type": "string"
         },
         "sheetDefinitions": {
@@ -30976,6 +31205,7 @@
           "items": {
             "$ref": "#/definitions/SheetDefinition"
           },
+          "readOnly": true,
           "type": "array"
         },
         "sources": {
@@ -30998,11 +31228,13 @@
         },
         "stylesPath": {
           "description": "Source styles part path; default xl/styles.xml. Round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "stylesXmlSpace": {
           "description": "Source `<styleSheet/@xml:space>`; round-trip only.",
           "enum": ["default", "preserve"],
+          "readOnly": true,
           "type": "string"
         },
         "subject": {
@@ -31010,6 +31242,7 @@
         },
         "subjectLanguage": {
           "description": "Subject XML language attribute; round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "tableStyles": {
@@ -31026,6 +31259,7 @@
         },
         "themePath": {
           "description": "Source theme part path; default xl/theme/theme1.xml. Round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "title": {
@@ -31051,6 +31285,7 @@
         },
         "volTypesCount": {
           "description": "Declared volatile-entry count; round-trip only.",
+          "readOnly": true,
           "type": "number"
         },
         "volTypesPath": {
@@ -31070,6 +31305,7 @@
         },
         "workbookPath": {
           "description": "Source primary workbook part path; default xl/workbook.xml. Round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "workbookProtection": {
@@ -31079,6 +31315,7 @@
         "workbookXmlSpace": {
           "description": "Source `<workbook/@xml:space>`; round-trip only.",
           "enum": ["default", "preserve"],
+          "readOnly": true,
           "type": "string"
         },
         "worksheets": {
@@ -31211,6 +31448,7 @@
         },
         "revisionsPasswordHashRaw": {
           "description": "Source legacy `@revisionsPassword` hash; round-trip only — do not hand-author.",
+          "readOnly": true,
           "type": "string"
         },
         "revisionsSaltValue": {
@@ -31239,6 +31477,7 @@
         },
         "workbookPasswordHashRaw": {
           "description": "Source legacy `@workbookPassword` hash; round-trip only — do not hand-author.",
+          "readOnly": true,
           "type": "string"
         },
         "workbookSaltValue": {
@@ -31310,6 +31549,7 @@
         },
         "uid": {
           "description": "Coauthoring identity (workbookView `@xr2:uid`). Round-trip only: the attribute rides in the xr2 revision namespace that the workbook root declares as mc:Ignorable.",
+          "readOnly": true,
           "type": "string"
         },
         "visibility": {
@@ -31453,7 +31693,8 @@
         },
         "fallbackShape": {
           "$ref": "#/definitions/GroupShapeChildOptions",
-          "description": "Legacy `mc:Fallback` placeholder shape; round-trip only."
+          "description": "Legacy `mc:Fallback` placeholder shape; round-trip only.",
+          "readOnly": true
         },
         "featureList": {
           "type": "string"
@@ -31533,6 +31774,7 @@
         },
         "shapeId": {
           "description": "Original cNvPr id (round-trip only).",
+          "readOnly": true,
           "type": "number"
         },
         "shapeProperties": {
@@ -31540,6 +31782,7 @@
         },
         "sourcePath": {
           "description": "Source ChartEx part path; round-trip only and preserves sparse names.",
+          "readOnly": true,
           "type": "string"
         },
         "sourceRelationships": {
@@ -31698,18 +31941,22 @@
         },
         "externalDataRelationshipTarget": {
           "description": "Source c:externalData relationship target — round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "externalDataRelationshipType": {
           "description": "Source c:externalData relationship type — round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "externalLink": {
           "$ref": "#/definitions/ExternalLinkOptions",
-          "description": "Chart-owned external link part for c:externalData — round-trip only."
+          "description": "Chart-owned external link part for c:externalData — round-trip only.",
+          "readOnly": true
         },
         "externalLinkPath": {
           "description": "Source chart-owned external link path — round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "fPublished": {
@@ -31769,6 +32016,7 @@
         },
         "frameTransform": {
           "description": "Whether the graphic frame carries a placement transform. `false` preserves a source frame that omitted `xdr:xfrm` (round-trip only).",
+          "readOnly": true,
           "type": "boolean"
         },
         "gapDepth": {
@@ -31920,6 +32168,7 @@
         },
         "shapeId": {
           "description": "Original cNvPr id (round-trip only).",
+          "readOnly": true,
           "type": "number"
         },
         "shapeProperties": {
@@ -31948,6 +32197,7 @@
         },
         "sourcePath": {
           "description": "Source chart part path; round-trip only and preserves relationship wiring.",
+          "readOnly": true,
           "type": "string"
         },
         "splitPosition": {
@@ -31974,10 +32224,12 @@
         },
         "themeOverride": {
           "$ref": "#/definitions/ThemeOverrideOptions",
-          "description": "Parsed theme override content — round-trip only."
+          "description": "Parsed theme override content — round-trip only.",
+          "readOnly": true
         },
         "themeOverridePath": {
           "description": "Chart-owned theme override (xl/theme/themeOverride{n}.xml) — round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "threeD": {
@@ -32024,6 +32276,7 @@
         },
         "zOrder": {
           "description": "Document-order position inside the drawing part (round-trip only).",
+          "readOnly": true,
           "type": "number"
         }
       },
@@ -32081,10 +32334,12 @@
         },
         "relationshipTarget": {
           "description": "Relationship target from the source drawing rels — round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "relationshipType": {
           "description": "Relationship type URI from the source drawing rels — round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "row": {
@@ -32095,11 +32350,11 @@
           "$ref": "#/definitions/PictureOptions/properties/rowOffset"
         },
         "shapeId": {
-          "description": "Original cNvPr id (round-trip only; fresh output allocates ids).",
-          "type": "number"
+          "$ref": "#/definitions/GroupShapeChildOptions/properties/shapeId"
         },
         "sourcePath": {
           "description": "Source companion part path — round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "toCol": {
@@ -32262,18 +32517,22 @@
         },
         "commentsVmlBom": {
           "description": "Source VML part carried a UTF-8 BOM; round-trip only.",
+          "readOnly": true,
           "type": "boolean"
         },
         "commentsVmlLayout": {
           "$ref": "#/definitions/VmlShapeLayoutOptions",
-          "description": "Source comments VML o:shapelayout; round-trip only."
+          "description": "Source comments VML o:shapelayout; round-trip only.",
+          "readOnly": true
         },
         "commentsVmlShapeType": {
           "$ref": "#/definitions/VmlShapetypeOptions",
-          "description": "Source comments VML v:shapetype; round-trip only."
+          "description": "Source comments VML v:shapetype; round-trip only.",
+          "readOnly": true
         },
         "commentsVmlSource": {
           "description": "Exact source comments VML text; round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "conditionalFormats": {
@@ -32361,6 +32620,7 @@
         },
         "dimensionPresent": {
           "description": "True when the source sheet declared `<dimension>` (even with an unusable ref). Round-trip only: distinguishes an omitted element from fresh authoring that has not set one yet.",
+          "readOnly": true,
           "type": "boolean"
         },
         "drawingHF": {
@@ -32369,14 +32629,17 @@
         },
         "drawingPresent": {
           "description": "True when the source sheet declared a drawing part, even one with no anchors (empty `<xdr:wsDr/>`). Round-trip only: keeps the part, its relationship, and its content-type override alive through a round-trip.",
+          "readOnly": true,
           "type": "boolean"
         },
         "drawingReferencePresent": {
           "description": "False when the source carried a drawing part and relationship without a `<drawing>` body reference. Round-trip only.",
+          "readOnly": true,
           "type": "boolean"
         },
         "drawingRid": {
           "description": "Drawing reference r:id. Round-trip only: drawing parts the bridge cannot map onto options (e.g. OLE shape representations) pass through verbatim; fresh worksheets derive the reference from images/charts/shapes.",
+          "readOnly": true,
           "type": "string"
         },
         "ext": {
@@ -32417,10 +32680,12 @@
         },
         "legacyDrawingHF": {
           "description": "Legacy drawing for header/footer r:id. Round-trip only: the referenced VML part is not re-emitted by the compiler.",
+          "readOnly": true,
           "type": "string"
         },
         "legacyDrawingRid": {
           "description": "Legacy drawing reference r:id. Round-trip only, same passthrough semantics as drawingRid.",
+          "readOnly": true,
           "type": "string"
         },
         "mergeCells": {
@@ -32474,6 +32739,7 @@
         },
         "preserveEmptyTableParts": {
           "description": "Preserve an empty `<tableParts count=\"0\"/>` container; round-trip only — do not hand-author.",
+          "readOnly": true,
           "type": "boolean"
         },
         "printOptions": {
@@ -32504,6 +32770,7 @@
         "rootXmlSpace": {
           "description": "Root `xml:space` lexical form; round-trip only.",
           "enum": ["default", "preserve"],
+          "readOnly": true,
           "type": "string"
         },
         "rowBreaks": {
@@ -32558,6 +32825,7 @@
         },
         "sheetViewsPresent": {
           "description": "True when the source sheet declared `<sheetViews>`. Round-trip only: distinguishes an omitted element from fresh authoring defaults.",
+          "readOnly": true,
           "type": "boolean"
         },
         "singleXmlCells": {
@@ -32587,10 +32855,12 @@
         },
         "sourcePath": {
           "description": "Source part path (xl/worksheets/sheet26.xml) — round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "sourceRelsPath": {
           "description": "Source rels path when its casing differs from the part-derived default (xl/worksheets/_rels/sheet1.xml.rels for Sheet1.xml) — round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "state": {
@@ -32627,6 +32897,7 @@
         "uidPrefix": {
           "description": "Root uid attribute namespace prefix when the source spelled it with a revision-prefixed binding (`xr2:`/`xr3:`/`xr6:`) — round-trip only; the writer defaults to `xr:`.",
           "enum": ["xr2", "xr3", "xr6"],
+          "readOnly": true,
           "type": "string"
         },
         "webExtensions": {
@@ -32775,6 +33046,7 @@
         },
         "shapeId": {
           "description": "Original cNvPr id (round-trip only).",
+          "readOnly": true,
           "type": "number"
         },
         "style": {
@@ -32891,7 +33163,8 @@
         },
         "part": {
           "$ref": "#/definitions/WebExtensionPartOptions",
-          "description": "Parsed webextension part content — round-trip only."
+          "description": "Parsed webextension part content — round-trip only.",
+          "readOnly": true
         },
         "printsWithSheet": {
           "description": "Print with sheet (default true)",
@@ -32906,10 +33179,12 @@
         },
         "shapeId": {
           "description": "Original cNvPr id (round-trip only).",
+          "readOnly": true,
           "type": "number"
         },
         "snapshotSourcePath": {
           "description": "Fallback snapshot image path; round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "sourcePath": {
@@ -33038,6 +33313,7 @@
           "type": "string"
         }
       },
+      "readOnly": true,
       "type": "object"
     },
     "XmlCellPropertiesOptions": {

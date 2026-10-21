@@ -1,10 +1,9 @@
-import type { ParagraphOptions, SectionChild } from "@office-open/docx";
+import type { DocumentOptions, ParagraphOptions, SectionChild } from "@office-open/docx";
 import { describe, expect, it } from "vitest";
 
 import { DocParseError } from "./errors";
 import { parseDocument } from "./index";
 import { parseCommentRanges } from "./mappers/document";
-import type { LegacyDocumentOptions } from "./records/models";
 import {
   parseBookmarks,
   parseFields,
@@ -79,8 +78,8 @@ function fillName(bytes: Uint8Array, offset: number, name: string): void {
   view.setUint16(offset + 64, (name.length + 1) * 2, true);
 }
 
-function parseLegacyDocument(data: Uint8Array): LegacyDocumentOptions {
-  return parseDocument(data) as LegacyDocumentOptions;
+function parseLegacyDocument(data: Uint8Array): DocumentOptions {
+  return parseDocument(data);
 }
 
 function writeDirectoryEntry(

@@ -361,6 +361,31 @@ const createMockUnzipped = (
 
 describe("patch-detector", () => {
   describe("patchDetector", () => {
+    describe("custom delimiters", () => {
+      beforeEach(() => {
+        vi.mocked(unzipSync).mockImplementation(() =>
+          createMockUnzipped([
+            [
+              "word/document.xml",
+              `<?xml version="1.0"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body><w:p><w:r><w:t>&lt;&lt;name&gt;&gt; and &lt;&lt;amount&gt;&gt;</w:t></w:r></w:p></w:body></w:document>`,
+            ],
+          ]),
+        );
+      });
+
+      afterEach(() => {
+        vi.restoreAllMocks();
+      });
+
+      it("detects keys with caller-supplied delimiters", async () => {
+        const output = await patchDetector({
+          data: Buffer.from(""),
+          placeholderDelimiters: { start: "<<", end: ">>" },
+        });
+        expect(output).toEqual(["name", "amount"]);
+      });
+    });
+
     describe("document.xml and [Content_Types].xml", () => {
       beforeEach(() => {
         vi.mocked(unzipSync).mockImplementation(() =>

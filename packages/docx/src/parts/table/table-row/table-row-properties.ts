@@ -48,6 +48,7 @@
  * @module
  */
 import type { PositiveUniversalMeasure } from "@office-open/core";
+import type { OnOffLexicalValue } from "@parts/paragraph/run/properties";
 import type { ChangedProperties } from "@shared/track-revision/track-revision";
 
 import type { AlignmentType } from "../../paragraph";
@@ -112,6 +113,8 @@ export interface TableRowPropertiesOptionsBase {
   cantSplit?: boolean;
   /** Whether the row should be repeated as a header row on each page (tblHeader) */
   tableHeader?: boolean;
+  /** Source `tableHeader/@w:val` lexical form; round-trip only — do not hand-author. */
+  tableHeaderRaw?: OnOffLexicalValue;
   /** Row height configuration (trHeight) */
   height?: {
     /** Height value in twips or as a PositiveUniversalMeasure */

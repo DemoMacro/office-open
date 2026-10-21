@@ -1,5 +1,3 @@
-import type { DocumentOptions } from "@office-open/docx";
-
 /** Word revision insert/delete markers decoded from FRD ranges. */
 export interface LegacyRevisionRange {
   /** Start character position in the main document. */
@@ -35,9 +33,6 @@ export interface LegacyPictureData {
 
 /** A picture shape resolved from the OfficeArt drawing group by its shape id. */
 export type LegacyPictureByShapeId = Map<number, LegacyPictureData>;
-
-/** Options produced by the legacy DOC reader. */
-export type LegacyDocumentOptions = DocumentOptions;
 
 /** Password for password-protected legacy DOC containers. */
 export interface LegacyParseOptions {

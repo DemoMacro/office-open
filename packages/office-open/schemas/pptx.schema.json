@@ -1675,6 +1675,7 @@
         "apPrefix": {
           "const": true,
           "description": "Emit the extended-properties vocabulary under the ap: prefix — the ISO strict binding, where the source declares xmlns:ap explicitly instead of using the namespace as the default. Round-trip only.",
+          "readOnly": true,
           "type": "boolean"
         },
         "appVersion": {
@@ -1724,7 +1725,8 @@
               "type": "null"
             }
           ],
-          "description": "Hyperlink metadata (HLinks) — Word's internal per-link records (six entries per link). Round-trip only: flat variant values are carried as-is; `null` preserves a source HLinks container with no vt:vector child."
+          "description": "Hyperlink metadata (HLinks) — Word's internal per-link records (six entries per link). Round-trip only: flat variant values are carried as-is; `null` preserves a source HLinks container with no vt:vector child.",
+          "readOnly": true
         },
         "hyperlinkBase": {
           "description": "Hyperlink base URL",
@@ -1737,6 +1739,7 @@
         "legacyMicrosoft": {
           "const": true,
           "description": "Legacy Microsoft extended-properties namespace; round-trip only.",
+          "readOnly": true,
           "type": "boolean"
         },
         "lines": {
@@ -1917,6 +1920,7 @@
         },
         "posterFileName": {
           "description": "Source poster media file name (round-trip only).",
+          "readOnly": true,
           "type": "string"
         },
         "posterType": {
@@ -2300,7 +2304,8 @@
         },
         "effectsList": {
           "$ref": "#/definitions/EffectListOptions",
-          "description": "Compatibility spelling `a:effectsLst` used by some producers; round-trip only."
+          "description": "Compatibility spelling `a:effectsLst` used by some producers; round-trip only.",
+          "readOnly": true
         },
         "fill": {
           "$ref": "#/definitions/FillOptions"
@@ -3988,6 +3993,7 @@
         },
         "ext": {
           "description": "Raw inner XML of the chart-space trailing c:extLst (after userShapes — c14:pivotOptions' home). Round-trip only, same contract as series ext.",
+          "readOnly": true,
           "type": "string"
         },
         "externalData": {
@@ -4311,6 +4317,7 @@
         },
         "sourcePath": {
           "description": "Source chart part path (`ppt/charts/chartN.xml`); round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "sourceRelationships": {
@@ -4318,6 +4325,7 @@
           "items": {
             "$ref": "#/definitions/ChartSourceRelationship"
           },
+          "readOnly": true,
           "type": "array"
         },
         "splitPosition": {
@@ -4400,6 +4408,7 @@
         },
         "userShapesSourceTarget": {
           "description": "Source userShapes relationship target; round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "varyColors": {
@@ -4456,6 +4465,7 @@
         },
         "bottomRaw": {
           "description": "Source lexical form of `bottom`; round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "footer": {
@@ -4463,6 +4473,7 @@
         },
         "footerRaw": {
           "description": "Source lexical form of `footer`; round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "header": {
@@ -4470,6 +4481,7 @@
         },
         "headerRaw": {
           "description": "Source lexical form of `header`; round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "left": {
@@ -4477,6 +4489,7 @@
         },
         "leftRaw": {
           "description": "Source lexical form of `left`; round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "right": {
@@ -4484,6 +4497,7 @@
         },
         "rightRaw": {
           "description": "Source lexical form of `right`; round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "top": {
@@ -4491,6 +4505,7 @@
         },
         "topRaw": {
           "description": "Source lexical form of `top`; round-trip only.",
+          "readOnly": true,
           "type": "string"
         }
       },
@@ -5161,6 +5176,7 @@
         },
         "path": {
           "description": "Source companion part path; round-trip only. Fresh authoring omits it.",
+          "readOnly": true,
           "type": "string"
         },
         "relationshipId": {
@@ -5968,8 +5984,7 @@
           "type": "number"
         },
         "ext": {
-          "description": "Verbatim inner XML of `p:extLst`; round-trip only.",
-          "type": "string"
+          "$ref": "#/definitions/SlideCommentOptions/properties/ext"
         },
         "id": {
           "description": "Stable author identifier (`p:cmAuthor/@id`).",
@@ -6474,6 +6489,7 @@
         },
         "preserveSourceDeclarations": {
           "description": "Preserve every source declaration, including entries for absent parts. Round-trip only.",
+          "readOnly": true,
           "type": "boolean"
         }
       },
@@ -6600,10 +6616,12 @@
       "properties": {
         "fmtid": {
           "description": "Source property format identity (`@fmtid`); round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "linkTarget": {
           "description": "Linked-content target (`@linkTarget`); round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "name": {
@@ -6612,6 +6630,7 @@
         },
         "pid": {
           "description": "Source property id (`@pid`); round-trip only.",
+          "readOnly": true,
           "type": "number"
         },
         "value": {
@@ -6620,6 +6639,7 @@
         },
         "valueLexeme": {
           "description": "Source lexical text of the vt:* element; round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "valueType": {
@@ -6668,6 +6688,7 @@
         },
         "contentPath": {
           "description": "Source item path; round-trip only — do not hand-author.",
+          "readOnly": true,
           "type": "string"
         },
         "properties": {
@@ -6676,6 +6697,7 @@
         },
         "propertiesPath": {
           "description": "Source properties path; round-trip only — do not hand-author.",
+          "readOnly": true,
           "type": "string"
         }
       },
@@ -7925,6 +7947,7 @@
           "description": "Complete source file bytes (OLE2/CFB container)."
         }
       },
+      "readOnly": true,
       "required": ["data"],
       "type": "object"
     },
@@ -8152,6 +8175,7 @@
         "relationshipType": {
           "description": "Source relationship kind; round-trip only, defaults to package.",
           "enum": ["oleObject", "package"],
+          "readOnly": true,
           "type": "string"
         }
       },
@@ -8419,6 +8443,7 @@
             },
             "blipExtensionXml": {
               "description": "Verbatim `a:blip` extension-list inner XML; round-trip only.",
+              "readOnly": true,
               "type": "string"
             },
             "compression": {
@@ -8465,6 +8490,7 @@
             "omitBlip": {
               "const": true,
               "description": "Source a:blipFill omitted its optional a:blip child; writer preserves the attribute/tile-only shape instead of inventing an empty image reference. Round-trip only ? do not hand-author.",
+              "readOnly": true,
               "type": "boolean"
             },
             "rotWithShape": {
@@ -8477,6 +8503,7 @@
             },
             "sourceReferenceId": {
               "description": "Source a:blip relationship id retained when its relationship declaration itself is absent (round-trip only — do not hand-author).",
+              "readOnly": true,
               "type": "string"
             },
             "stretch": {
@@ -9365,6 +9392,7 @@
         },
         "namePresent": {
           "description": "True when the source declared `@name`. Round-trip only: false keeps a source-absent name from gaining the fresh-authoring default.",
+          "readOnly": true,
           "type": "boolean"
         }
       },
@@ -10214,18 +10242,20 @@
         },
         "shapeTreeCreationId": {
           "description": "Root spTree cNvPr creation id — round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "shapeTreeExt": {
-          "description": "Root spTree cNvPr extension-list inner XML — round-trip only.",
-          "type": "string"
+          "$ref": "#/definitions/MasterDefinition/properties/shapeTreeExt"
         },
         "shapeTreeId": {
           "description": "Root spTree cNvPr id — round-trip only.",
+          "readOnly": true,
           "type": "number"
         },
         "shapeTreeName": {
           "description": "Root spTree cNvPr name — round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "theme": {
@@ -10670,6 +10700,7 @@
         },
         "backgroundPresent": {
           "description": "Whether the source layout carried p:bg; round-trip only.",
+          "readOnly": true,
           "type": "boolean"
         },
         "cSldExt": {
@@ -10730,6 +10761,7 @@
         },
         "orphaned": {
           "description": "Layout part exists but the owning master does not list it (round-trip only).",
+          "readOnly": true,
           "type": "boolean"
         },
         "placeholders": {
@@ -10744,18 +10776,20 @@
         },
         "shapeTreeCreationId": {
           "description": "Root spTree cNvPr creation id — round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "shapeTreeExt": {
-          "description": "Root spTree cNvPr extension-list inner XML — round-trip only.",
-          "type": "string"
+          "$ref": "#/definitions/MasterDefinition/properties/shapeTreeExt"
         },
         "shapeTreeId": {
           "description": "Root spTree cNvPr id — round-trip only.",
+          "readOnly": true,
           "type": "number"
         },
         "shapeTreeName": {
           "description": "Root spTree cNvPr name — round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "showMasterPlaceholderAnimations": {
@@ -10778,14 +10812,17 @@
         },
         "sourceOwnRels": {
           "description": "Whether the source package carried this layout's .rels part (round-trip only).",
+          "readOnly": true,
           "type": "boolean"
         },
         "sourcePath": {
           "description": "Source layout package path; round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "sourceRelationshipId": {
           "description": "Source master relationship id for this layout (round-trip only).",
+          "readOnly": true,
           "type": "string"
         },
         "themeOverride": {
@@ -10794,6 +10831,7 @@
         },
         "themeOverridePath": {
           "description": "Source theme override package path; round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "transition": {
@@ -11147,6 +11185,7 @@
         },
         "ext": {
           "description": "Raw inner XML of the legend entry trailing c:extLst — round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "index": {
@@ -11870,6 +11909,7 @@
         },
         "backgroundPresent": {
           "description": "Whether the source master carried p:bg; round-trip only.",
+          "readOnly": true,
           "type": "boolean"
         },
         "cSldExt": {
@@ -11992,18 +12032,22 @@
         },
         "shapeTreeCreationId": {
           "description": "Root spTree cNvPr creation id — round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "shapeTreeExt": {
           "description": "Root spTree cNvPr extension-list inner XML — round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "shapeTreeId": {
           "description": "Root spTree cNvPr id — round-trip only.",
+          "readOnly": true,
           "type": "number"
         },
         "shapeTreeName": {
           "description": "Root spTree cNvPr name — round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "slideLayoutIds": {
@@ -12021,6 +12065,7 @@
             "required": ["relationshipId"],
             "type": "object"
           },
+          "readOnly": true,
           "type": "array"
         },
         "slideLayoutIdsPresent": {
@@ -12029,6 +12074,7 @@
         },
         "sourcePath": {
           "description": "Source master package path; round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "textStyles": {
@@ -12037,6 +12083,7 @@
         },
         "textStylesPresent": {
           "description": "Whether the source master carried p:txStyles; round-trip only.",
+          "readOnly": true,
           "type": "boolean"
         },
         "theme": {
@@ -12044,10 +12091,12 @@
         },
         "themeRelationshipId": {
           "description": "Source master theme relationship id; round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "themeSourcePath": {
           "description": "Source master theme package path; round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "transition": {
@@ -12439,18 +12488,20 @@
         },
         "shapeTreeCreationId": {
           "description": "Root spTree cNvPr creation id — round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "shapeTreeExt": {
-          "description": "Root spTree cNvPr extension-list inner XML — round-trip only.",
-          "type": "string"
+          "$ref": "#/definitions/MasterDefinition/properties/shapeTreeExt"
         },
         "shapeTreeId": {
           "description": "Root spTree cNvPr id — round-trip only.",
+          "readOnly": true,
           "type": "number"
         },
         "shapeTreeName": {
           "description": "Root spTree cNvPr name — round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "theme": {
@@ -12490,18 +12541,20 @@
         },
         "shapeTreeCreationId": {
           "description": "Root spTree cNvPr creation id — round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "shapeTreeExt": {
-          "description": "Root spTree cNvPr extension-list inner XML — round-trip only.",
-          "type": "string"
+          "$ref": "#/definitions/MasterDefinition/properties/shapeTreeExt"
         },
         "shapeTreeId": {
           "description": "Root spTree cNvPr id — round-trip only.",
+          "readOnly": true,
           "type": "number"
         },
         "shapeTreeName": {
           "description": "Root spTree cNvPr name — round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "show": {
@@ -12661,6 +12714,7 @@
       "properties": {
         "ext": {
           "description": "Verbatim inner XML of a:objectDefaults/a:extLst — round-trip only for unmodeled Office extensions.",
+          "readOnly": true,
           "type": "string"
         },
         "lineDefault": {
@@ -12736,6 +12790,7 @@
         },
         "fileName": {
           "description": "Source embedding file name (ppt/embeddings/*) — round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "followColorScheme": {
@@ -13135,6 +13190,7 @@
         },
         "dashPresent": {
           "description": "Preserve a bare `a:prstDash` element produced by lenient sources. Mutually exclusive with `dash` and `customDash`; round-trip only.",
+          "readOnly": true,
           "type": "boolean"
         },
         "ext": {
@@ -13672,6 +13728,7 @@
         },
         "blipExt": {
           "description": "Verbatim a:blip extension-list children beyond modeled hints (round-trip only).",
+          "readOnly": true,
           "type": "string"
         },
         "blipFillPresent": {
@@ -13828,6 +13885,7 @@
         },
         "relationshipId": {
           "description": "Source `a:blip` `@r:embed` when the target has no image bytes (round-trip only — a broken internal reference).",
+          "readOnly": true,
           "type": "string"
         },
         "rotWithShape": {
@@ -13848,6 +13906,7 @@
         },
         "shapePropertiesExt": {
           "description": "Raw a:extLst inner XML on p:spPr; round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "shapePropertiesExtensions": {
@@ -14535,6 +14594,7 @@
         },
         "appPropertiesRelationshipType": {
           "description": "Root relationship Type for docProps/app.xml; preserved for non-canonical producers. Round-trip only — do not hand-author.",
+          "readOnly": true,
           "type": "string"
         },
         "application": {
@@ -14585,6 +14645,7 @@
             ],
             "type": "string"
           },
+          "readOnly": true,
           "type": "array"
         },
         "colorMru": {
@@ -14622,10 +14683,12 @@
         },
         "contentTypes": {
           "$ref": "#/definitions/ContentTypesInput",
-          "description": "Content types from the source [Content_Types].xml (round-trip only). Present, generate() keeps the source Default/Override entries as the base declaration table and derives only what they leave uncovered."
+          "description": "Content types from the source [Content_Types].xml (round-trip only). Present, generate() keeps the source Default/Override entries as the base declaration table and derives only what they leave uncovered.",
+          "readOnly": true
         },
         "corePropertiesRelationshipType": {
           "description": "Root relationship Type for docProps/core.xml; preserved for non-canonical producers. Round-trip only — do not hand-author.",
+          "readOnly": true,
           "type": "string"
         },
         "created": {
@@ -14673,6 +14736,7 @@
         "defaultNamespace": {
           "const": true,
           "description": "Emit the core-properties vocabulary as the default namespace — the ISO strict binding, where the source root is `<coreProperties xmlns=…>` and cp:-prefixed children appear prefix-less (dc:/dcterms: keep their prefixes). Round-trip only.",
+          "readOnly": true,
           "type": "boolean"
         },
         "defaultTextStyle": {
@@ -14705,7 +14769,8 @@
         },
         "encrypted": {
           "$ref": "#/definitions/EncryptedContainerOptions",
-          "description": "Source file is an encrypted OOXML package (OLE2/CFB). Round-trip only: original bytes carried verbatim and re-emitted unchanged; every other field stays empty — mixing slides is rejected."
+          "description": "Source file is an encrypted OOXML package (OLE2/CFB). Round-trip only: original bytes carried verbatim and re-emitted unchanged; every other field stays empty — mixing slides is rejected.",
+          "readOnly": true
         },
         "ext": {
           "description": "Raw `<p:ext>` entries of ppt/presentation.xml's trailing extLst outside the modeled sectionLst extension (e.g. p15:sldGuideLst) — verbatim round-trip, do not hand-author. Same slot as SlideOptions.ext.",
@@ -14764,6 +14829,7 @@
         "legacyMicrosoft": {
           "const": true,
           "description": "Legacy Microsoft core-property root/element spelling; round-trip only.",
+          "readOnly": true,
           "type": "boolean"
         },
         "masters": {
@@ -14807,6 +14873,7 @@
           "items": {
             "$ref": "#/definitions/PassthroughRelationship"
           },
+          "readOnly": true,
           "type": "array"
         },
         "photoAlbum": {
@@ -14818,6 +14885,7 @@
         },
         "presentationRelationshipType": {
           "description": "Root relationship Type for the primary presentation part; preserved for non-canonical producers. Round-trip only — do not hand-author.",
+          "readOnly": true,
           "type": "string"
         },
         "print": {
@@ -14927,6 +14995,7 @@
         },
         "subjectLanguage": {
           "description": "Subject XML language attribute; round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "tableStyles": {
@@ -15181,6 +15250,7 @@
         },
         "avLstOmitted": {
           "description": "Source omitted the a:avLst child; round-trip only — do not hand-author.",
+          "readOnly": true,
           "type": "boolean"
         },
         "preset": {
@@ -15342,6 +15412,7 @@
         },
         "avLstOmitted": {
           "description": "Source omitted the optional `a:avLst` child; round-trip only.",
+          "readOnly": true,
           "type": "boolean"
         },
         "preset": {
@@ -15683,6 +15754,7 @@
             "type": "string"
           },
           "description": "Attributes from non-DrawingML namespaces (e.g. `a14:legacySpreadsheetColorIndex`). Round-trip only — do not hand-author.",
+          "readOnly": true,
           "type": "object"
         },
         "transforms": {
@@ -16258,6 +16330,7 @@
         },
         "ext": {
           "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over `creationId`, which it subsumes when the source list carries both.",
+          "readOnly": true,
           "type": "string"
         },
         "flipHorizontal": {
@@ -17087,6 +17160,7 @@
         },
         "authorId": {
           "description": "Source author identity (`p:cm/@authorId`); round-trip only.",
+          "readOnly": true,
           "type": "number"
         },
         "date": {
@@ -17094,6 +17168,7 @@
         },
         "ext": {
           "description": "Verbatim inner XML of `p:extLst`; round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "height": {
@@ -17109,6 +17184,7 @@
         },
         "idx": {
           "description": "Source ordinal (`p:cm/@idx`); round-trip only.",
+          "readOnly": true,
           "type": "number"
         },
         "initials": {
@@ -17323,6 +17399,7 @@
         },
         "masterSourcePath": {
           "description": "Source master package path; round-trip only and disambiguates same-named masters.",
+          "readOnly": true,
           "type": "string"
         },
         "name": {
@@ -17354,18 +17431,20 @@
         },
         "shapeTreeCreationId": {
           "description": "Root spTree cNvPr creation id — round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "shapeTreeExt": {
-          "description": "Root spTree cNvPr extension-list inner XML — round-trip only.",
-          "type": "string"
+          "$ref": "#/definitions/MasterDefinition/properties/shapeTreeExt"
         },
         "shapeTreeId": {
           "description": "Root spTree cNvPr id — round-trip only.",
+          "readOnly": true,
           "type": "number"
         },
         "shapeTreeName": {
           "description": "Root spTree cNvPr name — round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "showMasterPlaceholderAnimations": {
@@ -17385,6 +17464,7 @@
         "showRaw": {
           "description": "Source lexical form of p:sld/`@show`; round-trip only — do not hand-author.",
           "enum": ["0", "1"],
+          "readOnly": true,
           "type": "string"
         },
         "slideId": {
@@ -17396,6 +17476,7 @@
         },
         "sourcePath": {
           "description": "Source slide package path; round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "transition": {
@@ -17642,7 +17723,8 @@
         },
         "raw": {
           "$ref": "#/definitions/SmartArtRawParts",
-          "description": "Verbatim source diagram parts. Round-trip only — do not hand-author."
+          "description": "Verbatim source diagram parts. Round-trip only — do not hand-author.",
+          "readOnly": true
         },
         "smartArtKey": {
           "description": "Pre-generated SmartArt key (e.g. \"smartart_1024\"). Auto-generated if omitted.",
@@ -17653,6 +17735,7 @@
           "items": {
             "$ref": "#/definitions/SmartArtDataRelationshipOptions"
           },
+          "readOnly": true,
           "type": "array"
         },
         "sourcePaths": {
@@ -17672,6 +17755,7 @@
               "type": "string"
             }
           },
+          "readOnly": true,
           "type": "object"
         },
         "sourceRelIds": {
@@ -17691,6 +17775,7 @@
               "type": "string"
             }
           },
+          "readOnly": true,
           "type": "object"
         },
         "style": {
@@ -17757,6 +17842,7 @@
         },
         "partPath": {
           "description": "Physical package path from the source; round-trip only.",
+          "readOnly": true,
           "type": "string"
         }
       },
@@ -18718,6 +18804,7 @@
       "properties": {
         "sourcePath": {
           "description": "Source package path; round-trip only — do not hand-author.",
+          "readOnly": true,
           "type": "string"
         },
         "tags": {
@@ -20986,6 +21073,7 @@
         },
         "posterFileName": {
           "description": "Source poster media file name (round-trip only).",
+          "readOnly": true,
           "type": "string"
         },
         "posterType": {

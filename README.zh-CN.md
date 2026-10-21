@@ -1,5 +1,6 @@
 # office-open
 
+包依赖图遵循格式归属：`odf` 负责 OCF 容器、XML 运行时、元数据以及共享图表/数据库编解码器；每个 ODF 文档编解码器可以类型引用对应 OOXML 包，运行时使用 `core` 与 `odf`；同级 ODF 编解码器互不依赖；`core` 永不导入格式编解码器；只有 `office-open` 聚合全部公开文档编解码器。
 [English](./README.md) | 简体中文
 
 [![npm downloads](https://img.shields.io/npm/dm/office-open)](https://www.npmjs.com/package/office-open)
@@ -35,13 +36,13 @@
 
 各包基准测试摘选（ops/s，越高越好；Windows 11、Node 24——相同场景在 Bun 1.4 上还能再快约 2×）。压缩率与 MS Office 默认值持平；完整方法论、压缩模式与全量数据见各包 README：
 
-| 包                                                       | 场景                            | @office-open | 竞品                   | 快       |
-| -------------------------------------------------------- | ------------------------------- | ------------ | ---------------------- | -------- |
-| [@office-open/docx](./packages/docx/README.md#benchmark) | 全功能文档 + 2 张图片           | 763 ops/s    | docx 9.6 — 54.2 ops/s  | **14×**  |
-|                                                          | 2,000 段落 + 20 张图片          | 104 ops/s    | docx 9.6 — 2.85 ops/s  | **37×**  |
-| [@office-open/pptx](./packages/pptx/README.md#benchmark) | 50 页全样式幻灯片               | 73.8 ops/s   | PptxGenJS — 0.91 ops/s | **81×**  |
-| [@office-open/xlsx](./packages/xlsx/README.md#benchmark) | 100k 行 × 20 列（200 万单元格） | 0.89 ops/s   | hucre — 0.46 ops/s     | **1.9×** |
-| [@office-open/xml](./packages/xml/README.md#benchmark)   | 解析复杂 OOXML                  | 424k ops/s   | txml — 389k ops/s      | **1.1×** |
+| 包                                                       | 场景                            | @office-open | 竞品                    | 快       |
+| -------------------------------------------------------- | ------------------------------- | ------------ | ----------------------- | -------- |
+| [@office-open/docx](./packages/docx/README.md#benchmark) | 全功能文档 + 2 张图片           | 763 ops/s    | docx 9.6.1 — 54.2 ops/s | **14×**  |
+|                                                          | 2,000 段落 + 20 张图片          | 104 ops/s    | docx 9.6.1 — 2.85 ops/s | **37×**  |
+| [@office-open/pptx](./packages/pptx/README.md#benchmark) | 50 页全样式幻灯片               | 73.8 ops/s   | PptxGenJS — 0.91 ops/s  | **81×**  |
+| [@office-open/xlsx](./packages/xlsx/README.md#benchmark) | 100k 行 × 20 列（200 万单元格） | 0.89 ops/s   | hucre — 0.46 ops/s      | **1.9×** |
+| [@office-open/xml](./packages/xml/README.md#benchmark)   | 解析复杂 OOXML                  | 424k ops/s   | txml — 389k ops/s       | **1.1×** |
 
 ## 为什么选择 office-open？
 
@@ -65,6 +66,7 @@
 | [@office-open/xls](./packages/xls/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/xls)  | 旧版 Excel .xls 解析                |
 | [@office-open/ppt](./packages/ppt/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/ppt)  | 旧版 PowerPoint .ppt 解析           |
 | [@office-open/rtf](./packages/rtf/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/rtf)  | Rich Text Format 生成与解析         |
+| [@office-open/odf](./packages/odf/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/odf)  | 共享 OpenDocument 容器与运行时      |
 | [@office-open/odt](./packages/odt/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/odt)  | OpenDocument 文本生成与解析         |
 | [@office-open/ods](./packages/ods/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/ods)  | OpenDocument 表格生成与解析         |
 | [@office-open/odp](./packages/odp/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/odp)  | OpenDocument 演示生成与解析         |
@@ -128,7 +130,7 @@ const buffer = generateDocumentSync({
 writeFileSync("document.docx", buffer);
 ```
 
-PowerPoint 与 Excel 结构相同——`generatePresentationSync({ slides: [...] })` 与 `generateWorkbookSync({ worksheets: [...] })`；见上方各包 README。另有按类型分发的 `generate()` 助手与 CLI：
+PowerPoint 与 Excel 结构相同——`generatePresentationSync({ slides: [...] })` 与 `generateWorkbookSync({ worksheets: [...] })`；见上方各包 README。另有按类型分发的 `generateOffice()` 助手与 CLI：
 
 ```bash
 npx office-open xlsx input.json "output.xlsx"

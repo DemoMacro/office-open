@@ -1,7 +1,9 @@
 export * from "./parts";
 export * from "./shared";
 export * from "./parse";
+export * from "./patch-commands";
 export * from "./patch";
+export type { PatchTextSelection } from "@office-open/core";
 export {
   generatePresentation,
   generatePresentationSync,

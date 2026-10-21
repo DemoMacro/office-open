@@ -9,11 +9,11 @@
 ## Features
 
 - 🧠 **Canonical Models** — `DocumentOptions`, `WorkbookOptions`, and `PresentationOptions`
-- 📄 **Word** — DOCX generation, parsing, and patching; DOC parsing
-- 📊 **Excel** — XLSX generation, parsing, and patching; XLS parsing
-- 📈 **PowerPoint** — PPTX generation, parsing, and patching; PPT parsing
-- 📝 **RTF** — Strict generation and parsing through `DocumentOptions`
-- 📦 **OpenDocument** — ODT, ODS, and ODP generation and parsing
+- 📄 **Word** — DOCX, RTF, and ODT generation, parsing, and patching; DOC parsing
+- 📊 **Excel** — XLSX and ODS generation, parsing, and patching; XLS parsing
+- 📈 **PowerPoint** — PPTX and ODP generation, parsing, and patching; PPT parsing
+- 📝 **RTF** — Strict read/write and canonical patching through `DocumentOptions`
+- 📦 **OpenDocument** — ODT, ODS, and ODP read/write and canonical patching
 - 🔁 **Cross-Format** — Shared drawing, chart, picture, table, connector, and group concepts
 - 🤖 **AI Tools** — Vercel AI SDK tools with schema validation and structured errors
 - 🧩 **JSON Schemas** — Draft-07 schemas and dependency-closed schema slicing
@@ -72,9 +72,13 @@ import { patchDocument } from "office-open";
 const patched = await patchDocument({
   format: "docx",
   data: input,
-  findReplace: {
-    "Account Manager": "Jane Doe",
-  },
+  commands: [
+    {
+      type: "replace",
+      at: { field: "sections", route: [{ index: 0 }], text: { literal: "Account Manager" } },
+      value: "Jane Doe",
+    },
+  ],
 });
 ```
 
@@ -121,14 +125,14 @@ Additional entries include `office-open/convert`, `office-open/schemas`, `office
 
 ## Format Support
 
-| Family       | Formats                               | Parse |              Generate |       Patch |
-| ------------ | ------------------------------------- | ----: | --------------------: | ----------: |
-| Document     | DOC, DOCX, DOCM, DOTX, DOTM, RTF, ODT |    ✅ | DOCX family, RTF, ODT | DOCX family |
-| Workbook     | XLS, XLSX, XLSM, XLTX, XLTM, ODS      |    ✅ |      XLSX family, ODS | XLSX family |
-| Presentation | PPT, PPTX, PPTM, POTX, POTM, ODP      |    ✅ |      PPTX family, ODP | PPTX family |
-| Tabular      | CSV, TSV                              |    ✅ |                    ✅ |          ❌ |
+| Family       | Formats                               | Parse |              Generate |                 Patch |
+| ------------ | ------------------------------------- | ----: | --------------------: | --------------------: |
+| Document     | DOC, DOCX, DOCM, DOTX, DOTM, RTF, ODT |    ✅ | DOCX family, RTF, ODT | DOCX family, RTF, ODT |
+| Workbook     | XLS, XLSX, XLSM, XLTX, XLTM, ODS      |    ✅ |      XLSX family, ODS |      XLSX family, ODS |
+| Presentation | PPT, PPTX, PPTM, POTX, POTM, ODP      |    ✅ |      PPTX family, ODP |      PPTX family, ODP |
+| Tabular      | CSV, TSV                              |    ✅ |                    ✅ |                    ❌ |
 
-Encrypted OOXML inputs are detected precisely and returned as parse errors with actionable context rather than being parsed as unrelated formats.
+Encrypted OOXML inputs are detected precisely and rejected by the unified parser rather than being parsed as unrelated formats.
 
 ## Canonical Model
 
@@ -148,7 +152,7 @@ Every parser returns the same family model. Therefore legacy and ODF content can
 - RTF generation rejects options that cannot be represented in RTF instead of dropping them.
 - ODT, ODS, and ODP support parse and generate but do not provide a patch API.
 - Parse errors expose structured context such as part, path, element name, and reason.
-- Unsupported operations throw explicit errors; they do not silently change format.
+- Unsupported commands throw explicit errors; they do not silently change format.
 
 ## AI SDK Tools
 

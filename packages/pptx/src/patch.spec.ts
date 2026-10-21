@@ -1,206 +1,141 @@
-import { unzipSync } from "@office-open/core/opc";
+import { PatchError } from "@office-open/core";
 import { describe, expect, it } from "vite-plus/test";
 
 import { generatePresentation } from "./generate";
 import { parsePresentationSync } from "./parse";
 import { patchPresentation } from "./patch";
-import type { PresentationOptions, SlideOptions } from "./shared/file";
+import type { PresentationOptions, SlideCommentOptions, SlideOptions } from "./shared/file";
 
-const decodeEntry = (buffer: Uint8Array, path: string): string => {
-  const unzipped = unzipSync(buffer);
-  const entry = unzipped[path];
-  if (!entry) throw new Error(`missing zip entry: ${path}`);
-  return new TextDecoder().decode(entry);
-};
-
-const slide = (text: string): SlideOptions => ({
+const slide = (text: string, name?: string): SlideOptions => ({
+  ...(name ? { name } : {}),
   children: [{ shape: { x: 0, y: 0, width: 200, height: 100, textBody: { text } } }],
 });
 
-const template = (slides: SlideOptions[]): PresentationOptions => ({ slides });
+const presentation = (slides: SlideOptions[]): PresentationOptions => ({ slides });
 
-describe("patchPresentation slides", () => {
-  it("appends a slide and wires sldIdLst, rels, and content types", async () => {
-    const buffer = await generatePresentation(template([slide("A"), slide("B")]));
+describe("patchPresentation commands", () => {
+  it("replaces text in one addressed slide", async () => {
+    const source = await generatePresentation(presentation([slide("Hello {{name}}")]));
     const patched = await patchPresentation({
-      data: buffer,
-      outputType: "uint8array",
-      slides: { append: [slide("APPENDED_SLIDE")] },
+      data: source,
+      commands: [
+        {
+          type: "replace",
+          at: { field: "slides", route: [{ index: 0 }], text: { placeholder: "name" } },
+          value: "Alice",
+        },
+      ],
     });
-
-    // Parser must accept the new file and see three slides.
     const parsed = parsePresentationSync(patched);
-    expect(parsed.slides?.length).toBe(3);
-
-    // New slide part carries the appended text.
-    expect(decodeEntry(patched, "ppt/slides/slide3.xml")).toContain("APPENDED_SLIDE");
-
-    // sldIdLst grew to three entries.
-    const pres = decodeEntry(patched, "ppt/presentation.xml");
-    expect((pres.match(/<p:sldId /g) ?? []).length).toBe(3);
-
-    // presentation.xml.rels references the new slide; content types declares it.
-    expect(decodeEntry(patched, "ppt/_rels/presentation.xml.rels")).toContain("slides/slide3.xml");
-    expect(decodeEntry(patched, "[Content_Types].xml")).toContain("/ppt/slides/slide3.xml");
-
-    // Slide rels points at an existing layout.
-    expect(decodeEntry(patched, "ppt/slides/_rels/slide3.xml.rels")).toContain("slideLayout1.xml");
+    expect(JSON.stringify(parsed.slides)).toContain("Alice");
+    expect(JSON.stringify(parsed.slides)).not.toContain("{{name}}");
   });
 
-  it("replaces a slide by index without changing the slide count", async () => {
-    const buffer = await generatePresentation(template([slide("ORIGINAL"), slide("B")]));
-    const patched = await patchPresentation({
-      data: buffer,
-      outputType: "uint8array",
-      slides: { replace: { 0: slide("REPLACED_SLIDE") } },
-    });
-
-    const parsed = parsePresentationSync(patched);
-    expect(parsed.slides?.length).toBe(2);
-
-    const slide1 = decodeEntry(patched, "ppt/slides/slide1.xml");
-    expect(slide1).toContain("REPLACED_SLIDE");
-    expect(slide1).not.toContain("<a:t>ORIGINAL</a:t>");
-  });
-
-  it("throws when replacing a non-existent index", async () => {
-    const buffer = await generatePresentation(template([slide("A")]));
-    await expect(
-      patchPresentation({
-        data: buffer,
-        outputType: "uint8array",
-        slides: { replace: { 5: slide("X") } },
-      }),
-    ).rejects.toThrow(/index 5/);
-  });
-
-  it("replaces every occurrence of a placeholder, not just the first", async () => {
-    const twice = (text: string): SlideOptions => ({
+  it("replaces every occurrence only when all is selected", async () => {
+    const repeated: SlideOptions = {
       children: [
-        { shape: { x: 0, y: 0, width: 200, height: 100, textBody: { text } } },
-        { shape: { x: 0, y: 120, width: 200, height: 100, textBody: { text } } },
+        { shape: { x: 0, y: 0, width: 200, height: 100, textBody: { text: "{{name}}" } } },
+        { shape: { x: 0, y: 120, width: 200, height: 100, textBody: { text: "{{name}}" } } },
       ],
-    });
-    const buffer = await generatePresentation(template([twice("{{name}}")]));
-    const patched = await patchPresentation({
-      data: buffer,
-      outputType: "uint8array",
-      placeholders: { name: "Alice" },
-    });
-
-    const slide1 = decodeEntry(patched, "ppt/slides/slide1.xml");
-    expect((slide1.match(/<a:t>Alice<\/a:t>/g) ?? []).length).toBe(2);
-    expect(slide1).not.toContain("{{name}}");
-  });
-
-  it("removes slides and unwires sldIdLst, rels, and content types", async () => {
-    const buffer = await generatePresentation(template([slide("A"), slide("B"), slide("C")]));
-    const patched = await patchPresentation({
-      data: buffer,
-      outputType: "uint8array",
-      slides: { remove: [0, 2] },
-    });
-
-    // Only the middle slide survives, first in the deck.
-    const parsed = parsePresentationSync(patched);
-    expect(parsed.slides?.length).toBe(1);
-    expect(decodeEntry(patched, "ppt/slides/slide2.xml")).toContain("<a:t>B</a:t>");
-
-    // sldIdLst shrank to one entry pointing at the surviving slide.
-    const pres = decodeEntry(patched, "ppt/presentation.xml");
-    expect((pres.match(/<p:sldId /g) ?? []).length).toBe(1);
-
-    // Removed parts, their rels, and their Overrides are gone.
-    const unzipped = unzipSync(patched);
-    expect(unzipped["ppt/slides/slide1.xml"]).toBeUndefined();
-    expect(unzipped["ppt/slides/slide3.xml"]).toBeUndefined();
-    expect(unzipped["ppt/slides/_rels/slide1.xml.rels"]).toBeUndefined();
-    expect(decodeEntry(patched, "ppt/_rels/presentation.xml.rels")).not.toContain(
-      "slides/slide1.xml",
-    );
-    expect(decodeEntry(patched, "[Content_Types].xml")).not.toContain("/ppt/slides/slide1.xml");
-  });
-
-  it("throws when removing a non-existent index", async () => {
-    const buffer = await generatePresentation(template([slide("A")]));
-    await expect(
-      patchPresentation({
-        data: buffer,
-        outputType: "uint8array",
-        slides: { remove: [9] },
+    };
+    const source = await generatePresentation(presentation([repeated]));
+    const parsed = parsePresentationSync(
+      await patchPresentation({
+        data: source,
+        commands: [
+          {
+            type: "replace",
+            at: {
+              field: "slides",
+              route: [{ index: 0 }],
+              text: { placeholder: "name", all: true },
+            },
+            value: "Alice",
+          },
+        ],
       }),
-    ).rejects.toThrow(/index 9/);
+    );
+    expect(JSON.stringify(parsed.slides).match(/Alice/g)).toHaveLength(2);
   });
-});
 
-describe("patchPresentation comments", () => {
-  it("appends comments, wiring authors + comments + rels + content types", async () => {
-    const buffer = await generatePresentation(template([slide("Hello"), slide("World")]));
-    const patched = await patchPresentation({
-      data: buffer,
-      outputType: "uint8array",
-      comments: {
-        0: [{ author: "Alice", text: "check this", x: 10, y: 20 }],
+  it("inserts, replaces, moves, and removes slides in command order", async () => {
+    const source = await generatePresentation(presentation([slide("A"), slide("B", "Summary")]));
+    const parsed = parsePresentationSync(
+      await patchPresentation({
+        data: source,
+        commands: [
+          { type: "insert", at: { field: "slides" }, position: "end", value: [slide("C")] },
+          {
+            type: "replace",
+            at: { field: "slides", route: [{ name: "Summary" }] },
+            value: slide("Replaced", "Summary"),
+          },
+          { type: "move", at: { field: "slides", route: [{ index: 2 }] }, to: "start" },
+          { type: "remove", at: { field: "slides", route: [{ index: 1 }] } },
+        ],
+      }),
+    );
+
+    expect(parsed.slides).toHaveLength(2);
+    expect(JSON.stringify(parsed.slides)).toContain("C");
+    expect(JSON.stringify(parsed.slides)).toContain("Replaced");
+  });
+
+  it("updates canonical package metadata", async () => {
+    const source = await generatePresentation(presentation([slide("A")]));
+    const parsed = parsePresentationSync(
+      await patchPresentation({
+        data: source,
+        commands: [{ type: "update", at: { field: "title" }, set: "Patched title" }],
+      }),
+    );
+    expect(parsed.title).toBe("Patched title");
+  });
+
+  it("inserts slide comments into an existing collection", async () => {
+    const added: SlideCommentOptions[] = [{ author: "Bob", text: "added", x: 10, y: 10 }];
+    const withComments = presentation([
+      {
+        ...slide("A"),
+        comments: [{ author: "Alice", text: "original", x: 0, y: 0 }],
+      },
+    ]);
+    const source = await generatePresentation(withComments);
+    const parsed = parsePresentationSync(
+      await patchPresentation({
+        data: source,
+        commands: [
+          {
+            type: "insert",
+            at: { field: "slides", route: [{ index: 0 }, { collection: "comments" }] },
+            value: added,
+          },
+        ],
+      }),
+    );
+    expect(parsed.slides?.[0]?.comments).toHaveLength(2);
+  });
+
+  it("reports a missing route with a structured diagnostic", async () => {
+    const source = await generatePresentation(presentation([slide("A")]));
+    const error = await patchPresentation({
+      data: source,
+      commands: [
+        {
+          type: "replace",
+          at: { field: "slides", route: [{ name: "Missing" }] },
+          value: slide("X"),
+        },
+      ],
+    }).catch((reason: unknown) => reason);
+
+    expect(error).toBeInstanceOf(PatchError);
+    expect(error).toMatchObject({
+      diagnostic: {
+        operation: "replace",
+        part: "[canonical-model]",
+        reason: "missing-target",
       },
     });
-
-    // commentAuthors.xml carries Alice
-    expect(decodeEntry(patched, "ppt/commentAuthors.xml")).toContain("Alice");
-
-    // comment1.xml (slide 1) carries the note
-    expect(decodeEntry(patched, "ppt/comments/comment1.xml")).toContain("check this");
-
-    // slide rels + presentation rels wire the parts
-    expect(decodeEntry(patched, "ppt/slides/_rels/slide1.xml.rels")).toContain(
-      "comments/comment1.xml",
-    );
-    expect(decodeEntry(patched, "ppt/_rels/presentation.xml.rels")).toContain("commentAuthors.xml");
-
-    // content types
-    const types = decodeEntry(patched, "[Content_Types].xml");
-    expect(types).toContain("/ppt/commentAuthors.xml");
-    expect(types).toContain("/ppt/comments/comment1.xml");
-  });
-
-  it("merges authors + entries with existing comments", async () => {
-    const buffer = await generatePresentation({
-      slides: [
-        { ...slide("One"), comments: [{ author: "Alice", text: "original", x: 1, y: 1 }] },
-        slide("Two"),
-      ],
-    });
-    const patched = await patchPresentation({
-      data: buffer,
-      outputType: "uint8array",
-      comments: {
-        0: [{ author: "Bob", text: "appended", x: 2, y: 2 }],
-      },
-    });
-
-    // Both authors present — Bob's id continues after Alice (id 0 → id 1).
-    const authors = decodeEntry(patched, "ppt/commentAuthors.xml");
-    expect(authors).toContain("Alice");
-    expect(authors).toContain("Bob");
-
-    // comment1.xml has both notes (merged entries).
-    const comments = decodeEntry(patched, "ppt/comments/comment1.xml");
-    expect(comments).toContain("original");
-    expect(comments).toContain("appended");
-
-    // No duplicate content-type overrides.
-    const types = decodeEntry(patched, "[Content_Types].xml");
-    expect((types.match(/\/ppt\/commentAuthors\.xml/g) ?? []).length).toBe(1);
-    expect((types.match(/\/ppt\/comments\/comment1\.xml/g) ?? []).length).toBe(1);
-  });
-
-  it("throws when commenting a non-existent slide index", async () => {
-    const buffer = await generatePresentation(template([slide("A")]));
-    await expect(
-      patchPresentation({
-        data: buffer,
-        outputType: "uint8array",
-        comments: { 5: [{ author: "X", text: "y", x: 0, y: 0 }] },
-      }),
-    ).rejects.toThrow(/index 5/);
   });
 });

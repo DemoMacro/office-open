@@ -1,10 +1,38 @@
-// Public API — only exports used by consumers (docx, pptx patchers + their tests)
+// Public patch runtime boundary shared by OOXML format packages.
 
 // Namespace configs
 export { DOCX_NS, PPTX_NS } from "./xml-namespace";
 export type { XmlNamespaceOptions } from "./xml-namespace";
 
-// Core replacer (the main entry point for patch operations)
+// Canonical patch command runtime (the shared editing model)
+export { applyPatchCommands } from "./commands";
+export type {
+  PartialDeep,
+  PatchAction,
+  PatchAddress,
+  PatchCollectionItem,
+  PatchCommand,
+  PatchInsertCommand,
+  PatchField,
+  PatchMoveCommand,
+  PatchNestedValue,
+  PatchNodeAddress,
+  PatchPathStep,
+  PatchPosition,
+  PatchPropertyPath,
+  PatchRemoveCommand,
+  PatchReplaceCommand,
+  PatchRouteStep,
+  PatchTextAddress,
+  PatchTextSelection,
+  PatchTextReplaceCommand,
+  PatchTextRemoveCommand,
+  PatchUpdateValue,
+  PatchUpdateCommand,
+  RuntimePatchCommand,
+} from "./commands";
+
+// Core replacer (lower-level XML helper retained for package tooling)
 export { createReplacer } from "./xml-replacer";
 export type { ReplacerOptions } from "./xml-replacer";
 
@@ -34,4 +62,7 @@ export { getNextRelationshipIndex, appendRelationship } from "./relationship-man
 export { applyCorePropertiesOverride } from "./core-properties-override";
 
 // Shared patch option types (extended by each format's patch options)
-export type { BasePatchOptions, PlaceholderDelimiters } from "./types";
+export type { PatchOptions, PlaceholderDelimiters } from "./types";
+export type { PatchDiagnostic, PatchPart, PatchPath, PatchReason } from "./diagnostics";
+export { PatchError } from "./diagnostics";
+export { PatchContext, assertPatchDelimiters, unsupportedPatchFormat } from "./context";

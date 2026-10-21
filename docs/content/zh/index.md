@@ -247,13 +247,17 @@ const opts = await parseDocument(buffer);
 // opts.sections — 文档节
 // opts.title, opts.creator — 核心属性
 
-// 修补模板占位符
+// 使用有序命令修改源文件
 const result = await patchDocument({
   outputType: "uint8array",
   data: buffer,
-  placeholders: {
-    name: { type: "paragraph", children: [{ text: "John" }] },
-  },
+  commands: [
+    {
+      type: "replace",
+      at: { field: "sections", route: [{ index: 0 }], text: { placeholder: "name" } },
+      value: "John",
+    },
+  ],
 });
 ```
 
@@ -265,13 +269,17 @@ const opts = await parsePresentation(buffer);
 // opts.slides — 幻灯片数组
 // opts.size, opts.title — 演示文稿属性
 
-// 修补模板占位符
+// 使用有序命令修改源演示文稿
 const result = await patchPresentation({
   outputType: "uint8array",
   data: buffer,
-  placeholders: {
-    title: [{ text: "已更新", bold: true }],
-  },
+  commands: [
+    {
+      type: "replace",
+      at: { field: "slides", route: [{ index: 0 }], text: { placeholder: "title" } },
+      value: "Updated",
+    },
+  ],
 });
 ```
 
@@ -283,13 +291,17 @@ const opts = await parseWorkbook(buffer);
 // opts.worksheets — 工作表数组
 // opts.styles — 样式定义
 
-// 修补模板占位符
+// 使用有序命令修改源工作簿
 const result = await patchWorkbook({
   outputType: "uint8array",
   data: buffer,
-  placeholders: {
-    name: "张三",
-  },
+  commands: [
+    {
+      type: "replace",
+      at: { field: "worksheets", route: [{ index: 0 }], text: { placeholder: "name" } },
+      value: "张三",
+    },
+  ],
 });
 ```
 
@@ -299,7 +311,7 @@ const result = await patchWorkbook({
 读取和修改现有文件
 
 #description
-将 `.docx`、`.pptx` 和 `.xlsx` 文件解析为结构化对象，或替换 `{{占位符}}` 标记修补模板。
+将 `.docx`、`.pptx` 和 `.xlsx` 文件解析为结构化对象，或使用有序且保留源结构的命令修补源包。
 
 #links
   :::button-link{to="/zh/docx/parsing" variant="outline" size="sm"}
@@ -324,7 +336,7 @@ const result = await patchWorkbook({
   <Icon name="i-lucide-wrench" />
 
   #title
-  替换模板占位符为新内容
+  应用有序且保留源结构的补丁命令
   :::
 
   :::page-feature

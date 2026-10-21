@@ -66,8 +66,8 @@ writeFileSync("workbook.xlsx", buffer);
 ## API
 
 - `generateWorkbook(options)` — generate a `.xlsx` file; `generateWorkbookSync` and `generateWorkbookStream` cover sync and streaming output
-- `parseWorkbook(data)` — read a `.xlsx` back into `WorkbookOptions` from bytes, `Blob`, or `ReadableStream`; `parseWorkbookSync` covers synchronous parsing
-- `patchWorkbook(input)` — patch an existing `.xlsx` template by placeholder replacement
+- `parseWorkbook(data)` — read a `.xlsx` back into `WorkbookOptions` from bytes, Base64/data-URL strings, `Blob`, or `ReadableStream`; `parseWorkbookSync` covers synchronous parsing
+- `patchWorkbook(input)` — apply ordered, source-preserving text, worksheet, and comment operations to an existing `.xlsx` file
 
 Every input is a plain JSON object (`WorkbookOptions` and its option types). The full typed API reference lives in the [documentation](https://www.office-open.com/en/xlsx/); the same types are also frozen as JSON Schemas — `npx office-open schema slice xlsx WorkbookOptions`.
 

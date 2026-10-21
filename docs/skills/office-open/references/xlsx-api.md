@@ -412,7 +412,7 @@ const doc = parseXlsx(readFileSync("input.xlsx"));
 
 ### patchWorkbook
 
-Modify an existing `.xlsx` template by replacing cell placeholder values:
+Modify an existing `.xlsx` template with ordered, source-preserving commands:
 
 ```ts
 import { patchWorkbook } from "@office-open/xlsx";
@@ -420,23 +420,59 @@ import { patchWorkbook } from "@office-open/xlsx";
 const result = await patchWorkbook({
   outputType: "nodebuffer",
   data: templateBuffer,
-  placeholders: {
-    number: "INV-2024-001",
-    customer: "Acme Corp",
-    amount: 1500,
-    date: new Date("2024-12-31"),
-  },
+  commands: [
+    {
+      type: "replace",
+      at: { field: "worksheets", route: [{ name: "Invoice" }], text: { placeholder: "number" } },
+      value: "INV-2024-001",
+    },
+    {
+      type: "replace",
+      at: { field: "worksheets", route: [{ name: "Invoice" }], text: { placeholder: "customer" } },
+      value: "Acme Corp",
+    },
+    {
+      type: "replace",
+      at: { field: "worksheets", route: [{ name: "Invoice" }], text: { placeholder: "amount" } },
+      value: 1500,
+    },
+    {
+      type: "update",
+      at: { field: "worksheets", route: [{ name: "Draft" }] },
+      set: { name: "Updated", rows: [{ cells: [{ reference: "A1", value: "Updated" }] }] },
+    },
+    {
+      type: "insert",
+      at: { field: "worksheets" },
+      position: "end",
+      value: [{ name: "Summary", rows: [{ cells: [{ reference: "A1", value: "Total" }] }] }],
+    },
+    { type: "move", at: { field: "worksheets", route: [{ name: "Summary" }] }, to: "start" },
+    { type: "remove", at: { field: "worksheets", route: [{ name: "Scratch" }] } },
+    {
+      type: "insert",
+      at: { field: "worksheets", route: [{ name: "Summary" }, { collection: "comments" }] },
+      value: [{ cell: "A1", author: "Alice", text: "Confirm this total." }],
+    },
+  ],
   placeholderDelimiters: { start: "{{", end: "}}" },
 });
 ```
 
-Placeholders are matched in shared strings, inline strings, and print headers/footers. When a placeholder fills an entire cell, `number`/`boolean`/`Date` values become real typed cells. Use `findReplace` for literal text and `coreProperties` to override `docProps/core.xml`.
+Each command uses `at: { field, route, text }`; worksheet routes accept `name` or `sheetId`, and optional `text` selects placeholder or literal text. Placeholder targets are matched in shared strings, inline strings, and print headers/footers. When a placeholder fills an entire cell, `number`/`boolean`/`Date` values become real typed cells. Failed patches throw a structured `PatchError` with a diagnostic containing `part`, `path`, `operation`, `reason`, and `message`.
 
-| Option                  | Type                             | Default      | Description                                  |
-| ----------------------- | -------------------------------- | ------------ | -------------------------------------------- |
-| `outputType`            | `string`                         | --           | Output format                                |
-| `data`                  | `Buffer \| Uint8Array \| ...`    | --           | Input .xlsx file                             |
-| `placeholders`          | `Record<string, ScalarValue>`    | --           | Delimiter-wrapped placeholder → scalar value |
-| `findReplace`           | `Record<string, ScalarValue>`    | --           | Literal find string → scalar value           |
-| `coreProperties`        | `Partial<CorePropertiesOptions>` | --           | Core metadata override                       |
-| `placeholderDelimiters` | `{ start, end }`                 | `{ {{, }} }` | Custom delimiters                            |
+| Option                  | Type                                                     | Default      | Description                     |
+| ----------------------- | -------------------------------------------------------- | ------------ | ------------------------------- |
+| `outputType`            | `string`                                                 | --           | Output format                   |
+| `data`                  | `Buffer \| Uint8Array \| ...`                            | --           | Input .xlsx file                |
+| `commands`              | `readonly WorkbookPatchCommand[]`                        | --           | Ordered source-preserving edits |
+| `packageVariant`        | `"standard" \| "macro" \| "template" \| "macroTemplate"` | `"standard"` | Output package variant          |
+| `placeholderDelimiters` | `{ start, end }`                                         | `{ {{, }} }` | Custom delimiters               |
+
+| Command   | Value field | Purpose                                                    |
+| --------- | ----------- | ---------------------------------------------------------- |
+| `insert`  | `value`     | Add canonical items to an array field or nested collection |
+| `replace` | `value`     | Replace a canonical field/node or selected text            |
+| `update`  | `set`       | Deep-merge object fields; arrays are replaced as a whole   |
+| `remove`  | —           | Remove a canonical node or selected text                   |
+| `move`    | `to`        | Reorder an item in a canonical array                       |

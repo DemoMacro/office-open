@@ -173,10 +173,10 @@ importers:
       '@office-open/odf':
         specifier: workspace:*
         version: link:../odf
+    devDependencies:
       '@office-open/xlsx':
         specifier: workspace:*
         version: link:../xlsx
-    devDependencies:
       '@office-open/xml':
         specifier: workspace:*
         version: link:../xml

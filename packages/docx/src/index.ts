@@ -32,6 +32,13 @@
 export * from "./parts";
 export * from "./shared";
 export * from "./patch";
+export type {
+  DocumentPatchCommand,
+  DocumentPatchField,
+  DocumentPatchInsertValue,
+  DocumentPatchOptions,
+  DocumentPatchValue,
+} from "./patch";
 export * from "./parse";
 export { DocxParseError } from "./errors";
 export { generateDocument, generateDocumentSync, generateDocumentStream } from "./generate";

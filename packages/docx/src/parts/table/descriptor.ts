@@ -32,6 +32,7 @@ import type {
   MarkupRangeOptions,
   MoveRangeStartOptions,
 } from "@parts/paragraph/links/bookmark";
+import { ON_OFF_LEXICAL_VALUES } from "@parts/paragraph/run/properties";
 import { parseRunProperties } from "@parts/paragraph/run/run-parse";
 import type { PermStartOptions } from "@parts/perm-start";
 import { parseSdtProperties } from "@parts/sdt/sdt-parse";
@@ -1156,6 +1157,8 @@ export function parseTableRowPropertiesEl(el: Element): TableRowPropertiesOption
   const tblHeader = findChild(el, "w:tblHeader");
   if (tblHeader) {
     opts.tableHeader = attrBool(tblHeader, "w:val") ?? true;
+    const raw = ON_OFF_LEXICAL_VALUES.find((value) => value === attr(tblHeader, "w:val"));
+    if (raw !== undefined) opts.tableHeaderRaw = raw;
   }
 
   const cantSplit = findChild(el, "w:cantSplit");

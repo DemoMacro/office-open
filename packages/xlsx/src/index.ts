@@ -6,6 +6,7 @@
 export * from "./parts";
 export * from "./shared";
 export * from "./util";
+export * from "./patch-commands";
 export type {
   CompressionOptions,
   OutputType,
@@ -15,7 +16,6 @@ export type {
 export { parseXlsx, parseWorkbook, parseWorkbookSync } from "./parse";
 export type { XlsxDocument, XlsxPartRefs } from "./parse";
 export { patchWorkbook } from "./patch";
-export type { Patch, ScalarValue, PatchWorkbookOptions } from "./patch";
 export { compileWorkbook } from "./compiler";
 export { XlsxWriteContext, XlsxReadContext } from "./context";
 export { generateWorkbook, generateWorkbookSync, generateWorkbookStream } from "./generate";

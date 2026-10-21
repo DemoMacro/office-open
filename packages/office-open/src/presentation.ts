@@ -1,5 +1,6 @@
 import {
   toUint8ArrayAsync,
+  unsupportedPatchFormat,
   type DataType,
   type OutputByType,
   type OutputType,
@@ -8,15 +9,18 @@ import {
 } from "@office-open/core";
 import { OOXML_PACKAGE_FORMATS } from "@office-open/core/opc";
 import {
+  patchPresentation as patchOdpPresentation,
   generatePresentation as generateOdpPresentation,
   parsePresentation as parseOdpPresentation,
+  type OdpPatchOptions,
+  type OdpPresentationOptions,
 } from "@office-open/odp";
 import { parsePresentation as parsePptPresentation } from "@office-open/ppt";
 import {
   generatePresentation as generatePptxPresentation,
   parsePresentation as parsePptxPresentation,
   patchPresentation as patchPptxPresentation,
-  type PatchPresentationOptions,
+  type PresentationPatchOptions,
   type PresentationOptions,
 } from "@office-open/pptx";
 
@@ -31,28 +35,41 @@ export type PresentationParseFormat = "odp" | "ppt" | "pptx" | "pptm" | "potx" |
 
 export type PresentationGenerateFormat = "pptx" | "pptm" | "potx" | "potm" | "odp";
 
-export type PresentationPatchFormat = "pptx" | "pptm" | "potx" | "potm";
+type PresentationOoxmlPatchFormat = "pptx" | "pptm" | "potx" | "potm";
+
+export type PresentationPatchFormat = PresentationOoxmlPatchFormat | "odp";
 
 const PRESENTATION_PATCH_FORMATS: readonly PresentationPatchFormat[] = [
   "pptx",
   "pptm",
   "potx",
   "potm",
+  "odp",
 ];
-
-export type PresentationPatchRequest<T extends OutputType = "uint8array"> = Omit<
-  PatchPresentationOptions<T>,
-  "data" | "outputType"
+type PresentationOoxmlPatchRequest<T extends OutputType = "uint8array"> = Omit<
+  PresentationPatchOptions<T>,
+  "outputType"
 > & {
-  format: PresentationPatchFormat;
-  data: PatchPresentationOptions<T>["data"];
+  format: PresentationOoxmlPatchFormat;
   outputType?: T;
 };
+
+type PresentationOdpPatchRequest<T extends OutputType = "uint8array"> = Omit<
+  OdpPatchOptions<T>,
+  "outputType"
+> & {
+  format: "odp";
+  outputType?: T;
+};
+
+export type PresentationPatchRequest<T extends OutputType = "uint8array"> =
+  | PresentationOoxmlPatchRequest<T>
+  | PresentationOdpPatchRequest<T>;
 
 export async function parsePresentation(
   input: DataType,
   options?: PresentationParseOptions,
-): Promise<PresentationOptions> {
+): Promise<PresentationOptions | OdpPresentationOptions> {
   const data = await toUint8ArrayAsync(input);
   const info = detectOffice(data);
 
@@ -76,7 +93,7 @@ export async function generatePresentation<
   T extends OutputType = "uint8array",
 >(
   format: F,
-  options: PresentationOptions,
+  options: PresentationOptions | OdpPresentationOptions,
   output?: T,
   reproducible?: F extends "odp" ? never : ReproducibleGenerationOptions,
 ): Promise<OutputByType[T]> {
@@ -100,13 +117,29 @@ export async function generatePresentation<
 export async function patchPresentation<T extends OutputType = "uint8array">(
   request: PresentationPatchRequest<T>,
 ): Promise<OutputByType[T]> {
-  const { format, data, outputType = "uint8array" as T, ...patch } = request;
+  const { format } = request;
   if (!PRESENTATION_PATCH_FORMATS.includes(format)) {
-    throw new Error(`${format} does not support presentation patching`);
+    throw unsupportedPatchFormat(format, "presentation");
   }
-  return patchPptxPresentation({
-    ...(patch as PatchPresentationOptions<T>),
-    data,
-    outputType,
-  } as PatchPresentationOptions<T>);
+  if (format === "pptx" || format === "pptm" || format === "potx" || format === "potm") {
+    const {
+      data,
+      outputType = "uint8array" as T,
+      packageVariant,
+      placeholderDelimiters,
+      commands,
+    } = request;
+    return patchPptxPresentation({
+      commands,
+      data,
+      outputType,
+      packageVariant,
+      placeholderDelimiters,
+    });
+  }
+  if (format === "odp") {
+    const { data, outputType = "uint8array" as T, placeholderDelimiters, commands } = request;
+    return patchOdpPresentation({ commands, data, outputType, placeholderDelimiters });
+  }
+  throw unsupportedPatchFormat(format, "presentation");
 }

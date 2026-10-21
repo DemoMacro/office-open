@@ -4,6 +4,7 @@ import type {
   TextBreakOptions,
   TextRunOptions,
 } from "@office-open/core";
+import type { ShapeOptions } from "@office-open/pptx";
 
 import { PptParseError } from "../errors";
 import {
@@ -20,7 +21,7 @@ import { EMU_PER_INCH, MASTER_UNITS_PER_INCH } from "./constants";
 import type { LegacyTextStyle, LegacyTextHyperlink, TextEntry } from "./models";
 import { parseTextStyle } from "./text-style";
 
-type PlaceholderType = "title" | "body" | "centerTitle";
+type PlaceholderType = NonNullable<ShapeOptions["placeholder"]>;
 export function readHyperlinkTargets(
   view: DataView,
   document: RecordNode,
@@ -111,9 +112,9 @@ export function collectEmbeddedTextEntries(
   const flush = (): void => {
     if (value === undefined) return;
     if (value === "*" && hasSlideNumber) {
-      text.push({ placeholderType: 8, text: "1" });
+      text.push({ placeholderType: -3, text: "1" });
     } else if (value === "*" && hasDateTime) {
-      text.push({ placeholderType: 7, text: "1/1/1" });
+      text.push({ placeholderType: -2, text: "1/1/1" });
     } else {
       const entry = {
         placeholderType: placeholderType ?? -1,
@@ -167,6 +168,8 @@ export function legacyPlaceholder(
   placeholderType: number | undefined,
 ): PlaceholderType | undefined {
   if (placeholderType === 0) return "title";
+  if (placeholderType === -2) return "date";
+  if (placeholderType === -3) return "slideNumber";
   if (placeholderType === 1 || placeholderType === 5 || placeholderType === 7) return "body";
   if (placeholderType === 6) return "centerTitle";
   if (placeholderType === 2) return "body";

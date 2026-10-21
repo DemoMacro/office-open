@@ -30,41 +30,41 @@ Slide children types: shape, picture, table, chart, group, line, connector, vide
 {
   "id": 1,
   "name": "My Shape",
-  "x": 50,
-  "y": 100,
-  "width": 300,
-  "height": 80,
+  "x": "2cm",
+  "y": "4cm",
+  "width": "12cm",
+  "height": "3cm",
   "textBody": { "text": "Hello World" },
   "fill": "4472C4"
 }
 ```
 
-| Property    | Type                    | Description                                           |
-| ----------- | ----------------------- | ----------------------------------------------------- |
-| `id`        | `number`                | Optional, auto-assigned                               |
-| `name`      | `string`                | Optional display name                                 |
-| `x`         | `number`                | Position X (pixels)                                   |
-| `y`         | `number`                | Position Y (pixels)                                   |
-| `width`     | `number`                | Width (pixels)                                        |
-| `height`    | `number`                | Height (pixels)                                       |
-| `textBody`  | `object`                | Text body (see below)                                 |
-| `fill`      | `string \| FillOptions` | Fill style. String `"4472C4"` = solid color shorthand |
-| `outline`   | `OutlineOptions`        | Outline/border                                        |
-| `effects`   | `EffectsOptions`        | Visual effects                                        |
-| `geometry`  | `string`                | Preset geometry                                       |
-| `rotation`  | `number`                | Rotation in degrees                                   |
-| `flipV`     | `boolean`               | Flip vertically                                       |
-| `flipH`     | `boolean`               | Flip horizontally                                     |
-| `animation` | `AnimationOptions`      | Animation settings                                    |
+| Property    | Type                         | Description                                           |
+| ----------- | ---------------------------- | ----------------------------------------------------- |
+| `id`        | `number`                     | Optional, auto-assigned                               |
+| `name`      | `string`                     | Optional display name                                 |
+| `x`         | `number \| UniversalMeasure` | Position X (EMU or unit string)                       |
+| `y`         | `number \| UniversalMeasure` | Position Y (EMU or unit string)                       |
+| `width`     | `number \| UniversalMeasure` | Width (EMU or unit string)                            |
+| `height`    | `number \| UniversalMeasure` | Height (EMU or unit string)                           |
+| `textBody`  | `object`                     | Text body (see below)                                 |
+| `fill`      | `string \| FillOptions`      | Fill style. String `"4472C4"` = solid color shorthand |
+| `outline`   | `OutlineOptions`             | Outline/border                                        |
+| `effects`   | `EffectsOptions`             | Visual effects                                        |
+| `geometry`  | `string`                     | Preset geometry                                       |
+| `rotation`  | `number`                     | Rotation in degrees                                   |
+| `flipV`     | `boolean`                    | Flip vertically                                       |
+| `flipH`     | `boolean`                    | Flip horizontally                                     |
+| `animation` | `AnimationOptions`           | Animation settings                                    |
 
 ### Shape with Rich Text (textBody)
 
 ```json
 {
-  "x": 50,
-  "y": 100,
-  "width": 400,
-  "height": 120,
+  "x": "2cm",
+  "y": "4cm",
+  "width": "16cm",
+  "height": "5cm",
   "textBody": {
     "children": [
       {
@@ -169,20 +169,20 @@ String shorthand: `fill: "4472C4"` is equivalent to the above.
 ```json
 {
   "color": "1565C0",
-  "width": 2,
+  "width": "2pt",
   "dashStyle": "solid",
   "capStyle": "flat",
   "compound": "single"
 }
 ```
 
-| Property    | Type     | Values                                                        |
-| ----------- | -------- | ------------------------------------------------------------- |
-| `color`     | `string` | Hex color without `#`                                         |
-| `width`     | `number` | Width in points                                               |
-| `dashStyle` | `string` | `"solid"` \| `"dash"` \| `"dashDot"` \| `"dot"` \| `"lgDash"` |
-| `capStyle`  | `string` | `"flat"` \| `"round"` \| `"square"`                           |
-| `compound`  | `string` | `"single"` \| `"double"` \| `"thickThin"`                     |
+| Property    | Type                         | Values                                                        |
+| ----------- | ---------------------------- | ------------------------------------------------------------- |
+| `color`     | `string`                     | Hex color without `#`                                         |
+| `width`     | `number \| UniversalMeasure` | Width in EMU or unit string                                   |
+| `dashStyle` | `string`                     | `"solid"` \| `"dash"` \| `"dashDot"` \| `"dot"` \| `"lgDash"` |
+| `capStyle`  | `string`                     | `"flat"` \| `"round"` \| `"square"`                           |
+| `compound`  | `string`                     | `"single"` \| `"double"` \| `"thickThin"`                     |
 
 ## Effects
 
@@ -276,28 +276,28 @@ String shorthand: `fill: "4472C4"` is equivalent to the above.
   "rotation3D": { "x": 25, "y": 15 },
   "extrusionH": 50000,
   "material": "plastic",
-  "bevelTop": { "width": 8, "height": 8 },
-  "bevelBottom": { "width": 5, "height": 5 },
+  "bevelTop": { "w": 76200, "h": 76200 },
+  "bevelBottom": { "w": 50800, "h": 50800 },
   "lighting": "threePt"
 }
 ```
 
-| Property      | Type                | Values                                                                           |
-| ------------- | ------------------- | -------------------------------------------------------------------------------- |
-| `extrusionH`  | `number`            | Extrusion height (EMU)                                                           |
-| `material`    | `string`            | `"plastic"` \| `"metal"` \| `"matte"` \| `"warmMatte"` \| `"flat"` \| `"powder"` |
-| `bevelTop`    | `{ width, height }` | Bevel dimensions in points                                                       |
-| `bevelBottom` | `{ width, height }` | Bevel dimensions in points                                                       |
-| `lighting`    | `string`            | `"flat"` \| `"threePt"` \| `"balanced"` \| `"soft"` \| `"harsh"`                 |
+| Property      | Type             | Values                                                                           |
+| ------------- | ---------------- | -------------------------------------------------------------------------------- |
+| `extrusionH`  | `number`         | Extrusion height (EMU)                                                           |
+| `material`    | `string`         | `"plastic"` \| `"metal"` \| `"matte"` \| `"warmMatte"` \| `"flat"` \| `"powder"` |
+| `bevelTop`    | `{ w, h, prst }` | Bevel dimensions in EMU; optional preset                                         |
+| `bevelBottom` | `{ w, h, prst }` | Bevel dimensions in EMU; optional preset                                         |
+| `lighting`    | `string`         | `"flat"` \| `"threePt"` \| `"balanced"` \| `"soft"` \| `"harsh"`                 |
 
 ## Tables
 
 ```json
 {
-  "x": 50,
-  "y": 200,
-  "width": 600,
-  "height": 250,
+  "x": "2cm",
+  "y": "8cm",
+  "width": "24cm",
+  "height": "10cm",
   "rows": [
     {
       "cells": [
@@ -340,10 +340,10 @@ String shorthand: `fill: "4472C4"` is equivalent to the above.
 
 ```json
 {
-  "x": 100,
-  "y": 100,
-  "width": 300,
-  "height": 200,
+  "x": "4cm",
+  "y": "4cm",
+  "width": "12cm",
+  "height": "8cm",
   "data": "<Uint8Array>",
   "imageType": "png"
 }
@@ -359,11 +359,11 @@ Charts use the pptx `ChartOptions` (which extends core's `ChartSpaceOptions`) an
 
 ```json
 {
-  "x1": 50,
-  "y1": 120,
-  "x2": 800,
-  "y2": 120,
-  "outline": { "color": "4472C4", "width": 2 }
+  "x1": "2cm",
+  "y1": "5cm",
+  "x2": "32cm",
+  "y2": "5cm",
+  "outline": { "color": "4472C4", "width": "2pt" }
 }
 ```
 
@@ -371,13 +371,13 @@ Charts use the pptx `ChartOptions` (which extends core's `ChartSpaceOptions`) an
 
 ```json
 {
-  "x1": 50,
-  "y1": 130,
-  "x2": 400,
-  "y2": 130,
+  "x1": "2cm",
+  "y1": "5cm",
+  "x2": "16cm",
+  "y2": "5cm",
   "outline": {
     "color": "4472C4",
-    "width": 2,
+    "width": "2pt",
     "headEnd": { "type": "triangle" },
     "tailEnd": { "type": "triangle" }
   }
@@ -396,14 +396,28 @@ Arrowheads live inside `outline.headEnd` / `outline.tailEnd` (each a `LineEndOpt
 
 ```json
 {
-  "x": 50,
-  "y": 50,
-  "width": 500,
-  "height": 300,
+  "x": "2cm",
+  "y": "2cm",
+  "width": "20cm",
+  "height": "12cm",
   "rotation": 10,
   "children": [
-    { "x": 0, "y": 0, "width": 240, "height": 140, "textBody": { "text": "A" }, "fill": "4472C4" },
-    { "x": 260, "y": 0, "width": 240, "height": 140, "textBody": { "text": "B" }, "fill": "ED7D31" }
+    {
+      "x": 0,
+      "y": 0,
+      "width": "9cm",
+      "height": "5cm",
+      "textBody": { "text": "A" },
+      "fill": "4472C4"
+    },
+    {
+      "x": "10cm",
+      "y": 0,
+      "width": "9cm",
+      "height": "5cm",
+      "textBody": { "text": "B" },
+      "fill": "ED7D31"
+    }
   ]
 }
 ```
@@ -603,15 +617,7 @@ parsePresentation(readFileSync("input.pptx"))
 
 ### patchPresentation
 
-Modify an existing `.pptx` template by replacing placeholders, literal text, or metadata:
-
-```json
-{
-  "placeholders": {
-    "title": [{ "text": "Updated Title", "bold": true, "size": 24 }]
-  }
-}
-```
+Modify an existing `.pptx` template with ordered, source-preserving commands:
 
 ```ts
 import { patchPresentation } from "@office-open/pptx";
@@ -619,21 +625,55 @@ import { patchPresentation } from "@office-open/pptx";
 const result = await patchPresentation({
   outputType: "nodebuffer",
   data: templateBuffer,
-  placeholders: {
-    title: [{ text: "Updated", bold: true }],
-  },
+  commands: [
+    {
+      type: "replace",
+      at: { field: "slides", route: [{ index: 0 }], text: { placeholder: "title" } },
+      value: "Updated",
+    },
+    {
+      type: "update",
+      at: { field: "slides", route: [{ index: 0 }] },
+      set: { name: "Overview" },
+    },
+    {
+      type: "insert",
+      at: { field: "slides" },
+      position: "end",
+      value: [
+        {
+          children: [
+            { shape: { x: 0, y: 0, width: 200, height: 100, textBody: { text: "Appended" } } },
+          ],
+        },
+      ],
+    },
+    { type: "move", at: { field: "slides", route: [{ index: 1 }] }, to: "start" },
+    { type: "remove", at: { field: "slides", route: [{ index: 1 }] } },
+    {
+      type: "insert",
+      at: { field: "slides", route: [{ index: 0 }, { collection: "comments" }] },
+      value: [{ author: "Alice", text: "Check this shape.", x: 10, y: 20 }],
+    },
+  ],
   placeholderDelimiters: { start: "{{", end: "}}" },
 });
 ```
 
-Use `findReplace` for literal text (no delimiters) and `coreProperties` to override `docProps/core.xml`.
+Each command uses `at: { field, route, text }`; slide routes accept `index`, `id`, or `name`, and optional `text` selects placeholder or literal text. Failed patches throw a structured `PatchError` with a diagnostic containing `part`, `path`, `operation`, `reason`, and `message`.
 
-| Option                  | Type                                                   | Default      | Description                                 |
-| ----------------------- | ------------------------------------------------------ | ------------ | ------------------------------------------- |
-| `outputType`            | `string`                                               | —            | Output format                               |
-| `data`                  | `Buffer \| Uint8Array \| ...`                          | —            | Input .pptx file                            |
-| `placeholders`          | `Record<string, RunOptions \| RunOptions[] \| string>` | —            | Delimiter-wrapped placeholder → run content |
-| `findReplace`           | `Record<string, RunOptions \| RunOptions[] \| string>` | —            | Literal find string → run content           |
-| `coreProperties`        | `Partial<CorePropertiesOptions>`                       | —            | Core metadata override                      |
-| `keepOriginalStyles`    | `boolean`                                              | `true`       | Preserve original run formatting properties |
-| `placeholderDelimiters` | `{ start, end }`                                       | `{ {{, }} }` | Custom delimiters                           |
+| Option                  | Type                                                     | Default      | Description                     |
+| ----------------------- | -------------------------------------------------------- | ------------ | ------------------------------- |
+| `outputType`            | `string`                                                 | —            | Output format                   |
+| `data`                  | `Buffer \| Uint8Array \| ...`                            | —            | Input .pptx file                |
+| `commands`              | `readonly PresentationPatchCommand[]`                    | —            | Ordered source-preserving edits |
+| `packageVariant`        | `"standard" \| "macro" \| "template" \| "macroTemplate"` | `"standard"` | Output package variant          |
+| `placeholderDelimiters` | `{ start, end }`                                         | `{ {{, }} }` | Custom delimiters               |
+
+| Command   | Value field | Purpose                                                    |
+| --------- | ----------- | ---------------------------------------------------------- |
+| `insert`  | `value`     | Add canonical items to an array field or nested collection |
+| `replace` | `value`     | Replace a canonical field/node or selected text            |
+| `update`  | `set`       | Deep-merge object fields; arrays are replaced as a whole   |
+| `remove`  | —           | Remove a canonical node or selected text                   |
+| `move`    | `to`        | Reorder an item in a canonical array                       |

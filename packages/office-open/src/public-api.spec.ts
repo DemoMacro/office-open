@@ -70,6 +70,7 @@ const RUNTIME_EXPORTS: Record<string, readonly string[]> = {
     "workbookToTsv",
   ],
   "./core": [
+    "PatchError",
     "convertEmuToInches",
     "convertEmuToPixels",
     "convertEmuToPoints",
@@ -111,7 +112,13 @@ const RUNTIME_EXPORTS: Record<string, readonly string[]> = {
     "patchPresentation",
   ],
   "./presentation": ["generatePresentation", "parsePresentation", "patchPresentation"],
-  "./rtf": ["generateDocument", "parseDocument", "RtfGenerateError", "RtfParseError"],
+  "./rtf": [
+    "generateDocument",
+    "patchDocument",
+    "parseDocument",
+    "RtfGenerateError",
+    "RtfParseError",
+  ],
   "./schemas": [
     "assertKnownDefinitions",
     "docxSchema",

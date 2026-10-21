@@ -316,6 +316,16 @@ describe("tableDesc round-trip", () => {
     expect(result.columnWidths).toEqual([3000, 3000]);
   });
 
+  it("preserves the source lexical form of a header-row toggle", () => {
+    const result = roundTripSource(
+      `<w:tbl xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:tr><w:trPr><w:tblHeader w:val="on"/></w:trPr><w:tc><w:tcPr/><w:p/></w:tc></w:tr></w:tbl>`,
+    );
+    const row = result.rows[0] as TableRowOptions;
+    expect(row.tableHeader).toBe(true);
+    expect(row.tableHeaderRaw).toBe("on");
+    expect(tableDesc.stringify(result, writeCtx)).toContain('<w:tblHeader w:val="on"/>');
+  });
+
   it("preserves legacy empty table columns", () => {
     const xml =
       "<w:tbl><w:tblPr/><w:tblGrid><w:tblCol/><w:tblCol/><w:tblCol/><w:tblCol/></w:tblGrid>" +

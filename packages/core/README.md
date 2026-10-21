@@ -18,7 +18,7 @@
 - **Unit Converters** — TWIP and EMU conversions (mm/in/pt/px)
 - **ID Generators** — Sequential numeric IDs, random IDs, SHA-1 hash, UUID v4
 - **Template Patching** — Placeholder replacement, XML traverser, and token replacer
-- **OOXML Compliance** — 100% element and attribute coverage across all 18 Transitional XSD schemas, verified by automated coverage tooling
+- **OOXML Compliance** — 100% element and attribute coverage across all 17 core Transitional XSD schemas, verified by automated coverage tooling
 
 ## Installation
 

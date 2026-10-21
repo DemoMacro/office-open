@@ -454,6 +454,7 @@
         "apPrefix": {
           "const": true,
           "description": "Emit the extended-properties vocabulary under the ap: prefix — the ISO strict binding, where the source declares xmlns:ap explicitly instead of using the namespace as the default. Round-trip only.",
+          "readOnly": true,
           "type": "boolean"
         },
         "appVersion": {
@@ -503,7 +504,8 @@
               "type": "null"
             }
           ],
-          "description": "Hyperlink metadata (HLinks) — Word's internal per-link records (six entries per link). Round-trip only: flat variant values are carried as-is; `null` preserves a source HLinks container with no vt:vector child."
+          "description": "Hyperlink metadata (HLinks) — Word's internal per-link records (six entries per link). Round-trip only: flat variant values are carried as-is; `null` preserves a source HLinks container with no vt:vector child.",
+          "readOnly": true
         },
         "hyperlinkBase": {
           "description": "Hyperlink base URL",
@@ -516,6 +518,7 @@
         "legacyMicrosoft": {
           "const": true,
           "description": "Legacy Microsoft extended-properties namespace; round-trip only.",
+          "readOnly": true,
           "type": "boolean"
         },
         "lines": {
@@ -1685,6 +1688,7 @@
         },
         "colorRaw": {
           "description": "Source `@w:color` when it is outside the canonical hex/auto surface; round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "frame": {
@@ -4777,11 +4781,13 @@
         },
         "ext": {
           "description": "Raw inner XML of the chart-space trailing c:extLst (after userShapes — c14:pivotOptions' home). Round-trip only, same contract as series ext.",
+          "readOnly": true,
           "type": "string"
         },
         "extensionIds": {
           "$ref": "#/definitions/DrawingExtensionIds",
-          "description": "Word 2010 wrapper ids; round-trip only."
+          "description": "Word 2010 wrapper ids; round-trip only.",
+          "readOnly": true
         },
         "externalData": {
           "$ref": "#/definitions/ExternalDataOptions",
@@ -5173,6 +5179,7 @@
         },
         "bottomRaw": {
           "description": "Source lexical form of `bottom`; round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "footer": {
@@ -5180,6 +5187,7 @@
         },
         "footerRaw": {
           "description": "Source lexical form of `footer`; round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "header": {
@@ -5187,6 +5195,7 @@
         },
         "headerRaw": {
           "description": "Source lexical form of `header`; round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "left": {
@@ -5194,6 +5203,7 @@
         },
         "leftRaw": {
           "description": "Source lexical form of `left`; round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "right": {
@@ -5201,6 +5211,7 @@
         },
         "rightRaw": {
           "description": "Source lexical form of `right`; round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "top": {
@@ -5208,6 +5219,7 @@
         },
         "topRaw": {
           "description": "Source lexical form of `top`; round-trip only.",
+          "readOnly": true,
           "type": "string"
         }
       },
@@ -6140,6 +6152,7 @@
         },
         "path": {
           "description": "Source companion part path; round-trip only. Fresh authoring omits it.",
+          "readOnly": true,
           "type": "string"
         },
         "relationshipId": {
@@ -6532,6 +6545,7 @@
         },
         "valRaw": {
           "description": "Source `w:val` spelling (for producer-specific `#RRGGBB`); round-trip only.",
+          "readOnly": true,
           "type": "string"
         }
       },
@@ -7187,6 +7201,7 @@
         "nextGen": {
           "const": true,
           "description": "Emit as w15:commentExNG — the next-gen comment variant element, same attribute set as w15:commentEx. Round-trip only.",
+          "readOnly": true,
           "type": "boolean"
         },
         "paraId": {
@@ -7215,6 +7230,7 @@
         },
         "ext": {
           "description": "Raw w16:extLst inner XML for future Microsoft extensions. Round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "intelligentPlaceholder": {
@@ -7711,6 +7727,7 @@
         },
         "compoundRunXml": {
           "description": "Complete source run when one producer packed all field stages into it (round-trip only — do not hand-author).",
+          "readOnly": true,
           "type": "string"
         },
         "deletionRsid": {
@@ -8107,6 +8124,7 @@
         },
         "preserveSourceDeclarations": {
           "description": "Preserve every source declaration, including entries for absent parts. Round-trip only.",
+          "readOnly": true,
           "type": "boolean"
         }
       },
@@ -8192,10 +8210,12 @@
       "properties": {
         "fmtid": {
           "description": "Source property format identity (`@fmtid`); round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "linkTarget": {
           "description": "Linked-content target (`@linkTarget`); round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "name": {
@@ -8204,6 +8224,7 @@
         },
         "pid": {
           "description": "Source property id (`@pid`); round-trip only.",
+          "readOnly": true,
           "type": "number"
         },
         "value": {
@@ -8212,6 +8233,7 @@
         },
         "valueLexeme": {
           "description": "Source lexical text of the vt:* element; round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "valueType": {
@@ -8262,6 +8284,7 @@
           "type": "string"
         }
       },
+      "readOnly": true,
       "required": ["element"],
       "type": "object"
     },
@@ -8288,6 +8311,7 @@
           "type": "string"
         }
       },
+      "readOnly": true,
       "required": ["element"],
       "type": "object"
     },
@@ -8332,6 +8356,7 @@
           "type": "string"
         }
       },
+      "readOnly": true,
       "required": ["element"],
       "type": "object"
     },
@@ -9499,6 +9524,7 @@
               "type": "string"
             }
           },
+          "readOnly": true,
           "type": "object"
         }
       },
@@ -9888,6 +9914,7 @@
             ],
             "type": "string"
           },
+          "readOnly": true,
           "type": "array"
         },
         "comments": {
@@ -9936,6 +9963,7 @@
         },
         "corePropertiesPath": {
           "description": "Selected core-properties part path from `_rels/.rels`. Round-trip only; fresh documents use `docProps/core.xml`.",
+          "readOnly": true,
           "type": "string"
         },
         "created": {
@@ -9970,6 +9998,7 @@
         "defaultNamespace": {
           "const": true,
           "description": "Emit the core-properties vocabulary as the default namespace — the ISO strict binding, where the source root is `<coreProperties xmlns=…>` and cp:-prefixed children appear prefix-less (dc:/dcterms: keep their prefixes). Round-trip only.",
+          "readOnly": true,
           "type": "boolean"
         },
         "description": {
@@ -9978,6 +10007,7 @@
         "dialect": {
           "description": "OOXML namespace dialect detected from the source; round-trip only.",
           "enum": ["transitional", "strict"],
+          "readOnly": true,
           "type": "string"
         },
         "editingDuration": {
@@ -9986,7 +10016,8 @@
         },
         "encrypted": {
           "$ref": "#/definitions/EncryptedContainerOptions",
-          "description": "Encrypted source (OLE2/CFB container). Round-trip only: the original bytes are re-emitted unchanged, every other field stays empty (`sections: []`); mixing real content is rejected. Do not hand-author."
+          "description": "Encrypted source (OLE2/CFB container). Round-trip only: the original bytes are re-emitted unchanged, every other field stays empty (`sections: []`); mixing real content is rejected. Do not hand-author.",
+          "readOnly": true
         },
         "endnoteSeparators": {
           "additionalProperties": false,
@@ -10104,6 +10135,7 @@
         "legacyMicrosoft": {
           "const": true,
           "description": "Legacy Microsoft core-property root/element spelling; round-trip only.",
+          "readOnly": true,
           "type": "boolean"
         },
         "mailMergeRecipients": {
@@ -10137,6 +10169,7 @@
           "items": {
             "$ref": "#/definitions/PassthroughRelationship"
           },
+          "readOnly": true,
           "type": "array"
         },
         "people": {
@@ -10148,6 +10181,7 @@
         },
         "primaryPartPath": {
           "description": "Primary document part path from `_rels/.rels`. Round-trip only; fresh documents use `word/document.xml`.",
+          "readOnly": true,
           "type": "string"
         },
         "printedBy": {
@@ -10179,6 +10213,7 @@
             "required": ["path", "data"],
             "type": "object"
           },
+          "readOnly": true,
           "type": "array"
         },
         "revision": {
@@ -10225,6 +10260,7 @@
         },
         "subjectLanguage": {
           "description": "Subject XML language attribute; round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "template": {
@@ -10289,6 +10325,7 @@
         },
         "cryptoAlgorithmSidRaw": {
           "description": "Source `@w:cryptAlgorithmSid` lexical form; round-trip only — do not hand-author.",
+          "readOnly": true,
           "type": "string"
         },
         "cryptoAlgorithmType": {
@@ -10328,7 +10365,8 @@
         },
         "enforcementRaw": {
           "$ref": "#/definitions/OnOffLexicalValue",
-          "description": "Source `documentProtection/@w:enforcement` lexical form; round-trip only — do not hand-author."
+          "description": "Source `documentProtection/@w:enforcement` lexical form; round-trip only — do not hand-author.",
+          "readOnly": true
         },
         "formatting": {
           "description": "Whether formatting is restricted",
@@ -10340,6 +10378,7 @@
         },
         "hashRaw": {
           "description": "Source legacy `@w:hash` lexical form; round-trip only — do not hand-author.",
+          "readOnly": true,
           "type": "string"
         },
         "hashValue": {
@@ -10356,6 +10395,7 @@
         },
         "saltRaw": {
           "description": "Source legacy `@w:salt` lexical form; round-trip only — do not hand-author.",
+          "readOnly": true,
           "type": "string"
         },
         "saltValue": {
@@ -10843,6 +10883,7 @@
         },
         "characterSetRaw": {
           "description": "Source `w:charset/@w:val` when it is not 2-char hex; round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "embedBold": {
@@ -10871,6 +10912,7 @@
         },
         "nameRaw": {
           "description": "Source `w:font/@w:name` when absent or an empty string; round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "notTrueType": {
@@ -10914,18 +10956,22 @@
         },
         "embedRid": {
           "description": "Round-trip only: source fontTable relationship id.",
+          "readOnly": true,
           "type": "string"
         },
         "fontKey": {
           "description": "Round-trip only: obfuscation GUID (`w:fontKey`) preserved verbatim. Undefined on authoring — a fresh key is generated for embedded fonts.",
+          "readOnly": true,
           "type": "string"
         },
         "odttfPath": {
           "description": "Round-trip only: original .odttf part path; preserves the source name.",
+          "readOnly": true,
           "type": "string"
         },
         "rawOdttf": {
           "description": "Round-trip only: `data` holds already-obfuscated .odttf bytes that must be copied verbatim instead of re-obfuscated.",
+          "readOnly": true,
           "type": "boolean"
         },
         "subsetted": {
@@ -10984,6 +11030,7 @@
           "description": "Complete source file bytes (OLE2/CFB container)."
         }
       },
+      "readOnly": true,
       "required": ["data"],
       "type": "object"
     },
@@ -11189,6 +11236,7 @@
         "relationshipType": {
           "description": "Source relationship kind; round-trip only, defaults to package.",
           "enum": ["oleObject", "package"],
+          "readOnly": true,
           "type": "string"
         }
       },
@@ -11449,6 +11497,7 @@
             },
             "blipExtensionXml": {
               "description": "Verbatim `a:blip` extension-list inner XML; round-trip only.",
+              "readOnly": true,
               "type": "string"
             },
             "compression": {
@@ -11495,6 +11544,7 @@
             "omitBlip": {
               "const": true,
               "description": "Source a:blipFill omitted its optional a:blip child; writer preserves the attribute/tile-only shape instead of inventing an empty image reference. Round-trip only ? do not hand-author.",
+              "readOnly": true,
               "type": "boolean"
             },
             "rotWithShape": {
@@ -11507,6 +11557,7 @@
             },
             "sourceReferenceId": {
               "description": "Source a:blip relationship id retained when its relationship declaration itself is absent (round-trip only — do not hand-author).",
+              "readOnly": true,
               "type": "string"
             },
             "stretch": {
@@ -11709,6 +11760,7 @@
         },
         "horizontalPositionPresent": {
           "description": "Whether the source anchor carried wp:positionH; round-trip only.",
+          "readOnly": true,
           "type": "boolean"
         },
         "horizontalSize": {
@@ -11759,6 +11811,7 @@
         },
         "simplePosPresent": {
           "description": "Whether the source anchor carried wp:simplePos; round-trip only.",
+          "readOnly": true,
           "type": "boolean"
         },
         "verticalPosition": {
@@ -11766,6 +11819,7 @@
         },
         "verticalPositionPresent": {
           "description": "Whether the source anchor carried wp:positionV; round-trip only.",
+          "readOnly": true,
           "type": "boolean"
         },
         "verticalSize": {
@@ -11777,6 +11831,7 @@
         },
         "wrapPresent": {
           "description": "Whether the source anchor carried a wrap choice; round-trip only.",
+          "readOnly": true,
           "type": "boolean"
         },
         "zIndex": {
@@ -12407,6 +12462,7 @@
         },
         "instrRunsXml": {
           "description": "Complete instruction-stage runs (round-trip only — do not hand-author).",
+          "readOnly": true,
           "type": "string"
         },
         "instructionAdditionRsid": {
@@ -12434,6 +12490,7 @@
         },
         "lastRenderedPageBreak": {
           "description": "A pagination hint Word parked on the begin run itself (round-trip only).",
+          "readOnly": true,
           "type": "boolean"
         },
         "numberingChange": {
@@ -12469,6 +12526,7 @@
         },
         "resultRunsXml": {
           "description": "Complete result-stage runs after the separate marker (round-trip only).",
+          "readOnly": true,
           "type": "string"
         },
         "runPropertiesRsid": {
@@ -12893,6 +12951,7 @@
         },
         "namePresent": {
           "description": "True when the source declared `@name`. Round-trip only: false keeps a source-absent name from gaining the fresh-authoring default.",
+          "readOnly": true,
           "type": "boolean"
         }
       },
@@ -13235,10 +13294,12 @@
         },
         "endnotesPartName": {
           "description": "Glossary endnotes path relative to word/ (round-trip only).",
+          "readOnly": true,
           "type": "string"
         },
         "fontTablePartName": {
           "description": "Glossary font-table path relative to word/ (round-trip only).",
+          "readOnly": true,
           "type": "string"
         },
         "fonts": {
@@ -13287,10 +13348,12 @@
         },
         "footnotesPartName": {
           "description": "Glossary footnotes path relative to word/ (round-trip only).",
+          "readOnly": true,
           "type": "string"
         },
         "hasDocParts": {
           "description": "Whether source carried w:docParts (round-trip only — do not hand-author). Distinguishes an empty container from the XSD-optional container's absence.",
+          "readOnly": true,
           "type": "boolean"
         },
         "numbering": {
@@ -13299,6 +13362,7 @@
         },
         "numberingPartName": {
           "description": "Glossary numbering path relative to word/ (round-trip only).",
+          "readOnly": true,
           "type": "string"
         },
         "partName": {
@@ -13318,6 +13382,7 @@
         },
         "settingsPartName": {
           "description": "Glossary settings path relative to word/ (round-trip only).",
+          "readOnly": true,
           "type": "string"
         },
         "styles": {
@@ -13326,6 +13391,7 @@
         },
         "stylesPartName": {
           "description": "Glossary styles path relative to word/ (round-trip only).",
+          "readOnly": true,
           "type": "string"
         },
         "webSettings": {
@@ -13334,6 +13400,7 @@
         },
         "webSettingsPartName": {
           "description": "Glossary web-settings path relative to word/ (round-trip only).",
+          "readOnly": true,
           "type": "string"
         }
       },
@@ -13664,14 +13731,14 @@
               "description": "Picture non-visual properties (pic:cNvPr) for round-trip fidelity"
             },
             "nonVisualPropertiesPresent": {
-              "description": "Whether pic:pic carried pic:nvPicPr; round-trip only.",
-              "type": "boolean"
+              "$ref": "#/definitions/PictureOptions/anyOf/0/properties/nonVisualPropertiesPresent"
             },
             "outline": {
               "$ref": "#/definitions/OutlineOptions"
             },
             "partPath": {
               "description": "Physical package path from the source (round-trip only). Most media lives under the package's word/ppt/xl directory; OPC also permits package-root targets such as /media/image.png, which must not be silently relocated.",
+              "readOnly": true,
               "type": "string"
             },
             "rotWithShape": {
@@ -13681,8 +13748,7 @@
               "$ref": "#/definitions/PictureOptions/anyOf/0/properties/shapeExtensions"
             },
             "shapePropertiesPresent": {
-              "description": "Whether pic:pic carried pic:spPr; round-trip only.",
-              "type": "boolean"
+              "$ref": "#/definitions/PictureOptions/anyOf/0/properties/shapePropertiesPresent"
             },
             "sourceRectangle": {
               "$ref": "#/definitions/SourceRectangleOptions",
@@ -13765,8 +13831,7 @@
                   "$ref": "#/definitions/GroupChildMediaData/anyOf/1/properties/nonVisualProperties"
                 },
                 "nonVisualPropertiesPresent": {
-                  "description": "Whether pic:pic carried pic:nvPicPr; round-trip only.",
-                  "type": "boolean"
+                  "$ref": "#/definitions/PictureOptions/anyOf/0/properties/nonVisualPropertiesPresent"
                 },
                 "partPath": {
                   "$ref": "#/definitions/GroupChildMediaData/anyOf/1/properties/partPath"
@@ -13778,8 +13843,7 @@
                   "$ref": "#/definitions/PictureOptions/anyOf/0/properties/shapeExtensions"
                 },
                 "shapePropertiesPresent": {
-                  "description": "Whether pic:pic carried pic:spPr; round-trip only.",
-                  "type": "boolean"
+                  "$ref": "#/definitions/PictureOptions/anyOf/0/properties/shapePropertiesPresent"
                 },
                 "sourceRectangle": {
                   "$ref": "#/definitions/SourceRectangleOptions",
@@ -13822,8 +13886,7 @@
               "$ref": "#/definitions/GroupChildMediaData/anyOf/1/properties/nonVisualProperties"
             },
             "nonVisualPropertiesPresent": {
-              "description": "Whether pic:pic carried pic:nvPicPr; round-trip only.",
-              "type": "boolean"
+              "$ref": "#/definitions/PictureOptions/anyOf/0/properties/nonVisualPropertiesPresent"
             },
             "outline": {
               "$ref": "#/definitions/OutlineOptions"
@@ -13838,8 +13901,7 @@
               "$ref": "#/definitions/PictureOptions/anyOf/0/properties/shapeExtensions"
             },
             "shapePropertiesPresent": {
-              "description": "Whether pic:pic carried pic:spPr; round-trip only.",
-              "type": "boolean"
+              "$ref": "#/definitions/PictureOptions/anyOf/0/properties/shapePropertiesPresent"
             },
             "sourceRectangle": {
               "$ref": "#/definitions/SourceRectangleOptions",
@@ -13883,6 +13945,7 @@
             },
             "childExtentPresent": {
               "description": "Source carried a:chExt; round-trip only.",
+              "readOnly": true,
               "type": "boolean"
             },
             "childExtentWidth": {
@@ -13891,6 +13954,7 @@
             },
             "childOffsetPresent": {
               "description": "Source carried a:chOff; round-trip only.",
+              "readOnly": true,
               "type": "boolean"
             },
             "childOffsetX": {
@@ -13941,6 +14005,7 @@
             },
             "nonVisualPropertiesPresent": {
               "description": "Source nested group carried wpg:cNvPr; round-trip only.",
+              "readOnly": true,
               "type": "boolean"
             },
             "outline": {
@@ -14196,6 +14261,7 @@
         },
         "childExtentPresent": {
           "description": "Source carried a:chExt; round-trip only.",
+          "readOnly": true,
           "type": "boolean"
         },
         "childExtentWidth": {
@@ -14204,6 +14270,7 @@
         },
         "childOffsetPresent": {
           "description": "Source carried a:chOff; round-trip only.",
+          "readOnly": true,
           "type": "boolean"
         },
         "childOffsetX": {
@@ -14663,6 +14730,7 @@
         },
         "clickRelationshipId": {
           "description": "Source click relationship ID (round-trip only — do not hand-author).",
+          "readOnly": true,
           "type": "string"
         },
         "clickTargetFrame": {
@@ -14672,6 +14740,7 @@
         "clickTargetMode": {
           "const": "External",
           "description": "Source click target mode (round-trip only — do not hand-author).",
+          "readOnly": true,
           "type": "string"
         },
         "clickTooltip": {
@@ -14684,6 +14753,7 @@
         },
         "hoverRelationshipId": {
           "description": "Source hover relationship ID (round-trip only — do not hand-author).",
+          "readOnly": true,
           "type": "string"
         },
         "hoverTargetFrame": {
@@ -14693,6 +14763,7 @@
         "hoverTargetMode": {
           "const": "External",
           "description": "Source hover target mode (round-trip only — do not hand-author).",
+          "readOnly": true,
           "type": "string"
         },
         "hoverTooltip": {
@@ -14884,6 +14955,7 @@
         },
         "firstLineRaw": {
           "description": "Source negative `w:firstLine`; round-trip only — do not hand-author.",
+          "readOnly": true,
           "type": "string"
         },
         "hanging": {
@@ -14901,6 +14973,7 @@
         },
         "hangingRaw": {
           "description": "Source negative `w:hanging`; round-trip only — do not hand-author.",
+          "readOnly": true,
           "type": "string"
         },
         "left": {
@@ -15356,6 +15429,7 @@
           "type": "string"
         }
       },
+      "readOnly": true,
       "required": ["hash"],
       "type": "object"
     },
@@ -15369,6 +15443,7 @@
         },
         "ext": {
           "description": "Raw inner XML of the legend entry trailing c:extLst — round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "index": {
@@ -15602,6 +15677,7 @@
           "items": {
             "$ref": "#/definitions/LevelChildOrder"
           },
+          "readOnly": true,
           "type": "array"
         },
         "format": {
@@ -15758,6 +15834,7 @@
             },
             "type": "object"
           },
+          "readOnly": true,
           "type": "array"
         },
         "formatFallback": {
@@ -15836,6 +15913,7 @@
               "type": "string"
             }
           },
+          "readOnly": true,
           "type": "object"
         },
         "formatOverride": {
@@ -16313,10 +16391,12 @@
         "namespace": {
           "const": "wne",
           "description": "Legacy `wne` vocabulary; standard `w` is omitted (round-trip only).",
+          "readOnly": true,
           "type": "string"
         },
         "partName": {
           "description": "Part path relative to word/ (round-trip only — do not hand-author). Fresh generation uses recipientsN.xml and preserves source filenames such as recipientData.xml.",
+          "readOnly": true,
           "type": "string"
         },
         "recipients": {
@@ -16721,6 +16801,7 @@
           "properties": {
             "preserveSpace": {
               "description": "Source `xml:space=\"preserve\"` marker on m:t; round-trip only.",
+              "readOnly": true,
               "type": "boolean"
             },
             "properties": {
@@ -18223,6 +18304,7 @@
         },
         "ext": {
           "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over `creationId`, which it subsumes when the source list carries both.",
+          "readOnly": true,
           "type": "string"
         },
         "hidden": {
@@ -18545,6 +18627,7 @@
             "properties": {
               "abstractId": {
                 "description": "Source w:abstractNumId; round-trip only.",
+                "readOnly": true,
                 "type": "number"
               },
               "aliases": {
@@ -18592,6 +18675,7 @@
           "items": {
             "type": "number"
           },
+          "readOnly": true,
           "type": "array"
         },
         "numIdMacAtCleanup": {
@@ -18603,6 +18687,7 @@
           "items": {
             "type": "number"
           },
+          "readOnly": true,
           "type": "array"
         },
         "numPicBullets": {
@@ -18745,6 +18830,7 @@
       "properties": {
         "ext": {
           "description": "Verbatim inner XML of a:objectDefaults/a:extLst — round-trip only for unmodeled Office extensions.",
+          "readOnly": true,
           "type": "string"
         },
         "lineDefault": {
@@ -18824,10 +18910,12 @@
         },
         "mcChoiceRequires": {
           "description": "mc:AlternateContent Choice `@Requires` carried from parse (round-trip only).",
+          "readOnly": true,
           "type": "string"
         },
         "mcFallback": {
           "description": "Serialized mc:Fallback element carried from parse (round-trip only — do not hand-author); stringify rebuilds the mc:AlternateContent wrapper.",
+          "readOnly": true,
           "type": "string"
         },
         "mcFallbackMedia": {
@@ -19298,6 +19386,7 @@
         },
         "dashPresent": {
           "description": "Preserve a bare `a:prstDash` element produced by lenient sources. Mutually exclusive with `dash` and `customDash`; round-trip only.",
+          "readOnly": true,
           "type": "boolean"
         },
         "ext": {
@@ -19916,6 +20005,7 @@
                 },
                 "sourceRelationshipId": {
                   "description": "Source document relationship id; round-trip only.",
+                  "readOnly": true,
                   "type": "string"
                 },
                 "targetFrame": {
@@ -21009,11 +21099,13 @@
         },
         "boldComplexScriptRaw": {
           "$ref": "#/definitions/OnOffLexicalValue",
-          "description": "Source `boldComplexScript/@w:val` lexical form; round-trip only — do not hand-author."
+          "description": "Source `boldComplexScript/@w:val` lexical form; round-trip only — do not hand-author.",
+          "readOnly": true
         },
         "boldRaw": {
           "$ref": "#/definitions/OnOffLexicalValue",
-          "description": "Source `bold/@w:val` lexical form; round-trip only — do not hand-author."
+          "description": "Source `bold/@w:val` lexical form; round-trip only — do not hand-author.",
+          "readOnly": true
         },
         "border": {
           "$ref": "#/definitions/BorderOptions"
@@ -21043,6 +21135,7 @@
           "items": {
             "$ref": "#/definitions/RunChildOrder"
           },
+          "readOnly": true,
           "type": "array"
         },
         "children": {
@@ -21472,6 +21565,7 @@
           "items": {
             "$ref": "#/definitions/FontProperties"
           },
+          "readOnly": true,
           "type": "array"
         },
         "footnoteReference": {
@@ -21525,11 +21619,13 @@
         },
         "italicComplexScriptRaw": {
           "$ref": "#/definitions/OnOffLexicalValue",
-          "description": "Source `italicComplexScript/@w:val` lexical form; round-trip only — do not hand-author."
+          "description": "Source `italicComplexScript/@w:val` lexical form; round-trip only — do not hand-author.",
+          "readOnly": true
         },
         "italicRaw": {
           "$ref": "#/definitions/OnOffLexicalValue",
-          "description": "Source `italic/@w:val` lexical form; round-trip only — do not hand-author."
+          "description": "Source `italic/@w:val` lexical form; round-trip only — do not hand-author.",
+          "readOnly": true
         },
         "kern": {
           "anyOf": [
@@ -21586,6 +21682,7 @@
         },
         "preserveSpace": {
           "description": "Source `xml:space=\"preserve\"` marker; round-trip only.",
+          "readOnly": true,
           "type": "boolean"
         },
         "props3d": {
@@ -21602,7 +21699,8 @@
         },
         "rightToLeftRaw": {
           "$ref": "#/definitions/OnOffLexicalValue",
-          "description": "Source right-to-left toggle lexical form; round-trip only — do not hand-author."
+          "description": "Source right-to-left toggle lexical form; round-trip only — do not hand-author.",
+          "readOnly": true
         },
         "scale": {
           "type": "number"
@@ -21664,6 +21762,7 @@
             },
             "colorRaw": {
               "description": "Source `w:color` spelling (for producer-specific `#RRGGBB`); round-trip only.",
+              "readOnly": true,
               "type": "string"
             },
             "themeColor": {
@@ -22325,6 +22424,7 @@
         },
         "relationshipId": {
           "description": "Source document relationship id; round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "shapeId": {
@@ -22420,6 +22520,7 @@
         },
         "vmlFallback": {
           "description": "Serialized mc:Fallback element carried when the source wrapped this pict in mc:AlternateContent. Round-trips verbatim (wrapper rebuilt on stringify); round-trip only — do not hand-author.",
+          "readOnly": true,
           "type": "string"
         },
         "w14AnchorId": {
@@ -22585,6 +22686,7 @@
             },
             "nonVisualPropertiesPresent": {
               "description": "Whether pic:pic carried pic:nvPicPr; round-trip only.",
+              "readOnly": true,
               "type": "boolean"
             },
             "outline": {
@@ -22632,6 +22734,7 @@
             },
             "shapePropertiesPresent": {
               "description": "Whether pic:pic carried pic:spPr; round-trip only.",
+              "readOnly": true,
               "type": "boolean"
             },
             "sourceRectangle": {
@@ -22754,8 +22857,7 @@
               "$ref": "#/definitions/PictureOptions/anyOf/0/properties/nonVisualProperties"
             },
             "nonVisualPropertiesPresent": {
-              "description": "Whether pic:pic carried pic:nvPicPr; round-trip only.",
-              "type": "boolean"
+              "$ref": "#/definitions/PictureOptions/anyOf/0/properties/nonVisualPropertiesPresent"
             },
             "outline": {
               "$ref": "#/definitions/OutlineOptions"
@@ -22783,8 +22885,7 @@
               "$ref": "#/definitions/PictureOptions/anyOf/0/properties/shapeExtensions"
             },
             "shapePropertiesPresent": {
-              "description": "Whether pic:pic carried pic:spPr; round-trip only.",
-              "type": "boolean"
+              "$ref": "#/definitions/PictureOptions/anyOf/0/properties/shapePropertiesPresent"
             },
             "sourceRectangle": {
               "$ref": "#/definitions/SourceRectangleOptions"
@@ -23251,6 +23352,7 @@
         },
         "avLstOmitted": {
           "description": "Source omitted the a:avLst child; round-trip only — do not hand-author.",
+          "readOnly": true,
           "type": "boolean"
         },
         "preset": {
@@ -23412,6 +23514,7 @@
         },
         "avLstOmitted": {
           "description": "Source omitted the optional `a:avLst` child; round-trip only.",
+          "readOnly": true,
           "type": "boolean"
         },
         "preset": {
@@ -23801,6 +23904,7 @@
             "type": "string"
           },
           "description": "Attributes from non-DrawingML namespaces (e.g. `a14:legacySpreadsheetColorIndex`). Round-trip only — do not hand-author.",
+          "readOnly": true,
           "type": "object"
         },
         "transforms": {
@@ -24146,8 +24250,7 @@
           "$ref": "#/definitions/ParagraphRunOptions/properties/position"
         },
         "preserveSpace": {
-          "description": "Source `xml:space=\"preserve\"` marker; round-trip only.",
-          "type": "boolean"
+          "$ref": "#/definitions/ParagraphRunOptions/properties/preserveSpace"
         },
         "props3d": {
           "$ref": "#/definitions/W14Props3dOptions"
@@ -25445,6 +25548,7 @@
           "items": {
             "$ref": "#/definitions/SdtChildOrder"
           },
+          "readOnly": true,
           "type": "array"
         },
         "citation": {
@@ -25683,7 +25787,8 @@
         },
         "multiLineRaw": {
           "$ref": "#/definitions/OnOffLexicalValue",
-          "description": "Source `@w:multiLine` spelling; round-trip only."
+          "description": "Source `@w:multiLine` spelling; round-trip only.",
+          "readOnly": true
         }
       },
       "type": "object"
@@ -25861,39 +25966,48 @@
                 },
                 "docPartUnique": {
                   "description": "Emit w:docPartUnique inside sdtPr's w:docPartObj (round-trip only).",
+                  "readOnly": true,
                   "type": "boolean"
                 },
                 "docPartUniqueRaw": {
                   "$ref": "#/definitions/OnOffLexicalValue",
-                  "description": "Source `@w:val` spelling for `w:docPartUnique` (round-trip only)."
+                  "description": "Source `@w:val` spelling for `w:docPartUnique` (round-trip only).",
+                  "readOnly": true
                 },
                 "endAdditionRsid": {
                   "$ref": "#/definitions/LongHexNumber",
-                  "description": "Revision save ID of the closing end run (round-trip only)."
+                  "description": "Revision save ID of the closing end run (round-trip only).",
+                  "readOnly": true
                 },
                 "endDeletionRsid": {
                   "$ref": "#/definitions/LongHexNumber",
-                  "description": "Revision save ID when the closing end run was deleted (round-trip only)."
+                  "description": "Revision save ID when the closing end run was deleted (round-trip only).",
+                  "readOnly": true
                 },
                 "endInBody": {
                   "description": "The field-end marker lives in a following body paragraph that round-trips on its own — stringify must not inject another end run into the last entry (round-trip only).",
+                  "readOnly": true,
                   "type": "boolean"
                 },
                 "endMarkerInEntries": {
                   "description": "The outer field-end marker already exists inside a rendered entry at its source position. Stringify must not inject another end run (round-trip only).",
+                  "readOnly": true,
                   "type": "boolean"
                 },
                 "endProperties": {
                   "$ref": "#/definitions/RunPropertiesOptions",
-                  "description": "Run properties of the SDT end mark (w:sdtEndPr). An empty object means the source carried a bare `<w:sdtEndPr/>` (round-trip only)."
+                  "description": "Run properties of the SDT end mark (w:sdtEndPr). An empty object means the source carried a bare `<w:sdtEndPr/>` (round-trip only).",
+                  "readOnly": true
                 },
                 "endRPrXml": {
                   "description": "Run properties of the field's closing `end` run (round-trip only). `\"\"` means the end run carried no rPr (stays bare rather than inheriting the control rPr); `undefined` means it matched the control runs' rPr.",
+                  "readOnly": true,
                   "type": "string"
                 },
                 "endRunPropertiesRsid": {
                   "$ref": "#/definitions/LongHexNumber",
-                  "description": "Revision save ID of the closing end run properties (round-trip only)."
+                  "description": "Revision save ID of the closing end run properties (round-trip only).",
+                  "readOnly": true
                 },
                 "entries": {
                   "description": "Rendered TOC entries — the paragraphs between the field's `separate` and `end` markers, round-tripped structurally (HYPERLINK field, tab leader, PAGEREF page number) so Office/WPS display them without regenerating. Omit on fresh generation (field is emitted `dirty`).",
@@ -25912,18 +26026,22 @@
                 },
                 "fieldEndBeforeChildren": {
                   "description": "The closing field-end run precedes bookmark markers in the final entry paragraph. Stringify uses this to preserve source child order instead of always appending the end run before `</w:p>` (round-trip only).",
+                  "readOnly": true,
                   "type": "boolean"
                 },
                 "headResultInFirstRun": {
                   "description": "The first source run combines the begin→separate controls with the first rendered TOC result. Stringify reuses the verbatim head run and must skip the duplicate result in the parsed entry (round-trip only).",
+                  "readOnly": true,
                   "type": "boolean"
                 },
                 "headRunsAfterText": {
                   "description": "Head control runs inject after the first entry's leading text run instead of after its pPr, matching a source paragraph that carried entry text before the field chain (round-trip only).",
+                  "readOnly": true,
                   "type": "boolean"
                 },
                 "headRunsXml": {
                   "description": "Verbatim `<w:r>…</w:r>` XML of the field's begin→separate control runs (round-trip only; Word splits the instruction across runs and the split must survive).",
+                  "readOnly": true,
                   "type": "string"
                 },
                 "headingStyleRange": {
@@ -25940,6 +26058,7 @@
                 },
                 "id": {
                   "description": "SDT identifier (w:id) of the TOC content control (round-trip only).",
+                  "readOnly": true,
                   "type": "number"
                 },
                 "leading": {
@@ -25947,6 +26066,7 @@
                   "items": {
                     "$ref": "#/definitions/SectionChild"
                   },
+                  "readOnly": true,
                   "type": "array"
                 },
                 "pageNumbersEntryLevelsRange": {
@@ -25963,11 +26083,13 @@
                 },
                 "rPrXml": {
                   "description": "Run properties carried by the field's begin/instruction/separate control runs, as serialized `<w:rPr>…</w:rPr>` XML (round-trip only; Word parks explicit style overrides — e.g. `b w:val=\"0\"` — on these invisible runs).",
+                  "readOnly": true,
                   "type": "string"
                 },
                 "runProperties": {
                   "$ref": "#/definitions/RunPropertiesOptions",
-                  "description": "Run properties of the SDT start mark — sdtPr's leading w:rPr element (round-trip only; Word parks the TOC style's font overrides there)."
+                  "description": "Run properties of the SDT start mark — sdtPr's leading w:rPr element (round-trip only; Word parks the TOC style's font overrides there).",
+                  "readOnly": true
                 },
                 "seqFieldIdentifierForPrefix": {
                   "description": "\\s option - For entries numbered with a SEQ field, adds a prefix to the page number. The prefix depends on the type of entry; the field-argument text must match the identifier in the SEQ field.",
@@ -25997,6 +26119,7 @@
                   "items": {
                     "$ref": "#/definitions/SectionChild"
                   },
+                  "readOnly": true,
                   "type": "array"
                 },
                 "useAppliedParagraphOutlineLevel": {
@@ -26091,7 +26214,8 @@
                 },
                 "contextualSpacingRaw": {
                   "$ref": "#/definitions/OnOffLexicalValue",
-                  "description": "Source contextual-spacing toggle lexical form; round-trip only."
+                  "description": "Source contextual-spacing toggle lexical form; round-trip only.",
+                  "readOnly": true
                 },
                 "defaultRunRsid": {
                   "$ref": "#/definitions/LongHexNumber",
@@ -26320,6 +26444,7 @@
                 },
                 "hyphenationLines": {
                   "description": "Vendor-defined hyphenation line limit (w:hyphenationLines, round-trip only).",
+                  "readOnly": true,
                   "type": "number"
                 },
                 "indent": {
@@ -26398,6 +26523,7 @@
                         },
                         "sourceNumId": {
                           "description": "Source numeric w:numId for lossless round-trip (round-trip only — do not hand-author). Set on parse so unknown IDs and definitions absent from the source package survive verbatim.",
+                          "readOnly": true,
                           "type": "number"
                         }
                       },
@@ -26769,6 +26895,7 @@
                   "type": "string"
                 }
               },
+              "readOnly": true,
               "type": "object"
             }
           },
@@ -26818,6 +26945,7 @@
                   "type": "string"
                 }
               },
+              "readOnly": true,
               "type": "object"
             }
           },
@@ -26918,8 +27046,7 @@
           "type": "boolean"
         },
         "tmGutter": {
-          "description": "Vendor-defined gutter marker (w:tmGutter, round-trip only).",
-          "type": "number"
+          "$ref": "#/definitions/SectionPropertiesOptions/properties/tmGutter"
         },
         "tmSection": {
           "$ref": "#/definitions/SectionPropertiesOptions/properties/tmSection"
@@ -26979,6 +27106,7 @@
           "items": {
             "$ref": "#/definitions/HeaderFooterReferenceSlot"
           },
+          "readOnly": true,
           "type": "array"
         },
         "lineNumberType": {
@@ -26986,6 +27114,7 @@
         },
         "mirrorMargins": {
           "description": "Tolerated misplaced settings element (`w:mirrorMargins`) inside a source section; round-trip only — author document settings instead.",
+          "readOnly": true,
           "type": "boolean"
         },
         "noEndnote": {
@@ -27061,11 +27190,13 @@
         },
         "tmGutter": {
           "description": "Vendor-defined gutter marker (w:tmGutter, round-trip only).",
+          "readOnly": true,
           "type": "number"
         },
         "tmSection": {
           "$ref": "#/definitions/TmSectionPropertiesOptions",
-          "description": "Vendor-defined section marker (w:tmSection, round-trip only)."
+          "description": "Vendor-defined section marker (w:tmSection, round-trip only).",
+          "readOnly": true
         },
         "type": {
           "description": "Section-break placement: \"nextPage\"/\"nextColumn\" start there, \"continuous\" flows on, \"evenPage\"/\"oddPage\" next even/odd page.",
@@ -27769,31 +27900,38 @@
               "type": "number"
             }
           },
+          "readOnly": true,
           "type": "object"
         },
         "tmCommentsProperties": {
           "$ref": "#/definitions/TmCommentsPropertiesOptions",
-          "description": "Vendor-defined comment display properties (w:tmCommentsPr, round-trip only)."
+          "description": "Vendor-defined comment display properties (w:tmCommentsPr, round-trip only).",
+          "readOnly": true
         },
         "tmFormatPreference": {
           "description": "Vendor-defined format preference (w:tmFmtPref, round-trip only).",
+          "readOnly": true,
           "type": "number"
         },
         "tmLastPosition": {
           "$ref": "#/definitions/TmLastPositionOptions",
-          "description": "Vendor-defined last edit position (w:tmLastPos, round-trip only)."
+          "description": "Vendor-defined last edit position (w:tmLastPos, round-trip only).",
+          "readOnly": true
         },
         "tmPrefOne": {
           "description": "Vendor-defined preference value (w:tmPrefOne, round-trip only).",
+          "readOnly": true,
           "type": "number"
         },
         "tmPrefTwo": {
           "description": "Vendor-defined secondary preference value (w:tmPrefTwo, round-trip only).",
+          "readOnly": true,
           "type": "number"
         },
         "tmReviewProperties": {
           "$ref": "#/definitions/TmReviewPropertiesOptions",
-          "description": "Vendor-defined review display properties (w:tmReviewPr, round-trip only)."
+          "description": "Vendor-defined review display properties (w:tmReviewPr, round-trip only).",
+          "readOnly": true
         },
         "trackRevisions": {
           "$ref": "#/definitions/SettingsOnOffValue",
@@ -27833,6 +27971,7 @@
         },
         "w14DocIdText": {
           "description": "Inline text carried by w14:docId in addition to w14:val (round-trip only; some producers place non-identifier content in this extension element).",
+          "readOnly": true,
           "type": "string"
         },
         "w15ChartTrackingRefBased": {
@@ -27845,6 +27984,7 @@
         },
         "w15DocIdText": {
           "description": "Inline text carried by w15:docId in addition to w15:val (round-trip only; some producers place non-identifier content in this extension element).",
+          "readOnly": true,
           "type": "string"
         },
         "writeProtection": {
@@ -27890,6 +28030,7 @@
         },
         "fillRaw": {
           "description": "Source `@w:fill` when it is outside the canonical hex/auto surface; round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "themeColor": {
@@ -27906,6 +28047,7 @@
         },
         "themeFillShadeRaw": {
           "description": "Source `@w:themeFillShade` when it is not 2-char hex; round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "themeFillTint": {
@@ -27914,6 +28056,7 @@
         },
         "themeFillTintRaw": {
           "description": "Source `@w:themeFillTint` when it is not 2-char hex; round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "themeShade": {
@@ -27922,6 +28065,7 @@
         },
         "themeShadeRaw": {
           "description": "Source `@w:themeShade` when it is not 2-char hex; round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "themeTint": {
@@ -27930,6 +28074,7 @@
         },
         "themeTintRaw": {
           "description": "Source `@w:themeTint` when it is not 2-char hex; round-trip only.",
+          "readOnly": true,
           "type": "string"
         },
         "type": {
@@ -28029,8 +28174,7 @@
           "$ref": "#/definitions/BodyPropertiesOptions"
         },
         "bodyPropertiesPresent": {
-          "description": "Whether the source shape carried wps:bodyPr; round-trip only.",
-          "type": "boolean"
+          "$ref": "#/definitions/ShapeOptions/properties/bodyPropertiesPresent"
         },
         "children": {
           "$ref": "#/definitions/ShapeOptions/properties/children"
@@ -28084,8 +28228,7 @@
           "$ref": "#/definitions/ShapeOptions/properties/shapeOffset"
         },
         "shapePropertiesPresent": {
-          "description": "Whether the source shape carried wps:spPr; round-trip only.",
-          "type": "boolean"
+          "$ref": "#/definitions/ShapeOptions/properties/shapePropertiesPresent"
         },
         "style": {
           "$ref": "#/definitions/ShapeOptions/properties/style"
@@ -28199,6 +28342,7 @@
         },
         "bodyPropertiesPresent": {
           "description": "Whether the source shape carried wps:bodyPr; round-trip only.",
+          "readOnly": true,
           "type": "boolean"
         },
         "children": {
@@ -28220,6 +28364,7 @@
         },
         "docPropertiesPresent": {
           "description": "Whether the drawing wrapper carried wp:docPr; round-trip only.",
+          "readOnly": true,
           "type": "boolean"
         },
         "effectDag": {
@@ -28257,6 +28402,7 @@
         },
         "graphicDataUri": {
           "description": "Exact namespace URI on a:graphicData for legacy WPS dialects (round-trip only — do not hand-author). Omit for the Word 2010 URI.",
+          "readOnly": true,
           "type": "string"
         },
         "graphicFrameLocks": {
@@ -28290,6 +28436,7 @@
         },
         "nonVisualPropertiesPresent": {
           "description": "Whether the source shape carried non-visual properties; round-trip only.",
+          "readOnly": true,
           "type": "boolean"
         },
         "nonVisualPropertiesWrapped": {
@@ -28331,6 +28478,7 @@
         },
         "shapePropertiesPresent": {
           "description": "Whether the source shape carried wps:spPr; round-trip only.",
+          "readOnly": true,
           "type": "boolean"
         },
         "style": {
@@ -28758,6 +28906,7 @@
       "properties": {
         "cachedInstructionRPrXml": {
           "description": "Verbatim run properties on `cachedInstructionText` (round-trip only).",
+          "readOnly": true,
           "type": "string"
         },
         "cachedInstructionText": {
@@ -28931,6 +29080,7 @@
         },
         "partPath": {
           "description": "Physical package path from the source; round-trip only.",
+          "readOnly": true,
           "type": "string"
         }
       },
@@ -29601,6 +29751,7 @@
                 "items": {
                   "$ref": "#/definitions/StyleChildOrder"
                 },
+                "readOnly": true,
                 "type": "array"
               },
               "customStyle": {
@@ -29609,7 +29760,8 @@
               },
               "customStyleRaw": {
                 "$ref": "#/definitions/OnOffLexicalValue",
-                "description": "Source `@w:customStyle` spelling; round-trip only."
+                "description": "Source `@w:customStyle` spelling; round-trip only.",
+                "readOnly": true
               },
               "default": {
                 "description": "`@w:default` — the default style for its type.",
@@ -29617,7 +29769,8 @@
               },
               "defaultRaw": {
                 "$ref": "#/definitions/OnOffLexicalValue",
-                "description": "Source `@w:default` spelling; round-trip only."
+                "description": "Source `@w:default` spelling; round-trip only.",
+                "readOnly": true
               },
               "hidden": {
                 "description": "w:hidden — style hidden from the UI.",
@@ -29655,7 +29808,8 @@
               },
               "quickFormatRaw": {
                 "$ref": "#/definitions/OnOffLexicalValue",
-                "description": "Source qFormat on/off lexical value; round-trip only."
+                "description": "Source qFormat on/off lexical value; round-trip only.",
+                "readOnly": true
               },
               "rsid": {
                 "$ref": "#/definitions/LongHexNumber",
@@ -29687,6 +29841,7 @@
           "items": {
             "type": "string"
           },
+          "readOnly": true,
           "type": "array"
         },
         "tableStyles": {
@@ -29925,8 +30080,7 @@
           "$ref": "#/definitions/ParagraphRunOptions/properties/position"
         },
         "preserveSpace": {
-          "description": "Source `xml:space=\"preserve\"` marker; round-trip only.",
-          "type": "boolean"
+          "$ref": "#/definitions/ParagraphRunOptions/properties/preserveSpace"
         },
         "props3d": {
           "$ref": "#/definitions/W14Props3dOptions"
@@ -30739,6 +30893,7 @@
               }
             ]
           },
+          "readOnly": true,
           "type": "array"
         },
         "columnWidthsRevision": {
@@ -30783,6 +30938,7 @@
           "items": {
             "$ref": "#/definitions/TablePropertyOrder"
           },
+          "readOnly": true,
           "type": "array"
         },
         "revision": {
@@ -30839,6 +30995,7 @@
         "tableGridOmitted": {
           "const": true,
           "description": "Source omitted `w:tblGrid`; round-trip only for tolerated legacy input.",
+          "readOnly": true,
           "type": "boolean"
         },
         "tableLook": {
@@ -31246,6 +31403,11 @@
           "description": "Whether the row should be repeated as a header row on each page (tblHeader)",
           "type": "boolean"
         },
+        "tableHeaderRaw": {
+          "$ref": "#/definitions/OnOffLexicalValue",
+          "description": "Source `tableHeader/@w:val` lexical form; round-trip only — do not hand-author.",
+          "readOnly": true
+        },
         "tableRowRsid": {
           "$ref": "#/definitions/LongHexNumber",
           "description": "Revision save ID for table row (w:rsidTr, hex string)."
@@ -31319,6 +31481,9 @@
         "tableHeader": {
           "$ref": "#/definitions/TableRowOptions/properties/tableHeader"
         },
+        "tableHeaderRaw": {
+          "$ref": "#/definitions/TableRowOptions/properties/tableHeaderRaw"
+        },
         "widthAfter": {
           "$ref": "#/definitions/TableRowOptions/properties/widthAfter"
         },
@@ -31381,6 +31546,9 @@
         },
         "tableHeader": {
           "$ref": "#/definitions/TableRowOptions/properties/tableHeader"
+        },
+        "tableHeaderRaw": {
+          "$ref": "#/definitions/TableRowOptions/properties/tableHeaderRaw"
         },
         "widthAfter": {
           "$ref": "#/definitions/TableRowOptions/properties/widthAfter"
@@ -32861,17 +33029,21 @@
       "properties": {
         "color": {
           "description": "Vendor-defined comment color (w:tmCommentsColor, round-trip only).",
+          "readOnly": true,
           "type": "number"
         },
         "place": {
           "description": "Vendor-defined comment placement (w:tmCommentsPlace, round-trip only).",
+          "readOnly": true,
           "type": "number"
         },
         "width": {
           "description": "Vendor-defined comment width (w:tmCommentsWidth, round-trip only).",
+          "readOnly": true,
           "type": "number"
         }
       },
+      "readOnly": true,
       "type": "object"
     },
     "TmLastPositionOptions": {
@@ -32889,6 +33061,7 @@
               "type": "number"
             }
           },
+          "readOnly": true,
           "type": "object"
         },
         "caret": {
@@ -32902,18 +33075,22 @@
               "type": "number"
             }
           },
+          "readOnly": true,
           "type": "object"
         },
         "frameIndex": {
           "description": "Vendor-defined frame index (w:tmLastPosFrameIdx, round-trip only).",
+          "readOnly": true,
           "type": "number"
         },
         "page": {
           "description": "Vendor-defined page position (w:tmLastPosPage, round-trip only).",
+          "readOnly": true,
           "type": "number"
         },
         "selection": {
           "description": "Vendor-defined selection position (w:tmLastPosSelect, round-trip only).",
+          "readOnly": true,
           "type": "number"
         },
         "tableRectangle": {
@@ -32933,9 +33110,11 @@
               "type": "number"
             }
           },
+          "readOnly": true,
           "type": "object"
         }
       },
+      "readOnly": true,
       "type": "object"
     },
     "TmReviewPropertiesOptions": {
@@ -32944,57 +33123,71 @@
       "properties": {
         "deletionColor": {
           "description": "Vendor-defined deletion color (w:tmReviewColorDel, round-trip only).",
+          "readOnly": true,
           "type": "number"
         },
         "deletionMark": {
           "description": "Vendor-defined deletion marker (w:tmReviewMarkDel, round-trip only).",
+          "readOnly": true,
           "type": "number"
         },
         "enabled": {
           "description": "Vendor-defined review enabled state (w:tmReviewEnabled, round-trip only).",
+          "readOnly": true,
           "type": "number"
         },
         "formattingColor": {
           "description": "Vendor-defined formatting color (w:tmReviewColorFmt, round-trip only).",
+          "readOnly": true,
           "type": "number"
         },
         "formattingMark": {
           "description": "Vendor-defined formatting marker (w:tmReviewMarkFmt, round-trip only).",
+          "readOnly": true,
           "type": "number"
         },
         "insertionColor": {
           "description": "Vendor-defined insertion color (w:tmReviewColorIns, round-trip only).",
+          "readOnly": true,
           "type": "number"
         },
         "insertionMark": {
           "description": "Vendor-defined insertion marker (w:tmReviewMarkIns, round-trip only).",
+          "readOnly": true,
           "type": "number"
         },
         "lineColor": {
           "description": "Vendor-defined line color (w:tmReviewColorLn, round-trip only).",
+          "readOnly": true,
           "type": "number"
         },
         "lineMark": {
           "description": "Vendor-defined line marker (w:tmReviewMarkLn, round-trip only).",
+          "readOnly": true,
           "type": "number"
         },
         "print": {
           "description": "Vendor-defined print behavior (w:tmReviewPrint, round-trip only).",
+          "readOnly": true,
           "type": "number"
         },
         "revisionNumber": {
           "description": "Vendor-defined revision counter (w:tmRevisionNum, round-trip only).",
+          "readOnly": true,
           "type": "number"
         },
         "show": {
           "description": "Vendor-defined review visibility (w:tmReviewShow, round-trip only).",
+          "readOnly": true,
           "type": "number"
         },
         "tooltip": {
           "description": "Vendor-defined tooltip state (w:tmReviewToolTip, round-trip only).",
+          "readOnly": true,
           "type": "number"
         }
       },
+      "readOnly": true,
       "type": "object"
     },
     "TmSectionPropertiesOptions": {
@@ -33003,9 +33196,11 @@
       "properties": {
         "height": {
           "description": "Vendor-defined section marker height (w:h, round-trip only).",
+          "readOnly": true,
           "type": "number"
         }
       },
+      "readOnly": true,
       "type": "object"
     },
     "TrackChangeChild": {
@@ -33262,6 +33457,7 @@
           "$ref": "#/definitions/ShapeOptions/properties/vmlFallbackMedia"
         }
       },
+      "readOnly": true,
       "required": ["anchor", "anchorMode", "graphicData"],
       "type": "object"
     },
@@ -33287,6 +33483,7 @@
           "type": "string"
         }
       },
+      "readOnly": true,
       "required": ["sourceRelationshipId", "relationshipType", "target"],
       "type": "object"
     },
@@ -38635,6 +38832,7 @@
         },
         "styleRaw": {
           "description": "Source style attribute lexical form; round-trip only — do not hand-author.",
+          "readOnly": true,
           "type": "string"
         },
         "target": {
@@ -38699,6 +38897,7 @@
         "signinginstructionsAttrRaw": {
           "description": "Source lexical spelling for the signing instruction attribute; round-trip only.",
           "enum": ["signinginstructions", "o:signinginstructions"],
+          "readOnly": true,
           "type": "string"
         },
         "signinginstructionsset": {
@@ -39637,6 +39836,7 @@
         },
         "longDescRId": {
           "description": "Long description relationship ID (round-trip only).",
+          "readOnly": true,
           "type": "string"
         },
         "marginHeight": {
@@ -39669,6 +39869,7 @@
         },
         "sourceRId": {
           "description": "Source file link rId (round-trip only; the id refers to a relationship in the source package).",
+          "readOnly": true,
           "type": "string"
         },
         "title": {
@@ -40158,10 +40359,12 @@
         "fillColorAttrRaw": {
           "description": "Vendor fill color attribute spelling; round-trip only — do not hand-author.",
           "enum": ["fillcolor", "w:fillcolor"],
+          "readOnly": true,
           "type": "string"
         },
         "fillColorRaw": {
           "description": "Vendor fill color on legacy w:framePr; round-trip only — do not hand-author.",
+          "readOnly": true,
           "type": "string"
         },
         "height": {

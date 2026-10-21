@@ -1,15 +1,13 @@
 ---
 name: office-open
 description: >
-  Generate, parse, and patch Office Open XML documents (.docx, .pptx, .xlsx) using pure JSON
-  options and functional API. Use when creating Word documents, PowerPoint presentations, or
-  Excel spreadsheets with TypeScript — paragraphs, tables, images, charts, shapes, math equations,
-  headers, footers, styles, effects, animations, data validation, or exporting to buffer/blob/base64.
-  Also use when parsing existing OOXML files or patching template placeholders.
-  Do not use for PDF generation, CSV files, or non-Office document formats.
+  Generate, parse, and patch Office files with pure JSON options and a functional API. Use when
+  creating or modifying Word, PowerPoint, or Excel files; parsing OOXML, legacy Office, RTF, or
+  ODF; converting tabular data; or applying ordered patch commands. Do not use for PDF generation
+  or unrelated document formats.
 ---
 
-# Office Open XML
+# Office Documents
 
 Pure JSON + functional API for Office documents. No classes — pass option objects to `generateDocument()`, `generatePresentation()`, or `generateWorkbook()`.
 
@@ -24,10 +22,19 @@ pnpm add office-open          # Umbrella
 
 ## Workflow
 
-1. Determine the target format: `.docx`, `.pptx`, or `.xlsx`.
-2. Read the corresponding reference for the full API: `references/docx-api.md`, `references/pptx-api.md`, or `references/xlsx-api.md`.
+1. Route the request by format family and capability:
+
+   | Request                                          | API                                                  |
+   | ------------------------------------------------ | ---------------------------------------------------- |
+   | Create/edit document/workbook/presentation files | Family dispatch or format package generate/patch API |
+   | Read `.doc`, `.xls`, `.ppt`                      | `parseOffice`, then use the projected OOXML model    |
+   | Read/write `.rtf`, `.odt`, `.ods`, `.odp`        | Family or `office-open` dispatch API                 |
+   | Convert CSV/TSV                                  | `office-open/convert`                                |
+
+2. Read the corresponding reference for the full API: `references/docx-api.md`, `references/pptx-api.md`, or `references/xlsx-api.md`. For the family dispatch and capability matrix, see the umbrella package README.
 3. Build the options object (e.g. `DocumentOptions`, `PresentationOptions`, `WorkbookOptions`).
 4. Call the generate function with optional output type.
+5. Verify the result by parsing it back and checking the canonical fields that the request changed; OOXML patch APIs preserve unrelated package facts, while RTF/ODF patch APIs preserve canonical and package-overlay fields.
 
 For measurement conversions (twips, EMU, half-points), see `references/units.md`. For exact field names, enum values, or unit constraints of any options type, see [Precise Field Lookup](#precise-field-lookup) below.
 
@@ -66,39 +73,68 @@ Same pattern: `parsePresentation` / `generatePresentation`, `parseWorkbook` / `g
 
 ## Patch
 
-Replace `{{placeholder}}` tokens in template files:
+Patch template files with ordered, source-preserving commands:
 
 ```ts
-// DOCX — paragraph or block-level replacement
+// DOCX — text and block content
 import { patchDocument } from "@office-open/docx";
 const result = await patchDocument({
   outputType: "uint8array",
   data: readFileSync("template.docx"),
-  placeholders: {
-    name: { type: "paragraph", children: [{ text: "John Doe" }] },
-    content: { type: "document", children: [{ paragraph: { children: ["Body"] } }] },
-  },
-  keepOriginalStyles: true,
+  commands: [
+    {
+      type: "replace",
+      at: { field: "sections", route: [{ index: 0 }], text: { placeholder: "name" } },
+      value: "John Doe",
+    },
+    {
+      type: "update",
+      at: { field: "sections", route: [{ index: 0 }] },
+      set: { children: [{ paragraph: { children: ["Body"] } }] },
+    },
+    {
+      type: "insert",
+      at: { field: "sections", route: [{ index: 0 }, { collection: "children" }] },
+      position: "end",
+      value: [{ paragraph: { children: ["Appended"] } }],
+    },
+  ],
 });
 
-// PPTX — run-level replacement
+// PPTX — text and slides
 import { patchPresentation } from "@office-open/pptx";
 const result = await patchPresentation({
   outputType: "uint8array",
   data: readFileSync("template.pptx"),
-  placeholders: { title: [{ text: "Updated" }] },
+  commands: [
+    {
+      type: "replace",
+      at: { field: "slides", route: [{ index: 0 }], text: { placeholder: "title" } },
+      value: "Updated",
+    },
+    { type: "remove", at: { field: "slides", route: [{ index: 1 }] } },
+  ],
 });
 
-// XLSX — cell-level replacement
+// XLSX — text and worksheets
 import { patchWorkbook } from "@office-open/xlsx";
 const result = await patchWorkbook({
   outputType: "uint8array",
   data: readFileSync("template.xlsx"),
-  placeholders: { amount: 1500 },
+  commands: [
+    {
+      type: "replace",
+      at: { field: "worksheets", route: [{ name: "Draft" }], text: { placeholder: "amount" } },
+      value: 1500,
+    },
+    { type: "remove", at: { field: "worksheets", route: [{ name: "Draft" }] } },
+  ],
 });
 ```
 
-Custom delimiters: `placeholderDelimiters: { start: "{{", end: "}}" }`.
+Address each command with `at: { field, route, text }`: `field` is the canonical root field, `route` selects nested nodes, and optional `text` selects placeholder or literal text. Pass `value`, `set`, or `to` for `replace|insert`, `update`, and `move` respectively. Set `placeholderDelimiters: { start: "{{", end: "}}" }` to customize placeholder tokens.
+
+Patch is available for writable OOXML, RTF, and ODF formats. RTF patching regenerates the file after canonical edits; ODF patching preserves canonical package overlays. Legacy DOC/XLS/PPT remains read-only. Never invent patch fields outside the canonical model.
 
 ## Feature Reference
 
@@ -190,7 +226,7 @@ A slice carries the full dependency closure of the requested types; other catalo
 - **String shorthand for text** — a plain string `"text"` in a children array is equivalent to `{ text: "text" }`.
 - **Color format** — always hex without `#` prefix: `"FF0000"`, not `"#FF0000"`.
 - **Font sizes** — Font sizes are in points across all formats. DOCX internally converts to half-points. PPTX and XLSX use points directly.
-- **Position units** — PPTX shape positions (`x`, `y`, `width`, `height`) are in pixels, internally converted to EMU. DOCX uses twips for margins/spacing.
+- **Geometry units** — DrawingML geometry accepts EMU numbers or `UniversalMeasure` strings (`"5cm"`, `"2in"`, `"200px"`). DOCX uses twips for margins/spacing.
 - **Date values in XLSX** — `Date` objects are serialized as serial numbers (days since 1899-12-30), not formatted strings. Apply `numFmt` for display formatting.
 - **Charts** — chart types are defined in `@office-open/core` (`ChartSpaceOptions`), shared across docx and pptx.
-- **XLSX patching** — uses `{ value: "new value" }` (cell-level), not `{ type: "paragraph", children: [...] }` like docx/pptx.
+- **XLSX patching** — text `replace` accepts scalar values; whole worksheets are addressed through `worksheets` routes with `WorksheetOptions`.

@@ -71,7 +71,10 @@ const templateBuffer = await generatePresentation({
 const patched = await patchPresentation({
   outputType: "nodebuffer",
   data: templateBuffer,
-  slides: { remove: [1, 2] },
+  commands: [
+    { type: "remove", at: { field: "slides", route: [{ index: 1 }] } },
+    { type: "remove", at: { field: "slides", route: [{ index: 2 }] } },
+  ],
 });
 
 mkdirSync(".temp", { recursive: true });

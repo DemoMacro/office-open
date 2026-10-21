@@ -74,8 +74,8 @@ writeFileSync("presentation.pptx", buffer);
 ## API
 
 - `generatePresentation(options)` — generate a `.pptx` file; `generatePresentationSync` and `generatePresentationStream` cover sync and streaming output
-- `parsePresentation(data)` — read a `.pptx` back into `PresentationOptions` from bytes, `Blob`, or `ReadableStream`; `parsePresentationSync` covers synchronous parsing
-- `patchPresentation(input)` — patch an existing `.pptx` template by placeholder replacement
+- `parsePresentation(data)` — read a `.pptx` back into `PresentationOptions` from bytes, Base64/data-URL strings, `Blob`, or `ReadableStream`; `parsePresentationSync` covers synchronous parsing
+- `patchPresentation(input)` — apply ordered, source-preserving text, slide, and comment operations to an existing `.pptx` file
 
 Every input is a plain JSON object (`PresentationOptions` and its option types). The full typed API reference lives in the [documentation](https://www.office-open.com/en/pptx/); the same types are also frozen as JSON Schemas — `npx office-open schema slice pptx PresentationOptions`.
 

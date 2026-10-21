@@ -43,8 +43,9 @@ const options = await parseWorkbook(ods);
 
 ## API
 
-- `generateWorkbook(options, output?)` — generate an `.ods` package from `WorkbookOptions` as `Promise` (`Uint8Array` by default); `generateWorkbookSync` covers synchronous output and `generateWorkbookStream` returns a `ReadableStream<Uint8Array>`
-- `parseWorkbook(data)` — parse bytes, Base64/data-URL strings, `Blob`, or `ReadableStream` into `WorkbookOptions` as `Promise`; `parseWorkbookSync` covers synchronous parsing (rejects `Blob` and `ReadableStream` inputs)
+- `generateWorkbook(options, output?)` — generate an `.ods` package from `OdsWorkbookOptions` as `Promise` (`Uint8Array` by default); `generateWorkbookSync` covers synchronous output and `generateWorkbookStream` returns a `ReadableStream<Uint8Array>`
+- `parseWorkbook(data)` — parse bytes, Base64/data-URL strings, `Blob`, or `ReadableStream` into `OdsWorkbookOptions` (the canonical `WorkbookOptions` ODF overlay) as `Promise`; `parseWorkbookSync` covers synchronous parsing (rejects `Blob` and `ReadableStream` inputs)
+- `patchWorkbook({ data, commands })` — parse an ODS package, apply ordered canonical edits, and regenerate it
 - `OdsParseError` — structured parse failure with part, path, and reason diagnostics
 
 Every input is a plain JSON object (`WorkbookOptions` and its option types). The full typed API reference lives in the [documentation](https://www.office-open.com/en/getting-started/more-formats).
@@ -53,7 +54,7 @@ Every input is a plain JSON object (`WorkbookOptions` and its option types). The
 
 - Invalid ZIP containers, unexpected mimetypes, truncated XML, and unknown content-model elements throw `OdsParseError`.
 - Generated output targets ODF 1.3.
-- ODS has no patch API; parse, mutate `WorkbookOptions`, and generate instead.
+- Patching edits the canonical model and preserves package overlays unless they are explicitly changed.
 
 ## Documentation
 

@@ -1,0 +1,1696 @@
+{
+  "$id": "https://cdn.jsdelivr.net/npm/office-open/schemas/docx.patch.schema.json",
+  "$ref": "#/definitions/DocumentPatchCommand",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "DocumentPatchCommand": {
+      "anyOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "at": {
+              "$ref": "#/definitions/PatchAddress%3CDocumentPatchField%3E"
+            },
+            "position": {
+              "$ref": "#/definitions/PatchPosition"
+            },
+            "type": {
+              "const": "insert",
+              "type": "string"
+            },
+            "value": {
+              "items": {
+                "$ref": "#/definitions/DocumentPatchInsertValue"
+              },
+              "type": "array"
+            }
+          },
+          "required": ["type", "at", "value"],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "at": {
+              "$ref": "#/definitions/PatchNodeAddress%3CDocumentPatchField%3E"
+            },
+            "type": {
+              "const": "replace",
+              "type": "string"
+            },
+            "value": {
+              "anyOf": [
+                {
+                  "items": {
+                    "$ref": "docx.schema.json#/definitions/SectionOptions"
+                  },
+                  "type": "array"
+                },
+                {
+                  "description": "Primary document part path from `_rels/.rels`. Round-trip only; fresh documents use `word/document.xml`.",
+                  "readOnly": true,
+                  "type": "string"
+                },
+                {
+                  "description": "Selected core-properties part path from `_rels/.rels`. Round-trip only; fresh documents use `docProps/core.xml`.",
+                  "readOnly": true,
+                  "type": "string"
+                },
+                {
+                  "description": "Declared sequence names and numbering semantics used by sequence fields.",
+                  "items": {
+                    "$ref": "docx.schema.json#/definitions/SequenceDeclarationOptions"
+                  },
+                  "type": "array"
+                },
+                {
+                  "description": "Declared variable names and value types used by variable fields.",
+                  "items": {
+                    "$ref": "docx.schema.json#/definitions/VariableDeclarationOptions"
+                  },
+                  "type": "array"
+                },
+                {
+                  "$ref": "docx.schema.json#/definitions/OfficeFormsOptions",
+                  "description": "Document-level ODF forms, including root focus and design-mode settings."
+                },
+                {
+                  "$ref": "docx.schema.json#/definitions/EncryptedContainerOptions",
+                  "description": "Encrypted source (OLE2/CFB container). Round-trip only: the original bytes are re-emitted unchanged, every other field stays empty (`sections: []`); mixing real content is rejected. Do not hand-author.",
+                  "readOnly": true
+                },
+                {
+                  "$ref": "docx.schema.json#/definitions/StylesOptions"
+                },
+                {
+                  "$ref": "docx.schema.json#/definitions/StylesOptions",
+                  "description": "Legacy Word 2010 style effects companion (word/stylesWithEffects.xml)."
+                },
+                {
+                  "$ref": "docx.schema.json#/definitions/NumberingOptions"
+                },
+                {
+                  "items": {
+                    "$ref": "docx.schema.json#/definitions/CommentOptions"
+                  },
+                  "type": "array"
+                },
+                {
+                  "description": "Comment authors (word/people.xml). Word pairs each w15:person with comments by exact author-string equality; omit for documents whose comments carry no author index.",
+                  "items": {
+                    "$ref": "docx.schema.json#/definitions/CommentPersonOptions"
+                  },
+                  "type": "array"
+                },
+                {
+                  "description": "Comment metadata (word/commentsExtended.xml) — resolved state and reply threading, keyed by the w14:paraId of each comment's first paragraph.",
+                  "items": {
+                    "$ref": "docx.schema.json#/definitions/CommentExtendedOptions"
+                  },
+                  "type": "array"
+                },
+                {
+                  "description": "Durable comment ids (word/commentsIds.xml).",
+                  "items": {
+                    "$ref": "docx.schema.json#/definitions/CommentIdOptions"
+                  },
+                  "type": "array"
+                },
+                {
+                  "description": "Extensible comment metadata (word/commentsExtensible.xml).",
+                  "items": {
+                    "$ref": "docx.schema.json#/definitions/CommentExtensibleOptions"
+                  },
+                  "type": "array"
+                },
+                {
+                  "$ref": "docx.schema.json#/definitions/BibliographyOptions"
+                },
+                {
+                  "description": "User footnotes (word/footnotes.xml). `id` auto-assigns 1, 2, … when omitted.",
+                  "items": {
+                    "$ref": "docx.schema.json#/definitions/FootnoteOptions"
+                  },
+                  "type": "array"
+                },
+                {
+                  "additionalProperties": false,
+                  "description": "Separator footnotes — id + content round-tripped verbatim from the source so the generated id stays consistent with settings.footnoteProperties, references it. Omit for freshly generated documents (defaults apply).",
+                  "properties": {
+                    "continuationNotice": {
+                      "$ref": "docx.schema.json#/definitions/FootnoteSeparator",
+                      "description": "w:type=\"continuationNotice\" — round-tripped verbatim, no fresh default."
+                    },
+                    "continuationSeparator": {
+                      "anyOf": [
+                        {
+                          "$ref": "docx.schema.json#/definitions/FootnoteSeparator"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "separator": {
+                      "anyOf": [
+                        {
+                          "$ref": "docx.schema.json#/definitions/FootnoteSeparator"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "description": "null = the parsed source carried no such note (emit nothing)."
+                    }
+                  },
+                  "type": "object"
+                },
+                {
+                  "description": "User endnotes (word/endnotes.xml). `id` auto-assigns 1, 2, … when omitted.",
+                  "items": {
+                    "$ref": "docx.schema.json#/definitions/EndnoteOptions"
+                  },
+                  "type": "array"
+                },
+                {
+                  "additionalProperties": false,
+                  "description": "Separator endnotes — round-tripped verbatim from the source.",
+                  "properties": {
+                    "continuationNotice": {
+                      "$ref": "docx.schema.json#/definitions/EndnoteSeparator",
+                      "description": "w:type=\"continuationNotice\" — round-tripped verbatim, no fresh default."
+                    },
+                    "continuationSeparator": {
+                      "anyOf": [
+                        {
+                          "$ref": "docx.schema.json#/definitions/EndnoteSeparator"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "separator": {
+                      "anyOf": [
+                        {
+                          "$ref": "docx.schema.json#/definitions/EndnoteSeparator"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "description": "null = the parsed source carried no such note (emit nothing)."
+                    }
+                  },
+                  "type": "object"
+                },
+                {
+                  "$ref": "docx.schema.json#/definitions/DocumentBackgroundOptions"
+                },
+                {
+                  "items": {
+                    "$ref": "docx.schema.json#/definitions/CustomPropertyOptions"
+                  },
+                  "type": "array"
+                },
+                {
+                  "items": {
+                    "$ref": "docx.schema.json#/definitions/EmbeddedFontOptions"
+                  },
+                  "type": "array"
+                },
+                {
+                  "description": "Document conformance class (w:document/`@w:conformance`).",
+                  "enum": ["strict", "transitional"],
+                  "type": "string"
+                },
+                {
+                  "description": "OOXML namespace dialect detected from the source; round-trip only.",
+                  "enum": ["transitional", "strict"],
+                  "readOnly": true,
+                  "type": "string"
+                },
+                {
+                  "$ref": "docx.schema.json#/definitions/GlossaryDocumentOptions",
+                  "description": "Glossary document — building blocks (Quick Parts)"
+                },
+                {
+                  "$ref": "docx.schema.json#/definitions/SettingsOptions",
+                  "description": "Document settings (word/settings.xml)."
+                },
+                {
+                  "description": "Mail merge recipient lists (word/recipientsN.xml parts).",
+                  "items": {
+                    "$ref": "docx.schema.json#/definitions/MailMergeRecipientsOptions"
+                  },
+                  "type": "array"
+                },
+                {
+                  "$ref": "docx.schema.json#/definitions/WebSettingsOptions",
+                  "description": "Web settings for browser rendering (word/webSettings.xml)"
+                },
+                {
+                  "$ref": "docx.schema.json#/definitions/WordCustomizationsOptions",
+                  "description": "Keyboard and toolbar customizations (word/customizations.xml)."
+                },
+                {
+                  "$ref": "docx.schema.json#/definitions/ThemeOptions",
+                  "description": "Document theme (word/theme/theme1.xml); fresh output emits the default"
+                },
+                {
+                  "$ref": "docx.schema.json#/definitions/ContentTypesInput",
+                  "description": "Content types from [Content_Types].xml (parse path only)"
+                },
+                {
+                  "description": "Source parts generate() does not rebuild (word/theme/*, customXml/*, unknown extension parts), carried verbatim with bytes and content-type intact; compiler-rebuilt paths win over the passthrough copy. Round-trip only — do not hand-author.",
+                  "items": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "contentType": {
+                        "type": "string"
+                      },
+                      "data": {
+                        "$ref": "docx.schema.json#/definitions/DataType"
+                      },
+                      "path": {
+                        "type": "string"
+                      }
+                    },
+                    "required": ["path", "data"],
+                    "type": "object"
+                  },
+                  "readOnly": true,
+                  "type": "array"
+                },
+                {
+                  "description": "Source .rels relationships from rebuilt parts pointing at rawParts (e.g. document.xml → theme/customXml); re-emitted verbatim with a fresh rId. Round-trip only — do not hand-author.",
+                  "items": {
+                    "$ref": "docx.schema.json#/definitions/PassthroughRelationship"
+                  },
+                  "readOnly": true,
+                  "type": "array"
+                },
+                {
+                  "$ref": "docx.schema.json#/definitions/AppPropertiesOptions",
+                  "description": "Extended properties (docProps/app.xml)"
+                },
+                {
+                  "type": "string"
+                },
+                {
+                  "description": "Subject XML language attribute; round-trip only.",
+                  "readOnly": true,
+                  "type": "string"
+                },
+                {
+                  "description": "Revision number (cp:revision). null preserves a source element with empty text; undefined omits the element on fresh authoring.",
+                  "type": ["number", "null"]
+                },
+                {
+                  "description": "Creation timestamp (W3CDTF), round-tripped from dcterms:created. null = the source core.xml carried none — emit nothing; undefined (fresh) = default to now.",
+                  "type": ["string", "null"]
+                },
+                {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "const": false,
+                      "type": "boolean"
+                    }
+                  ],
+                  "description": "Created xsi:type; false preserves absence, undefined uses W3CDTF."
+                },
+                {
+                  "description": "Last modified timestamp (W3CDTF); same null/undefined semantics as the created field.",
+                  "type": ["string", "null"]
+                },
+                {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "const": false,
+                      "type": "boolean"
+                    }
+                  ],
+                  "description": "Modified xsi:type; false preserves absence, undefined uses W3CDTF."
+                },
+                {
+                  "description": "Document category, round-tripped from cp:category.",
+                  "type": "string"
+                },
+                {
+                  "description": "Document status (e.g. \"Draft\"), round-tripped from cp:contentStatus.",
+                  "type": "string"
+                },
+                {
+                  "description": "Content type (e.g. \"Document\"), round-tripped from cp:contentType.",
+                  "type": "string"
+                },
+                {
+                  "description": "Unique document identifier, round-tripped from dc:identifier.",
+                  "type": "string"
+                },
+                {
+                  "description": "Document language (RFC 3066), round-tripped from dc:language.",
+                  "type": "string"
+                },
+                {
+                  "description": "Publisher names, in source order; ODF stores repeatable dc:publisher values.",
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "description": "ODF/LibreOffice auto-filler names, in source order.",
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "description": "Source references, in source order; ODF stores repeatable dc:source values.",
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "description": "Document version number, round-tripped from cp:version.",
+                  "type": "string"
+                },
+                {
+                  "description": "Generating application name, round-tripped from ODF meta:generator.",
+                  "type": "string"
+                },
+                {
+                  "description": "Printed-by name, round-tripped from ODF meta:printed-by.",
+                  "type": "string"
+                },
+                {
+                  "$ref": "docx.schema.json#/definitions/CalendarDurationOptions",
+                  "description": "Editing duration expressed with explicit calendar components."
+                },
+                {
+                  "$ref": "docx.schema.json#/definitions/DocumentTemplateOptions",
+                  "description": "ODF document template reference."
+                },
+                {
+                  "$ref": "docx.schema.json#/definitions/AutoReloadOptions",
+                  "description": "ODF automatic document reload behavior."
+                },
+                {
+                  "$ref": "docx.schema.json#/definitions/HyperlinkBehaviorOptions",
+                  "description": "ODF hyperlink target behavior."
+                },
+                {
+                  "$ref": "docx.schema.json#/definitions/DocumentStatisticsOptions",
+                  "description": "ODF document statistics."
+                },
+                {
+                  "description": "ODF user-defined properties, in source order.",
+                  "items": {
+                    "$ref": "docx.schema.json#/definitions/UserDefinedMetadataOptions"
+                  },
+                  "type": "array"
+                },
+                {
+                  "const": true,
+                  "description": "Emit the core-properties vocabulary as the default namespace — the ISO strict binding, where the source root is `<coreProperties xmlns=…>` and cp:-prefixed children appear prefix-less (dc:/dcterms: keep their prefixes). Round-trip only.",
+                  "readOnly": true,
+                  "type": "boolean"
+                },
+                {
+                  "const": true,
+                  "description": "Legacy Microsoft core-property root/element spelling; round-trip only.",
+                  "readOnly": true,
+                  "type": "boolean"
+                },
+                {
+                  "description": "Source child order as canonical field keys; round-trip only.",
+                  "items": {
+                    "enum": [
+                      "title",
+                      "subject",
+                      "creator",
+                      "keywords",
+                      "description",
+                      "lastModifiedBy",
+                      "lastPrinted",
+                      "revision",
+                      "created",
+                      "modified",
+                      "category",
+                      "contentStatus",
+                      "contentType",
+                      "identifier",
+                      "language",
+                      "version"
+                    ],
+                    "type": "string"
+                  },
+                  "readOnly": true,
+                  "type": "array"
+                },
+                {
+                  "$ref": "#/definitions/PatchNestedValue%3C(def-interface-554622586-2630-3587-554622586-0-35881994865212%5B%5D%7C(string%7Cundefined)2022371089%7C(string%7Cundefined)374273512%7C(def-interface-232193440-0-364-232193440-0-636397764709%5B%5D%7Cundefined)1200773401%7C(def-interface-232193440-364-635-232193440-0-636679109654%5B%5D%7Cundefined)1765072253%7C(def-interface-326702574-11828-11992-326702574-0-11993%7Cundefined)515450618%7C(def-interface-1547132348-753-1094-1547132348-0-2842892438204%7Cundefined)1024277330%7CStylesOptions%7Cundefined%7C(def-interface-1559157195-1834-3808-1559157195-0-23437646146444%7Cundefined)1310478781%7CNumberingOptions%7Cdef-interface-248835676-385-1233-248835676-0-21001115859281%5B%5D%7C(def-interface-342087127-535-1197-342087127-0-3166657617048%5B%5D%7Cundefined)711616297%7C(def-interface-51502142-703-1292-51502142-0-270580727291%5B%5D%7Cundefined)302490283%7C(def-interface-844001351-598-921-844001351-0-1704737179880%5B%5D%7Cundefined)2107529068%7C(def-interface-1672938304-548-1029-1672938304-0-2701350084624%5B%5D%7Cundefined)1607029852%7CBibliographyOptions%7C(def-interface-1058510091-678-1033-1058510091-0-25681196684014%5B%5D%7Cundefined)1706443529%7C(structure-977368077-5521-5823-977368077-5256-5824-977368077-1891-8097-977368077-0-8606%7Cundefined)1496814634%7C(def-interface-1508239532-670-1023-1508239532-0-25421816004197%5B%5D%7Cundefined)1038111165%7C(structure-977368077-6031-6330-977368077-5939-6331-977368077-1891-8097-977368077-0-8606%7Cundefined)1839797105%7CDocumentBackgroundOptions%7Cdef-interface-542791940-479-1413-542791940-0-3566480994065%5B%5D%7Cdef-interface-932068795-1559-3418-932068795-0-3677695240944%5B%5D%7C(%22strict%22%7C%22transitional%22%7Cundefined)388272199%7C(%22transitional%22%7C%22strict%22%7Cundefined)1369981804%7C(def-interface-2145117750-5128-7550-2145117750-0-21407900624160%7Cundefined)1728158004%7C(def-interface-1280257835-4380-17547-1280257835-0-304571288208691%7Cundefined)1391870013%7C(def-interface-1280257835-24105-24554-1280257835-0-30457977485990%5B%5D%7Cundefined)636879897%7C(def-interface-1657496566-2318-3393-1657496566-0-19175613241077%7Cundefined)2061257631%7C(def-interface-638685620-987-1473-638685620-0-14741285359077%7Cundefined)815716091%7C(def-interface-424632302-5833-6828-424632302-0-70361531979882%7Cundefined)1874279238%7C(def-interface-342987153-1346-1858-342987153-0-21071318313257%7Cundefined)1288240108%7C(structure-977368077-7684-7739-977368077-7684-7741-977368077-7399-7742-977368077-1891-8097-977368077-0-8606%5B%5D%7Cundefined)712409055%7C(def-interface-1926289697-1519-2284-1926289697-0-13941%5B%5D%7Cundefined)367760564%7C(def-interface-1225316072-851-3139-1225316072-0-13407426754077%7Cundefined)589992171%7Cstring%7C(string%7Cundefined)224214605%7C(number%7Cnull%7Cundefined)1757053720%7C(string%7Cnull%7Cundefined)588053656%7C(string%7Cfalse%7Cundefined)1736812168%7C(string%7Cnull%7Cundefined)323831087%7C(string%7Cfalse%7Cundefined)758243595%7C(string%7Cundefined)619337124%7C(string%7Cundefined)3920205%7C(string%7Cundefined)1427399219%7C(string%7Cundefined)19099165%7C(string%7Cundefined)1487903223%7C(string%5B%5D%7Cundefined)724890049%7C(string%5B%5D%7Cundefined)2143604175%7C(string%5B%5D%7Cundefined)1992445651%7C(string%7Cundefined)1475815121%7C(string%7Cundefined)227398142%7C(string%7Cundefined)2114428161%7C(def-interface-2073763800-3651-3894-2073763800-0-17693723985410%7Cundefined)1169649406%7C(def-interface-2073763800-3894-4098-2073763800-0-17693180744250%7Cundefined)1537047498%7C(def-interface-2073763800-4098-4297-2073763800-0-17693567980079%7Cundefined)2147391045%7C(def-interface-2073763800-4297-4438-2073763800-0-17693657709645%7Cundefined)657709645%7C(def-interface-2073763800-4438-4899-2073763800-0-176931056641307%7Cundefined)674278348%7C(def-alias-2073763800-4899-5346-2073763800-0-17693145316076%5B%5D%7Cundefined)891899200%7C(true%7Cundefined)1229412021%7C(true%7Cundefined)26140217%7C(alias-2073763800-5463-5747-2073763800-0-17693%5B%5D%7Cundefined)1711184389)%3E"
+                }
+              ]
+            }
+          },
+          "required": ["type", "at"],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "at": {
+              "$ref": "#/definitions/PatchTextAddress%3CDocumentPatchField%3E"
+            },
+            "type": {
+              "const": "replace",
+              "type": "string"
+            },
+            "value": {
+              "type": "string"
+            }
+          },
+          "required": ["type", "at", "value"],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "at": {
+              "$ref": "#/definitions/PatchNodeAddress%3CDocumentPatchField%3E"
+            },
+            "set": {
+              "$ref": "#/definitions/DocumentPatchUpdateValue"
+            },
+            "type": {
+              "const": "update",
+              "type": "string"
+            },
+            "unset": {
+              "$ref": "#/definitions/PatchPropertyPath"
+            }
+          },
+          "required": ["type", "at"],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "at": {
+              "$ref": "#/definitions/PatchNodeAddress%3CDocumentPatchField%3E"
+            },
+            "type": {
+              "const": "remove",
+              "type": "string"
+            }
+          },
+          "required": ["type", "at"],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "at": {
+              "$ref": "#/definitions/PatchTextAddress%3CDocumentPatchField%3E"
+            },
+            "type": {
+              "const": "remove",
+              "type": "string"
+            }
+          },
+          "required": ["type", "at"],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "at": {
+              "$ref": "#/definitions/PatchNodeAddress%3CDocumentPatchField%3E"
+            },
+            "to": {
+              "$ref": "#/definitions/PatchPosition"
+            },
+            "type": {
+              "const": "move",
+              "type": "string"
+            }
+          },
+          "required": ["type", "at", "to"],
+          "type": "object"
+        }
+      ],
+      "description": "One ordered canonical DOCX edit."
+    },
+    "DocumentPatchField": {
+      "$ref": "#/definitions/PatchField%3CDocumentOptions%3E",
+      "description": "Canonical root fields addressable by a DOCX patch command."
+    },
+    "DocumentPatchInsertValue": {
+      "$ref": "#/definitions/PatchNestedValue%3Cdef-interface-554622586-2630-3587-554622586-0-35881994865212%5B%5D%3E",
+      "description": "Canonical item that can be inserted into a DOCX collection field."
+    },
+    "DocumentPatchUpdateValue": {
+      "$ref": "#/definitions/DocumentPatchValue",
+      "description": "Canonical partial value accepted by a DOCX update command."
+    },
+    "DocumentPatchValue": {
+      "anyOf": [
+        {
+          "items": {
+            "$ref": "docx.schema.json#/definitions/SectionOptions"
+          },
+          "type": "array"
+        },
+        {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Primary document part path from `_rels/.rels`. Round-trip only; fresh documents use `word/document.xml`.",
+          "readOnly": true
+        },
+        {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Selected core-properties part path from `_rels/.rels`. Round-trip only; fresh documents use `docProps/core.xml`.",
+          "readOnly": true
+        },
+        {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "docx.schema.json#/definitions/SequenceDeclarationOptions"
+              },
+              "type": "array"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Declared sequence names and numbering semantics used by sequence fields."
+        },
+        {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "docx.schema.json#/definitions/VariableDeclarationOptions"
+              },
+              "type": "array"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Declared variable names and value types used by variable fields."
+        },
+        {
+          "anyOf": [
+            {
+              "$ref": "docx.schema.json#/definitions/OfficeFormsOptions"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Document-level ODF forms, including root focus and design-mode settings."
+        },
+        {
+          "anyOf": [
+            {
+              "$ref": "docx.schema.json#/definitions/EncryptedContainerOptions"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Encrypted source (OLE2/CFB container). Round-trip only: the original bytes are re-emitted unchanged, every other field stays empty (`sections: []`); mixing real content is rejected. Do not hand-author.",
+          "readOnly": true
+        },
+        {
+          "$ref": "docx.schema.json#/definitions/StylesOptions"
+        },
+        {
+          "not": {}
+        },
+        {
+          "anyOf": [
+            {
+              "$ref": "docx.schema.json#/definitions/StylesOptions"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Legacy Word 2010 style effects companion (word/stylesWithEffects.xml)."
+        },
+        {
+          "$ref": "docx.schema.json#/definitions/NumberingOptions"
+        },
+        {
+          "items": {
+            "$ref": "docx.schema.json#/definitions/CommentOptions"
+          },
+          "type": "array"
+        },
+        {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "docx.schema.json#/definitions/CommentPersonOptions"
+              },
+              "type": "array"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Comment authors (word/people.xml). Word pairs each w15:person with comments by exact author-string equality; omit for documents whose comments carry no author index."
+        },
+        {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "docx.schema.json#/definitions/CommentExtendedOptions"
+              },
+              "type": "array"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Comment metadata (word/commentsExtended.xml) — resolved state and reply threading, keyed by the w14:paraId of each comment's first paragraph."
+        },
+        {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "docx.schema.json#/definitions/CommentIdOptions"
+              },
+              "type": "array"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Durable comment ids (word/commentsIds.xml)."
+        },
+        {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "docx.schema.json#/definitions/CommentExtensibleOptions"
+              },
+              "type": "array"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Extensible comment metadata (word/commentsExtensible.xml)."
+        },
+        {
+          "$ref": "docx.schema.json#/definitions/BibliographyOptions"
+        },
+        {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "docx.schema.json#/definitions/FootnoteOptions"
+              },
+              "type": "array"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "User footnotes (word/footnotes.xml). `id` auto-assigns 1, 2, … when omitted."
+        },
+        {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PatchNestedValue%3C(def-interface-554622586-2630-3587-554622586-0-35881994865212%5B%5D%7C(string%7Cundefined)2022371089%7C(string%7Cundefined)374273512%7C(def-interface-232193440-0-364-232193440-0-636397764709%5B%5D%7Cundefined)1200773401%7C(def-interface-232193440-364-635-232193440-0-636679109654%5B%5D%7Cundefined)1765072253%7C(def-interface-326702574-11828-11992-326702574-0-11993%7Cundefined)515450618%7C(def-interface-1547132348-753-1094-1547132348-0-2842892438204%7Cundefined)1024277330%7CStylesOptions%7Cundefined%7C(def-interface-1559157195-1834-3808-1559157195-0-23437646146444%7Cundefined)1310478781%7CNumberingOptions%7Cdef-interface-248835676-385-1233-248835676-0-21001115859281%5B%5D%7C(def-interface-342087127-535-1197-342087127-0-3166657617048%5B%5D%7Cundefined)711616297%7C(def-interface-51502142-703-1292-51502142-0-270580727291%5B%5D%7Cundefined)302490283%7C(def-interface-844001351-598-921-844001351-0-1704737179880%5B%5D%7Cundefined)2107529068%7C(def-interface-1672938304-548-1029-1672938304-0-2701350084624%5B%5D%7Cundefined)1607029852%7CBibliographyOptions%7C(def-interface-1058510091-678-1033-1058510091-0-25681196684014%5B%5D%7Cundefined)1706443529%7C(structure-977368077-5521-5823-977368077-5256-5824-977368077-1891-8097-977368077-0-8606%7Cundefined)1496814634%7C(def-interface-1508239532-670-1023-1508239532-0-25421816004197%5B%5D%7Cundefined)1038111165%7C(structure-977368077-6031-6330-977368077-5939-6331-977368077-1891-8097-977368077-0-8606%7Cundefined)1839797105%7CDocumentBackgroundOptions%7Cdef-interface-542791940-479-1413-542791940-0-3566480994065%5B%5D%7Cdef-interface-932068795-1559-3418-932068795-0-3677695240944%5B%5D%7C(%22strict%22%7C%22transitional%22%7Cundefined)388272199%7C(%22transitional%22%7C%22strict%22%7Cundefined)1369981804%7C(def-interface-2145117750-5128-7550-2145117750-0-21407900624160%7Cundefined)1728158004%7C(def-interface-1280257835-4380-17547-1280257835-0-304571288208691%7Cundefined)1391870013%7C(def-interface-1280257835-24105-24554-1280257835-0-30457977485990%5B%5D%7Cundefined)636879897%7C(def-interface-1657496566-2318-3393-1657496566-0-19175613241077%7Cundefined)2061257631%7C(def-interface-638685620-987-1473-638685620-0-14741285359077%7Cundefined)815716091%7C(def-interface-424632302-5833-6828-424632302-0-70361531979882%7Cundefined)1874279238%7C(def-interface-342987153-1346-1858-342987153-0-21071318313257%7Cundefined)1288240108%7C(structure-977368077-7684-7739-977368077-7684-7741-977368077-7399-7742-977368077-1891-8097-977368077-0-8606%5B%5D%7Cundefined)712409055%7C(def-interface-1926289697-1519-2284-1926289697-0-13941%5B%5D%7Cundefined)367760564%7C(def-interface-1225316072-851-3139-1225316072-0-13407426754077%7Cundefined)589992171%7Cstring%7C(string%7Cundefined)224214605%7C(number%7Cnull%7Cundefined)1757053720%7C(string%7Cnull%7Cundefined)588053656%7C(string%7Cfalse%7Cundefined)1736812168%7C(string%7Cnull%7Cundefined)323831087%7C(string%7Cfalse%7Cundefined)758243595%7C(string%7Cundefined)619337124%7C(string%7Cundefined)3920205%7C(string%7Cundefined)1427399219%7C(string%7Cundefined)19099165%7C(string%7Cundefined)1487903223%7C(string%5B%5D%7Cundefined)724890049%7C(string%5B%5D%7Cundefined)2143604175%7C(string%5B%5D%7Cundefined)1992445651%7C(string%7Cundefined)1475815121%7C(string%7Cundefined)227398142%7C(string%7Cundefined)2114428161%7C(def-interface-2073763800-3651-3894-2073763800-0-17693723985410%7Cundefined)1169649406%7C(def-interface-2073763800-3894-4098-2073763800-0-17693180744250%7Cundefined)1537047498%7C(def-interface-2073763800-4098-4297-2073763800-0-17693567980079%7Cundefined)2147391045%7C(def-interface-2073763800-4297-4438-2073763800-0-17693657709645%7Cundefined)657709645%7C(def-interface-2073763800-4438-4899-2073763800-0-176931056641307%7Cundefined)674278348%7C(def-alias-2073763800-4899-5346-2073763800-0-17693145316076%5B%5D%7Cundefined)891899200%7C(true%7Cundefined)1229412021%7C(true%7Cundefined)26140217%7C(alias-2073763800-5463-5747-2073763800-0-17693%5B%5D%7Cundefined)1711184389)%3E/anyOf/5"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Separator footnotes — id + content round-tripped verbatim from the source so the generated id stays consistent with settings.footnoteProperties, references it. Omit for freshly generated documents (defaults apply)."
+        },
+        {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "docx.schema.json#/definitions/EndnoteOptions"
+              },
+              "type": "array"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "User endnotes (word/endnotes.xml). `id` auto-assigns 1, 2, … when omitted."
+        },
+        {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PatchNestedValue%3C(def-interface-554622586-2630-3587-554622586-0-35881994865212%5B%5D%7C(string%7Cundefined)2022371089%7C(string%7Cundefined)374273512%7C(def-interface-232193440-0-364-232193440-0-636397764709%5B%5D%7Cundefined)1200773401%7C(def-interface-232193440-364-635-232193440-0-636679109654%5B%5D%7Cundefined)1765072253%7C(def-interface-326702574-11828-11992-326702574-0-11993%7Cundefined)515450618%7C(def-interface-1547132348-753-1094-1547132348-0-2842892438204%7Cundefined)1024277330%7CStylesOptions%7Cundefined%7C(def-interface-1559157195-1834-3808-1559157195-0-23437646146444%7Cundefined)1310478781%7CNumberingOptions%7Cdef-interface-248835676-385-1233-248835676-0-21001115859281%5B%5D%7C(def-interface-342087127-535-1197-342087127-0-3166657617048%5B%5D%7Cundefined)711616297%7C(def-interface-51502142-703-1292-51502142-0-270580727291%5B%5D%7Cundefined)302490283%7C(def-interface-844001351-598-921-844001351-0-1704737179880%5B%5D%7Cundefined)2107529068%7C(def-interface-1672938304-548-1029-1672938304-0-2701350084624%5B%5D%7Cundefined)1607029852%7CBibliographyOptions%7C(def-interface-1058510091-678-1033-1058510091-0-25681196684014%5B%5D%7Cundefined)1706443529%7C(structure-977368077-5521-5823-977368077-5256-5824-977368077-1891-8097-977368077-0-8606%7Cundefined)1496814634%7C(def-interface-1508239532-670-1023-1508239532-0-25421816004197%5B%5D%7Cundefined)1038111165%7C(structure-977368077-6031-6330-977368077-5939-6331-977368077-1891-8097-977368077-0-8606%7Cundefined)1839797105%7CDocumentBackgroundOptions%7Cdef-interface-542791940-479-1413-542791940-0-3566480994065%5B%5D%7Cdef-interface-932068795-1559-3418-932068795-0-3677695240944%5B%5D%7C(%22strict%22%7C%22transitional%22%7Cundefined)388272199%7C(%22transitional%22%7C%22strict%22%7Cundefined)1369981804%7C(def-interface-2145117750-5128-7550-2145117750-0-21407900624160%7Cundefined)1728158004%7C(def-interface-1280257835-4380-17547-1280257835-0-304571288208691%7Cundefined)1391870013%7C(def-interface-1280257835-24105-24554-1280257835-0-30457977485990%5B%5D%7Cundefined)636879897%7C(def-interface-1657496566-2318-3393-1657496566-0-19175613241077%7Cundefined)2061257631%7C(def-interface-638685620-987-1473-638685620-0-14741285359077%7Cundefined)815716091%7C(def-interface-424632302-5833-6828-424632302-0-70361531979882%7Cundefined)1874279238%7C(def-interface-342987153-1346-1858-342987153-0-21071318313257%7Cundefined)1288240108%7C(structure-977368077-7684-7739-977368077-7684-7741-977368077-7399-7742-977368077-1891-8097-977368077-0-8606%5B%5D%7Cundefined)712409055%7C(def-interface-1926289697-1519-2284-1926289697-0-13941%5B%5D%7Cundefined)367760564%7C(def-interface-1225316072-851-3139-1225316072-0-13407426754077%7Cundefined)589992171%7Cstring%7C(string%7Cundefined)224214605%7C(number%7Cnull%7Cundefined)1757053720%7C(string%7Cnull%7Cundefined)588053656%7C(string%7Cfalse%7Cundefined)1736812168%7C(string%7Cnull%7Cundefined)323831087%7C(string%7Cfalse%7Cundefined)758243595%7C(string%7Cundefined)619337124%7C(string%7Cundefined)3920205%7C(string%7Cundefined)1427399219%7C(string%7Cundefined)19099165%7C(string%7Cundefined)1487903223%7C(string%5B%5D%7Cundefined)724890049%7C(string%5B%5D%7Cundefined)2143604175%7C(string%5B%5D%7Cundefined)1992445651%7C(string%7Cundefined)1475815121%7C(string%7Cundefined)227398142%7C(string%7Cundefined)2114428161%7C(def-interface-2073763800-3651-3894-2073763800-0-17693723985410%7Cundefined)1169649406%7C(def-interface-2073763800-3894-4098-2073763800-0-17693180744250%7Cundefined)1537047498%7C(def-interface-2073763800-4098-4297-2073763800-0-17693567980079%7Cundefined)2147391045%7C(def-interface-2073763800-4297-4438-2073763800-0-17693657709645%7Cundefined)657709645%7C(def-interface-2073763800-4438-4899-2073763800-0-176931056641307%7Cundefined)674278348%7C(def-alias-2073763800-4899-5346-2073763800-0-17693145316076%5B%5D%7Cundefined)891899200%7C(true%7Cundefined)1229412021%7C(true%7Cundefined)26140217%7C(alias-2073763800-5463-5747-2073763800-0-17693%5B%5D%7Cundefined)1711184389)%3E/anyOf/6"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Separator endnotes — round-tripped verbatim from the source."
+        },
+        {
+          "$ref": "docx.schema.json#/definitions/DocumentBackgroundOptions"
+        },
+        {
+          "items": {
+            "$ref": "docx.schema.json#/definitions/CustomPropertyOptions"
+          },
+          "type": "array"
+        },
+        {
+          "items": {
+            "$ref": "docx.schema.json#/definitions/EmbeddedFontOptions"
+          },
+          "type": "array"
+        },
+        {
+          "anyOf": [
+            {
+              "const": "strict",
+              "type": "string"
+            },
+            {
+              "const": "transitional",
+              "type": "string"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Document conformance class (w:document/`@w:conformance`)."
+        },
+        {
+          "anyOf": [
+            {
+              "const": "transitional",
+              "type": "string"
+            },
+            {
+              "const": "strict",
+              "type": "string"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "OOXML namespace dialect detected from the source; round-trip only.",
+          "readOnly": true
+        },
+        {
+          "anyOf": [
+            {
+              "$ref": "docx.schema.json#/definitions/GlossaryDocumentOptions"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Glossary document — building blocks (Quick Parts)"
+        },
+        {
+          "anyOf": [
+            {
+              "$ref": "docx.schema.json#/definitions/SettingsOptions"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Document settings (word/settings.xml)."
+        },
+        {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "docx.schema.json#/definitions/MailMergeRecipientsOptions"
+              },
+              "type": "array"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Mail merge recipient lists (word/recipientsN.xml parts)."
+        },
+        {
+          "anyOf": [
+            {
+              "$ref": "docx.schema.json#/definitions/WebSettingsOptions"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Web settings for browser rendering (word/webSettings.xml)"
+        },
+        {
+          "anyOf": [
+            {
+              "$ref": "docx.schema.json#/definitions/WordCustomizationsOptions"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Keyboard and toolbar customizations (word/customizations.xml)."
+        },
+        {
+          "anyOf": [
+            {
+              "$ref": "docx.schema.json#/definitions/ThemeOptions"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Document theme (word/theme/theme1.xml); fresh output emits the default"
+        },
+        {
+          "anyOf": [
+            {
+              "$ref": "docx.schema.json#/definitions/ContentTypesInput"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Content types from [Content_Types].xml (parse path only)"
+        },
+        {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/definitions/DocumentPatchCommand/anyOf/1/properties/value/anyOf/32/items"
+              },
+              "type": "array"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Source parts generate() does not rebuild (word/theme/*, customXml/*, unknown extension parts), carried verbatim with bytes and content-type intact; compiler-rebuilt paths win over the passthrough copy. Round-trip only — do not hand-author.",
+          "readOnly": true
+        },
+        {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "docx.schema.json#/definitions/PassthroughRelationship"
+              },
+              "type": "array"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Source .rels relationships from rebuilt parts pointing at rawParts (e.g. document.xml → theme/customXml); re-emitted verbatim with a fresh rId. Round-trip only — do not hand-author.",
+          "readOnly": true
+        },
+        {
+          "anyOf": [
+            {
+              "$ref": "docx.schema.json#/definitions/AppPropertiesOptions"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Extended properties (docProps/app.xml)"
+        },
+        {
+          "type": "string"
+        },
+        {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Subject XML language attribute; round-trip only.",
+          "readOnly": true
+        },
+        {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Revision number (cp:revision). null preserves a source element with empty text; undefined omits the element on fresh authoring."
+        },
+        {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Creation timestamp (W3CDTF), round-tripped from dcterms:created. null = the source core.xml carried none — emit nothing; undefined (fresh) = default to now."
+        },
+        {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "const": false,
+              "type": "boolean"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Created xsi:type; false preserves absence, undefined uses W3CDTF."
+        },
+        {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Last modified timestamp (W3CDTF); same null/undefined semantics as the created field."
+        },
+        {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "const": false,
+              "type": "boolean"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Modified xsi:type; false preserves absence, undefined uses W3CDTF."
+        },
+        {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Document category, round-tripped from cp:category."
+        },
+        {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Document status (e.g. \"Draft\"), round-tripped from cp:contentStatus."
+        },
+        {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Content type (e.g. \"Document\"), round-tripped from cp:contentType."
+        },
+        {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Unique document identifier, round-tripped from dc:identifier."
+        },
+        {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Document language (RFC 3066), round-tripped from dc:language."
+        },
+        {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Publisher names, in source order; ODF stores repeatable dc:publisher values."
+        },
+        {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "ODF/LibreOffice auto-filler names, in source order."
+        },
+        {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Source references, in source order; ODF stores repeatable dc:source values."
+        },
+        {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Document version number, round-tripped from cp:version."
+        },
+        {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Generating application name, round-tripped from ODF meta:generator."
+        },
+        {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Printed-by name, round-tripped from ODF meta:printed-by."
+        },
+        {
+          "anyOf": [
+            {
+              "$ref": "docx.schema.json#/definitions/CalendarDurationOptions"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Editing duration expressed with explicit calendar components."
+        },
+        {
+          "anyOf": [
+            {
+              "$ref": "docx.schema.json#/definitions/DocumentTemplateOptions"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "ODF document template reference."
+        },
+        {
+          "anyOf": [
+            {
+              "$ref": "docx.schema.json#/definitions/AutoReloadOptions"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "ODF automatic document reload behavior."
+        },
+        {
+          "anyOf": [
+            {
+              "$ref": "docx.schema.json#/definitions/HyperlinkBehaviorOptions"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "ODF hyperlink target behavior."
+        },
+        {
+          "anyOf": [
+            {
+              "$ref": "docx.schema.json#/definitions/DocumentStatisticsOptions"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "ODF document statistics."
+        },
+        {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "docx.schema.json#/definitions/UserDefinedMetadataOptions"
+              },
+              "type": "array"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "ODF user-defined properties, in source order."
+        },
+        {
+          "anyOf": [
+            {
+              "const": true,
+              "type": "boolean"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Emit the core-properties vocabulary as the default namespace — the ISO strict binding, where the source root is `<coreProperties xmlns=…>` and cp:-prefixed children appear prefix-less (dc:/dcterms: keep their prefixes). Round-trip only.",
+          "readOnly": true
+        },
+        {
+          "anyOf": [
+            {
+              "const": true,
+              "type": "boolean"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Legacy Microsoft core-property root/element spelling; round-trip only.",
+          "readOnly": true
+        },
+        {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/definitions/DocumentPatchCommand/anyOf/1/properties/value/anyOf/61/items"
+              },
+              "type": "array"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Source child order as canonical field keys; round-trip only.",
+          "readOnly": true
+        },
+        {
+          "$ref": "#/definitions/DocumentPatchCommand/anyOf/1/properties/value/anyOf/62"
+        }
+      ],
+      "description": "Canonical value assignable to an addressed DOCX root or nested node."
+    },
+    "PatchAddress<DocumentPatchField>": {
+      "additionalProperties": false,
+      "description": "Canonical root field plus optional structured route to a nested node.",
+      "properties": {
+        "field": {
+          "$ref": "#/definitions/DocumentPatchField",
+          "description": "Root canonical field, for example `sections`, `slides`, or `worksheets`."
+        },
+        "route": {
+          "description": "Structured canonical route below the field; XML paths are not valid.",
+          "items": {
+            "$ref": "#/definitions/PatchRouteStep"
+          },
+          "type": "array"
+        },
+        "text": {
+          "$ref": "#/definitions/PatchTextSelection",
+          "description": "Select text inside the addressed subtree instead of the node itself."
+        }
+      },
+      "required": ["field"],
+      "type": "object"
+    },
+    "PatchField<DocumentOptions>": {
+      "description": "A canonical field that accepts patch commands.",
+      "enum": [
+        "sections",
+        "primaryPartPath",
+        "corePropertiesPath",
+        "sequenceDeclarations",
+        "variableDeclarations",
+        "forms",
+        "encrypted",
+        "styles",
+        "stylesWithEffects",
+        "numbering",
+        "comments",
+        "people",
+        "commentsExtended",
+        "commentsIds",
+        "commentsExtensible",
+        "bibliography",
+        "footnotes",
+        "footnoteSeparators",
+        "endnotes",
+        "endnoteSeparators",
+        "background",
+        "customProperties",
+        "fonts",
+        "conformance",
+        "dialect",
+        "glossary",
+        "settings",
+        "mailMergeRecipients",
+        "webSettings",
+        "customizations",
+        "theme",
+        "contentTypes",
+        "rawParts",
+        "passthroughRelationships",
+        "appProperties",
+        "title",
+        "subject",
+        "subjectLanguage",
+        "creator",
+        "keywords",
+        "description",
+        "lastModifiedBy",
+        "revision",
+        "lastPrinted",
+        "created",
+        "createdType",
+        "modified",
+        "modifiedType",
+        "category",
+        "contentStatus",
+        "contentType",
+        "identifier",
+        "language",
+        "publishers",
+        "autoFillers",
+        "sources",
+        "version",
+        "application",
+        "printedBy",
+        "editingDuration",
+        "template",
+        "autoReload",
+        "hyperlinkBehavior",
+        "statistics",
+        "userDefinedProperties",
+        "defaultNamespace",
+        "legacyMicrosoft",
+        "childOrder"
+      ],
+      "type": "string"
+    },
+    "PatchNestedValue<(def-interface-554622586-2630-3587-554622586-0-35881994865212[]|(string|undefined)2022371089|(string|undefined)374273512|(def-interface-232193440-0-364-232193440-0-636397764709[]|undefined)1200773401|(def-interface-232193440-364-635-232193440-0-636679109654[]|undefined)1765072253|(def-interface-326702574-11828-11992-326702574-0-11993|undefined)515450618|(def-interface-1547132348-753-1094-1547132348-0-2842892438204|undefined)1024277330|StylesOptions|undefined|(def-interface-1559157195-1834-3808-1559157195-0-23437646146444|undefined)1310478781|NumberingOptions|def-interface-248835676-385-1233-248835676-0-21001115859281[]|(def-interface-342087127-535-1197-342087127-0-3166657617048[]|undefined)711616297|(def-interface-51502142-703-1292-51502142-0-270580727291[]|undefined)302490283|(def-interface-844001351-598-921-844001351-0-1704737179880[]|undefined)2107529068|(def-interface-1672938304-548-1029-1672938304-0-2701350084624[]|undefined)1607029852|BibliographyOptions|(def-interface-1058510091-678-1033-1058510091-0-25681196684014[]|undefined)1706443529|(structure-977368077-5521-5823-977368077-5256-5824-977368077-1891-8097-977368077-0-8606|undefined)1496814634|(def-interface-1508239532-670-1023-1508239532-0-25421816004197[]|undefined)1038111165|(structure-977368077-6031-6330-977368077-5939-6331-977368077-1891-8097-977368077-0-8606|undefined)1839797105|DocumentBackgroundOptions|def-interface-542791940-479-1413-542791940-0-3566480994065[]|def-interface-932068795-1559-3418-932068795-0-3677695240944[]|(\"strict\"|\"transitional\"|undefined)388272199|(\"transitional\"|\"strict\"|undefined)1369981804|(def-interface-2145117750-5128-7550-2145117750-0-21407900624160|undefined)1728158004|(def-interface-1280257835-4380-17547-1280257835-0-304571288208691|undefined)1391870013|(def-interface-1280257835-24105-24554-1280257835-0-30457977485990[]|undefined)636879897|(def-interface-1657496566-2318-3393-1657496566-0-19175613241077|undefined)2061257631|(def-interface-638685620-987-1473-638685620-0-14741285359077|undefined)815716091|(def-interface-424632302-5833-6828-424632302-0-70361531979882|undefined)1874279238|(def-interface-342987153-1346-1858-342987153-0-21071318313257|undefined)1288240108|(structure-977368077-7684-7739-977368077-7684-7741-977368077-7399-7742-977368077-1891-8097-977368077-0-8606[]|undefined)712409055|(def-interface-1926289697-1519-2284-1926289697-0-13941[]|undefined)367760564|(def-interface-1225316072-851-3139-1225316072-0-13407426754077|undefined)589992171|string|(string|undefined)224214605|(number|null|undefined)1757053720|(string|null|undefined)588053656|(string|false|undefined)1736812168|(string|null|undefined)323831087|(string|false|undefined)758243595|(string|undefined)619337124|(string|undefined)3920205|(string|undefined)1427399219|(string|undefined)19099165|(string|undefined)1487903223|(string[]|undefined)724890049|(string[]|undefined)2143604175|(string[]|undefined)1992445651|(string|undefined)1475815121|(string|undefined)227398142|(string|undefined)2114428161|(def-interface-2073763800-3651-3894-2073763800-0-17693723985410|undefined)1169649406|(def-interface-2073763800-3894-4098-2073763800-0-17693180744250|undefined)1537047498|(def-interface-2073763800-4098-4297-2073763800-0-17693567980079|undefined)2147391045|(def-interface-2073763800-4297-4438-2073763800-0-17693657709645|undefined)657709645|(def-interface-2073763800-4438-4899-2073763800-0-176931056641307|undefined)674278348|(def-alias-2073763800-4899-5346-2073763800-0-17693145316076[]|undefined)891899200|(true|undefined)1229412021|(true|undefined)26140217|(alias-2073763800-5463-5747-2073763800-0-17693[]|undefined)1711184389)>": {
+      "anyOf": [
+        {
+          "$ref": "docx.schema.json#/definitions/OfficeFormsOptions"
+        },
+        {
+          "$ref": "docx.schema.json#/definitions/EncryptedContainerOptions"
+        },
+        {
+          "$ref": "docx.schema.json#/definitions/StylesOptions"
+        },
+        {
+          "$ref": "docx.schema.json#/definitions/NumberingOptions"
+        },
+        {
+          "$ref": "docx.schema.json#/definitions/BibliographyOptions"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "continuationNotice": {
+              "$ref": "#/definitions/DocumentPatchCommand/anyOf/1/properties/value/anyOf/17/properties/continuationNotice"
+            },
+            "continuationSeparator": {
+              "anyOf": [
+                {
+                  "$ref": "docx.schema.json#/definitions/FootnoteSeparator"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "separator": {
+              "$ref": "#/definitions/DocumentPatchCommand/anyOf/1/properties/value/anyOf/17/properties/separator"
+            }
+          },
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "continuationNotice": {
+              "$ref": "#/definitions/DocumentPatchCommand/anyOf/1/properties/value/anyOf/19/properties/continuationNotice"
+            },
+            "continuationSeparator": {
+              "anyOf": [
+                {
+                  "$ref": "docx.schema.json#/definitions/EndnoteSeparator"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "separator": {
+              "$ref": "#/definitions/DocumentPatchCommand/anyOf/1/properties/value/anyOf/19/properties/separator"
+            }
+          },
+          "type": "object"
+        },
+        {
+          "$ref": "docx.schema.json#/definitions/DocumentBackgroundOptions"
+        },
+        {
+          "$ref": "docx.schema.json#/definitions/GlossaryDocumentOptions"
+        },
+        {
+          "$ref": "docx.schema.json#/definitions/SettingsOptions"
+        },
+        {
+          "$ref": "docx.schema.json#/definitions/WebSettingsOptions"
+        },
+        {
+          "$ref": "docx.schema.json#/definitions/WordCustomizationsOptions"
+        },
+        {
+          "$ref": "docx.schema.json#/definitions/ThemeOptions"
+        },
+        {
+          "$ref": "docx.schema.json#/definitions/ContentTypesInput"
+        },
+        {
+          "$ref": "docx.schema.json#/definitions/AppPropertiesOptions"
+        },
+        {
+          "$ref": "docx.schema.json#/definitions/CalendarDurationOptions"
+        },
+        {
+          "$ref": "docx.schema.json#/definitions/DocumentTemplateOptions"
+        },
+        {
+          "$ref": "docx.schema.json#/definitions/AutoReloadOptions"
+        },
+        {
+          "$ref": "docx.schema.json#/definitions/HyperlinkBehaviorOptions"
+        },
+        {
+          "$ref": "docx.schema.json#/definitions/DocumentStatisticsOptions"
+        }
+      ],
+      "description": "Any canonical object or nested collection item reachable within six routes."
+    },
+    "PatchNestedValue<def-interface-554622586-2630-3587-554622586-0-35881994865212[]>": {
+      "$ref": "#/definitions/PatchNestedValue%3Cinterface-554622586-2630-3587-554622586-0-3588%2Cnever%3E",
+      "description": "Any canonical object or nested collection item reachable within six routes."
+    },
+    "PatchNestedValue<interface-554622586-2630-3587-554622586-0-3588,never>": {
+      "description": "Any canonical object or nested collection item reachable within six routes.",
+      "not": {}
+    },
+    "PatchNodeAddress<DocumentPatchField>": {
+      "additionalProperties": false,
+      "description": "Address a canonical node rather than a text selection.",
+      "properties": {
+        "field": {
+          "$ref": "#/definitions/PatchAddress%3CDocumentPatchField%3E/properties/field"
+        },
+        "route": {
+          "$ref": "#/definitions/PatchAddress%3CDocumentPatchField%3E/properties/route"
+        },
+        "text": {
+          "description": "Must remain absent when addressing a canonical node.",
+          "not": {}
+        }
+      },
+      "required": ["field"],
+      "type": "object"
+    },
+    "PatchPathStep": {
+      "description": "A canonical property name or array index used below a patch field.",
+      "type": ["string", "number"]
+    },
+    "PatchPosition": {
+      "anyOf": [
+        {
+          "const": "start",
+          "type": "string"
+        },
+        {
+          "const": "end",
+          "type": "string"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "before": {
+              "$ref": "#/definitions/PatchRouteStep"
+            }
+          },
+          "required": ["before"],
+          "title": "before",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "after": {
+              "$ref": "#/definitions/PatchRouteStep"
+            }
+          },
+          "required": ["after"],
+          "title": "after",
+          "type": "object"
+        }
+      ],
+      "description": "Insertion or move destination inside an array."
+    },
+    "PatchPropertyPath": {
+      "description": "A property path used by `update.unset`.",
+      "items": {
+        "$ref": "#/definitions/PatchPathStep"
+      },
+      "type": "array"
+    },
+    "PatchRouteStep": {
+      "anyOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "property": {
+              "type": "string"
+            }
+          },
+          "required": ["property"],
+          "title": "property",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "collection": {
+              "type": "string"
+            }
+          },
+          "required": ["collection"],
+          "title": "collection",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "index": {
+              "type": "number"
+            }
+          },
+          "required": ["index"],
+          "title": "index",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "type": ["string", "number"]
+            }
+          },
+          "required": ["id"],
+          "title": "id",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "type": "string"
+            }
+          },
+          "required": ["name"],
+          "title": "name",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "reference": {
+              "type": "string"
+            }
+          },
+          "required": ["reference"],
+          "title": "reference",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "address": {
+              "type": "string"
+            }
+          },
+          "required": ["address"],
+          "title": "address",
+          "type": "object"
+        }
+      ],
+      "description": "One canonical-tree hop from the selected root field."
+    },
+    "PatchTextAddress<DocumentPatchField>": {
+      "additionalProperties": false,
+      "description": "Address a text selection inside a canonical subtree.",
+      "properties": {
+        "field": {
+          "$ref": "#/definitions/PatchAddress%3CDocumentPatchField%3E/properties/field"
+        },
+        "route": {
+          "$ref": "#/definitions/PatchAddress%3CDocumentPatchField%3E/properties/route"
+        },
+        "text": {
+          "$ref": "#/definitions/PatchTextSelection",
+          "description": "Select text inside the addressed subtree."
+        }
+      },
+      "required": ["field", "text"],
+      "type": "object"
+    },
+    "PatchTextSelection": {
+      "anyOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "all": {
+              "type": "boolean"
+            },
+            "literal": {
+              "type": "string"
+            }
+          },
+          "required": ["literal"],
+          "title": "literal",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "all": {
+              "type": "boolean"
+            },
+            "placeholder": {
+              "type": "string"
+            }
+          },
+          "required": ["placeholder"],
+          "title": "placeholder",
+          "type": "object"
+        }
+      ],
+      "description": "Text selected inside the canonical subtree reached by the address."
+    }
+  },
+  "description": "Ordered canonical-model commands for patching a WordprocessingML package.",
+  "title": "office-open DOCX patch request"
+}

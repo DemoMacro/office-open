@@ -138,6 +138,9 @@ export type RichTextRunProperty =
   | "vertAlign"
   | "scheme";
 
+/** XSD `xsd:boolean` lexical forms accepted by OOXML boolean attributes. */
+export type BooleanLexicalValue = "true" | "false" | "1" | "0";
+
 export interface RichTextRunPropertiesOptions {
   /** Font name (CT_FontName → rFont) */
   font?: string;
@@ -147,18 +150,26 @@ export interface RichTextRunPropertiesOptions {
   family?: number;
   bold?: boolean;
   /** Source lexical form of `b/@val`; round-trip only — do not hand-author. */
-  boldValRaw?: string;
+  boldValRaw?: BooleanLexicalValue;
   italic?: boolean;
   /** Source lexical form of `i/@val`; round-trip only — do not hand-author. */
-  italicValRaw?: string;
+  italicValRaw?: BooleanLexicalValue;
   /** Strikethrough */
   strike?: boolean;
-  /** Source `strike/@val`; round-trip only — do not hand-author. */
-  strikeVal?: string;
+  /** Source lexical form of `strike/@val`; round-trip only — do not hand-author. */
+  strikeValRaw?: BooleanLexicalValue;
   outline?: boolean;
+  /** Source lexical form of `outline/@val`; round-trip only — do not hand-author. */
+  outlineValRaw?: BooleanLexicalValue;
   shadow?: boolean;
+  /** Source lexical form of `shadow/@val`; round-trip only — do not hand-author. */
+  shadowValRaw?: BooleanLexicalValue;
   condense?: boolean;
+  /** Source lexical form of `condense/@val`; round-trip only — do not hand-author. */
+  condenseValRaw?: BooleanLexicalValue;
   extend?: boolean;
+  /** Source lexical form of `extend/@val`; round-trip only — do not hand-author. */
+  extendValRaw?: BooleanLexicalValue;
   /** Font color (CT_Color) */
   color?: ColorOptions;
   /** Font size in points */

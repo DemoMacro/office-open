@@ -1,16 +1,17 @@
 # Measurement Units & Converters
 
-OOXML uses several measurement systems. This reference covers all units and conversion utilities.
+Office XML uses several measurement systems. This reference covers all units and conversion utilities.
 
 ## Unit Reference
 
-| Unit        | Used In                         | Conversion          |
-| ----------- | ------------------------------- | ------------------- |
-| Twips       | Page margins, paragraph spacing | 1 inch = 1440 twips |
-| EMU         | Images, shapes, offsets         | 1 inch = 914400 EMU |
-| Half-points | Font sizes                      | Size 24 = 12pt      |
-| 60000ths°   | Angles, rotation, effects       | 45° = 2700000       |
-| 1000ths %   | Alpha/opacity in effects        | 50% = 50000         |
+| Unit        | Used In                           | Conversion                  |
+| ----------- | --------------------------------- | --------------------------- |
+| Twips       | Page margins, paragraph spacing   | 1 inch = 1440 twips         |
+| EMU         | DrawingML images, shapes, offsets | 1 inch = 914400 EMU         |
+| Universal   | DrawingML geometry input          | `"5cm"`, `"2in"`, `"200px"` |
+| Half-points | Font sizes                        | Size 24 = 12pt              |
+| 60000ths°   | Angles, rotation, effects         | 45° = 2700000               |
+| 1000ths %   | Alpha/opacity in effects          | 50% = 50000                 |
 
 ## Common Values
 
@@ -90,16 +91,17 @@ const fontSize = convertToPt(12); // 12 (number passes through)
 // any unit → inches (xlsx page margins)
 const pageMargin = convertToInch("2.5cm"); // ~0.984
 
-// Legacy fixed-unit converters (still available):
+// Fixed-unit converters (still available for explicit conversions):
 const marginTwip = convertMillimetersToTwip(25.4); // 1440
 const emu = convertPixelsToEmu(200); // shape/image dimensions
 const ptEmu = convertPointsToEmu(12); // font size to EMU
 ```
 
-## Pixel to EMU Conversion
+## DrawingML Geometry Input
 
-Shapes and images in PPTX use pixel values in the API, which are internally converted to EMU:
+DrawingML geometry accepts an EMU number or a `UniversalMeasure` string. Prefer explicit units for hand-written options:
 
 - 1 pixel = 9525 EMU (at 96 DPI)
-- The `x`, `y`, `width`, `height` properties accept pixel values
-- Internal conversion: `convertPixelsToEmu(pixels)`
+- `x`, `y`, `width`, and `height` accept `number | UniversalMeasure`
+- `914400`, `"1in"`, `"2.54cm"`, and `"96px"` describe the same length
+- `convertToEmu()` normalizes a universal value; `convertPixelsToEmu()` converts a pixel count only

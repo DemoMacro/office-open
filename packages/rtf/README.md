@@ -49,6 +49,7 @@ const rtf = new TextDecoder().decode(generateDocument(options));
 
 - `parseDocument(source, options?)` — read RTF source into `DocumentOptions`
 - `generateDocument(options, context?)` — write canonical `DocumentOptions` to RTF bytes
+- `patchDocument({ data, commands })` — parse an RTF file, apply ordered canonical edits, and regenerate it
 - `RtfParseError` — thrown for malformed RTF
 - `RtfGenerateError` — thrown for canonical fields that have no RTF representation
 
@@ -56,8 +57,8 @@ const rtf = new TextDecoder().decode(generateDocument(options));
 
 - Malformed RTF throws `RtfParseError`.
 - Generation rejects fields that cannot be represented in RTF with `RtfGenerateError`; it does not drop them silently.
-- RTF has no patch API; parse, mutate the canonical model, and generate instead.
-- Unrecognized destinations are skipped without aborting the document.
+- Patching is a canonical edit and regeneration, not a byte-preserving RTF rewrite.
+- Starred unsupported destinations are skipped; non-starred unsupported destinations throw `RtfParseError`.
 
 ## Documentation
 

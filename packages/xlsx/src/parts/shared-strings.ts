@@ -14,6 +14,7 @@ import type { Element as XmlElement } from "@office-open/xml";
 import { colorAttributes, parseColorOptions } from "../shared/color";
 import type {
   SharedStringExtensionOptions,
+  BooleanLexicalValue,
   RichTextRunProperty,
   RichTextOptions,
   RichTextRunOptions,
@@ -21,8 +22,30 @@ import type {
   PhoneticRunOptions,
 } from "./worksheet";
 
+const booleanRaw = (value: string | undefined): BooleanLexicalValue | undefined =>
+  value === "true" || value === "false" || value === "1" || value === "0" ? value : undefined;
+
 /** String or rich text entry in the SST. */
 type SstEntry = string | RichTextOptions;
+
+function setBooleanProperty(
+  result: RichTextRunPropertiesOptions,
+  key: "bold" | "italic" | "strike" | "outline" | "shadow" | "condense" | "extend",
+  rawKey:
+    | "boldValRaw"
+    | "italicValRaw"
+    | "strikeValRaw"
+    | "outlineValRaw"
+    | "shadowValRaw"
+    | "condenseValRaw"
+    | "extendValRaw",
+  child: XmlElement,
+): void {
+  const lexical = attr(child, "val");
+  result[key] = parseOnOff(lexical) ?? true;
+  const raw = booleanRaw(lexical);
+  if (raw !== undefined) result[rawKey] = raw;
+}
 
 const MC_NS = "http://schemas.openxmlformats.org/markup-compatibility/2006";
 const W14_NS = "http://schemas.microsoft.com/office/word/2008/9/16/wordprocessingDrawing";
@@ -60,16 +83,21 @@ export function buildRPrXml(
 ): string {
   if (!pr) return "";
   const partsByTag: Partial<Record<RichTextRunProperty, string>> = {};
-  if (pr.boldValRaw !== undefined) partsByTag.b = `<b val="${escapeXml(pr.boldValRaw)}"/>`;
-  else if (pr.bold) partsByTag.b = "<b/>";
-  if (pr.italicValRaw !== undefined) partsByTag.i = `<i val="${escapeXml(pr.italicValRaw)}"/>`;
-  else if (pr.italic) partsByTag.i = "<i/>";
-  if (pr.strikeVal !== undefined) partsByTag.strike = `<strike val="${escapeXml(pr.strikeVal)}"/>`;
-  else if (pr.strike) partsByTag.strike = "<strike/>";
-  if (pr.outline) partsByTag.outline = "<outline/>";
-  if (pr.shadow) partsByTag.shadow = "<shadow/>";
-  if (pr.condense) partsByTag.condense = "<condense/>";
-  if (pr.extend) partsByTag.extend = "<extend/>";
+  const booleanProperty = (
+    tag: "b" | "i" | "strike" | "outline" | "shadow" | "condense" | "extend",
+    value: boolean | undefined,
+    valueRaw: BooleanLexicalValue | undefined,
+  ): void => {
+    if (valueRaw !== undefined) partsByTag[tag] = `<${tag} val="${escapeXml(valueRaw)}"/>`;
+    else if (value) partsByTag[tag] = `<${tag}/>`;
+  };
+  booleanProperty("b", pr.bold, pr.boldValRaw);
+  booleanProperty("i", pr.italic, pr.italicValRaw);
+  booleanProperty("strike", pr.strike, pr.strikeValRaw);
+  booleanProperty("outline", pr.outline, pr.outlineValRaw);
+  booleanProperty("shadow", pr.shadow, pr.shadowValRaw);
+  booleanProperty("condense", pr.condense, pr.condenseValRaw);
+  booleanProperty("extend", pr.extend, pr.extendValRaw);
   // val="none" is explicit: a bare <u/> means underline single, so omitting
   // the attribute would flip none → single on parse.
   if (pr.underlineValRaw !== undefined)
@@ -522,28 +550,25 @@ export function parseRPr(el: XmlElement): RichTextRunPropertiesOptions {
         result.family = attrNum(child, "val");
         break;
       case "b":
-        result.bold = parseOnOff(attr(child, "val")) ?? true;
-        if (attr(child, "val") !== undefined) result.boldValRaw = attr(child, "val");
+        setBooleanProperty(result, "bold", "boldValRaw", child);
         break;
       case "i":
-        result.italic = parseOnOff(attr(child, "val")) ?? true;
-        if (attr(child, "val") !== undefined) result.italicValRaw = attr(child, "val");
+        setBooleanProperty(result, "italic", "italicValRaw", child);
         break;
       case "strike":
-        result.strike = parseOnOff(attr(child, "val")) ?? true;
-        if (attr(child, "val") !== undefined) result.strikeVal = attr(child, "val");
+        setBooleanProperty(result, "strike", "strikeValRaw", child);
         break;
       case "outline":
-        result.outline = true;
+        setBooleanProperty(result, "outline", "outlineValRaw", child);
         break;
       case "shadow":
-        result.shadow = true;
+        setBooleanProperty(result, "shadow", "shadowValRaw", child);
         break;
       case "condense":
-        result.condense = true;
+        setBooleanProperty(result, "condense", "condenseValRaw", child);
         break;
       case "extend":
-        result.extend = true;
+        setBooleanProperty(result, "extend", "extendValRaw", child);
         break;
       case "color": {
         result.color = parseColorOptions(child);

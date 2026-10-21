@@ -1,5 +1,6 @@
 import {
   convertOutput,
+  unsupportedPatchFormat,
   toUint8ArrayAsync,
   type DataType,
   type OutputByType,
@@ -14,16 +15,20 @@ import {
   parseDocument as parseDocxDocument,
   patchDocument as patchDocxDocument,
   type DocumentOptions,
-  type PatchDocumentOptions,
+  type DocumentPatchOptions,
 } from "@office-open/docx";
 import {
+  patchDocument as patchOdtDocument,
   generateDocument as generateOdtDocument,
   parseDocument as parseOdtDocument,
+  type OdtPatchOptions,
   type OdtDocumentOptions,
 } from "@office-open/odt";
 import {
   generateDocument as generateRtfDocument,
   parseDocument as parseRtfDocument,
+  patchDocument as patchRtfDocument,
+  type RtfPatchOptions,
 } from "@office-open/rtf";
 
 import { detectOffice, withRequestedPackageVariant } from "./formats";
@@ -37,18 +42,46 @@ export type DocumentParseFormat = "doc" | "docx" | "docm" | "dotx" | "dotm" | "r
 
 export type DocumentGenerateFormat = "docx" | "docm" | "dotx" | "dotm" | "odt" | "rtf";
 
-export type DocumentPatchFormat = "docx" | "docm" | "dotx" | "dotm";
+type DocumentOoxmlPatchFormat = "docx" | "docm" | "dotx" | "dotm";
 
-const DOCUMENT_PATCH_FORMATS: readonly DocumentPatchFormat[] = ["docx", "docm", "dotx", "dotm"];
+export type DocumentPatchFormat = DocumentOoxmlPatchFormat | "rtf" | "odt";
 
-export type DocumentPatchRequest<T extends OutputType = "uint8array"> = Omit<
-  PatchDocumentOptions<T>,
-  "data" | "outputType"
+const DOCUMENT_PATCH_FORMATS: readonly DocumentPatchFormat[] = [
+  "docx",
+  "docm",
+  "dotx",
+  "dotm",
+  "rtf",
+  "odt",
+];
+type DocumentOoxmlPatchRequest<T extends OutputType = "uint8array"> = Omit<
+  DocumentPatchOptions<T>,
+  "outputType"
 > & {
-  format: DocumentPatchFormat;
-  data: PatchDocumentOptions<T>["data"];
+  format: DocumentOoxmlPatchFormat;
   outputType?: T;
 };
+
+type DocumentRtfPatchRequest<T extends OutputType = "uint8array"> = Omit<
+  RtfPatchOptions<T>,
+  "outputType"
+> & {
+  format: "rtf";
+  outputType?: T;
+};
+
+type DocumentOdtPatchRequest<T extends OutputType = "uint8array"> = Omit<
+  OdtPatchOptions<T>,
+  "outputType"
+> & {
+  format: "odt";
+  outputType?: T;
+};
+
+export type DocumentPatchRequest<T extends OutputType = "uint8array"> =
+  | DocumentOoxmlPatchRequest<T>
+  | DocumentRtfPatchRequest<T>
+  | DocumentOdtPatchRequest<T>;
 
 const RTF_MIME_TYPE = "application/rtf";
 
@@ -116,13 +149,27 @@ export async function generateDocument<
 export async function patchDocument<T extends OutputType = "uint8array">(
   request: DocumentPatchRequest<T>,
 ): Promise<OutputByType[T]> {
-  const { format, data, outputType = "uint8array" as T, ...patch } = request;
+  const { format } = request;
   if (!DOCUMENT_PATCH_FORMATS.includes(format)) {
-    throw new Error(`${format} does not support document patching`);
+    throw unsupportedPatchFormat(format, "document");
   }
-  return patchDocxDocument({
-    ...(patch as PatchDocumentOptions<T>),
-    data,
-    outputType,
-  } as PatchDocumentOptions<T>);
+  if (format === "docx" || format === "docm" || format === "dotx" || format === "dotm") {
+    const {
+      data,
+      outputType = "uint8array" as T,
+      packageVariant,
+      placeholderDelimiters,
+      commands,
+    } = request;
+    return patchDocxDocument({ commands, data, outputType, packageVariant, placeholderDelimiters });
+  }
+  if (format === "rtf") {
+    const { data, outputType = "uint8array" as T, placeholderDelimiters, commands } = request;
+    return patchRtfDocument({ commands, data, outputType, placeholderDelimiters });
+  }
+  if (format === "odt") {
+    const { data, outputType = "uint8array" as T, placeholderDelimiters, commands } = request;
+    return patchOdtDocument({ commands, data, outputType, placeholderDelimiters });
+  }
+  throw unsupportedPatchFormat(format, "document");
 }

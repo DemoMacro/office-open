@@ -6,7 +6,7 @@ You are a senior TypeScript developer.
 
 ## Architecture
 
-- **Packages**: `core/` (shared OOXML domains — descriptor runtime, `drawing/`, `chart/`, `table/`, `picture/`, `connector/`, `group/`, smartart, OPC), `xml/`, `docx/`, `pptx/`, `xlsx/`. The three format packages are peers: same `src/` layout (`parts/`, `shared/`, `compiler.ts`, `context.ts`, `generate.ts`, `parse.ts`, `patch.ts`, `index.ts`) and one `**Options` name per shared concept.
+- **Packages**: `core/` (shared OOXML domains — descriptor runtime, `drawing/`, `chart/`, `table/`, `picture/`, `connector/`, `group/`, smartart, OPC), `xml/`, `docx/`, `pptx/`, `xlsx/`, legacy readers `doc/`, `xls/`, `ppt/`, `rtf/`, and ODF codecs `odf/`, `odt/`, `ods/`, `odp/`. OOXML format packages are peers: same `src/` layout (`parts/`, `shared/`, `compiler.ts`, `context.ts`, `generate.ts`, `parse.ts`, `patch.ts`, `index.ts`) and one `**Options` name per shared concept.
 - **Parts**: one module per OOXML XML part. docx/xlsx co-locate types and the `<part>Desc` descriptor; pptx keeps descriptors in `parts/descriptors/` with public types in `shared/<domain>/`. Cross-part shared types live in `shared/`.
 - **Descriptor pattern**: every part is a `CustomDescriptor<T>` with hand-written `stringify(opts, ctx)` + `parse(el, ctx)` (bidirectional). Runtime at `packages/core/src/descriptor/`.
 - **Cross-format copy** reuses `core`'s shared domains + package-to-package conversion in `packages/office-open/src/convert/` — **no unified document-model layer**. The conversion mode follows how the concept's XML maps across packages:

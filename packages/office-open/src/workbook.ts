@@ -1,5 +1,6 @@
 import {
   toUint8ArrayAsync,
+  unsupportedPatchFormat,
   type DataType,
   type OutputByType,
   type OutputType,
@@ -8,8 +9,10 @@ import {
 } from "@office-open/core";
 import { OOXML_PACKAGE_FORMATS } from "@office-open/core/opc";
 import {
+  patchWorkbook as patchOdsWorkbook,
   generateWorkbook as generateOdsWorkbook,
   parseWorkbook as parseOdsWorkbook,
+  type OdsPatchOptions,
   type OdsWorkbookOptions,
 } from "@office-open/ods";
 import { parseWorkbook as parseXlsWorkbook } from "@office-open/xls";
@@ -17,7 +20,7 @@ import {
   generateWorkbook as generateXlsxWorkbook,
   parseWorkbook as parseXlsxWorkbook,
   patchWorkbook as patchXlsxWorkbook,
-  type PatchWorkbookOptions,
+  type WorkbookPatchOptions,
   type WorkbookOptions,
 } from "@office-open/xlsx";
 
@@ -32,18 +35,36 @@ export type WorkbookParseFormat = "ods" | "xls" | "xlsx" | "xlsm" | "xltx" | "xl
 
 export type WorkbookGenerateFormat = "xlsx" | "xlsm" | "xltx" | "xltm" | "ods";
 
-export type WorkbookPatchFormat = "xlsx" | "xlsm" | "xltx" | "xltm";
+type WorkbookOoxmlPatchFormat = "xlsx" | "xlsm" | "xltx" | "xltm";
 
-const WORKBOOK_PATCH_FORMATS: readonly WorkbookPatchFormat[] = ["xlsx", "xlsm", "xltx", "xltm"];
+export type WorkbookPatchFormat = WorkbookOoxmlPatchFormat | "ods";
 
-export type WorkbookPatchRequest<T extends OutputType = "uint8array"> = Omit<
-  PatchWorkbookOptions<T>,
-  "data" | "outputType"
+const WORKBOOK_PATCH_FORMATS: readonly WorkbookPatchFormat[] = [
+  "xlsx",
+  "xlsm",
+  "xltx",
+  "xltm",
+  "ods",
+];
+type WorkbookOoxmlPatchRequest<T extends OutputType = "uint8array"> = Omit<
+  WorkbookPatchOptions<T>,
+  "outputType"
 > & {
-  format: WorkbookPatchFormat;
-  data: PatchWorkbookOptions<T>["data"];
+  format: WorkbookOoxmlPatchFormat;
   outputType?: T;
 };
+
+type WorkbookOdsPatchRequest<T extends OutputType = "uint8array"> = Omit<
+  OdsPatchOptions<T>,
+  "outputType"
+> & {
+  format: "ods";
+  outputType?: T;
+};
+
+export type WorkbookPatchRequest<T extends OutputType = "uint8array"> =
+  | WorkbookOoxmlPatchRequest<T>
+  | WorkbookOdsPatchRequest<T>;
 
 export async function parseWorkbook(
   input: DataType,
@@ -96,13 +117,29 @@ export async function generateWorkbook<
 export async function patchWorkbook<T extends OutputType = "uint8array">(
   request: WorkbookPatchRequest<T>,
 ): Promise<OutputByType[T]> {
-  const { format, data, outputType = "uint8array" as T, ...patch } = request;
+  const { format } = request;
   if (!WORKBOOK_PATCH_FORMATS.includes(format)) {
-    throw new Error(`${format} does not support workbook patching`);
+    throw unsupportedPatchFormat(format, "workbook");
   }
-  return patchXlsxWorkbook({
-    ...(patch as PatchWorkbookOptions<T>),
-    data,
-    outputType,
-  } as PatchWorkbookOptions<T>);
+  if (format === "xlsx" || format === "xlsm" || format === "xltx" || format === "xltm") {
+    const {
+      data,
+      outputType = "uint8array" as T,
+      packageVariant,
+      placeholderDelimiters,
+      commands,
+    } = request;
+    return patchXlsxWorkbook({
+      commands,
+      data,
+      outputType,
+      packageVariant,
+      placeholderDelimiters,
+    });
+  }
+  if (format === "ods") {
+    const { data, outputType = "uint8array" as T, placeholderDelimiters, commands } = request;
+    return patchOdsWorkbook({ commands, data, outputType, placeholderDelimiters });
+  }
+  throw unsupportedPatchFormat(format, "workbook");
 }

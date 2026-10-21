@@ -39,7 +39,7 @@ const templateBuffer = await generateWorkbook({
 const patched = await patchWorkbook({
   outputType: "nodebuffer",
   data: templateBuffer,
-  worksheets: { remove: ["Report Draft"] },
+  commands: [{ type: "remove", at: { field: "worksheets", route: [{ name: "Report Draft" }] } }],
 });
 
 mkdirSync(".temp", { recursive: true });

@@ -3,5 +3,6 @@
  *
  * @module
  */
-export * from "./from-docx";
+export * from "./commands";
 export * from "./patch-detector";
+export * from "./patch";

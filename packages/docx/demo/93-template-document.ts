@@ -1,73 +1,32 @@
-// Patch a document with patches
+// Patch canonical document text in an existing template.
 
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 
 import { patchDocument } from "@office-open/docx";
 
+const replacements: Record<string, string> = {
+  address: "blah blah",
+  city: "test",
+  email_address: "test",
+  first_name: "test",
+  ft_dates: "test",
+  grade: "test",
+  last_name: "test",
+  phone: "test",
+  school_name: "test",
+  state: "test",
+  todays_date: new Date().toLocaleDateString(),
+  zip: "test",
+};
+
 const doc = await patchDocument({
   data: readFileSync("demo/assets/field-trip.docx"),
-  outputType: "nodebuffer",
-  placeholders: {
-    address: {
-      children: [{ text: "blah blah" }],
-      type: "paragraph",
-    },
-
-    city: {
-      children: [{ text: "test" }],
-      type: "paragraph",
-    },
-
-    email_address: {
-      children: [{ text: "test" }],
-      type: "paragraph",
-    },
-
-    first_name: {
-      children: [{ text: "test" }],
-      type: "paragraph",
-    },
-
-    ft_dates: {
-      children: [{ text: "test" }],
-      type: "paragraph",
-    },
-
-    grade: {
-      children: [{ text: "test" }],
-      type: "paragraph",
-    },
-
-    last_name: {
-      children: [{ text: "test" }],
-      type: "paragraph",
-    },
-
-    phone: {
-      children: [{ text: "test" }],
-      type: "paragraph",
-    },
-
-    school_name: {
-      children: [{ text: "test" }],
-      type: "paragraph",
-    },
-
-    state: {
-      children: [{ text: "test" }],
-      type: "paragraph",
-    },
-
-    todays_date: {
-      children: [{ text: new Date().toLocaleDateString() }],
-      type: "paragraph",
-    },
-
-    zip: {
-      children: [{ text: "test" }],
-      type: "paragraph",
-    },
-  },
+  commands: Object.entries(replacements).map(([placeholder, value]) => ({
+    type: "replace",
+    at: { field: "sections", text: { placeholder } },
+    value,
+  })),
 });
+
 mkdirSync(".temp", { recursive: true });
 writeFileSync(".temp/93-template-document.docx", doc);

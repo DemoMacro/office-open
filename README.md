@@ -1,5 +1,6 @@
 # office-open
 
+The package graph follows format ownership: `odf` owns the OCF container, XML runtime, metadata, and shared chart/database codecs; each ODF document codec may type-import its OOXML peer while using `core` and `odf` at runtime; peer codecs do not import one another; `core` never imports a format codec; only `office-open` aggregates every public document codec.
 English | [简体中文](./README.zh-CN.md)
 
 [![npm downloads](https://img.shields.io/npm/dm/office-open)](https://www.npmjs.com/package/office-open)
@@ -35,13 +36,13 @@ Used in production by [json-to-office](https://json-to-office.com/) — its qual
 
 Highlights from the per-package benchmarks (ops/s, higher is better; Windows 11, Node 24 — the same scenarios run up to ~2× faster again on Bun 1.4). Compression matches MS Office defaults; full methodology, compression modes, and complete tables live in each package's README:
 
-| Package                                                  | Scenario                        | @office-open | Competitor             | Faster   |
-| -------------------------------------------------------- | ------------------------------- | ------------ | ---------------------- | -------- |
-| [@office-open/docx](./packages/docx/README.md#benchmark) | Full-featured document + 2 imgs | 763 ops/s    | docx 9.6 — 54.2 ops/s  | **14×**  |
-|                                                          | 2,000 paragraphs + 20 images    | 104 ops/s    | docx 9.6 — 2.85 ops/s  | **37×**  |
-| [@office-open/pptx](./packages/pptx/README.md#benchmark) | 50 fully-styled slides          | 73.8 ops/s   | PptxGenJS — 0.91 ops/s | **81×**  |
-| [@office-open/xlsx](./packages/xlsx/README.md#benchmark) | 100k rows × 20 cols (2M cells)  | 0.89 ops/s   | hucre — 0.46 ops/s     | **1.9×** |
-| [@office-open/xml](./packages/xml/README.md#benchmark)   | Parse complex OOXML             | 424k ops/s   | txml — 389k ops/s      | **1.1×** |
+| Package                                                  | Scenario                        | @office-open | Competitor              | Faster   |
+| -------------------------------------------------------- | ------------------------------- | ------------ | ----------------------- | -------- |
+| [@office-open/docx](./packages/docx/README.md#benchmark) | Full-featured document + 2 imgs | 763 ops/s    | docx 9.6.1 — 54.2 ops/s | **14×**  |
+|                                                          | 2,000 paragraphs + 20 images    | 104 ops/s    | docx 9.6.1 — 2.85 ops/s | **37×**  |
+| [@office-open/pptx](./packages/pptx/README.md#benchmark) | 50 fully-styled slides          | 73.8 ops/s   | PptxGenJS — 0.91 ops/s  | **81×**  |
+| [@office-open/xlsx](./packages/xlsx/README.md#benchmark) | 100k rows × 20 cols (2M cells)  | 0.89 ops/s   | hucre — 0.46 ops/s      | **1.9×** |
+| [@office-open/xml](./packages/xml/README.md#benchmark)   | Parse complex OOXML             | 424k ops/s   | txml — 389k ops/s       | **1.1×** |
 
 ## Why office-open?
 
@@ -65,6 +66,7 @@ Most Office libraries only generate files. office-open closes the loop with gene
 | [@office-open/xls](./packages/xls/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/xls)  | Legacy Excel .xls parsing                            |
 | [@office-open/ppt](./packages/ppt/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/ppt)  | Legacy PowerPoint .ppt parsing                       |
 | [@office-open/rtf](./packages/rtf/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/rtf)  | Rich Text Format generation and parsing              |
+| [@office-open/odf](./packages/odf/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/odf)  | Shared OpenDocument container and runtime            |
 | [@office-open/odt](./packages/odt/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/odt)  | OpenDocument text generation and parsing             |
 | [@office-open/ods](./packages/ods/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/ods)  | OpenDocument spreadsheet generation and parsing      |
 | [@office-open/odp](./packages/odp/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/odp)  | OpenDocument presentation generation and parsing     |
@@ -80,7 +82,7 @@ Most Office libraries only generate files. office-open closes the loop with gene
 | `.rtf`                        | ✅    | ✅       | ❌    | Strict `DocumentOptions` projection       |
 | ODF `.odt`/`.ods`/`.odp`      | ✅    | ✅       | ❌    | Canonical format-family read/write codecs |
 
-The matrix is a capability contract, not an invitation to synthesize unsupported editing: legacy formats have no writers, RTF rejects unsupported canonical fields rather than dropping them, and ODF codecs do not expose patch operations.
+The matrix is a capability contract, not an invitation to synthesize unsupported editing: legacy formats have no writers, RTF rejects unsupported canonical fields rather than dropping them, and ODF codecs do not expose patch commands.
 
 The package graph follows format ownership: `odf` owns the OCF container, XML runtime, metadata, and shared chart/database codecs, each ODF document codec may type-import its OOXML peer while using `odf` at runtime, peer codecs do not import one another, `core` never imports a format codec, and only `office-open` aggregates every public document codec.
 
@@ -128,7 +130,7 @@ const buffer = generateDocumentSync({
 writeFileSync("document.docx", buffer);
 ```
 
-PowerPoint and Excel follow the same shape — `generatePresentationSync({ slides: [...] })` and `generateWorkbookSync({ worksheets: [...] })`; see the per-package READMEs linked above. There is also a type-dispatched `generate()` helper and a CLI:
+PowerPoint and Excel follow the same shape — `generatePresentationSync({ slides: [...] })` and `generateWorkbookSync({ worksheets: [...] })`; see the per-package READMEs linked above. There is also a type-dispatched `generateOffice()` helper and a CLI:
 
 ```bash
 npx office-open xlsx input.json "output.xlsx"

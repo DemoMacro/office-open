@@ -504,24 +504,7 @@ Used in TextRun children as a string — displays the page number where the refe
 
 ### patchDocument
 
-Modify an existing `.docx` template by replacing placeholders:
-
-```json
-// Replace a paragraph placeholder
-{
-  "type": "paragraph",
-  "children": [{ "text": "John Doe" }]
-}
-
-// Replace with block-level content
-{
-  "type": "document",
-  "children": [
-    { "children": [{ "text": "First paragraph" }] },
-    { "children": [{ "text": "Second paragraph" }] }
-  ]
-}
-```
+Modify an existing `.docx` template with ordered, source-preserving commands:
 
 ```ts
 import { patchDocument } from "@office-open/docx";
@@ -529,36 +512,45 @@ import { patchDocument } from "@office-open/docx";
 const result = await patchDocument({
   outputType: "nodebuffer",
   data: templateBuffer,
-  placeholders: {
-    name: { type: "paragraph", children: [{ text: "John Doe" }] },
-    content: {
-      type: "document",
-      children: [{ children: ["First"] }, { children: ["Second"] }],
+  commands: [
+    {
+      type: "replace",
+      at: { field: "sections", route: [{ index: 0 }], text: { placeholder: "name" } },
+      value: "John Doe",
     },
-  },
+    {
+      type: "insert",
+      at: { field: "sections", route: [{ index: 0 }, { collection: "children" }] },
+      position: "end",
+      value: [{ paragraph: { children: ["Appendix"] } }],
+    },
+    {
+      type: "move",
+      at: { field: "sections", route: [{ index: 1 }] },
+      to: "start",
+    },
+  ],
   placeholderDelimiters: { start: "{{", end: "}}" },
-  keepOriginalStyles: true,
-  recursive: true,
 });
 ```
 
-Use `findReplace` for literal text (no delimiters) and `coreProperties` to override `docProps/core.xml`.
+Each command uses `at: { field, route, text }`. `field` is a `DocumentOptions` root field; `route` selects nested nodes by property, index, or native identity; optional `text` selects placeholder or literal text. Failed patches throw a structured `PatchError` with a diagnostic containing `part`, `path`, `operation`, `reason`, and `message`.
 
-| Option                  | Type                             | Default      | Description                                 |
-| ----------------------- | -------------------------------- | ------------ | ------------------------------------------- |
-| `outputType`            | `string`                         | —            | Output format                               |
-| `data`                  | `Buffer \| Uint8Array \| ...`    | —            | Input .docx file                            |
-| `placeholders`          | `Record<string, Patch>`          | —            | Delimiter-wrapped placeholder → patch       |
-| `findReplace`           | `Record<string, Patch>`          | —            | Literal find string → patch                 |
-| `coreProperties`        | `Partial<CorePropertiesOptions>` | —            | Core metadata override                      |
-| `keepOriginalStyles`    | `boolean`                        | `true`       | Preserve original run formatting properties |
-| `placeholderDelimiters` | `{ start, end }`                 | `{ {{, }} }` | Custom delimiters                           |
-| `recursive`             | `boolean`                        | `true`       | Replace all occurrences                     |
+| Option                  | Type                                                     | Default      | Description                     |
+| ----------------------- | -------------------------------------------------------- | ------------ | ------------------------------- |
+| `outputType`            | `string`                                                 | —            | Output format                   |
+| `data`                  | `Buffer \| Uint8Array \| ...`                            | —            | Input .docx file                |
+| `commands`              | `readonly DocumentPatchCommand[]`                        | —            | Ordered source-preserving edits |
+| `packageVariant`        | `"standard" \| "macro" \| "template" \| "macroTemplate"` | `"standard"` | Output package variant          |
+| `placeholderDelimiters` | `{ start, end }`                                         | `{ {{, }} }` | Custom delimiters               |
 
-| Patch type    | Value         | Description                  |
-| ------------- | ------------- | ---------------------------- |
-| `"paragraph"` | `"paragraph"` | Inline run-level replacement |
-| `"document"`  | `"document"`  | Block-level replacement      |
+| Command   | Value field | Purpose                                                    |
+| --------- | ----------- | ---------------------------------------------------------- |
+| `insert`  | `value`     | Add canonical items to an array field or nested collection |
+| `replace` | `value`     | Replace a canonical field/node or selected text            |
+| `update`  | `set`       | Deep-merge object fields; arrays are replaced as a whole   |
+| `remove`  | —           | Remove a canonical node or selected text                   |
+| `move`    | `to`        | Reorder an item in a canonical array                       |
 
 ### patchDetector
 
@@ -567,6 +559,6 @@ Scan a template to discover all placeholder keys:
 ```ts
 import { patchDetector } from "@office-open/docx";
 
-const placeholders = await patchDetector({ data: templateBuffer });
+const placeholderKeys = await patchDetector({ data: templateBuffer });
 // ["name", "title", "content", ...]
 ```

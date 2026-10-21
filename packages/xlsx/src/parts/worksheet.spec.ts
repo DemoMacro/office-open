@@ -230,6 +230,33 @@ describe("Worksheet", () => {
       );
     });
 
+    it("preserves explicit false rich-text run properties", () => {
+      const result = parseSource(
+        `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">` +
+          `<sheetData><row r="1"><c r="A1" t="inlineStr"><is>` +
+          `<r><rPr><b val="0"/><i val="false"/><strike val="0"/></rPr><t>Off</t></r>` +
+          `</is></c></row></sheetData></worksheet>`,
+      );
+      expect(result.rows?.[0]?.cells?.[0]?.value).toMatchObject({
+        runs: [
+          {
+            text: "Off",
+            properties: {
+              bold: false,
+              boldValRaw: "0",
+              italic: false,
+              italicValRaw: "false",
+              strike: false,
+              strikeValRaw: "0",
+            },
+          },
+        ],
+      });
+      expect(buildWorksheetXml(result, {})).toContain(
+        '<r><rPr><b val="0"/><i val="false"/><strike val="0"/></rPr><t>Off</t></r>',
+      );
+    });
+
     it("round-trips non-preserved numeric cell and formula cache lexemes", () => {
       const result = parseSource(
         `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">` +

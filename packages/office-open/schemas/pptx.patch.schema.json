@@ -1,0 +1,1677 @@
+{
+  "$id": "https://cdn.jsdelivr.net/npm/office-open/schemas/pptx.patch.schema.json",
+  "$ref": "#/definitions/PresentationPatchCommand",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "PatchAddress<PresentationPatchField>": {
+      "additionalProperties": false,
+      "description": "Canonical root field plus optional structured route to a nested node.",
+      "properties": {
+        "field": {
+          "$ref": "#/definitions/PresentationPatchField",
+          "description": "Root canonical field, for example `sections`, `slides`, or `worksheets`."
+        },
+        "route": {
+          "description": "Structured canonical route below the field; XML paths are not valid.",
+          "items": {
+            "$ref": "#/definitions/PatchRouteStep"
+          },
+          "type": "array"
+        },
+        "text": {
+          "$ref": "#/definitions/PatchTextSelection",
+          "description": "Select text inside the addressed subtree instead of the node itself."
+        }
+      },
+      "required": ["field"],
+      "type": "object"
+    },
+    "PatchField<PresentationOptions>": {
+      "description": "A canonical field that accepts patch commands.",
+      "enum": [
+        "size",
+        "slideSizeType",
+        "notesWidth",
+        "notesHeight",
+        "encrypted",
+        "masters",
+        "slides",
+        "sections",
+        "show",
+        "includePresentationProperties",
+        "view",
+        "includeHandoutMaster",
+        "includeNotesMaster",
+        "handoutMasterOptions",
+        "notesMasterOptions",
+        "commentAuthors",
+        "commentAuthorsPresent",
+        "tableStyles",
+        "web",
+        "print",
+        "htmlPublish",
+        "serverZoom",
+        "firstSlideNum",
+        "showSpecialPlsOnTitleSld",
+        "rtl",
+        "removePersonalInfoOnSave",
+        "compatMode",
+        "strictFirstAndLastChars",
+        "embedTrueTypeFonts",
+        "saveSubsetFonts",
+        "autoCompressPictures",
+        "bookmarkIdSeed",
+        "conformance",
+        "photoAlbum",
+        "modifyVerifier",
+        "embeddedFonts",
+        "customShows",
+        "customXml",
+        "defaultTextStyle",
+        "kinsoku",
+        "customerData",
+        "tags",
+        "smartTags",
+        "colorMru",
+        "presentationPropertiesExt",
+        "ext",
+        "appProperties",
+        "includeAppProperties",
+        "appPropertiesRelationshipType",
+        "corePropertiesRelationshipType",
+        "presentationRelationshipType",
+        "contentTypes",
+        "customProperties",
+        "rawParts",
+        "passthroughRelationships",
+        "title",
+        "subject",
+        "subjectLanguage",
+        "creator",
+        "keywords",
+        "description",
+        "lastModifiedBy",
+        "revision",
+        "lastPrinted",
+        "created",
+        "createdType",
+        "modified",
+        "modifiedType",
+        "category",
+        "contentStatus",
+        "contentType",
+        "identifier",
+        "language",
+        "publishers",
+        "autoFillers",
+        "sources",
+        "version",
+        "application",
+        "printedBy",
+        "editingDuration",
+        "template",
+        "autoReload",
+        "hyperlinkBehavior",
+        "statistics",
+        "userDefinedProperties",
+        "defaultNamespace",
+        "legacyMicrosoft",
+        "childOrder"
+      ],
+      "type": "string"
+    },
+    "PatchNestedValue<(),never>": {
+      "description": "Any canonical object or nested collection item reachable within six routes.",
+      "not": {}
+    },
+    "PatchNestedValue<()>": {
+      "$ref": "#/definitions/PatchNestedValue%3C()%2Cnever%3E",
+      "description": "Any canonical object or nested collection item reachable within six routes."
+    },
+    "PatchNestedValue<(SlideSize|undefined|(def-alias-1341829136-3512-3754-1341829136-0-6369|undefined)488347959|(number|undefined)1155566516|(number|undefined)2083112455|(def-interface-1547132348-753-1094-1547132348-0-2842892438204|undefined)1941477500|def-interface-364960677-6128-7240-364960677-0-186091467231428[]|def-interface-364960677-8740-12242-364960677-0-18609434691707[]|(def-interface-1341829136-6029-6368-1341829136-0-63692055332289[]|undefined)57866394|ShowOptions|(boolean|undefined)210223845|ViewPropertiesOptions|boolean|HandoutMasterOptions|NotesMasterOptions|(def-interface-364960677-8087-8542-364960677-0-18609[]|undefined)1775913023|(boolean|undefined)90934481|TableStyleListOptions|WebPropertiesOptions|PrintPropertiesOptions|HtmlPublishPropertiesOptions|(number|undefined)286941599|number|(\"strict\"|\"transitional\"|undefined)1630846414|PhotoAlbumOptions|ModifyVerifierOptions|def-interface-1341829136-1719-2037-1341829136-0-6369239933737[]|def-interface-1341829136-2037-2299-1341829136-0-6369552866668[]|(def-interface-1341829136-3014-3512-1341829136-0-63691896424903[]|undefined)1339250922|(string|false|undefined)132586217|def-interface-1341829136-2299-2495-1341829136-0-63691723130120[]|CustomerDataOptions|(def-interface-1341829136-2793-3014-1341829136-0-63691737517352[]|undefined)1481442839|(structure-364960677-16278-16294-364960677-16199-16295-364960677-13260-18608-364960677-0-18609|undefined)377399703|string[]|(string|undefined)2088030316|(string|undefined)725537498|(def-interface-1225316072-851-3139-1225316072-0-13407426754077|undefined)589992171|(boolean|undefined)244190974|(string|undefined)1302705035|(string|undefined)154628323|(string|undefined)73496976|(def-interface-342987153-1346-1858-342987153-0-21071318313257|undefined)2044652370|(def-interface-542791940-479-1413-542791940-0-3566480994065[]|undefined)626417703|(structure-364960677-18285-18340-364960677-18285-18342-364960677-18061-18343-364960677-13260-18608-364960677-0-18609[]|undefined)984370007|(def-interface-1926289697-1519-2284-1926289697-0-13941[]|undefined)717491709|string|(string|undefined)224214605|(number|null|undefined)1757053720|(string|null|undefined)588053656|(string|false|undefined)1736812168|(string|null|undefined)323831087|(string|false|undefined)758243595|(string|undefined)619337124|(string|undefined)3920205|(string|undefined)1427399219|(string|undefined)19099165|(string|undefined)1487903223|(string[]|undefined)724890049|(string[]|undefined)2143604175|(string[]|undefined)1992445651|(string|undefined)1475815121|(string|undefined)227398142|(string|undefined)2114428161|(def-interface-2073763800-3651-3894-2073763800-0-17693723985410|undefined)1169649406|(def-interface-2073763800-3894-4098-2073763800-0-17693180744250|undefined)1537047498|(def-interface-2073763800-4098-4297-2073763800-0-17693567980079|undefined)2147391045|(def-interface-2073763800-4297-4438-2073763800-0-17693657709645|undefined)657709645|(def-interface-2073763800-4438-4899-2073763800-0-176931056641307|undefined)674278348|(def-alias-2073763800-4899-5346-2073763800-0-17693145316076[]|undefined)891899200|(true|undefined)1229412021|(true|undefined)26140217|(alias-2073763800-5463-5747-2073763800-0-17693[]|undefined)1711184389)>": {
+      "anyOf": [
+        {
+          "$ref": "pptx.schema.json#/definitions/SlideSize/anyOf/2"
+        },
+        {
+          "$ref": "pptx.schema.json#/definitions/EncryptedContainerOptions"
+        },
+        {
+          "$ref": "pptx.schema.json#/definitions/ShowOptions"
+        },
+        {
+          "$ref": "pptx.schema.json#/definitions/ViewPropertiesOptions"
+        },
+        {
+          "$ref": "pptx.schema.json#/definitions/HandoutMasterOptions"
+        },
+        {
+          "$ref": "pptx.schema.json#/definitions/NotesMasterOptions"
+        },
+        {
+          "$ref": "pptx.schema.json#/definitions/TableStyleListOptions"
+        },
+        {
+          "$ref": "pptx.schema.json#/definitions/WebPropertiesOptions"
+        },
+        {
+          "$ref": "pptx.schema.json#/definitions/PrintPropertiesOptions"
+        },
+        {
+          "$ref": "pptx.schema.json#/definitions/HtmlPublishPropertiesOptions"
+        },
+        {
+          "$ref": "pptx.schema.json#/definitions/PhotoAlbumOptions"
+        },
+        {
+          "$ref": "pptx.schema.json#/definitions/ModifyVerifierOptions"
+        },
+        {
+          "$ref": "pptx.schema.json#/definitions/CustomerDataOptions"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "rId": {
+              "type": "string"
+            }
+          },
+          "required": ["rId"],
+          "title": "rId",
+          "type": "object"
+        },
+        {
+          "$ref": "pptx.schema.json#/definitions/AppPropertiesOptions"
+        },
+        {
+          "$ref": "pptx.schema.json#/definitions/ContentTypesInput"
+        },
+        {
+          "$ref": "pptx.schema.json#/definitions/CalendarDurationOptions"
+        },
+        {
+          "$ref": "pptx.schema.json#/definitions/DocumentTemplateOptions"
+        },
+        {
+          "$ref": "pptx.schema.json#/definitions/AutoReloadOptions"
+        },
+        {
+          "$ref": "pptx.schema.json#/definitions/HyperlinkBehaviorOptions"
+        },
+        {
+          "$ref": "pptx.schema.json#/definitions/DocumentStatisticsOptions"
+        }
+      ],
+      "description": "Any canonical object or nested collection item reachable within six routes."
+    },
+    "PatchNodeAddress<PresentationPatchField>": {
+      "additionalProperties": false,
+      "description": "Address a canonical node rather than a text selection.",
+      "properties": {
+        "field": {
+          "$ref": "#/definitions/PatchAddress%3CPresentationPatchField%3E/properties/field"
+        },
+        "route": {
+          "$ref": "#/definitions/PatchAddress%3CPresentationPatchField%3E/properties/route"
+        },
+        "text": {
+          "description": "Must remain absent when addressing a canonical node.",
+          "not": {}
+        }
+      },
+      "required": ["field"],
+      "type": "object"
+    },
+    "PatchPathStep": {
+      "description": "A canonical property name or array index used below a patch field.",
+      "type": ["string", "number"]
+    },
+    "PatchPosition": {
+      "anyOf": [
+        {
+          "const": "start",
+          "type": "string"
+        },
+        {
+          "const": "end",
+          "type": "string"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "before": {
+              "$ref": "#/definitions/PatchRouteStep"
+            }
+          },
+          "required": ["before"],
+          "title": "before",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "after": {
+              "$ref": "#/definitions/PatchRouteStep"
+            }
+          },
+          "required": ["after"],
+          "title": "after",
+          "type": "object"
+        }
+      ],
+      "description": "Insertion or move destination inside an array."
+    },
+    "PatchPropertyPath": {
+      "description": "A property path used by `update.unset`.",
+      "items": {
+        "$ref": "#/definitions/PatchPathStep"
+      },
+      "type": "array"
+    },
+    "PatchRouteStep": {
+      "anyOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "property": {
+              "type": "string"
+            }
+          },
+          "required": ["property"],
+          "title": "property",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "collection": {
+              "type": "string"
+            }
+          },
+          "required": ["collection"],
+          "title": "collection",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "index": {
+              "type": "number"
+            }
+          },
+          "required": ["index"],
+          "title": "index",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "type": ["string", "number"]
+            }
+          },
+          "required": ["id"],
+          "title": "id",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "type": "string"
+            }
+          },
+          "required": ["name"],
+          "title": "name",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "reference": {
+              "type": "string"
+            }
+          },
+          "required": ["reference"],
+          "title": "reference",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "address": {
+              "type": "string"
+            }
+          },
+          "required": ["address"],
+          "title": "address",
+          "type": "object"
+        }
+      ],
+      "description": "One canonical-tree hop from the selected root field."
+    },
+    "PatchTextAddress<PresentationPatchField>": {
+      "additionalProperties": false,
+      "description": "Address a text selection inside a canonical subtree.",
+      "properties": {
+        "field": {
+          "$ref": "#/definitions/PatchAddress%3CPresentationPatchField%3E/properties/field"
+        },
+        "route": {
+          "$ref": "#/definitions/PatchAddress%3CPresentationPatchField%3E/properties/route"
+        },
+        "text": {
+          "$ref": "#/definitions/PatchTextSelection",
+          "description": "Select text inside the addressed subtree."
+        }
+      },
+      "required": ["field", "text"],
+      "type": "object"
+    },
+    "PatchTextSelection": {
+      "anyOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "all": {
+              "type": "boolean"
+            },
+            "literal": {
+              "type": "string"
+            }
+          },
+          "required": ["literal"],
+          "title": "literal",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "all": {
+              "type": "boolean"
+            },
+            "placeholder": {
+              "type": "string"
+            }
+          },
+          "required": ["placeholder"],
+          "title": "placeholder",
+          "type": "object"
+        }
+      ],
+      "description": "Text selected inside the canonical subtree reached by the address."
+    },
+    "PresentationPatchCommand": {
+      "anyOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "at": {
+              "$ref": "#/definitions/PatchAddress%3CPresentationPatchField%3E"
+            },
+            "position": {
+              "$ref": "#/definitions/PatchPosition"
+            },
+            "type": {
+              "const": "insert",
+              "type": "string"
+            },
+            "value": {
+              "items": {
+                "$ref": "#/definitions/PresentationPatchInsertValue"
+              },
+              "type": "array"
+            }
+          },
+          "required": ["type", "at", "value"],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "at": {
+              "$ref": "#/definitions/PatchNodeAddress%3CPresentationPatchField%3E"
+            },
+            "type": {
+              "const": "replace",
+              "type": "string"
+            },
+            "value": {
+              "anyOf": [
+                {
+                  "$ref": "pptx.schema.json#/definitions/SlideSize"
+                },
+                {
+                  "$ref": "pptx.schema.json#/definitions/SlideSizeType",
+                  "description": "Slide size class (`p:sldSz/@type`); cx/cy decide actual size."
+                },
+                {
+                  "description": "Notes page width in EMU (`p:notesSz/@cx`, default 6858000).",
+                  "type": "number"
+                },
+                {
+                  "description": "Notes page height in EMU (`p:notesSz/@cy`, default 9144000).",
+                  "type": "number"
+                },
+                {
+                  "$ref": "pptx.schema.json#/definitions/EncryptedContainerOptions",
+                  "description": "Source file is an encrypted OOXML package (OLE2/CFB). Round-trip only: original bytes carried verbatim and re-emitted unchanged; every other field stays empty — mixing slides is rejected.",
+                  "readOnly": true
+                },
+                {
+                  "items": {
+                    "$ref": "pptx.schema.json#/definitions/MasterDefinition"
+                  },
+                  "type": "array"
+                },
+                {
+                  "items": {
+                    "$ref": "pptx.schema.json#/definitions/SlideOptions"
+                  },
+                  "type": "array"
+                },
+                {
+                  "description": "Explicit slide sections; parsed sources preserve order, ids, and empty sections.",
+                  "items": {
+                    "$ref": "pptx.schema.json#/definitions/PresentationSectionGroup"
+                  },
+                  "type": "array"
+                },
+                {
+                  "$ref": "pptx.schema.json#/definitions/ShowOptions"
+                },
+                {
+                  "description": "Preserve an empty ppt/presProps.xml part; parsed sources set this to true.",
+                  "type": "boolean"
+                },
+                {
+                  "$ref": "pptx.schema.json#/definitions/ViewPropertiesOptions"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "$ref": "pptx.schema.json#/definitions/HandoutMasterOptions"
+                },
+                {
+                  "$ref": "pptx.schema.json#/definitions/NotesMasterOptions"
+                },
+                {
+                  "description": "Canonical author list backing ppt/commentAuthors.xml; parsed sources preserve ids and extensions.",
+                  "items": {
+                    "$ref": "pptx.schema.json#/definitions/CommentAuthorOptions"
+                  },
+                  "type": "array"
+                },
+                {
+                  "description": "Source package declared ppt/commentAuthors.xml, even when its author list is empty.",
+                  "type": "boolean"
+                },
+                {
+                  "$ref": "pptx.schema.json#/definitions/TableStyleListOptions"
+                },
+                {
+                  "$ref": "pptx.schema.json#/definitions/WebPropertiesOptions"
+                },
+                {
+                  "$ref": "pptx.schema.json#/definitions/PrintPropertiesOptions"
+                },
+                {
+                  "$ref": "pptx.schema.json#/definitions/HtmlPublishPropertiesOptions"
+                },
+                {
+                  "description": "Server zoom in percent (p:presentation/@serverZoom).",
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "description": "Package dialect to emit: ISO strict or transitional namespace set (round-trips a strict source).",
+                  "enum": ["strict", "transitional"],
+                  "type": "string"
+                },
+                {
+                  "$ref": "pptx.schema.json#/definitions/PhotoAlbumOptions"
+                },
+                {
+                  "$ref": "pptx.schema.json#/definitions/ModifyVerifierOptions"
+                },
+                {
+                  "items": {
+                    "$ref": "pptx.schema.json#/definitions/EmbeddedFontOptions"
+                  },
+                  "type": "array"
+                },
+                {
+                  "items": {
+                    "$ref": "pptx.schema.json#/definitions/CustomShowOptions"
+                  },
+                  "type": "array"
+                },
+                {
+                  "description": "OPC custom-XML items (customXml/itemN.xml plus optional itemPropsN.xml).",
+                  "items": {
+                    "$ref": "pptx.schema.json#/definitions/CustomXmlItemOptions"
+                  },
+                  "type": "array"
+                },
+                {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "const": false,
+                      "type": "boolean"
+                    }
+                  ],
+                  "description": "Default text style (p:defaultTextStyle) as raw inner XML. Fresh emits PowerPoint's default 9-level style; a parsed source preserves its value; false omits the element."
+                },
+                {
+                  "items": {
+                    "$ref": "pptx.schema.json#/definitions/KinsokuOptions"
+                  },
+                  "type": "array"
+                },
+                {
+                  "$ref": "pptx.schema.json#/definitions/CustomerDataOptions"
+                },
+                {
+                  "description": "User-defined tags parts (ppt/tags/tagsN.xml); compiler wires the presentation-owned reference.",
+                  "items": {
+                    "$ref": "pptx.schema.json#/definitions/TagPartOptions"
+                  },
+                  "type": "array"
+                },
+                {
+                  "additionalProperties": false,
+                  "description": "Smart tags (p:smartTags) — r:id to the smart-tags part.",
+                  "properties": {
+                    "rId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["rId"],
+                  "title": "rId",
+                  "type": "object"
+                },
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "description": "Verbatim inner XML of p:presentationPr's p:extLst (presProps extensions) — round-trip channel: captured from a parsed source; do not hand-author.",
+                  "type": "string"
+                },
+                {
+                  "description": "Raw `<p:ext>` entries of ppt/presentation.xml's trailing extLst outside the modeled sectionLst extension (e.g. p15:sldGuideLst) — verbatim round-trip, do not hand-author. Same slot as SlideOptions.ext.",
+                  "type": "string"
+                },
+                {
+                  "$ref": "pptx.schema.json#/definitions/AppPropertiesOptions",
+                  "description": "Extended properties (docProps/app.xml)"
+                },
+                {
+                  "description": "Preserve a source package's docProps/app.xml presence, even when empty.",
+                  "type": "boolean"
+                },
+                {
+                  "description": "Root relationship Type for docProps/app.xml; preserved for non-canonical producers. Round-trip only — do not hand-author.",
+                  "readOnly": true,
+                  "type": "string"
+                },
+                {
+                  "description": "Root relationship Type for docProps/core.xml; preserved for non-canonical producers. Round-trip only — do not hand-author.",
+                  "readOnly": true,
+                  "type": "string"
+                },
+                {
+                  "description": "Root relationship Type for the primary presentation part; preserved for non-canonical producers. Round-trip only — do not hand-author.",
+                  "readOnly": true,
+                  "type": "string"
+                },
+                {
+                  "$ref": "pptx.schema.json#/definitions/ContentTypesInput",
+                  "description": "Content types from the source [Content_Types].xml (round-trip only). Present, generate() keeps the source Default/Override entries as the base declaration table and derives only what they leave uncovered.",
+                  "readOnly": true
+                },
+                {
+                  "description": "Custom properties (docProps/custom.xml). Round-trip is presence-based: a source part round-trips even when it carries no properties; fresh documents omit the field (and the part) entirely.",
+                  "items": {
+                    "$ref": "pptx.schema.json#/definitions/CustomPropertyOptions"
+                  },
+                  "type": "array"
+                },
+                {
+                  "description": "Parts generate() does not rebuild (handout masters, customXml, unknown extension parts), carried verbatim from a parsed source with bytes and content-type intact — do not hand-author.",
+                  "items": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "contentType": {
+                        "type": "string"
+                      },
+                      "data": {
+                        "$ref": "pptx.schema.json#/definitions/DataType"
+                      },
+                      "path": {
+                        "type": "string"
+                      }
+                    },
+                    "required": ["path", "data"],
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                {
+                  "description": "Source .rels relationships from rebuilt parts that point at rawParts (e.g. presentation.xml → handoutMaster). Re-emitted verbatim, fresh rId. Round-trip only — do not hand-author.",
+                  "items": {
+                    "$ref": "pptx.schema.json#/definitions/PassthroughRelationship"
+                  },
+                  "readOnly": true,
+                  "type": "array"
+                },
+                {
+                  "type": "string"
+                },
+                {
+                  "description": "Subject XML language attribute; round-trip only.",
+                  "readOnly": true,
+                  "type": "string"
+                },
+                {
+                  "description": "Revision number (cp:revision). null preserves a source element with empty text; undefined omits the element on fresh authoring.",
+                  "type": ["number", "null"]
+                },
+                {
+                  "description": "Creation timestamp (W3CDTF), round-tripped from dcterms:created. null = the source core.xml carried none — emit nothing; undefined (fresh) = default to now.",
+                  "type": ["string", "null"]
+                },
+                {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "const": false,
+                      "type": "boolean"
+                    }
+                  ],
+                  "description": "Created xsi:type; false preserves absence, undefined uses W3CDTF."
+                },
+                {
+                  "description": "Last modified timestamp (W3CDTF); same null/undefined semantics as the created field.",
+                  "type": ["string", "null"]
+                },
+                {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "const": false,
+                      "type": "boolean"
+                    }
+                  ],
+                  "description": "Modified xsi:type; false preserves absence, undefined uses W3CDTF."
+                },
+                {
+                  "description": "Document category, round-tripped from cp:category.",
+                  "type": "string"
+                },
+                {
+                  "description": "Document status (e.g. \"Draft\"), round-tripped from cp:contentStatus.",
+                  "type": "string"
+                },
+                {
+                  "description": "Content type (e.g. \"Document\"), round-tripped from cp:contentType.",
+                  "type": "string"
+                },
+                {
+                  "description": "Unique document identifier, round-tripped from dc:identifier.",
+                  "type": "string"
+                },
+                {
+                  "description": "Document language (RFC 3066), round-tripped from dc:language.",
+                  "type": "string"
+                },
+                {
+                  "description": "Publisher names, in source order; ODF stores repeatable dc:publisher values.",
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "description": "ODF/LibreOffice auto-filler names, in source order.",
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "description": "Source references, in source order; ODF stores repeatable dc:source values.",
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "description": "Document version number, round-tripped from cp:version.",
+                  "type": "string"
+                },
+                {
+                  "description": "Generating application name, round-tripped from ODF meta:generator.",
+                  "type": "string"
+                },
+                {
+                  "description": "Printed-by name, round-tripped from ODF meta:printed-by.",
+                  "type": "string"
+                },
+                {
+                  "$ref": "pptx.schema.json#/definitions/CalendarDurationOptions",
+                  "description": "Editing duration expressed with explicit calendar components."
+                },
+                {
+                  "$ref": "pptx.schema.json#/definitions/DocumentTemplateOptions",
+                  "description": "ODF document template reference."
+                },
+                {
+                  "$ref": "pptx.schema.json#/definitions/AutoReloadOptions",
+                  "description": "ODF automatic document reload behavior."
+                },
+                {
+                  "$ref": "pptx.schema.json#/definitions/HyperlinkBehaviorOptions",
+                  "description": "ODF hyperlink target behavior."
+                },
+                {
+                  "$ref": "pptx.schema.json#/definitions/DocumentStatisticsOptions",
+                  "description": "ODF document statistics."
+                },
+                {
+                  "description": "ODF user-defined properties, in source order.",
+                  "items": {
+                    "$ref": "pptx.schema.json#/definitions/UserDefinedMetadataOptions"
+                  },
+                  "type": "array"
+                },
+                {
+                  "const": true,
+                  "description": "Emit the core-properties vocabulary as the default namespace — the ISO strict binding, where the source root is `<coreProperties xmlns=…>` and cp:-prefixed children appear prefix-less (dc:/dcterms: keep their prefixes). Round-trip only.",
+                  "readOnly": true,
+                  "type": "boolean"
+                },
+                {
+                  "const": true,
+                  "description": "Legacy Microsoft core-property root/element spelling; round-trip only.",
+                  "readOnly": true,
+                  "type": "boolean"
+                },
+                {
+                  "description": "Source child order as canonical field keys; round-trip only.",
+                  "items": {
+                    "enum": [
+                      "title",
+                      "subject",
+                      "creator",
+                      "keywords",
+                      "description",
+                      "lastModifiedBy",
+                      "lastPrinted",
+                      "revision",
+                      "created",
+                      "modified",
+                      "category",
+                      "contentStatus",
+                      "contentType",
+                      "identifier",
+                      "language",
+                      "version"
+                    ],
+                    "type": "string"
+                  },
+                  "readOnly": true,
+                  "type": "array"
+                },
+                {
+                  "$ref": "#/definitions/PatchNestedValue%3C(SlideSize%7Cundefined%7C(def-alias-1341829136-3512-3754-1341829136-0-6369%7Cundefined)488347959%7C(number%7Cundefined)1155566516%7C(number%7Cundefined)2083112455%7C(def-interface-1547132348-753-1094-1547132348-0-2842892438204%7Cundefined)1941477500%7Cdef-interface-364960677-6128-7240-364960677-0-186091467231428%5B%5D%7Cdef-interface-364960677-8740-12242-364960677-0-18609434691707%5B%5D%7C(def-interface-1341829136-6029-6368-1341829136-0-63692055332289%5B%5D%7Cundefined)57866394%7CShowOptions%7C(boolean%7Cundefined)210223845%7CViewPropertiesOptions%7Cboolean%7CHandoutMasterOptions%7CNotesMasterOptions%7C(def-interface-364960677-8087-8542-364960677-0-18609%5B%5D%7Cundefined)1775913023%7C(boolean%7Cundefined)90934481%7CTableStyleListOptions%7CWebPropertiesOptions%7CPrintPropertiesOptions%7CHtmlPublishPropertiesOptions%7C(number%7Cundefined)286941599%7Cnumber%7C(%22strict%22%7C%22transitional%22%7Cundefined)1630846414%7CPhotoAlbumOptions%7CModifyVerifierOptions%7Cdef-interface-1341829136-1719-2037-1341829136-0-6369239933737%5B%5D%7Cdef-interface-1341829136-2037-2299-1341829136-0-6369552866668%5B%5D%7C(def-interface-1341829136-3014-3512-1341829136-0-63691896424903%5B%5D%7Cundefined)1339250922%7C(string%7Cfalse%7Cundefined)132586217%7Cdef-interface-1341829136-2299-2495-1341829136-0-63691723130120%5B%5D%7CCustomerDataOptions%7C(def-interface-1341829136-2793-3014-1341829136-0-63691737517352%5B%5D%7Cundefined)1481442839%7C(structure-364960677-16278-16294-364960677-16199-16295-364960677-13260-18608-364960677-0-18609%7Cundefined)377399703%7Cstring%5B%5D%7C(string%7Cundefined)2088030316%7C(string%7Cundefined)725537498%7C(def-interface-1225316072-851-3139-1225316072-0-13407426754077%7Cundefined)589992171%7C(boolean%7Cundefined)244190974%7C(string%7Cundefined)1302705035%7C(string%7Cundefined)154628323%7C(string%7Cundefined)73496976%7C(def-interface-342987153-1346-1858-342987153-0-21071318313257%7Cundefined)2044652370%7C(def-interface-542791940-479-1413-542791940-0-3566480994065%5B%5D%7Cundefined)626417703%7C(structure-364960677-18285-18340-364960677-18285-18342-364960677-18061-18343-364960677-13260-18608-364960677-0-18609%5B%5D%7Cundefined)984370007%7C(def-interface-1926289697-1519-2284-1926289697-0-13941%5B%5D%7Cundefined)717491709%7Cstring%7C(string%7Cundefined)224214605%7C(number%7Cnull%7Cundefined)1757053720%7C(string%7Cnull%7Cundefined)588053656%7C(string%7Cfalse%7Cundefined)1736812168%7C(string%7Cnull%7Cundefined)323831087%7C(string%7Cfalse%7Cundefined)758243595%7C(string%7Cundefined)619337124%7C(string%7Cundefined)3920205%7C(string%7Cundefined)1427399219%7C(string%7Cundefined)19099165%7C(string%7Cundefined)1487903223%7C(string%5B%5D%7Cundefined)724890049%7C(string%5B%5D%7Cundefined)2143604175%7C(string%5B%5D%7Cundefined)1992445651%7C(string%7Cundefined)1475815121%7C(string%7Cundefined)227398142%7C(string%7Cundefined)2114428161%7C(def-interface-2073763800-3651-3894-2073763800-0-17693723985410%7Cundefined)1169649406%7C(def-interface-2073763800-3894-4098-2073763800-0-17693180744250%7Cundefined)1537047498%7C(def-interface-2073763800-4098-4297-2073763800-0-17693567980079%7Cundefined)2147391045%7C(def-interface-2073763800-4297-4438-2073763800-0-17693657709645%7Cundefined)657709645%7C(def-interface-2073763800-4438-4899-2073763800-0-176931056641307%7Cundefined)674278348%7C(def-alias-2073763800-4899-5346-2073763800-0-17693145316076%5B%5D%7Cundefined)891899200%7C(true%7Cundefined)1229412021%7C(true%7Cundefined)26140217%7C(alias-2073763800-5463-5747-2073763800-0-17693%5B%5D%7Cundefined)1711184389)%3E"
+                }
+              ]
+            }
+          },
+          "required": ["type", "at"],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "at": {
+              "$ref": "#/definitions/PatchTextAddress%3CPresentationPatchField%3E"
+            },
+            "type": {
+              "const": "replace",
+              "type": "string"
+            },
+            "value": {
+              "type": "string"
+            }
+          },
+          "required": ["type", "at", "value"],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "at": {
+              "$ref": "#/definitions/PatchNodeAddress%3CPresentationPatchField%3E"
+            },
+            "set": {
+              "$ref": "#/definitions/PresentationPatchUpdateValue"
+            },
+            "type": {
+              "const": "update",
+              "type": "string"
+            },
+            "unset": {
+              "$ref": "#/definitions/PatchPropertyPath"
+            }
+          },
+          "required": ["type", "at"],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "at": {
+              "$ref": "#/definitions/PatchNodeAddress%3CPresentationPatchField%3E"
+            },
+            "type": {
+              "const": "remove",
+              "type": "string"
+            }
+          },
+          "required": ["type", "at"],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "at": {
+              "$ref": "#/definitions/PatchTextAddress%3CPresentationPatchField%3E"
+            },
+            "type": {
+              "const": "remove",
+              "type": "string"
+            }
+          },
+          "required": ["type", "at"],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "at": {
+              "$ref": "#/definitions/PatchNodeAddress%3CPresentationPatchField%3E"
+            },
+            "to": {
+              "$ref": "#/definitions/PatchPosition"
+            },
+            "type": {
+              "const": "move",
+              "type": "string"
+            }
+          },
+          "required": ["type", "at", "to"],
+          "type": "object"
+        }
+      ],
+      "description": "One ordered canonical PPTX edit."
+    },
+    "PresentationPatchField": {
+      "$ref": "#/definitions/PatchField%3CPresentationOptions%3E",
+      "description": "Canonical root fields addressable by a PPTX patch command."
+    },
+    "PresentationPatchInsertValue": {
+      "$ref": "#/definitions/PatchNestedValue%3C()%3E",
+      "description": "Canonical item that can be inserted into a PPTX collection field."
+    },
+    "PresentationPatchUpdateValue": {
+      "$ref": "#/definitions/PresentationPatchValue",
+      "description": "Canonical partial value accepted by a PPTX update command."
+    },
+    "PresentationPatchValue": {
+      "anyOf": [
+        {
+          "$ref": "pptx.schema.json#/definitions/SlideSize"
+        },
+        {
+          "not": {}
+        },
+        {
+          "anyOf": [
+            {
+              "$ref": "pptx.schema.json#/definitions/SlideSizeType"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Slide size class (`p:sldSz/@type`); cx/cy decide actual size."
+        },
+        {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Notes page width in EMU (`p:notesSz/@cx`, default 6858000)."
+        },
+        {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Notes page height in EMU (`p:notesSz/@cy`, default 9144000)."
+        },
+        {
+          "anyOf": [
+            {
+              "$ref": "pptx.schema.json#/definitions/EncryptedContainerOptions"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Source file is an encrypted OOXML package (OLE2/CFB). Round-trip only: original bytes carried verbatim and re-emitted unchanged; every other field stays empty — mixing slides is rejected.",
+          "readOnly": true
+        },
+        {
+          "items": {
+            "$ref": "pptx.schema.json#/definitions/MasterDefinition"
+          },
+          "type": "array"
+        },
+        {
+          "items": {
+            "$ref": "pptx.schema.json#/definitions/SlideOptions"
+          },
+          "type": "array"
+        },
+        {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "pptx.schema.json#/definitions/PresentationSectionGroup"
+              },
+              "type": "array"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Explicit slide sections; parsed sources preserve order, ids, and empty sections."
+        },
+        {
+          "$ref": "pptx.schema.json#/definitions/ShowOptions"
+        },
+        {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Preserve an empty ppt/presProps.xml part; parsed sources set this to true."
+        },
+        {
+          "$ref": "pptx.schema.json#/definitions/ViewPropertiesOptions"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "$ref": "pptx.schema.json#/definitions/HandoutMasterOptions"
+        },
+        {
+          "$ref": "pptx.schema.json#/definitions/NotesMasterOptions"
+        },
+        {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "pptx.schema.json#/definitions/CommentAuthorOptions"
+              },
+              "type": "array"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Canonical author list backing ppt/commentAuthors.xml; parsed sources preserve ids and extensions."
+        },
+        {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Source package declared ppt/commentAuthors.xml, even when its author list is empty."
+        },
+        {
+          "$ref": "pptx.schema.json#/definitions/TableStyleListOptions"
+        },
+        {
+          "$ref": "pptx.schema.json#/definitions/WebPropertiesOptions"
+        },
+        {
+          "$ref": "pptx.schema.json#/definitions/PrintPropertiesOptions"
+        },
+        {
+          "$ref": "pptx.schema.json#/definitions/HtmlPublishPropertiesOptions"
+        },
+        {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Server zoom in percent (p:presentation/@serverZoom)."
+        },
+        {
+          "type": "number"
+        },
+        {
+          "anyOf": [
+            {
+              "const": "strict",
+              "type": "string"
+            },
+            {
+              "const": "transitional",
+              "type": "string"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Package dialect to emit: ISO strict or transitional namespace set (round-trips a strict source)."
+        },
+        {
+          "$ref": "pptx.schema.json#/definitions/PhotoAlbumOptions"
+        },
+        {
+          "$ref": "pptx.schema.json#/definitions/ModifyVerifierOptions"
+        },
+        {
+          "items": {
+            "$ref": "pptx.schema.json#/definitions/EmbeddedFontOptions"
+          },
+          "type": "array"
+        },
+        {
+          "items": {
+            "$ref": "pptx.schema.json#/definitions/CustomShowOptions"
+          },
+          "type": "array"
+        },
+        {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "pptx.schema.json#/definitions/CustomXmlItemOptions"
+              },
+              "type": "array"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "OPC custom-XML items (customXml/itemN.xml plus optional itemPropsN.xml)."
+        },
+        {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "const": false,
+              "type": "boolean"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Default text style (p:defaultTextStyle) as raw inner XML. Fresh emits PowerPoint's default 9-level style; a parsed source preserves its value; false omits the element."
+        },
+        {
+          "items": {
+            "$ref": "pptx.schema.json#/definitions/KinsokuOptions"
+          },
+          "type": "array"
+        },
+        {
+          "$ref": "pptx.schema.json#/definitions/CustomerDataOptions"
+        },
+        {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "pptx.schema.json#/definitions/TagPartOptions"
+              },
+              "type": "array"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "User-defined tags parts (ppt/tags/tagsN.xml); compiler wires the presentation-owned reference."
+        },
+        {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PatchNestedValue%3C(SlideSize%7Cundefined%7C(def-alias-1341829136-3512-3754-1341829136-0-6369%7Cundefined)488347959%7C(number%7Cundefined)1155566516%7C(number%7Cundefined)2083112455%7C(def-interface-1547132348-753-1094-1547132348-0-2842892438204%7Cundefined)1941477500%7Cdef-interface-364960677-6128-7240-364960677-0-186091467231428%5B%5D%7Cdef-interface-364960677-8740-12242-364960677-0-18609434691707%5B%5D%7C(def-interface-1341829136-6029-6368-1341829136-0-63692055332289%5B%5D%7Cundefined)57866394%7CShowOptions%7C(boolean%7Cundefined)210223845%7CViewPropertiesOptions%7Cboolean%7CHandoutMasterOptions%7CNotesMasterOptions%7C(def-interface-364960677-8087-8542-364960677-0-18609%5B%5D%7Cundefined)1775913023%7C(boolean%7Cundefined)90934481%7CTableStyleListOptions%7CWebPropertiesOptions%7CPrintPropertiesOptions%7CHtmlPublishPropertiesOptions%7C(number%7Cundefined)286941599%7Cnumber%7C(%22strict%22%7C%22transitional%22%7Cundefined)1630846414%7CPhotoAlbumOptions%7CModifyVerifierOptions%7Cdef-interface-1341829136-1719-2037-1341829136-0-6369239933737%5B%5D%7Cdef-interface-1341829136-2037-2299-1341829136-0-6369552866668%5B%5D%7C(def-interface-1341829136-3014-3512-1341829136-0-63691896424903%5B%5D%7Cundefined)1339250922%7C(string%7Cfalse%7Cundefined)132586217%7Cdef-interface-1341829136-2299-2495-1341829136-0-63691723130120%5B%5D%7CCustomerDataOptions%7C(def-interface-1341829136-2793-3014-1341829136-0-63691737517352%5B%5D%7Cundefined)1481442839%7C(structure-364960677-16278-16294-364960677-16199-16295-364960677-13260-18608-364960677-0-18609%7Cundefined)377399703%7Cstring%5B%5D%7C(string%7Cundefined)2088030316%7C(string%7Cundefined)725537498%7C(def-interface-1225316072-851-3139-1225316072-0-13407426754077%7Cundefined)589992171%7C(boolean%7Cundefined)244190974%7C(string%7Cundefined)1302705035%7C(string%7Cundefined)154628323%7C(string%7Cundefined)73496976%7C(def-interface-342987153-1346-1858-342987153-0-21071318313257%7Cundefined)2044652370%7C(def-interface-542791940-479-1413-542791940-0-3566480994065%5B%5D%7Cundefined)626417703%7C(structure-364960677-18285-18340-364960677-18285-18342-364960677-18061-18343-364960677-13260-18608-364960677-0-18609%5B%5D%7Cundefined)984370007%7C(def-interface-1926289697-1519-2284-1926289697-0-13941%5B%5D%7Cundefined)717491709%7Cstring%7C(string%7Cundefined)224214605%7C(number%7Cnull%7Cundefined)1757053720%7C(string%7Cnull%7Cundefined)588053656%7C(string%7Cfalse%7Cundefined)1736812168%7C(string%7Cnull%7Cundefined)323831087%7C(string%7Cfalse%7Cundefined)758243595%7C(string%7Cundefined)619337124%7C(string%7Cundefined)3920205%7C(string%7Cundefined)1427399219%7C(string%7Cundefined)19099165%7C(string%7Cundefined)1487903223%7C(string%5B%5D%7Cundefined)724890049%7C(string%5B%5D%7Cundefined)2143604175%7C(string%5B%5D%7Cundefined)1992445651%7C(string%7Cundefined)1475815121%7C(string%7Cundefined)227398142%7C(string%7Cundefined)2114428161%7C(def-interface-2073763800-3651-3894-2073763800-0-17693723985410%7Cundefined)1169649406%7C(def-interface-2073763800-3894-4098-2073763800-0-17693180744250%7Cundefined)1537047498%7C(def-interface-2073763800-4098-4297-2073763800-0-17693567980079%7Cundefined)2147391045%7C(def-interface-2073763800-4297-4438-2073763800-0-17693657709645%7Cundefined)657709645%7C(def-interface-2073763800-4438-4899-2073763800-0-176931056641307%7Cundefined)674278348%7C(def-alias-2073763800-4899-5346-2073763800-0-17693145316076%5B%5D%7Cundefined)891899200%7C(true%7Cundefined)1229412021%7C(true%7Cundefined)26140217%7C(alias-2073763800-5463-5747-2073763800-0-17693%5B%5D%7Cundefined)1711184389)%3E/anyOf/13"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Smart tags (p:smartTags) — r:id to the smart-tags part."
+        },
+        {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Verbatim inner XML of p:presentationPr's p:extLst (presProps extensions) — round-trip channel: captured from a parsed source; do not hand-author."
+        },
+        {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Raw `<p:ext>` entries of ppt/presentation.xml's trailing extLst outside the modeled sectionLst extension (e.g. p15:sldGuideLst) — verbatim round-trip, do not hand-author. Same slot as SlideOptions.ext."
+        },
+        {
+          "anyOf": [
+            {
+              "$ref": "pptx.schema.json#/definitions/AppPropertiesOptions"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Extended properties (docProps/app.xml)"
+        },
+        {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Preserve a source package's docProps/app.xml presence, even when empty."
+        },
+        {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Root relationship Type for docProps/app.xml; preserved for non-canonical producers. Round-trip only — do not hand-author.",
+          "readOnly": true
+        },
+        {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Root relationship Type for docProps/core.xml; preserved for non-canonical producers. Round-trip only — do not hand-author.",
+          "readOnly": true
+        },
+        {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Root relationship Type for the primary presentation part; preserved for non-canonical producers. Round-trip only — do not hand-author.",
+          "readOnly": true
+        },
+        {
+          "anyOf": [
+            {
+              "$ref": "pptx.schema.json#/definitions/ContentTypesInput"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Content types from the source [Content_Types].xml (round-trip only). Present, generate() keeps the source Default/Override entries as the base declaration table and derives only what they leave uncovered.",
+          "readOnly": true
+        },
+        {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "pptx.schema.json#/definitions/CustomPropertyOptions"
+              },
+              "type": "array"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Custom properties (docProps/custom.xml). Round-trip is presence-based: a source part round-trips even when it carries no properties; fresh documents omit the field (and the part) entirely."
+        },
+        {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/definitions/PresentationPatchCommand/anyOf/1/properties/value/anyOf/43/items"
+              },
+              "type": "array"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Parts generate() does not rebuild (handout masters, customXml, unknown extension parts), carried verbatim from a parsed source with bytes and content-type intact — do not hand-author."
+        },
+        {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "pptx.schema.json#/definitions/PassthroughRelationship"
+              },
+              "type": "array"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Source .rels relationships from rebuilt parts that point at rawParts (e.g. presentation.xml → handoutMaster). Re-emitted verbatim, fresh rId. Round-trip only — do not hand-author.",
+          "readOnly": true
+        },
+        {
+          "type": "string"
+        },
+        {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Subject XML language attribute; round-trip only.",
+          "readOnly": true
+        },
+        {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Revision number (cp:revision). null preserves a source element with empty text; undefined omits the element on fresh authoring."
+        },
+        {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Creation timestamp (W3CDTF), round-tripped from dcterms:created. null = the source core.xml carried none — emit nothing; undefined (fresh) = default to now."
+        },
+        {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "const": false,
+              "type": "boolean"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Created xsi:type; false preserves absence, undefined uses W3CDTF."
+        },
+        {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Last modified timestamp (W3CDTF); same null/undefined semantics as the created field."
+        },
+        {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "const": false,
+              "type": "boolean"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Modified xsi:type; false preserves absence, undefined uses W3CDTF."
+        },
+        {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Document category, round-tripped from cp:category."
+        },
+        {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Document status (e.g. \"Draft\"), round-tripped from cp:contentStatus."
+        },
+        {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Content type (e.g. \"Document\"), round-tripped from cp:contentType."
+        },
+        {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Unique document identifier, round-tripped from dc:identifier."
+        },
+        {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Document language (RFC 3066), round-tripped from dc:language."
+        },
+        {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Publisher names, in source order; ODF stores repeatable dc:publisher values."
+        },
+        {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "ODF/LibreOffice auto-filler names, in source order."
+        },
+        {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Source references, in source order; ODF stores repeatable dc:source values."
+        },
+        {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Document version number, round-tripped from cp:version."
+        },
+        {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Generating application name, round-tripped from ODF meta:generator."
+        },
+        {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Printed-by name, round-tripped from ODF meta:printed-by."
+        },
+        {
+          "anyOf": [
+            {
+              "$ref": "pptx.schema.json#/definitions/CalendarDurationOptions"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Editing duration expressed with explicit calendar components."
+        },
+        {
+          "anyOf": [
+            {
+              "$ref": "pptx.schema.json#/definitions/DocumentTemplateOptions"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "ODF document template reference."
+        },
+        {
+          "anyOf": [
+            {
+              "$ref": "pptx.schema.json#/definitions/AutoReloadOptions"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "ODF automatic document reload behavior."
+        },
+        {
+          "anyOf": [
+            {
+              "$ref": "pptx.schema.json#/definitions/HyperlinkBehaviorOptions"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "ODF hyperlink target behavior."
+        },
+        {
+          "anyOf": [
+            {
+              "$ref": "pptx.schema.json#/definitions/DocumentStatisticsOptions"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "ODF document statistics."
+        },
+        {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "pptx.schema.json#/definitions/UserDefinedMetadataOptions"
+              },
+              "type": "array"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "ODF user-defined properties, in source order."
+        },
+        {
+          "anyOf": [
+            {
+              "const": true,
+              "type": "boolean"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Emit the core-properties vocabulary as the default namespace — the ISO strict binding, where the source root is `<coreProperties xmlns=…>` and cp:-prefixed children appear prefix-less (dc:/dcterms: keep their prefixes). Round-trip only.",
+          "readOnly": true
+        },
+        {
+          "anyOf": [
+            {
+              "const": true,
+              "type": "boolean"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Legacy Microsoft core-property root/element spelling; round-trip only.",
+          "readOnly": true
+        },
+        {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/definitions/PresentationPatchCommand/anyOf/1/properties/value/anyOf/71/items"
+              },
+              "type": "array"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Source child order as canonical field keys; round-trip only.",
+          "readOnly": true
+        },
+        {
+          "$ref": "#/definitions/PresentationPatchCommand/anyOf/1/properties/value/anyOf/72"
+        }
+      ],
+      "description": "Canonical value assignable to an addressed PPTX root or nested node."
+    }
+  },
+  "description": "Ordered canonical-model commands for patching a PresentationML package.",
+  "title": "office-open PPTX patch request"
+}

@@ -43,8 +43,9 @@ const options = await parsePresentation(odp);
 
 ## API
 
-- `generatePresentation(options, output?)` — generate an `.odp` package from `PresentationOptions` as `Promise` (`Uint8Array` by default); `generatePresentationSync` covers synchronous output and `generatePresentationStream` returns a `ReadableStream<Uint8Array>`
-- `parsePresentation(data)` — parse bytes, Base64/data-URL strings, `Blob`, or `ReadableStream` into `PresentationOptions` as `Promise`; `parsePresentationSync` covers synchronous parsing (rejects `Blob` and `ReadableStream` inputs)
+- `generatePresentation(options, output?)` — generate an `.odp` package from `OdpPresentationOptions` as `Promise` (`Uint8Array` by default); `generatePresentationSync` covers synchronous output and `generatePresentationStream` returns a `ReadableStream<Uint8Array>`
+- `parsePresentation(data)` — parse bytes, Base64/data-URL strings, `Blob`, or `ReadableStream` into `OdpPresentationOptions` (the canonical `PresentationOptions` ODF overlay) as `Promise`; `parsePresentationSync` covers synchronous parsing (rejects `Blob` and `ReadableStream` inputs)
+- `patchPresentation({ data, commands })` — parse an ODP package, apply ordered canonical edits, and regenerate it
 - `OdpParseError` — structured parse failure with part, path, and reason diagnostics
 
 Every input is a plain JSON object (`PresentationOptions` and its option types). The full typed API reference lives in the [documentation](https://www.office-open.com/en/getting-started/more-formats).
@@ -53,7 +54,7 @@ Every input is a plain JSON object (`PresentationOptions` and its option types).
 
 - Invalid ZIP containers, unexpected mimetypes, truncated XML, and unknown content-model elements throw `OdpParseError`.
 - Generated output targets ODF 1.3.
-- ODP has no patch API; parse, mutate `PresentationOptions`, and generate instead.
+- Patching edits the canonical model and preserves package overlays unless they are explicitly changed.
 
 ## Documentation
 

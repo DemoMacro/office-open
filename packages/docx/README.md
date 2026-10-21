@@ -74,8 +74,8 @@ writeFileSync("My Document.docx", buffer);
 ## API
 
 - `generateDocument(options)` — generate a `.docx` file; `generateDocumentSync` and `generateDocumentStream` cover sync and streaming output
-- `parseDocument(data)` — read a `.docx` back into `DocumentOptions` from bytes, `Blob`, or `ReadableStream`; `parseDocumentSync` covers synchronous parsing
-- `patchDocument(input)` — patch an existing `.docx` template by placeholder replacement
+- `parseDocument(data)` — read a `.docx` back into `DocumentOptions` from bytes, Base64/data-URL strings, `Blob`, or `ReadableStream`; `parseDocumentSync` covers synchronous parsing
+- `patchDocument(input)` — apply ordered, source-preserving text, content, section, and comment operations to an existing `.docx` file
 
 Every input is a plain JSON object (`DocumentOptions` and its option types). The full typed API reference lives in the [documentation](https://www.office-open.com/en/docx/); the same types are also frozen as JSON Schemas — `npx office-open schema slice docx DocumentOptions`.
 

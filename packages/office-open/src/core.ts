@@ -13,7 +13,6 @@ export type {
   BandFormatOptions,
   BaseConnectorOptions,
   BaseGroupOptions,
-  BasePatchOptions,
   BasePictureOptions,
   BaseTableCellOptions,
   BaseTableOptions,
@@ -130,6 +129,12 @@ export type {
   PackerOptions,
   ParagraphDescriptorOptions,
   parseDataModelOptions,
+  PatchDiagnostic,
+  PatchOptions,
+  PatchPart,
+  PatchPath,
+  PatchReason,
+  PatchTextSelection,
   PathOptions,
   PathShadeOptions,
   PatternFillOptions,
@@ -276,6 +281,7 @@ export type {
   ZipOptions,
 } from "@office-open/core/opc";
 export {
+  PatchError,
   convertEmuToInches,
   convertEmuToPixels,
   convertEmuToPoints,

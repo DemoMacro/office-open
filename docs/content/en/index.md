@@ -247,13 +247,17 @@ const opts = await parseDocument(buffer);
 // opts.sections — document sections
 // opts.title, opts.creator — core properties
 
-// Patch template placeholders
+// Patch source documents with ordered commands
 const result = await patchDocument({
   outputType: "uint8array",
   data: buffer,
-  placeholders: {
-    name: { type: "paragraph", children: [{ text: "John" }] },
-  },
+  commands: [
+    {
+      type: "replace",
+      at: { field: "sections", route: [{ index: 0 }], text: { placeholder: "name" } },
+      value: "John",
+    },
+  ],
 });
 ```
 
@@ -265,13 +269,17 @@ const opts = await parsePresentation(buffer);
 // opts.slides — slide array
 // opts.size, opts.title — presentation properties
 
-// Patch template placeholders
+// Patch source presentations with ordered commands
 const result = await patchPresentation({
   outputType: "uint8array",
   data: buffer,
-  placeholders: {
-    title: [{ text: "Updated", bold: true }],
-  },
+  commands: [
+    {
+      type: "replace",
+      at: { field: "slides", route: [{ index: 0 }], text: { placeholder: "title" } },
+      value: "Updated",
+    },
+  ],
 });
 ```
 
@@ -283,13 +291,17 @@ const opts = await parseWorkbook(buffer);
 // opts.worksheets — worksheet array
 // opts.styles — style definitions
 
-// Patch template placeholders
+// Patch source workbooks with ordered commands
 const result = await patchWorkbook({
   outputType: "uint8array",
   data: buffer,
-  placeholders: {
-    name: "John Doe",
-  },
+  commands: [
+    {
+      type: "replace",
+      at: { field: "worksheets", route: [{ index: 0 }], text: { placeholder: "name" } },
+      value: "John Doe",
+    },
+  ],
 });
 ```
 
@@ -299,7 +311,7 @@ const result = await patchWorkbook({
 Read and modify existing files
 
 #description
-Parse `.docx`, `.pptx`, and `.xlsx` files into structured objects, or patch templates by replacing `{{placeholder}}` tokens with new content.
+Parse `.docx`, `.pptx`, and `.xlsx` files into structured objects, or patch source packages with ordered, source-preserving commands.
 
 #links
   :::button-link{to="/en/docx/parsing" variant="outline" size="sm"}
@@ -324,7 +336,7 @@ Parse `.docx`, `.pptx`, and `.xlsx` files into structured objects, or patch temp
   <Icon name="i-lucide-wrench" />
 
   #title
-  Patch template placeholders with new content
+  Apply ordered, source-preserving patch commands
   :::
 
   :::page-feature

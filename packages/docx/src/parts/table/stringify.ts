@@ -460,7 +460,7 @@ function stringifyTableRowPropertiesInner(
   }
 
   if (options.tableHeader !== undefined) {
-    parts.push(onOff("w:tblHeader", options.tableHeader));
+    parts.push(onOff("w:tblHeader", options.tableHeader, options.tableHeaderRaw));
   }
 
   if (options.cellSpacing) {
