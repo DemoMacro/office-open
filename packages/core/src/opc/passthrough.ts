@@ -108,6 +108,7 @@ function extensionOf(path: string): string | undefined {
  *   from the model. Listing a part here without its .rels leaves the .rels
  *   to pass through — used by docx glossary, where the document part is
  *   rebuilt but its companion rels travel verbatim.
+ * @param policy - Optional per-part allow/reject decision for opaque parts.
  */
 export function collectPassthroughParts(
   archive: ParsedArchive,

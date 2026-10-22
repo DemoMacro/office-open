@@ -70,7 +70,7 @@ export function setNotesParseChild(fn: ParseNoteChild): void {
   parseNoteChild = fn;
 }
 
-export interface NotesDescConfig {
+export interface NotesDescOptions {
   /** Root element name (`w:footnotes` / `w:endnotes`). */
   rootTag: string;
   /** Note element name (`w:footnote` / `w:endnote`). */
@@ -88,7 +88,7 @@ export interface NotesDescConfig {
 }
 
 /** Build the complete footnotes/endnotes descriptor from a format config. */
-export function createNotesDesc(cfg: NotesDescConfig): CustomDescriptor<NotesData, BodyContext> {
+export function createNotesDesc(cfg: NotesDescOptions): CustomDescriptor<NotesData, BodyContext> {
   /** Render a system note from round-tripped id + content, or the spec default. */
   const systemNote = (
     type: "separator" | "continuationSeparator" | "continuationNotice",
@@ -227,7 +227,7 @@ function containsElement(element: Element | undefined, name: string): boolean {
 }
 
 /** Insert the reference run into the first paragraph's XML. */
-function injectRefRun(pXml: string, cfg: NotesDescConfig): string {
+function injectRefRun(pXml: string, cfg: NotesDescOptions): string {
   if (cfg.insertRefAfterParagraphProperties) {
     const pPrEnd = pXml.indexOf("</w:pPr>");
     if (pPrEnd !== -1) {

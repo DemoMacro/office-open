@@ -47,7 +47,7 @@ function encryptedPassthrough<T extends OutputType>(
  *
  * @example
  * ```typescript
- * import { generatePresentation } from "`@office`-open/pptx";
+ * import { generatePresentation } from "@office-open/pptx";
  *
  * const buffer = await generatePresentation({ slides: [...] });
  * const bytes = await generatePresentation({ slides: [...] }, { type: "uint8array" });

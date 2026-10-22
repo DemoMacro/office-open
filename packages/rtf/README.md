@@ -48,7 +48,7 @@ const rtf = new TextDecoder().decode(generateDocument(options));
 ## API
 
 - `parseDocument(source, options?)` — read RTF source into `DocumentOptions`
-- `generateDocument(options, context?)` — write canonical `DocumentOptions` to RTF bytes
+- `generateDocument(options)` — write canonical `DocumentOptions` to RTF bytes
 - `patchDocument({ data, commands })` — parse an RTF file, apply ordered canonical edits, and regenerate it
 - `RtfParseError` — thrown for malformed RTF
 - `RtfGenerateError` — thrown for canonical fields that have no RTF representation

@@ -139,7 +139,7 @@ export function odfLengthToEmu(value: number | string): number {
 export function emuToLength(emu: number | string | undefined, unit: "cm" | "px" = "cm"): string {
   const value = typeof emu === "string" ? lengthToEmu(emu) : emu;
   if (value === undefined) return "0cm";
-  if (unit === "px") return `${value}px`;
+  if (unit === "px") return `${Number((value / 9525).toFixed(9))}px`;
   const amount = Number((value / 360000).toFixed(6));
   return `${amount}cm`;
 }

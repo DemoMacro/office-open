@@ -634,7 +634,7 @@ export function isOdfElementName(name: string): name is OdfElementName {
   return ODF_ELEMENT_NAME_SET.has(name);
 }
 
-export function serializeOdfNodes(nodes: (OdfXmlNode | string)[] = []): string[] {
+export function stringifyOdfNodes(nodes: (OdfXmlNode | string)[] = []): string[] {
   return nodes.flatMap((node) => {
     if (typeof node === "string") return node.trim() ? [escapeText(node)] : [];
     if (!XML_NAME_PATTERN.test(node.name)) return [];
@@ -644,7 +644,7 @@ export function serializeOdfNodes(nodes: (OdfXmlNode | string)[] = []): string[]
         typeof value === "boolean" ? (value ? "true" : "false") : value,
       ]),
     );
-    return [xmlElement(node.name, attributes, serializeOdfNodes(node.children))];
+    return [xmlElement(node.name, attributes, stringifyOdfNodes(node.children))];
   });
 }
 

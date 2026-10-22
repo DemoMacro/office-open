@@ -35,7 +35,39 @@ const RUN_PROPERTIES = [
   "emboss",
   "scale",
   "style",
+  "highlight",
 ] as const;
+
+const RTF_HIGHLIGHT_INDICES: Record<string, number> = {
+  black: 1,
+  blue: 2,
+  cyan: 3,
+  green: 4,
+  magenta: 5,
+  red: 6,
+  yellow: 7,
+  darkBlue: 9,
+  darkCyan: 10,
+  darkGreen: 11,
+  darkMagenta: 12,
+  darkRed: 13,
+  darkYellow: 14,
+  darkGray: 15,
+  lightGray: 16,
+};
+
+const UNDERLINE_CONTROLS: Record<string, string> = {
+  single: "ul",
+  words: "ulw",
+  dotted: "uldb",
+  dash: "uldash",
+  dotDash: "uldashd",
+  dotDotDash: "uldashdd",
+  thick: "ulth",
+  wave: "ulwave",
+  wavyHeavy: "ulhwave",
+  dashLong: "ulldash",
+};
 
 export function writeRunProperties(run: RunOptions, context: RtfGenerateContext): string {
   assertAllowed(run, [...RUN_PROPERTIES, "text", "children"], "run", "run");
@@ -58,9 +90,26 @@ export function writeRunProperties(run: RunOptions, context: RtfGenerateContext)
     run.italic === false ? control("i", 0) : "",
     run.strike === true ? control("strike") : "",
     run.strike === false ? control("strike", 0) : "",
-    run.underline
-      ? (assertAllowed(run.underline, ["type"], "run", "run.underline"), control("ul"))
-      : "",
+    (() => {
+      if (!run.underline) return "";
+      const style = typeof run.underline === "object" ? run.underline.type : undefined;
+      const controlName = style !== undefined ? UNDERLINE_CONTROLS[style] : "ul";
+      if (controlName === undefined)
+        return reject(
+          "run",
+          "run.underline.type",
+          String(style),
+          "unsupported RTF underline style",
+        );
+      return control(controlName);
+    })(),
+    (() => {
+      if (run.highlight === undefined || run.highlight === "none") return "";
+      const index = RTF_HIGHLIGHT_INDICES[run.highlight];
+      if (index === undefined)
+        return reject("run", "run.highlight", run.highlight, "unsupported RTF highlight color");
+      return control("highlight", index);
+    })(),
     run.size === undefined
       ? ""
       : typeof run.size === "number"

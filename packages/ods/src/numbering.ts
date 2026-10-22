@@ -14,6 +14,7 @@ import type {
 } from "@office-open/xlsx";
 import type { Element } from "@office-open/xml";
 
+import { OdsParseError } from "./error";
 import { odfColor, parseBorder } from "./styles";
 
 /** Translates an Excel numFmt code into the matching ODF data style element. */
@@ -94,7 +95,9 @@ export function numFmtDataStyle(numFmt: string): { name: string; children: strin
 
 /** ODF office:date-value is UTC ISO 8601 without timezone suffix. */
 export function odfDateValue(date: Date): string {
-  return date.toISOString().slice(0, 19);
+  return date.getUTCMilliseconds()
+    ? date.toISOString().slice(0, 23)
+    : date.toISOString().slice(0, 19);
 }
 
 /** Maps table-cell style names back to typed StyleOptions via data styles. */
@@ -158,14 +161,34 @@ export function parseNumberStyles(container: Element | undefined): Map<string, S
     );
     const alignment: AlignmentOptions = {
       horizontal:
-        horizontal === "start"
-          ? "left"
-          : horizontal === "end"
-            ? "right"
-            : (horizontal as AlignmentOptions["horizontal"]),
-      vertical: (vertical === "middle" ? "center" : vertical) as AlignmentOptions["vertical"],
+        horizontal === undefined
+          ? undefined
+          : horizontal === "start"
+            ? "left"
+            : horizontal === "end"
+              ? "right"
+              : (["left", "center", "right", "justify"] as const).find(
+                  (value) => value === horizontal,
+                ),
+      vertical:
+        vertical === undefined
+          ? undefined
+          : vertical === "middle"
+            ? "center"
+            : (["top", "bottom"] as const).find((value) => value === vertical),
       wrapText: wrapText || undefined,
     };
+    if (
+      (horizontal !== undefined && !alignment.horizontal) ||
+      (vertical !== undefined && !alignment.vertical)
+    )
+      throw new OdsParseError(
+        "Invalid OpenDocument cell alignment",
+        "content.xml",
+        "/office:document-content/office:automatic-styles/style:style",
+        vertical !== undefined && !alignment.vertical ? "style:vertical-align" : "fo:text-align",
+        "unsupported alignment value",
+      );
     if (Object.values(alignment).some((value) => value !== undefined))
       options.alignment = alignment;
     if (Object.keys(options).length > 0) {
@@ -218,8 +241,38 @@ export function dataStyleNumFmt(element: Element): string | undefined {
       case "number:text":
         parts.push(textOf(child));
         break;
+      case "number:scientific-number": {
+        const mantissa = attributeNumber(child, "number:mantissa-places") ?? 1;
+        const exponent = attributeNumber(child, "number:min-exponent-digits") ?? 2;
+        parts.push(`0.${"0".repeat(mantissa)}E+${"0".repeat(exponent)}`);
+        break;
+      }
+      case "number:am-pm":
+        parts.push("AM/PM");
+        break;
+      case "number:boolean":
+        parts.push("TRUE;FALSE");
+        break;
+      case "number:day-of-week":
+        parts.push(long ? "dddd" : "ddd");
+        break;
+      case "number:quarter":
+        parts.push(long ? "qq" : "q");
+        break;
+      case "number:era":
+        parts.push(long ? "ggg" : "gg");
+        break;
+      case "number:week-of-year":
+        parts.push("ww");
+        break;
       default:
-        return undefined;
+        throw new OdsParseError(
+          `content.xml: unsupported number format element "${child.name}"`,
+          "content.xml",
+          "/office:automatic-styles",
+          child.name,
+          "unsupported-number-format-element",
+        );
     }
   }
   let format = parts.join("");

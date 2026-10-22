@@ -12,7 +12,7 @@ import {
   parseManifestOptions,
   parseOdfNodes,
   readOcf,
-  serializeOdfNodes,
+  stringifyOdfNodes,
   type OdfXmlNode,
 } from "../index";
 
@@ -43,7 +43,7 @@ describe("OCF runtime", () => {
       { name: "manifest:file-entry", attributes: { "manifest:full-path": "/" } },
       { name: "unknown:element", attributes: { hidden: "true" } },
     ];
-    const serialized = serializeOdfNodes(nodes).join("");
+    const serialized = stringifyOdfNodes(nodes).join("");
     const document = parse(
       `<root xmlns:style="urn:1" xmlns:text="urn:2" xmlns:draw="urn:3" xmlns:table="urn:4" xmlns:number="urn:5" xmlns:chart="urn:6" xmlns:anim="urn:7" xmlns:config="urn:8" xmlns:db="urn:9" xmlns:form="urn:10" xmlns:manifest="urn:11" xmlns:unknown="urn:12">${serialized}</root>`,
       { ignoreDeclaration: true },

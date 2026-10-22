@@ -37,6 +37,58 @@ import { parseStylesheet, stylesFromDrafts, type StyleDraft } from "./stylesheet
 
 type StoryBlocks = Map<"default" | "even" | "first", SectionChild[]>;
 
+const RTF_HIGHLIGHT_COLORS = [
+  "black",
+  "blue",
+  "cyan",
+  "green",
+  "magenta",
+  "red",
+  "yellow",
+  "none",
+  "darkBlue",
+  "darkCyan",
+  "darkGreen",
+  "darkMagenta",
+  "darkRed",
+  "darkYellow",
+  "darkGray",
+  "lightGray",
+] as const;
+
+const RTF_CODE_PAGE_ENCODINGS: Record<number, string> = {
+  932: "shift_jis",
+  936: "gbk",
+  949: "euc-kr",
+  950: "big5",
+  1250: "windows-1250",
+  1251: "windows-1251",
+  1252: "windows-1252",
+  1253: "windows-1253",
+  1254: "windows-1254",
+  1255: "windows-1255",
+  1256: "windows-1256",
+  1257: "windows-1257",
+  1258: "windows-1258",
+  65001: "utf-8",
+};
+
+const RTF_FONT_CHARSET_ENCODINGS: Record<number, string> = {
+  0: "windows-1252",
+  128: "shift_jis",
+  129: "euc-kr",
+  134: "gbk",
+  136: "big5",
+  161: "windows-1253",
+  162: "windows-1254",
+  163: "windows-1258",
+  177: "windows-1255",
+  178: "windows-1256",
+  186: "windows-1257",
+  204: "windows-1251",
+  238: "windows-1250",
+};
+
 function applyStoryBlocks(
   section: SectionOptions | undefined,
   headerBlocks: StoryBlocks,
@@ -67,17 +119,22 @@ function rtfDate(start: number, end: number, tokens: readonly RtfToken[]): strin
       values.set(token.word, token.param);
     }
   }
-  const date = new Date(
-    Date.UTC(
-      values.get("yr") ?? 0,
-      (values.get("mo") ?? 1) - 1,
-      values.get("dy") ?? 1,
-      values.get("hr") ?? 0,
-      values.get("min") ?? 0,
-      values.get("sec") ?? 0,
-    ),
-  );
-  if (Number.isNaN(date.getTime())) return "";
+  const year = values.get("yr");
+  const month = values.get("mo") ?? 1;
+  const day = values.get("dy") ?? 1;
+  const hour = values.get("hr") ?? 0;
+  const minute = values.get("min") ?? 0;
+  const second = values.get("sec") ?? 0;
+  if (year === undefined) return "";
+  const date = new Date(Date.UTC(year, month - 1, day, hour, minute, second));
+  if (
+    Number.isNaN(date.getTime()) ||
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() + 1 !== month ||
+    date.getUTCDate() !== day
+  ) {
+    return "";
+  }
   const pad = (value: number, length = 2) => value.toString().padStart(length, "0");
   return `${pad(date.getUTCFullYear(), 4)}-${pad(date.getUTCMonth() + 1)}-${pad(
     date.getUTCDate(),
@@ -122,6 +179,9 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
   let unicodeSkip = 0;
   let fontId: number | undefined;
   let fontName: string | undefined;
+  let fontCharset = 0;
+  let ansiCodePage = 1252;
+  let hexBuffer: number[] = [];
   let appProperties: NonNullable<DocumentOptions["appProperties"]> = {};
   let color: { red?: number; green?: number; blue?: number } = {};
   let tokenIndex = 0;
@@ -393,6 +453,26 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
     else draft.segments.push(value);
   };
 
+  const flushHexBuffer = () => {
+    if (hexBuffer.length === 0) return;
+    const encoding = RTF_CODE_PAGE_ENCODINGS[ansiCodePage];
+    if (!encoding) {
+      throw new RtfParseError(
+        `unsupported RTF ANSI code page ${ansiCodePage}`,
+        tokens[tokenIndex]?.position ?? 0,
+        source,
+        {
+          part: "RTF text",
+          path: "\\ansicpg",
+          name: "ansicpg",
+          reason: "unsupported code page",
+        },
+      );
+    }
+    appendText(new TextDecoder(encoding).decode(new Uint8Array(hexBuffer)));
+    hexBuffer = [];
+  };
+
   const appendInline = (child: NonNullable<RunOptions["children"]>[number]) => {
     const draft = ensureParagraph();
     flushRun(draft);
@@ -478,10 +558,14 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
     if (word === "f") {
       fontId = parameter;
       fontName = "";
+      fontCharset = 0;
+      return true;
+    }
+    if (word === "fcharset") {
+      fontCharset = parameter ?? 0;
       return true;
     }
     if (
-      word === "fcharset" ||
       word === "froman" ||
       word === "fmodern" ||
       word === "fswiss" ||
@@ -836,7 +920,32 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
         format.underline = undefined;
         return;
       case "ulw":
-        format.underline = { type: "single" };
+        format.underline = { type: "words" };
+        return;
+      case "uldb":
+        format.underline = { type: "dotted" };
+        return;
+      case "uld":
+      case "uldash":
+        format.underline = { type: "dash" };
+        return;
+      case "uldashd":
+        format.underline = { type: "dotDash" };
+        return;
+      case "uldashdd":
+        format.underline = { type: "dotDotDash" };
+        return;
+      case "ulth":
+        format.underline = { type: "thick" };
+        return;
+      case "ulwave":
+        format.underline = { type: "wave" };
+        return;
+      case "ulhwave":
+        format.underline = { type: "wavyHeavy" };
+        return;
+      case "ulldash":
+        format.underline = { type: "dashLong" };
         return;
       case "fs":
         if (!token.param || token.param <= 0) return;
@@ -882,6 +991,17 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
         format.color = mapped ?? undefined;
         return;
       }
+      case "highlight": {
+        const index = token.param;
+        format.highlight =
+          index !== undefined && index >= 1 && index <= 16
+            ? RTF_HIGHLIGHT_COLORS[index - 1]
+            : undefined;
+        return;
+      }
+      case "ansicpg":
+        if (token.param !== undefined) ansiCodePage = token.param;
+        return;
       case "clmgf":
       case "clmrg":
       case "clvmgf":
@@ -980,6 +1100,8 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
     if (!token) break;
     const currentFrame = groupFrames.at(-1);
     const destination = currentFrame?.destination ?? "root";
+
+    if (token.kind !== "hex") flushHexBuffer();
 
     if (
       token.kind === "control" &&
@@ -1332,7 +1454,33 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
         unicodeSkip -= 1;
         continue;
       }
-      appendText(String.fromCharCode(Number.parseInt(token.value, 16)));
+      if (destination === "font-table" && fontId !== undefined && fontName !== undefined) {
+        const encoding =
+          RTF_FONT_CHARSET_ENCODINGS[fontCharset] ?? RTF_CODE_PAGE_ENCODINGS[ansiCodePage];
+        if (!encoding) {
+          throw new RtfParseError(
+            `unsupported RTF font encoding ${fontCharset || ansiCodePage}`,
+            token.position,
+            source,
+            {
+              part: "RTF font table",
+              path: `\\f${fontId}`,
+              name: "fonttbl",
+              reason: "unsupported font character set",
+            },
+          );
+        }
+        fontName += new TextDecoder(encoding).decode(
+          new Uint8Array([Number.parseInt(token.value, 16)]),
+        );
+        if (fontName.includes(";")) {
+          const name = fontName.replace(/;.*$/u, "").trim();
+          if (name) fonts.set(fontId, name);
+          fontName = "";
+        }
+        continue;
+      }
+      hexBuffer.push(Number.parseInt(token.value, 16));
       continue;
     }
 
@@ -1358,6 +1506,7 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
   }
 
   groupFrames.length = 0;
+  flushHexBuffer();
   const table = activeTable();
   if (table) closeRow(table);
   flushParagraph();

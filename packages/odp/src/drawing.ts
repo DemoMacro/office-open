@@ -218,7 +218,7 @@ export function parsePictureFrame(
   }
   return {
     picture: {
-      type: (path.split(".").pop() ?? "png") as PictureOptions["type"],
+      type: embeddedPictureType(path),
       data,
       x: lengthToEmu(attributeString(frame, "svg:x")),
       y: lengthToEmu(attributeString(frame, "svg:y")),
@@ -233,6 +233,25 @@ function pictureTypeFromUrl(value: string): PictureOptions["type"] {
   if (extension === "jpeg") return "jpg";
   const supported = ["png", "jpg", "gif", "bmp", "emf", "wmf"].includes(extension ?? "");
   return (supported ? extension : "png") as PictureOptions["type"];
+}
+
+function embeddedPictureType(path: string): PictureOptions["type"] {
+  const extension = path.split(/[?#]/, 1)[0]?.split("/").pop()?.split(".").pop()?.toLowerCase();
+  const type =
+    extension === "jpeg"
+      ? "jpg"
+      : (["png", "jpg", "gif", "bmp", "tif", "ico", "emf", "wmf"] as const).find(
+          (value) => value === extension,
+        );
+  if (!type)
+    throw new OdpParseError(
+      "Unsupported embedded image extension",
+      "content.xml",
+      "/office:document-content/office:presentation/draw:page/draw:frame/draw:image",
+      path,
+      "unsupported-image-extension",
+    );
+  return type;
 }
 
 /** Parses a draw:frame + media draw:plugin back to a slide video/audio child. */

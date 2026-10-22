@@ -6,8 +6,13 @@ export function commentPlainText(text: CommentOptions["text"]): string {
   return text.runs?.map((run) => run.text).join("") ?? text.text ?? "";
 }
 
-export function cellDecorationXml(worksheet: WorksheetOptions, reference: string): string[] {
-  const comment = worksheet.comments?.find((entry) => entry.cell === reference);
+export function cellDecorationXml(
+  worksheet: WorksheetOptions,
+  reference: string,
+  commentsByCell?: Map<string, NonNullable<WorksheetOptions["comments"]>[number]>,
+): string[] {
+  const comment =
+    commentsByCell?.get(reference) ?? worksheet.comments?.find((entry) => entry.cell === reference);
   return comment
     ? [
         xmlElement(

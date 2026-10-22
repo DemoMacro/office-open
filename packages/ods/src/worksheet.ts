@@ -65,6 +65,13 @@ interface RepeatedRow {
   readonly repeat: number;
 }
 
+interface MergedRange {
+  readonly firstColumn: number;
+  readonly firstRow: number;
+  readonly lastColumn: number;
+  readonly lastRow: number;
+}
+
 type DetectiveHighlightedRangeDirection = Extract<
   DetectiveHighlightedRangeOptions,
   { direction: unknown }
@@ -221,7 +228,7 @@ export function worksheetXml(
     );
   }
   const tableSheetName = worksheet.name ?? `Sheet${index}`;
-  const merges = (worksheet.mergeCells ?? []).flatMap((merge) => {
+  const merges: MergedRange[] = (worksheet.mergeCells ?? []).flatMap((merge) => {
     const match = /^([A-Z]+)(\d+):([A-Z]+)(\d+)$/u.exec(merge.ref);
     if (!match) return [];
     const firstColumn = columnNumber(match[1]!);
@@ -257,6 +264,23 @@ export function worksheetXml(
     !(worksheet.comments?.length ?? 0) &&
     !(worksheet.shapes?.length ?? 0) &&
     validationNames.size === 0;
+  const commentsByCell = new Map<string, NonNullable<WorksheetOptions["comments"]>[number]>();
+  for (const comment of worksheet.comments ?? []) commentsByCell.set(comment.cell, comment);
+  const shapesByCell = new Map<string, NonNullable<WorksheetOptions["shapes"]>[number][]>();
+  for (const shape of worksheet.shapes ?? []) {
+    const reference = `${cellAddress(shape.col, shape.row)}`;
+    const cellShapes = shapesByCell.get(reference);
+    if (cellShapes) cellShapes.push(shape);
+    else shapesByCell.set(reference, [shape]);
+  }
+  const mergesByRow = new Map<number, MergedRange[]>();
+  const mergeStartsByCell = new Map<string, MergedRange>();
+  for (const merge of merges) {
+    const rowMerges = mergesByRow.get(merge.firstRow);
+    if (rowMerges) rowMerges.push(merge);
+    else mergesByRow.set(merge.firstRow, [merge]);
+    mergeStartsByCell.set(`${merge.firstRow}:${merge.firstColumn}`, merge);
+  }
   const repeatedRows = groupRepeatedRows(worksheet.rows ?? [], canShareRepeatedRows);
   const emptyRow = { repeat: 1, xml: xmlElement("table:table-row") };
   const bodyRows: Array<{ repeat: number; xml: string }> = [];
@@ -279,7 +303,7 @@ export function worksheetXml(
       cell,
       column: cell.reference ? columnNumber(cell.reference.replace(/\d+$/u, "")) : cellIndex + 1,
     }));
-    for (const merge of merges) {
+    for (const merge of mergesByRow.get(rowNumber) ?? []) {
       if (rowNumber < merge.firstRow || rowNumber > merge.lastRow) continue;
       for (let column = merge.firstColumn; column <= merge.lastColumn; column += 1) {
         const reference = `${cellAddress(column, rowNumber)}`;
@@ -289,19 +313,14 @@ export function worksheetXml(
     }
     cells.sort((left, right) => left.column - right.column);
     const groupedCellXml: { count: number; xml: string }[] = [];
-    for (const { cell } of cells) {
-      const start = merges.find(
-        (merge) =>
-          merge.firstRow === rowNumber &&
-          merge.firstColumn ===
-            (cell.reference ? columnNumber(cell.reference.replace(/\d+$/u, "")) : 0),
-      );
+    for (const { cell, column } of cells) {
+      const start = mergeStartsByCell.get(`${rowNumber}:${column}`);
       const xml = cellXml(
         cell,
         styles,
         [
-          ...cellDecorationXml(worksheet, cell.reference ?? ""),
-          ...cellShapeXml(worksheet.shapes, cell.reference ?? "", styles),
+          ...cellDecorationXml(worksheet, cell.reference ?? "", commentsByCell),
+          ...cellShapeXml(shapesByCell.get(cell.reference ?? ""), cell.reference ?? "", styles),
         ],
         validationNames.get(`${tableSheetName}:${cell.reference ?? ""}`),
         start
@@ -415,9 +434,7 @@ export function worksheetXml(
 }
 
 function concatenate(parts: readonly string[]): string {
-  let result = "";
-  for (const part of parts) result += part;
-  return result;
+  return parts.join("");
 }
 
 export function cellAddress(column: number, row: number): string {
@@ -1376,9 +1393,20 @@ export function parseCell(
     result.style = styleWithNumFmt(result.style, "[hh]:mm:ss");
   } else if (valueType === "boolean")
     result.value = attributeString(cell, "office:boolean-value") === "true";
-  else if (valueType === "date")
-    result.value = new Date(`${attributeString(cell, "office:date-value")}Z`);
-  else if (valueType === "string") result.value = textOf(childNamed(cell, "text:p"));
+  else if (valueType === "date") {
+    const source = attributeString(cell, "office:date-value");
+    const normalized =
+      source === undefined || /(?:Z|[+-]\d{2}:\d{2})$/u.test(source) ? source : `${source}Z`;
+    const date = normalized === undefined ? undefined : new Date(normalized);
+    if (!date || Number.isNaN(date.getTime()))
+      throw unknownOdsElement(
+        cell,
+        `/office:document-content/office:body/office:spreadsheet/table:table/table:table-row[${row}]/table:table-cell[${column}]`,
+        "office:date-value",
+        "invalid date value",
+      );
+    result.value = date;
+  } else if (valueType === "string") result.value = textOf(childNamed(cell, "text:p"));
   return result;
 }
 

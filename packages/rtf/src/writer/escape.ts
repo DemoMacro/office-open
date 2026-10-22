@@ -1,23 +1,23 @@
 export function rtfText(value: string): string {
-  let result = "";
+  const parts: string[] = [];
   for (let index = 0; index < value.length; index += 1) {
     const character = value[index]!;
-    const code = character.codePointAt(0) ?? 0;
+    const code = character.charCodeAt(0);
     if (character === "{" || character === "}" || character === "\\") {
-      result += `\\${character}`;
+      parts.push(`\\${character}`);
     } else if (code === 0x0d) {
-      result += "\\line ";
+      parts.push("\\line ");
     } else if (code === 0x09) {
-      result += "\\tab ";
+      parts.push("\\tab ");
     } else if (character === " ") {
-      result += "\\'20";
+      parts.push("\\'20");
     } else if (code < 0x80) {
-      result += character;
+      parts.push(character);
     } else {
-      result += `\\u${code > 0x7fff ? code - 0x10000 : code}?`;
+      parts.push(`\\u${code > 0x7fff ? code - 0x10000 : code}?`);
     }
   }
-  return result;
+  return parts.join("");
 }
 
 export function control(word: string, parameter?: number): string {

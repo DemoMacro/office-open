@@ -63,7 +63,7 @@ function encryptedPassthrough<T extends OutputType>(
  *
  * @example
  * ```typescript
- * import { generateWorkbook } from "`@office`-open/xlsx";
+ * import { generateWorkbook } from "@office-open/xlsx";
  *
  * const buffer = await generateWorkbook({ worksheets: [...] });
  * const bytes = await generateWorkbook({ worksheets: [...] }, { type: "uint8array" });

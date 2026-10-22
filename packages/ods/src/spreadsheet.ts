@@ -38,6 +38,20 @@ import { assertElementNames, unknownOdsElement } from "./workbook";
 
 const CONTENT_PATH = "/office:document-content/office:body/office:spreadsheet";
 
+const ODF_PIVOT_FUNCTIONS = {
+  sum: "sum",
+  count: "count",
+  average: "average",
+  max: "max",
+  min: "min",
+  product: "product",
+  countnums: "countNumbers",
+  stddev: "standardDeviation",
+  stddevp: "standardDeviationPopulation",
+  var: "variance",
+  varp: "variancePopulation",
+} as const;
+
 export interface SheetAddress {
   sheet?: string;
   address: string;
@@ -1201,12 +1215,21 @@ export function parseDataPilotTables(
       if (orientation === "row") rows.push(name);
       else if (orientation === "column") columns.push(name);
       else if (orientation === "data") {
+        const functionValue = attributeString(field, "table:function");
+        const summarize =
+          functionValue === undefined || functionValue === "auto"
+            ? undefined
+            : ODF_PIVOT_FUNCTIONS[functionValue as keyof typeof ODF_PIVOT_FUNCTIONS];
+        if (functionValue !== undefined && functionValue !== "auto" && !summarize)
+          throw unknownOdsElement(
+            field,
+            `${CONTENT_PATH}/table:data-pilot-table/table:data-pilot-field`,
+            "table:function",
+            "unsupported pivot summary function",
+          );
         data.push({
           field: name,
-          summarize:
-            attributeString(field, "table:function") === "auto"
-              ? undefined
-              : (attributeString(field, "table:function") as PivotDataField["summarize"]),
+          summarize,
         });
       }
     }

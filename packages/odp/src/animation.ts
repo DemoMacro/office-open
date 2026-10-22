@@ -171,7 +171,7 @@ function assignTiming(target: AnimationEntry, element: Element, allowed: readonl
         target.presetTextOnly = value === "true";
         break;
       case "presentation:additive":
-        target.presetAdditive = value as NonNullable<AnimationEntry["presetAdditive"]>;
+        target.presetAdditive = parseLiteral(element, name, value, ["replace", "add"] as const);
         break;
       case "presentation:master-element":
         target.masterElement = value;
@@ -213,7 +213,13 @@ function assignTiming(target: AnimationEntry, element: Element, allowed: readonl
         target.end = value === "indefinite" ? "indefinite" : value;
         break;
       case "smil:fill":
-        target.timeFill = value as NonNullable<AnimationEntry["timeFill"]>;
+        target.timeFill = parseLiteral(element, name, value, [
+          "remove",
+          "freeze",
+          "hold",
+          "transition",
+          "autoReverse",
+        ] as const);
         break;
       case "smil:repeatCount":
         target.repeatCount = value === "indefinite" ? "indefinite" : Number(value);
@@ -222,7 +228,8 @@ function assignTiming(target: AnimationEntry, element: Element, allowed: readonl
         target.repeatDuration = parseDuration(element, value);
         break;
       case "smil:restart":
-        target.restart = value as NonNullable<AnimationEntry["restart"]>;
+        const restart = parseLiteral(element, name, value, ["default", "never", "always"] as const);
+        target.restart = restart === "default" ? "whenNotActive" : restart;
         break;
       case "smil:sub-item":
       case "anim:sub-item":
@@ -239,7 +246,11 @@ function assignTiming(target: AnimationEntry, element: Element, allowed: readonl
         target.animBy = value;
         break;
       case "smil:calcMode":
-        target.calcMode = value as NonNullable<AnimationEntry["calcMode"]>;
+        target.calcMode = parseLiteral(element, name, value, [
+          "discrete",
+          "linear",
+          "formula",
+        ] as const);
         break;
       case "smil:formula":
         target.formula = value;
@@ -251,7 +262,11 @@ function assignTiming(target: AnimationEntry, element: Element, allowed: readonl
         target.to = value;
         break;
       case "smil:valueType":
-        target.valueType = value as NonNullable<AnimationEntry["valueType"]>;
+        target.valueType = parseLiteral(element, name, value, [
+          "string",
+          "number",
+          "color",
+        ] as const);
         break;
       case "smil:values":
         target.values = value.split(/[;,]\s*/u);
@@ -357,18 +372,30 @@ function parseBehavior(element: Element): AnimationEntry {
     if (rotation) options.motionRotation = rotation === "auto" ? "auto" : Number(rotation);
     const pathEditMode = attributeString(element, "smil:pathEditMode");
     if (pathEditMode)
-      options.pathEditMode = pathEditMode as NonNullable<AnimationEntry["pathEditMode"]>;
+      options.pathEditMode = parseLiteral(element, "animation path edit mode", pathEditMode, [
+        "relative",
+        "fixed",
+      ] as const);
   }
   if (behavior === "transitionFilter") {
     const type = requireString(element, "smil:type");
     options.transitionType = type;
-    options.type = type as NonNullable<AnimationEntry["type"]>;
     options.transitionSubType = attributeString(element, "smil:subtype");
-    options.transitionMode = attributeString(element, "smil:mode") as "in" | "out" | undefined;
+    const transitionMode = attributeString(element, "smil:mode");
+    if (transitionMode)
+      options.transitionMode = parseLiteral(element, "animation transition mode", transitionMode, [
+        "in",
+        "out",
+      ] as const);
     options.fadeColor = attributeString(element, "smil:fadeColor");
-    options.direction = attributeString(element, "smil:direction") as
-      | NonNullable<AnimationEntry["direction"]>
-      | undefined;
+    const direction = attributeString(element, "smil:direction");
+    if (direction)
+      options.direction = parseLiteral(element, "animation transition direction", direction, [
+        "left",
+        "right",
+        "up",
+        "down",
+      ] as const);
   }
   if (behavior === "audio") {
     options.mediaType = "playAudio";

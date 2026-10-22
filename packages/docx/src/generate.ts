@@ -61,7 +61,7 @@ function sectionsOf(options: DocumentOptions): DocumentOptions["sections"] {
  *
  * @example
  * ```typescript
- * import { generateDocument } from "`@office`-open/docx";
+ * import { generateDocument } from "@office-open/docx";
  *
  * const buffer = await generateDocument({ sections: [...] });
  * const bytes = await generateDocument({ sections: [...] }, { type: "uint8array" });

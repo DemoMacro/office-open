@@ -29,6 +29,7 @@ export type RunFormat = Pick<
   | "emboss"
   | "scale"
   | "style"
+  | "highlight"
 >;
 
 export type ParagraphDraft = {

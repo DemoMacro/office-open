@@ -24,7 +24,7 @@ export {
   ODF_ELEMENT_NAMES,
   parseOdfNode,
   parseOdfNodes,
-  serializeOdfNodes,
+  stringifyOdfNodes,
   type OdfAttributeValue,
   type OdfElementName,
   type OdfXmlNode,
