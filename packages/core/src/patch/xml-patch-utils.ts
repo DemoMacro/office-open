@@ -7,7 +7,6 @@ import type { Element } from "@office-open/xml";
 export const toJson = (xmlData: string): Element => {
   const xmlObj = parse(xmlData, {
     captureSpacesBetweenElements: true,
-    compact: false,
   }) as Element;
   return xmlObj;
 };

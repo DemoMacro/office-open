@@ -74,6 +74,43 @@ export function nativeTypeValue(value: string): string | number | boolean {
   return value;
 }
 
+interface XmlNamespaceLayer {
+  prefixes: Map<string, string> | undefined;
+  defaultCanonical: string | undefined;
+}
+
+function canonicalXmlName(
+  name: string,
+  prefixes: Map<string, string> | undefined,
+  defaultCanonical: string | undefined,
+): string {
+  const colon = name.indexOf(":");
+  if (colon > 0) {
+    const prefix = name.slice(0, colon);
+    if (prefix === "xml") return name;
+    const canonical = prefixes?.get(prefix);
+    if (canonical === undefined) return name;
+    const local = name.slice(colon + 1);
+    return canonical === "" ? local : canonical + ":" + local;
+  }
+  if (defaultCanonical !== undefined && defaultCanonical !== "")
+    return defaultCanonical + ":" + name;
+  return name;
+}
+
+function setXmlAttribute(
+  attrs: Record<string, string> | undefined,
+  name: string,
+  value: string,
+): Record<string, string> {
+  if (attrs !== undefined && Object.hasOwn(attrs, name)) {
+    throw new Error(`Malformed XML: duplicate attribute ${name}.`);
+  }
+  const result = attrs ?? {};
+  result[name] = value;
+  return result;
+}
+
 export function parse(xmlString: string, options?: ParseOptions): Element {
   const captureSpaces = options?.captureSpacesBetweenElements ?? false;
   const trim = options?.trim ?? false;
@@ -82,6 +119,8 @@ export function parse(xmlString: string, options?: ParseOptions): Element {
   const ignoreComment = options?.ignoreComment ?? false;
   const ignoreCdata = options?.ignoreCdata ?? false;
   const ignoreDoctype = options?.ignoreDoctype ?? false;
+  const ignoreInstruction = options?.ignoreInstruction ?? false;
+  const ignoreAttributes = options?.ignoreAttributes ?? false;
   const nativeTypeAttributes = options?.nativeTypeAttributes ?? false;
   // Lookup set for deferred elements (raw inner-XML capture). Undefined when
   // the option is absent so the common path pays one truthiness check.
@@ -98,16 +137,12 @@ export function parse(xmlString: string, options?: ParseOptions): Element {
     options?.normalizeNamespaces !== undefined
       ? new Map(Object.entries(options.normalizeNamespaces))
       : undefined;
-  interface NsLayer {
-    prefixes: Map<string, string> | undefined;
-    /** Canonical form of the default namespace; undefined = none/unknown. */
-    defaultCanonical: string | undefined;
-  }
-  const nsRootLayer: NsLayer = { prefixes: undefined, defaultCanonical: undefined };
-  const nsStack: NsLayer[] = [nsRootLayer];
+  const nsRootLayer: XmlNamespaceLayer = { prefixes: undefined, defaultCanonical: undefined };
+  const nsStack: XmlNamespaceLayer[] = [nsRootLayer];
 
   const result: Element = {};
   const stack: Element[] = [result];
+  const openNames: string[] = [];
 
   let i = 0;
   const len = xmlString.length;
@@ -174,6 +209,10 @@ export function parse(xmlString: string, options?: ParseOptions): Element {
           }
           result.declaration.attributes = attrs;
         }
+      } else if (!ignoreInstruction) {
+        const parent = peek(stack);
+        if (parent.elements === undefined) parent.elements = [];
+        parent.elements.push({ type: "instruction", instruction: body });
       }
       continue;
     }
@@ -220,6 +259,18 @@ export function parse(xmlString: string, options?: ParseOptions): Element {
     if (xmlString.charCodeAt(i) === 0x2f /* / */) {
       const end = xmlString.indexOf(">", i + 1);
       if (end === -1) break;
+      const closingName = xmlString.slice(i + 1, end).trim();
+      if (closingName.length === 0) throw new Error("Malformed XML: empty closing tag.");
+      const closingLayer = nsStack[nsStack.length - 1]!;
+      const closingFinalName = nsTable
+        ? canonicalXmlName(closingName, closingLayer.prefixes, closingLayer.defaultCanonical)
+        : closingName;
+      const openName = openNames.pop();
+      if (openName === undefined || openName !== closingFinalName) {
+        throw new Error(
+          `Malformed XML: expected closing tag </${openName ?? "root"}>, got </${closingFinalName}>.`,
+        );
+      }
       i = end + 1;
       stack.pop();
       if (nsTable !== undefined) nsStack.pop();
@@ -306,8 +357,7 @@ export function parse(xmlString: string, options?: ParseOptions): Element {
         }
         continue;
       }
-      if (attrs === undefined) attrs = {};
-      attrs[name] = value;
+      attrs = setXmlAttribute(attrs, name, value);
     }
 
     let rawValues: Record<string, string> | undefined;
@@ -328,18 +378,7 @@ export function parse(xmlString: string, options?: ParseOptions): Element {
     // included — attributes see the element's in-scope bindings).
     let finalName = tagName;
     if (nsTable !== undefined) {
-      const colon = tagName.indexOf(":");
-      if (colon > 0) {
-        const p = tagName.slice(0, colon);
-        if (p !== "xml") {
-          const c = nsPrefixes?.get(p);
-          if (c !== undefined && c !== p) {
-            finalName = c === "" ? tagName.slice(colon + 1) : c + tagName.slice(colon);
-          }
-        }
-      } else if (colon < 0 && nsDefault !== undefined && nsDefault !== "") {
-        finalName = nsDefault + ":" + tagName;
-      }
+      finalName = canonicalXmlName(tagName, nsPrefixes, nsDefault);
       if (attrs !== undefined && nsPrefixes !== undefined) {
         for (const key of Object.keys(attrs)) {
           if (key === "xmlns" || key.startsWith("xmlns:")) continue;
@@ -350,9 +389,17 @@ export function parse(xmlString: string, options?: ParseOptions): Element {
           const c = nsPrefixes.get(p);
           if (c !== undefined && c !== p) {
             const renamed = c === "" ? key.slice(kcolon + 1) : c + key.slice(kcolon);
+            if (renamed !== key && Object.hasOwn(attrs, renamed)) {
+              throw new Error(`Malformed XML: duplicate attribute ${renamed}.`);
+            }
             const attrValue = attrs[key];
             if (attrValue !== undefined) attrs[renamed] = attrValue;
             delete attrs[key];
+            if (rawValues !== undefined && Object.hasOwn(rawValues, key)) {
+              const rawValue = rawValues[key]!;
+              delete rawValues[key];
+              rawValues[renamed] = rawValue;
+            }
           }
         }
       }
@@ -369,7 +416,7 @@ export function parse(xmlString: string, options?: ParseOptions): Element {
     const element: Element = {
       type: "element",
       name: finalName,
-      attributes: attrs,
+      attributes: ignoreAttributes ? undefined : attrs,
       elements: undefined,
     };
     if (rawValues) element.attributeRawValues = rawValues;
@@ -424,6 +471,7 @@ export function parse(xmlString: string, options?: ParseOptions): Element {
         continue;
       }
       stack.push(element);
+      openNames.push(finalName);
       if (nsTable !== undefined) {
         // Share the parent layer unless this element declared anything (a
         // cloned prefix map, or a default declaration that can shadow one).
@@ -442,6 +490,10 @@ export function parse(xmlString: string, options?: ParseOptions): Element {
     delete result.elements;
     result.elements = temp;
     delete result.text;
+  }
+
+  if (openNames.length > 0) {
+    throw new Error(`Malformed XML: unclosed element <${openNames[openNames.length - 1]!}>.`);
   }
 
   return result;

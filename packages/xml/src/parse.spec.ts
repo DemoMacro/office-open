@@ -5,7 +5,7 @@ import { attr } from "../src/utils";
 
 describe("parse", () => {
   it("parses a simple element", () => {
-    const result = parse("<w:t>Hello</w:t>", { compact: false });
+    const result = parse("<w:t>Hello</w:t>");
     expect(result.elements?.[0]).toEqual({
       type: "element",
       name: "w:t",
@@ -14,7 +14,7 @@ describe("parse", () => {
   });
 
   it("parses an element with attributes", () => {
-    const result = parse('<w:pStyle w:val="Title"/>', { compact: false });
+    const result = parse('<w:pStyle w:val="Title"/>');
     expect(result.elements?.[0]).toEqual({
       type: "element",
       name: "w:pStyle",
@@ -23,28 +23,38 @@ describe("parse", () => {
   });
 
   it("parses nested elements", () => {
-    const result = parse("<w:p><w:r><w:t>Hello</w:t></w:r></w:p>", { compact: false });
+    const result = parse("<w:p><w:r><w:t>Hello</w:t></w:r></w:p>");
     expect(result.elements?.[0]?.name).toBe("w:p");
     expect(result.elements?.[0]?.elements?.[0]?.name).toBe("w:r");
     expect(result.elements?.[0]?.elements?.[0]?.elements?.[0]?.name).toBe("w:t");
   });
 
   it("parses XML declaration", () => {
-    const result = parse('<?xml version="1.0" encoding="UTF-8"?><root/>', { compact: false });
+    const result = parse('<?xml version="1.0" encoding="UTF-8"?><root/>');
     expect(result.declaration).toEqual({
       attributes: { version: "1.0", encoding: "UTF-8" },
     });
   });
 
-  it("parses standalone declaration", () => {
-    const result = parse('<?xml version="1.0" encoding="UTF-8" standalone="yes"?><root/>', {
-      compact: false,
+  it("parses and ignores processing instructions", () => {
+    const source = '<?xml version="1.0"?><?mso-application progid="Word.Document"?><root/>';
+    expect(parse(source).elements?.[0]).toEqual({
+      type: "instruction",
+      instruction: 'mso-application progid="Word.Document"',
     });
+    expect(parse(source, { ignoreInstruction: true }).elements?.[0]).toMatchObject({
+      type: "element",
+      name: "root",
+    });
+  });
+
+  it("parses standalone declaration", () => {
+    const result = parse('<?xml version="1.0" encoding="UTF-8" standalone="yes"?><root/>', {});
     expect(result.declaration?.attributes?.standalone).toBe("yes");
   });
 
   it("ignores whitespace between elements by default", () => {
-    const result = parse("<root>\n  <a>1</a>\n  <b>2</b>\n</root>", { compact: false });
+    const result = parse("<root>\n  <a>1</a>\n  <b>2</b>\n</root>");
     expect(result.elements?.[0]?.elements?.length).toBe(2);
     // No whitespace text nodes
     expect(result.elements?.[0]?.elements?.every((e: any) => e.type === "element")).toBe(true);
@@ -52,7 +62,6 @@ describe("parse", () => {
 
   it("captures spaces between elements when option is set", () => {
     const result = parse("<root>\n  <a>1</a>\n  <b>2</b>\n</root>", {
-      compact: false,
       captureSpacesBetweenElements: true,
     });
     // Should have text nodes for whitespace
@@ -60,17 +69,17 @@ describe("parse", () => {
   });
 
   it("parses self-closing tags", () => {
-    const result = parse("<w:p/>", { compact: false });
+    const result = parse("<w:p/>");
     expect(result.elements?.[0]).toEqual({ type: "element", name: "w:p" });
   });
 
   it("parses CDATA sections", () => {
-    const result = parse("<root><![CDATA[data]]></root>", { compact: false });
+    const result = parse("<root><![CDATA[data]]></root>");
     expect(result.elements?.[0]?.elements?.[0]).toEqual({ type: "cdata", cdata: "data" });
   });
 
   it("parses comments", () => {
-    const result = parse("<root><!-- comment --><a>1</a></root>", { compact: false });
+    const result = parse("<root><!-- comment --><a>1</a></root>");
     expect(result.elements?.[0]?.elements?.[0]).toEqual({
       type: "comment",
       comment: " comment ",
@@ -78,19 +87,65 @@ describe("parse", () => {
   });
 
   it("parses attributes with single quotes", () => {
-    const result = parse("<root attr='value'/>", { compact: false });
+    const result = parse("<root attr='value'/>");
     expect(result.elements?.[0]?.attributes).toEqual({ attr: "value" });
   });
 
+  it("omits attributes when ignoreAttributes is enabled", () => {
+    const result = parse('<root attr="value"/>', { ignoreAttributes: true });
+    expect(result.elements?.[0]?.attributes).toBeUndefined();
+  });
+
+  it("rejects mismatched and unclosed elements", () => {
+    expect(() => parse("<a><b></a></b>")).toThrowError(
+      "Malformed XML: expected closing tag </b>, got </a>.",
+    );
+    expect(() => parse("<a><b>")).toThrowError("Malformed XML: unclosed element <b>.");
+  });
+
+  it("rejects duplicate attributes", () => {
+    expect(() => parse('<root x="1" x="2"/>')).toThrowError(
+      "Malformed XML: duplicate attribute x.",
+    );
+  });
+
+  it("matches namespace-equivalent opening and closing names", () => {
+    const result = parse(
+      '<w:a xmlns:w="http://example/w" xmlns:q="http://example/w" x="1"></q:a>',
+      { normalizeNamespaces: { "http://example/w": "w" } },
+    );
+    expect(result.elements?.[0]).toMatchObject({ name: "w:a" });
+  });
+
+  it("renames native attribute raw values with namespaces", () => {
+    const result = parse('<root xmlns:q="http://example/w" q:flag="False"/>', {
+      nativeTypeAttributes: true,
+      normalizeNamespaces: { "http://example/w": "w" },
+    }).elements![0]!;
+    expect(result.attributes).toEqual({
+      "xmlns:w": "http://example/w",
+      "w:flag": false,
+    });
+    expect(result.attributeRawValues).toEqual({ "w:flag": "False" });
+  });
+
+  it("rejects attributes that collide after namespace normalization", () => {
+    expect(() =>
+      parse('<root xmlns:w="http://example/w" xmlns:q="http://example/w" q:a="1" w:a="2"/>', {
+        normalizeNamespaces: { "http://example/w": "w" },
+      }),
+    ).toThrowError("Malformed XML: duplicate attribute w:a.");
+  });
+
   it("parses empty element", () => {
-    const result = parse("<root></root>", { compact: false });
+    const result = parse("<root></root>");
     expect(result.elements?.[0]?.name).toBe("root");
     // xml-js does not set elements for empty non-self-closing tags
     expect(result.elements?.[0]?.elements).toBeUndefined();
   });
 
   it("parses mixed content (text + elements)", () => {
-    const result = parse("<root>text<a>1</a>more</root>", { compact: false });
+    const result = parse("<root>text<a>1</a>more</root>");
     const children = result.elements?.[0]?.elements;
     expect(children?.[0]).toEqual({ type: "text", text: "text" });
     expect(children?.[1]?.name).toBe("a");
@@ -100,7 +155,6 @@ describe("parse", () => {
   it("parses OOXML-style namespaced tags and attributes", () => {
     const result = parse(
       '<w:p w:val="1" xml:space="preserve"><w:r><w:t xml:space="preserve">Hello</w:t></w:r></w:p>',
-      { compact: false },
     );
     expect(result.elements?.[0]?.name).toBe("w:p");
     expect(result.elements?.[0]?.attributes?.["w:val"]).toBe("1");

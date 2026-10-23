@@ -237,7 +237,7 @@ describe("ODS codec", () => {
   });
 
   it("parses cells beyond spreadsheet-specific column limits", async () => {
-    const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:spreadsheet><table:table table:name="Sheet1"><table:table-row><table:table-cell table:number-columns-repeated="20000"/><table:table-cell office:value-type="float" office:value="7"/></table:table-row></table:table></office:body></office:document-content>`;
+    const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:spreadsheet><table:table table:name="Sheet1"><table:table-row><table:table-cell table:number-columns-repeated="20000"/><table:table-cell office:value-type="float" office:value="7"/></table:table-row></table:table></office:spreadsheet></office:body></office:document-content>`;
     const parsed = await parseWorkbook(
       generateOcf("application/vnd.oasis.opendocument.spreadsheet", { "content.xml": content }),
     );

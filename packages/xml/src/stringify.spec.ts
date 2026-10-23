@@ -86,6 +86,24 @@ describe("stringify", () => {
     expect(stringify(el)).toBe("<root><!--note--></root>");
   });
 
+  it("writes and ignores processing instructions", () => {
+    const el: Element = {
+      elements: [
+        { type: "instruction", instruction: 'mso-application progid="Word.Document"' },
+        { type: "element", name: "root" },
+      ],
+    };
+    expect(stringify(el)).toBe('<?mso-application progid="Word.Document"?><root/>');
+    expect(stringify(el, { ignoreInstruction: true })).toBe("<root/>");
+  });
+
+  it("omits attributes when ignoreAttributes is enabled", () => {
+    const el: Element = {
+      elements: [{ type: "element", name: "root", attributes: { flag: 1 } }],
+    };
+    expect(stringify(el, { ignoreAttributes: true })).toBe("<root/>");
+  });
+
   it("handles text nodes with special characters", () => {
     const el: Element = {
       elements: [{ type: "element", name: "w:t", elements: [{ type: "text", text: "a & b" }] }],

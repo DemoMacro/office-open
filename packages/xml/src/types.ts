@@ -15,6 +15,7 @@ export interface Element {
     attributes?: DeclarationAttributes;
   };
   instruction?: string;
+  /** Body of a processing instruction without the surrounding `<?…?>`. */
   attributes?: Attributes;
   /** Verbatim values for attributes coerced by `nativeTypeAttributes`. */
   attributeRawValues?: Record<string, string>;
@@ -65,15 +66,8 @@ export interface IgnoreOptions {
 // ── Options: parse ──
 
 export interface ParseOptions extends IgnoreOptions {
-  compact?: boolean;
   trim?: boolean;
-  sanitize?: boolean;
-  nativeType?: boolean;
   nativeTypeAttributes?: boolean;
-  addParent?: boolean;
-  alwaysArray?: boolean | string[];
-  alwaysChildren?: boolean;
-  instructionHasAttributes?: boolean;
   captureSpacesBetweenElements?: boolean;
   /**
    * Element names whose inner XML is captured verbatim into {@link Element.raw}
@@ -95,74 +89,19 @@ export interface ParseOptions extends IgnoreOptions {
    * unprefixed attributes (no namespace) are never rewritten.
    */
   normalizeNamespaces?: Readonly<Record<string, string>>;
-  doctypeFn?: (value: string, parentElement: object) => string;
-  instructionFn?: (value: string, instructionName: string, parentElement: string) => string;
-  cdataFn?: (value: string, parentElement: object) => string;
-  commentFn?: (value: string, parentElement: object) => string;
-  textFn?: (value: string, parentElement: object) => string;
-  instructionNameFn?: (
-    instructionName: string,
-    instructionValue: string,
-    parentElement: string,
-  ) => string;
-  elementNameFn?: (value: string, parentElement: object) => string;
-  attributeNameFn?: (
-    attributeName: string,
-    attributeValue: string,
-    parentElement: string,
-  ) => string;
-  attributeValueFn?: (
-    attributeValue: string,
-    attributeName: string,
-    parentElement: string,
-  ) => string;
-  attributesFn?: (value: Attributes, parentElement: string) => Attributes;
 }
 
 // ── Options: stringify ──
 
 export interface StringifyOptions extends IgnoreOptions {
   spaces?: number | string;
-  compact?: boolean;
   indentText?: boolean;
   indentCdata?: boolean;
-  indentAttributes?: boolean;
-  indentInstruction?: boolean;
   fullTagEmptyElement?: boolean;
-  noQuotesForNativeAttributes?: boolean;
-  doctypeFn?: (value: string, currentElementName: string, currentElementObj: object) => string;
-  instructionFn?: (
-    instructionValue: string,
-    instructionName: string,
-    currentElementName: string,
-    currentElementObj: object,
-  ) => string;
-  cdataFn?: (value: string, currentElementName: string, currentElementObj: object) => string;
-  commentFn?: (value: string, currentElementName: string, currentElementObj: object) => string;
-  textFn?: (value: string, currentElementName: string, currentElementObj: object) => string;
-  instructionNameFn?: (
-    instructionName: string,
-    instructionValue: string,
-    currentElementName: string,
-    currentElementObj: object,
-  ) => string;
-  elementNameFn?: (value: string, currentElementName: string, currentElementObj: object) => string;
-  attributeNameFn?: (
-    attributeName: string,
-    attributeValue: string,
-    currentElementName: string,
-    currentElementObj: object,
-  ) => string;
   attributeValueFn?: (
     attributeValue: string,
     attributeName: string,
     currentElementName: string,
     currentElementObj: object,
   ) => string;
-  attributesFn?: (
-    value: Attributes,
-    currentElementName: string,
-    currentElementObj: object,
-  ) => Attributes;
-  fullTagEmptyElementFn?: (currentElementName: string, currentElementObj: object) => boolean;
 }

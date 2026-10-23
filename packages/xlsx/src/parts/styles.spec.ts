@@ -397,7 +397,7 @@ describe("Styles", () => {
         `<fills count="1"><fill><patternFill patternType="none"/></fill></fills>` +
         `<borders count="1"><border/></borders>` +
         `<cellXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0">` +
-        `<protection locked="0"/></protection></xf></cellXfs>` +
+        `<protection locked="0"/></xf></cellXfs>` +
         `</styleSheet>`;
       const el = parseXml(xml, { nativeTypeAttributes: true }).elements?.[0];
       if (!el) throw new Error("parsed document has no root element");

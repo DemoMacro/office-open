@@ -26,7 +26,7 @@ export class ExternalStylesFactory {
    * Parses the styles XML and converts each child to a raw XML string.
    */
   public newInstance(xmlData: string): StylesOptions {
-    const xmlObj = parse(xmlData, { compact: false }) as XMLElement;
+    const xmlObj = parse(xmlData) as XMLElement;
 
     let stylesXmlElement: XMLElement | undefined;
     for (const xmlElm of xmlObj.elements || []) {

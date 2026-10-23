@@ -5,15 +5,13 @@ import { generateWorkbook, parseWorkbook } from "./index";
 
 const CALCEXT_NAMESPACE =
   'xmlns:calcext="urn:org:documentfoundation:names:experimental:calc:xmlns:calcext:1.0"';
-const LOEXT_NAMESPACE =
-  'xmlns:loext="urn:org:documentfoundation:names:experimental:office:xmlns:loext:1.0"';
 
 function packageWith(
   body: string,
   automaticStyles = "",
   commonStyles = "<office:styles/>",
 ): Uint8Array {
-  const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES} ${CALCEXT_NAMESPACE} ${LOEXT_NAMESPACE} office:version="1.3"><office:automatic-styles>${automaticStyles}</office:automatic-styles><office:body><office:spreadsheet>${body}</office:spreadsheet></office:body></office:document-content>`;
+  const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES} ${CALCEXT_NAMESPACE} office:version="1.3"><office:automatic-styles>${automaticStyles}</office:automatic-styles><office:body><office:spreadsheet>${body}</office:spreadsheet></office:body></office:document-content>`;
   const styles = `<?xml version="1.0"?><office:document-styles ${ODF_NAMESPACES} office:version="1.3">${commonStyles}</office:document-styles>`;
   return generateOcf("application/vnd.oasis.opendocument.spreadsheet", {
     "content.xml": content,

@@ -70,7 +70,7 @@ const XML_PKG_COMPLEX: XmlPkgInput = {
 
 describe("Benchmark: parse — ours vs original xml-js", () => {
   bench("parse() simple XML", () => {
-    parse(XML_STRING, { compact: false });
+    parse(XML_STRING);
   });
 
   bench("xml2js (original) simple XML", () => {
@@ -78,7 +78,7 @@ describe("Benchmark: parse — ours vs original xml-js", () => {
   });
 
   bench("parse() complex OOXML", () => {
-    parse(COMPLEX_XML, { compact: false });
+    parse(COMPLEX_XML);
   });
 
   bench("xml2js (original) complex OOXML", () => {
@@ -86,7 +86,7 @@ describe("Benchmark: parse — ours vs original xml-js", () => {
   });
 
   bench("parse() with captureSpaces", () => {
-    parse(COMPLEX_XML, { compact: false, captureSpacesBetweenElements: true });
+    parse(COMPLEX_XML, { captureSpacesBetweenElements: true });
   });
 
   bench("xml2js (original) with captureSpaces", () => {
@@ -113,8 +113,8 @@ describe("Benchmark: parse — ours vs original xml-js", () => {
 });
 
 describe("Benchmark: stringify — ours vs xml-js & xml", () => {
-  const parsedSimple = parse(XML_STRING, { compact: false });
-  const parsedComplex = parse(COMPLEX_XML, { compact: false });
+  const parsedSimple = parse(XML_STRING);
+  const parsedComplex = parse(COMPLEX_XML);
   // txml consumes its own node format ({tagName, attributes, children}).
   const txmlParsedSimple = txmlParse(XML_STRING);
   const txmlParsedComplex = txmlParse(COMPLEX_XML);

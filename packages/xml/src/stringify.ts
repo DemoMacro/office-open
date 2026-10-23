@@ -12,6 +12,9 @@ export function stringify(js: Element, options?: StringifyOptions): string {
   if (js.declaration && !opts.ignoreDeclaration) {
     parts.push(writeDeclaration(js.declaration));
   }
+  if (js.instruction !== undefined && !opts.ignoreInstruction) {
+    parts.push(`<?${js.instruction}?>`);
+  }
 
   if (js.elements?.length) {
     parts.push(writeElements(js.elements, opts, 0, !parts.length));
@@ -23,6 +26,8 @@ export function stringify(js: Element, options?: StringifyOptions): string {
 interface NormalizedOptions {
   spaces: string;
   ignoreDeclaration: boolean;
+  ignoreInstruction: boolean;
+  ignoreAttributes: boolean;
   ignoreText: boolean;
   ignoreComment: boolean;
   ignoreCdata: boolean;
@@ -38,6 +43,8 @@ interface NormalizedOptions {
 const DEFAULT_OPTIONS: NormalizedOptions = {
   spaces: "",
   ignoreDeclaration: false,
+  ignoreInstruction: false,
+  ignoreAttributes: false,
   ignoreText: false,
   ignoreComment: false,
   ignoreCdata: false,
@@ -56,6 +63,8 @@ function normalizeOptions(options?: StringifyOptions): NormalizedOptions {
   return {
     spaces,
     ignoreDeclaration: options.ignoreDeclaration ?? false,
+    ignoreInstruction: options.ignoreInstruction ?? false,
+    ignoreAttributes: options.ignoreAttributes ?? false,
     ignoreText: options.ignoreText ?? false,
     ignoreComment: options.ignoreComment ?? false,
     ignoreCdata: options.ignoreCdata ?? false,
@@ -129,9 +138,10 @@ function writeElements(
       if (!name) continue;
       if (opts.spaces) s += writeIndentation(opts.spaces, depth, isFirst);
       const attributes = element.attributes;
-      const attrStr = attributes
-        ? writeAttributes(attributes, name, element, opts.attributeValueFn)
-        : "";
+      const attrStr =
+        attributes && !opts.ignoreAttributes
+          ? writeAttributes(attributes, name, element, opts.attributeValueFn)
+          : "";
       // Deferred content: re-emit the captured inner XML verbatim — children
       // were never parsed, and the bytes must survive a set/save round-trip.
       if (element.raw !== undefined) {
@@ -176,6 +186,10 @@ function writeElements(
       s += TEXT_SPECIALS.test(str)
         ? str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
         : str;
+    } else if (type === "instruction") {
+      if (opts.ignoreInstruction) continue;
+      if (opts.spaces) s += writeIndentation(opts.spaces, depth, isFirst);
+      s += `<?${element.instruction ?? ""}?>`;
     } else if (type === "cdata") {
       if (opts.ignoreCdata) continue;
       if (opts.indentCdata && opts.spaces) s += writeIndentation(opts.spaces, depth, isFirst);

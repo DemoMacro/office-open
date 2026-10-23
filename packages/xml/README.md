@@ -47,11 +47,11 @@ const xml = stringify(doc);
 
 ### parse(xmlString, options?)
 
-Parse an XML string into an `Element` tree. Options include `compact`, `trim`, `nativeType`, `captureSpacesBetweenElements`, the `ignore*` flags, and the `*Fn` transformation hooks.
+Parse an XML string into an `Element` tree. Options include `trim`, `captureSpacesBetweenElements`, `nativeTypeAttributes`, `deferElements`, `normalizeNamespaces`, and the supported `ignore*` flags.
 
 ### stringify(element, options?)
 
-Serialize an `Element` tree to an XML string. Options include `spaces` (indentation), the `ignore*` flags, and the `*Fn` hooks.
+Serialize an `Element` tree to an XML string. Options include `spaces` (indentation), the supported `ignore*` flags, and `attributeValueFn`.
 
 ### escapeXml(str) / unescapeXml(str)
 
