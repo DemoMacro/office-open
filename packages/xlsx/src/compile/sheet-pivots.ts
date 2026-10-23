@@ -331,6 +331,16 @@ function findWorksheetIndex(configs: WorksheetOptions[], name: string): number {
   return -1;
 }
 
+function pivotGroupKey(indices: number[], record: unknown[]): string {
+  if (indices.length === 1) return String(record[indices[0]!]);
+  let key = "";
+  for (const [position, index] of indices.entries()) {
+    if (position > 0) key += "|";
+    key += String(record[index]);
+  }
+  return key;
+}
+
 export function renderPivotSheetData(
   pivotOpts: SourcePivotTableOptions[],
   worksheetConfigs: WorksheetOptions[],
@@ -371,7 +381,7 @@ export function renderPivotSheetData(
     // Group records by row field values
     const groupMap = new Map<string, { keys: (string | number)[]; values: number[][] }>();
     for (const record of sourceData.records) {
-      const groupKey = rowFieldIndices.map((fi) => String(record[fi])).join("|");
+      const groupKey = pivotGroupKey(rowFieldIndices, record);
       let group = groupMap.get(groupKey);
       if (!group) {
         group = {
@@ -419,8 +429,8 @@ export function renderPivotSheetData(
         { rowKeys: (string | number)[]; colData: Map<string, number[][]>; rowTotals: number[][] }
       >();
       for (const record of sourceData.records) {
-        const rowKey = rowFieldIndices.map((fi) => String(record[fi])).join("|");
-        const colKey = colFieldIndices.map((fi) => String(record[fi])).join("|");
+        const rowKey = pivotGroupKey(rowFieldIndices, record);
+        const colKey = pivotGroupKey(colFieldIndices, record);
         let entry = crossTabMap.get(rowKey);
         if (!entry) {
           entry = {
@@ -520,7 +530,7 @@ export function renderPivotSheetData(
         const colAllValues: number[] = [];
         const dfIdx0 = dataFieldIndices[0];
         for (const record of sourceData.records) {
-          const recColKey = colFieldIndices.map((fi) => String(record[fi])).join("|");
+          const recColKey = pivotGroupKey(colFieldIndices, record);
           if (recColKey === colKey && dfIdx0 !== undefined) {
             const val = record[dfIdx0];
             if (typeof val === "number") colAllValues.push(val);

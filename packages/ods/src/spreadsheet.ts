@@ -989,6 +989,8 @@ function rulesPrioritySeed(format: Element): number {
   return (format.elements ?? []).filter((child) => child.type === "element").length;
 }
 
+const dxfKeyCache = new WeakMap<DxfOptions[], string[]>();
+
 function dxfIndex(style: StyleOptions, dxfs: DxfOptions[]): number {
   const dxf: DxfOptions = {
     font: style.font,
@@ -998,9 +1000,16 @@ function dxfIndex(style: StyleOptions, dxfs: DxfOptions[]): number {
     alignment: style.alignment,
     protection: style.protection,
   };
-  const index = dxfs.findIndex((entry) => JSON.stringify(entry) === JSON.stringify(dxf));
+  let dxfKeys = dxfKeyCache.get(dxfs);
+  if (!dxfKeys) {
+    dxfKeys = dxfs.map((entry) => JSON.stringify(entry));
+    dxfKeyCache.set(dxfs, dxfKeys);
+  }
+  const dxfKey = JSON.stringify(dxf);
+  const index = dxfKeys.indexOf(dxfKey);
   if (index >= 0) return index;
   dxfs.push(dxf);
+  dxfKeys.push(dxfKey);
   return dxfs.length - 1;
 }
 
