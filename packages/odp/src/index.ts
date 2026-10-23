@@ -14,5 +14,28 @@ export type {
   SlideOptions,
 } from "./options";
 export type { OdpEmbeddedObjectOptions, OdpEmbeddedObjectFrameOptions } from "./embedded-objects";
-export type { OdpOpaqueSlideNodeOptions } from "./opaque-node";
+export type {
+  OdpAppletOptions,
+  OdpCubeOptions,
+  OdpExtrudeOptions,
+  OdpFloatingFrameOptions,
+  OdpFrameContentOptions,
+  OdpFrameOptions,
+  OdpGluePointOptions,
+  OdpLightOptions,
+  OdpMeasureOptions,
+  OdpPageThumbnailOptions,
+  OdpParameterOptions,
+  OdpPluginOptions,
+  OdpRotateOptions,
+  OdpSceneObjectOptions,
+  OdpSceneOptions,
+  OdpSlideChild,
+  OdpSlideNodeBaseOptions,
+  OdpSlideNodeOptions,
+  OdpSlideNodePayload,
+  OdpSphereOptions,
+  OdpTextBoxOptions,
+  OdpVector3DOptions,
+} from "./slide-nodes";
 export type { PackageMemberOptions } from "@office-open/odf";

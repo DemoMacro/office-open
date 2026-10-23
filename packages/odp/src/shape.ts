@@ -13,9 +13,9 @@ import {
   xmlElement,
   type GraphicStyle,
 } from "@office-open/odf";
-import { stringifyElement } from "@office-open/odf";
 import type {
   ConnectorOptions,
+  GroupOptions,
   LineShapeOptions,
   ShapeOptions,
   SlideChild,
@@ -26,6 +26,7 @@ import { endpointConnection, parseChartFrame, parsePictureFrame } from "./drawin
 import { OdpGenerateError, OdpParseError, unknownSlideChild } from "./error";
 import { GeometryFormulaEvaluator } from "./geometry-formulas";
 import { parseSlideTable } from "./slide";
+import { parseSlideNode, type OdpSlideNodeOptions } from "./slide-nodes";
 import { parseParagraph, textBodyXml, type TextProperties } from "./text-run";
 
 /** Shape with preset geometry renders as draw:custom-shape + enhanced-geometry. */
@@ -612,7 +613,8 @@ export function parseGroup(
   binaries: Record<string, Uint8Array>,
   chartPool: Map<string, ChartSpaceOptions>,
   usedBinaryPaths: Set<string>,
-): SlideChild[] {
+): { group: GroupOptions & { odpNodes?: OdpSlideNodeOptions[] } }[] {
+  const odpNodes: OdpSlideNodeOptions[] = [];
   const children = (element.elements ?? []).flatMap((child): SlideChild[] => {
     if (child.name === "draw:frame") {
       const chart = parseChartFrame(child, chartPool);
@@ -621,7 +623,10 @@ export function parseGroup(
       const picture = parsePictureFrame(child, binaries, usedBinaryPaths);
       if (picture) return [picture];
       if (childNamed(child, "draw:text-box")) return [{ shape: parseShape(child, textStyles) }];
-      if (child.name === "draw:frame") return [{ rawXml: stringifyElement(child) }];
+      if (child.name === "draw:frame") {
+        odpNodes.push({ position: visibleChildIndex(element, child), node: parseSlideNode(child) });
+        return [];
+      }
       throw unknownSlideChild(child, "/draw:g");
     }
     if (child.name === "draw:custom-shape")
@@ -643,7 +648,10 @@ export function parseGroup(
         usedBinaryPaths,
       );
     if (child.name === "table:table") return [parseSlideTable(child, textStyles, columnWidths)];
-    if (child.name === "dr3d:scene") return [{ rawXml: stringifyElement(child) }];
+    if (child.name === "dr3d:scene") {
+      odpNodes.push({ position: visibleChildIndex(element, child), node: parseSlideNode(child) });
+      return [];
+    }
     throw unknownSlideChild(child, "/draw:g");
   });
   return [
@@ -652,9 +660,21 @@ export function parseGroup(
         ...(odfShapeId(element) === undefined ? {} : { id: odfShapeId(element) }),
         name: attributeString(element, "draw:name"),
         children,
+        ...(odpNodes.length > 0 ? { odpNodes } : {}),
       },
     },
   ];
+}
+
+function visibleChildIndex(container: Element, child: Element): number {
+  let index = 0;
+  for (const candidate of container.elements ?? []) {
+    if (candidate.type !== "element") continue;
+    if (candidate.name === "presentation:notes" || candidate.name === "office:forms") continue;
+    if (candidate === child) return index;
+    index++;
+  }
+  return index;
 }
 
 function isPrimitiveShape(element: Element): boolean {
