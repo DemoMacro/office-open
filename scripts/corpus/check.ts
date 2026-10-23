@@ -40,6 +40,20 @@ const LIBRARIES = LOCKED_SOURCES.map((source) => ({
   commit: source.commit,
 }));
 
+function isCorpusCheckoutReady(destination: string): boolean {
+  if (!fs.existsSync(path.join(destination, ".git"))) return false;
+  try {
+    execSync("git rev-parse --verify --quiet HEAD", {
+      cwd: destination,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function setup(): void {
   for (const library of LIBRARIES) {
     const destination = path.resolve(ROOT_DIR, library.dest);
@@ -233,7 +247,7 @@ const synthetic = await runSyntheticCorpus();
 if (synthetic.diagnostics.length > 0) failed = true;
 
 const missingLibraries = LIBRARIES.filter(
-  (library) => !fs.existsSync(path.resolve(ROOT_DIR, library.dest)),
+  (library) => !isCorpusCheckoutReady(path.resolve(ROOT_DIR, library.dest)),
 );
 if (missingLibraries.length > 0) {
   console.warn(
