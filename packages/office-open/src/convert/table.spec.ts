@@ -97,6 +97,29 @@ describe("toXlsxTable (docx → xlsx visual restoration)", () => {
   });
 });
 
+describe("xlsx visual table source coordinates", () => {
+  it("preserves sparse physical rows and merge spans", () => {
+    const docx = toDocxTable({
+      mergeCells: [{ ref: "A1:B2" }],
+      rows: [
+        { rowNumber: 1, cells: [{ reference: "A1", value: "merged" }] },
+        { rowNumber: 3, cells: [{ reference: "C3", value: "C3" }] },
+      ],
+    });
+    expect(docx.rows).toHaveLength(3);
+    const anchor = docx.rows[0]!;
+    if (!("cells" in anchor)) throw new Error("expected plain row");
+    expect(anchor.cells[0]).toMatchObject({ columnSpan: 2, rowSpan: 2 });
+    const sparse = docx.rows[2]!;
+    if (!("cells" in sparse)) throw new Error("expected plain row");
+    const cell = sparse.cells[2]!;
+    if (!("children" in cell)) throw new Error("expected plain cell");
+    expect(cell.children[0]).toEqual({
+      paragraph: { children: [{ text: "C3" }] },
+    });
+  });
+});
+
 describe("round-trip docx → pptx → docx", () => {
   it("preserves base flags and column widths (635 divides evenly)", () => {
     const back = toDocxTable(toPptxTable(docxTable));
