@@ -16,7 +16,7 @@
  * @module
  */
 
-import { OOXML_XML_DECLARATION } from "@office-open/xml";
+import { escapeXml, OOXML_XML_DECLARATION } from "@office-open/xml";
 
 import type { CustomDescriptor, WriteContext } from "../descriptor";
 import type { DataType } from "../util/data-type";
@@ -69,14 +69,18 @@ export const contentTypesDesc: CustomDescriptor<ContentTypesInput> = {
       const key = d.extension.toLowerCase();
       if (seenDefault.has(key)) continue;
       seenDefault.add(key);
-      p.push(`<Default Extension="${d.extension}" ContentType="${d.contentType}"/>`);
+      p.push(
+        `<Default Extension="${escapeXml(d.extension)}" ContentType="${escapeXml(d.contentType)}"/>`,
+      );
     }
     const seenOverride = new Set<string>();
     for (const o of opts.overrides) {
       const key = o.partName.toLowerCase();
       if (seenOverride.has(key)) continue;
       seenOverride.add(key);
-      p.push(`<Override PartName="${o.partName}" ContentType="${o.contentType}"/>`);
+      p.push(
+        `<Override PartName="${escapeXml(o.partName)}" ContentType="${escapeXml(o.contentType)}"/>`,
+      );
     }
     p.push("</Types>");
     return p.join("");

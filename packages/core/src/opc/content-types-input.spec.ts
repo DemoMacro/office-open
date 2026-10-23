@@ -1,3 +1,4 @@
+import { parse } from "@office-open/xml";
 import { describe, expect, it } from "vite-plus/test";
 
 import type { ContentTypesInput } from "./content-types-input";
@@ -19,6 +20,18 @@ const MEDIA = {
 };
 
 describe("partContentTypeResolver", () => {
+  it("escapes dynamic declaration attributes for valid XML round trips", () => {
+    const source: ContentTypesInput = {
+      defaults: [{ extension: "x", contentType: 'a"b&c' }],
+      overrides: [],
+    };
+    const xml = contentTypesDesc.stringify(source, {} as never)!;
+    const root = parse(xml).elements![0]!;
+    const parsed = contentTypesDesc.parse(root, {} as never);
+
+    expect(parsed.defaults).toEqual([{ extension: "x", contentType: 'a"b&c' }]);
+  });
+
   it("matches dense sequential and sparse index-based part names equally", () => {
     // Dense: slides are written slide1, slide2, slide3 in sequence.
     expect(resolve("ppt/slides/slide1.xml")).toBe(
