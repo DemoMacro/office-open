@@ -697,7 +697,7 @@ function replaceAcrossItems(
   replaceAll: boolean,
 ): void {
   const leaves: PatchTextLeaf[] = [];
-  for (const item of items) collectTextLeaves(item, items, leaves);
+  for (const [index, item] of items.entries()) collectTextLeaves(item, items, index, leaves);
   const joined = leaves.map((leaf) => leaf.value).join("");
   const starts: number[] = [];
   let offset = 0;
@@ -753,19 +753,24 @@ interface PatchTextLeaf {
   value: string;
 }
 
-function collectTextLeaves(value: unknown, array: unknown[], leaves: PatchTextLeaf[]): void {
+function collectTextLeaves(
+  value: unknown,
+  array: unknown[],
+  index: number,
+  leaves: PatchTextLeaf[],
+): void {
   if (typeof value === "string") {
-    const index = array.indexOf(value);
     leaves.push({ array, index, value });
     return;
   }
   if (!isRecord(value)) return;
   if (typeof value.text === "string") {
-    leaves.push({ array, index: array.indexOf(value), property: "text", value: value.text });
+    leaves.push({ array, index, property: "text", value: value.text });
     return;
   }
   if (Array.isArray(value.children)) {
-    for (const child of value.children) collectTextLeaves(child, value.children, leaves);
+    for (const [childIndex, child] of value.children.entries())
+      collectTextLeaves(child, value.children, childIndex, leaves);
   }
 }
 

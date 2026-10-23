@@ -33,4 +33,18 @@ describe("canonical patch commands", () => {
     ]);
     expect(options.items[0]?.children).toEqual(["b-c"]);
   });
+
+  it("tracks repeated string leaves by their actual array indexes", () => {
+    const options = { values: ["a", "a"] };
+
+    applyPatchCommands(options, [
+      {
+        type: "replace",
+        at: { field: "values", text: { literal: "aa" } },
+        value: "X",
+      },
+    ]);
+
+    expect(options.values).toEqual(["X", ""]);
+  });
 });
