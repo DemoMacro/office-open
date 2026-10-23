@@ -23,10 +23,10 @@ import {
 import type { Element } from "@office-open/xml";
 
 import type { XlsxReadContext } from "../../context";
+import { XlsxParseError } from "../../error";
 import { parseColorOptions, type ColorOptions } from "../../shared/color";
 import { parseAutoFilter, parseSortStateEl } from "../auto-filter";
 import { parsePivotArea } from "../pivot-table/parse";
-import { XlsxParseError } from "../pivot/pivot-xml";
 import { parseCfColor, parseCfvo, parsePageBreaks } from "./parse";
 import { parseSheetDataRows } from "./sheet-data";
 import type {

@@ -79,10 +79,10 @@ Most Office libraries only generate files. office-open closes the loop with gene
 | ----------------------------- | ----- | -------- | ----- | ----------------------------------------- |
 | OOXML `.docx`/`.xlsx`/`.pptx` | ✅    | ✅       | ✅    | Bidirectional package codecs              |
 | Legacy `.doc`/`.xls`/`.ppt`   | ✅    | ❌       | ❌    | Projected to the OOXML option models      |
-| `.rtf`                        | ✅    | ✅       | ❌    | Strict `DocumentOptions` projection       |
-| ODF `.odt`/`.ods`/`.odp`      | ✅    | ✅       | ❌    | Canonical format-family read/write codecs |
+| `.rtf`                        | ✅    | ✅       | ✅    | Strict `DocumentOptions` projection       |
+| ODF `.odt`/`.ods`/`.odp`      | ✅    | ✅       | ✅    | Canonical format-family read/write codecs |
 
-The matrix is a capability contract, not an invitation to synthesize unsupported editing: legacy formats have no writers, RTF rejects unsupported canonical fields rather than dropping them, and ODF codecs do not expose patch commands.
+The matrix is a capability contract, not an invitation to synthesize unsupported editing: legacy formats have no writers, RTF rejects unsupported canonical fields rather than dropping them, and ODF patching edits the canonical model before regenerating the package.
 
 The package graph follows format ownership: `odf` owns the OCF container, XML runtime, metadata, and shared chart/database codecs, each ODF document codec may type-import its OOXML peer while using `odf` at runtime, peer codecs do not import one another, `core` never imports a format codec, and only `office-open` aggregates every public document codec.
 

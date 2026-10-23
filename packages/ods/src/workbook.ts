@@ -6,6 +6,7 @@ import {
   type DataType,
   type OutputByType,
   type OutputType,
+  type SyncDataType,
 } from "@office-open/core";
 import type { ChartSpaceOptions, OfficeFormsOptions } from "@office-open/core";
 import {
@@ -215,7 +216,7 @@ export async function parseWorkbook(data: DataType): Promise<OdsWorkbookOptions>
   return parseWorkbookSync(await toUint8ArrayAsync(data));
 }
 
-export function parseWorkbookSync(data: DataType): OdsWorkbookOptions {
+export function parseWorkbookSync(data: SyncDataType): OdsWorkbookOptions {
   try {
     return parseOdsPackage(toUint8Array(data));
   } catch (cause) {

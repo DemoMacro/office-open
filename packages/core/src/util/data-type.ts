@@ -21,6 +21,12 @@ export type DataType =
   | string
   | Uint8Array;
 
+/**
+ * Binary input shapes accepted synchronously; excludes async-only Blob and
+ * ReadableStream members of `DataType`.
+ */
+export type SyncDataType = Exclude<DataType, Blob | ReadableStream>;
+
 // Matches data:[<mediatype>][;base64],<data> — a base64 data URL. Mirrors the
 // `isBase64DataURL` check in unjs/undio so plain strings stay UTF-8 text.
 const DATA_URL_RE = /^data:([\w.+-]+\/[\w.+-]+)?;base64,/;

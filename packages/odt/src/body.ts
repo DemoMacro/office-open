@@ -4,6 +4,7 @@ import {
   toUint8ArrayAsync,
   streamUint8Array,
   type DataType,
+  type SyncDataType,
   type OutputByType,
   type OutputType,
 } from "@office-open/core";
@@ -417,7 +418,7 @@ export async function parseDocument(data: DataType): Promise<OdtDocumentOptions>
   return parseDocumentSync(await toUint8ArrayAsync(data));
 }
 
-export function parseDocumentSync(data: DataType): OdtDocumentOptions {
+export function parseDocumentSync(data: SyncDataType): OdtDocumentOptions {
   try {
     return parseOdtPackage(toUint8Array(data));
   } catch (cause) {

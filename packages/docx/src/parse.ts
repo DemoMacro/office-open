@@ -1,5 +1,5 @@
 import { parseArchive, ParsedArchive } from "@office-open/core";
-import type { DataType } from "@office-open/core";
+import type { DataType, SyncDataType } from "@office-open/core";
 import {
   decodeUriPath,
   imageTypeFromPath,
@@ -477,8 +477,8 @@ function ensureNestedMap<K, V>(outer: Map<K, Map<K, V>>, key: K): Map<K, V> {
  * This is the main public API for parsing DOCX files. Async so that `Blob`
  * (including `File`) and `ReadableStream` inputs are accepted alongside raw
  * bytes — parts are indexed and decompressed on demand.
- * The returned options can be passed directly to `new Document(parsed)`
- * to recreate the document.
+ * The returned value is plain declarative JSON suitable for persistence and
+ * can be regenerated with `generateDocument`.
  *
  * @param data - .docx file content — raw bytes, base64 string, Blob, or ReadableStream
  * @returns Document options including sections and metadata
@@ -503,7 +503,7 @@ export async function parseDocument(data: DataType): Promise<DocumentOptions> {
  * and `ReadableStream` inputs throw (normalize them to bytes first, or use
  * the async entry).
  */
-export function parseDocumentSync(data: DataType): DocumentOptions {
+export function parseDocumentSync(data: SyncDataType): DocumentOptions {
   return parseDocumentFromBytes(toUint8Array(data));
 }
 

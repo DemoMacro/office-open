@@ -7,6 +7,7 @@ import type { OdpOpaqueSlideNodeOptions } from "./opaque-node";
 /** Canonical presentation model plus the unified ODF package overlay. */
 export interface OdpPresentationOptions extends PresentationOptions, PackageOptions {
   embeddedObjects?: OdpEmbeddedObjectOptions[];
+  slides?: OdpSlideOptions[];
 }
 
 /** PPTX slide model plus ODP-only nodes that have no canonical equivalent. */

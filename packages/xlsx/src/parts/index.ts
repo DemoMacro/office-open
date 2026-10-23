@@ -186,7 +186,8 @@ export {
   type PivotCacheRecordsDescriptorOptions,
   type PivotCacheRecordsOptions,
 } from "./pivot-cache";
-export { XlsxParseError, type PivotXmlElementOptions } from "./pivot/pivot-xml";
+export { XlsxParseError } from "../error";
+export { type PivotXmlElementOptions } from "./pivot/pivot-xml";
 export type {
   DefinitionPivotTableOptions,
   SourcePivotTableOptions,

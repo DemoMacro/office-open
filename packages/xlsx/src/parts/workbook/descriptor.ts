@@ -8,7 +8,7 @@ import { parseOnOff, xsdComments } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attr, attrNum, findChild, stringifyElement } from "@office-open/xml";
 
-import { XlsxParseError } from "../pivot/pivot-xml";
+import { XlsxParseError } from "../../error";
 import { stringifyWorkbook } from "./stringify";
 import type {
   CalculationPropertiesOptions,

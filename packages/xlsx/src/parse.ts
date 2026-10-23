@@ -1,6 +1,6 @@
 import { convertToEmu, parseArchive, ParsedArchive } from "@office-open/core";
 import { pickNonVisualDrawingProperties, toUint8Array, toUint8ArrayAsync } from "@office-open/core";
-import type { DataType } from "@office-open/core";
+import type { DataType, SyncDataType } from "@office-open/core";
 import {
   chartExSpaceDesc,
   chartSpaceDesc,
@@ -559,7 +559,8 @@ function parseXlsxArchive(doc: ParsedArchive): XlsxDocument {
  *
  * Async so that `Blob` (including `File`) and `ReadableStream` inputs are
  * accepted alongside raw bytes — parts are indexed and decompressed on
- * demand. The returned options can be passed to `new Workbook(parsed)`.
+ * demand. The returned value is plain declarative JSON suitable for
+ * persistence and can be regenerated with `generateWorkbook`.
  */
 export async function parseWorkbook(data: DataType): Promise<WorkbookOptions> {
   // Blob/File inputs bypass full materialization: the archive indexes and
@@ -580,7 +581,7 @@ export async function parseWorkbook(data: DataType): Promise<WorkbookOptions> {
  * and `ReadableStream` inputs throw (normalize them to bytes first, or use
  * the async entry).
  */
-export function parseWorkbookSync(data: DataType): WorkbookOptions {
+export function parseWorkbookSync(data: SyncDataType): WorkbookOptions {
   return parseWorkbookFromBytes(toUint8Array(data));
 }
 

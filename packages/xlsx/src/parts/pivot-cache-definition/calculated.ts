@@ -1,3 +1,4 @@
+import { XlsxParseError } from "../../error";
 import type {
   CalculatedItemOptions,
   CalculatedMemberOptions,
@@ -10,7 +11,6 @@ import {
   stringifyPivotXmlElement,
   type PivotXmlAttributeValue,
 } from "../pivot/pivot-xml";
-import { XlsxParseError } from "../pivot/pivot-xml";
 
 function attributesOf(
   node: PivotXmlElementOptions,

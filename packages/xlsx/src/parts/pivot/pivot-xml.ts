@@ -1,5 +1,6 @@
 import { escapeXml, type Element } from "@office-open/xml";
 
+import { XlsxParseError } from "../../error";
 import { PIVOT_ALLOWED_CHILDREN } from "./pivot-xml-schema";
 
 export type PivotXmlAttributeValue = string | number | boolean;
@@ -9,18 +10,6 @@ export interface PivotXmlElementOptions {
   attributes?: Record<string, PivotXmlAttributeValue | undefined>;
   children?: PivotXmlElementOptions[];
   text?: string;
-}
-
-export class XlsxParseError extends Error {
-  constructor(
-    readonly part: string,
-    readonly path: string,
-    readonly elementName: string,
-    readonly reason: string,
-  ) {
-    super(`${part}${path}: ${elementName}: ${reason}`);
-    this.name = "XlsxParseError";
-  }
 }
 
 export function stringifyPivotXmlElement(node: PivotXmlElementOptions): string {

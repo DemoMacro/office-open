@@ -1,5 +1,5 @@
 import { parseArchive, ParsedArchive } from "@office-open/core";
-import type { DataType } from "@office-open/core";
+import type { DataType, SyncDataType } from "@office-open/core";
 import { extUriMatches, toUint8Array, toUint8ArrayAsync } from "@office-open/core";
 import type { ReadContext } from "@office-open/core/descriptor";
 import type { EmbeddingData, PassthroughRelationship } from "@office-open/core/opc";
@@ -595,8 +595,8 @@ function parseSlideSections(
  * This is the main public API for parsing PPTX files. Async so that `Blob`
  * (including `File`) and `ReadableStream` inputs are accepted alongside raw
  * bytes — parts are indexed and decompressed on demand.
- * The returned options can be passed directly to `new Presentation(parsed)`
- * to recreate the presentation.
+ * The returned value is plain declarative JSON suitable for persistence and
+ * can be regenerated with `generatePresentation`.
  *
  * @param data - .pptx file content — raw bytes, base64 string, Blob, or ReadableStream
  * @returns Parsed presentation options
@@ -620,7 +620,7 @@ export async function parsePresentation(data: DataType): Promise<PresentationOpt
  * `Blob` and `ReadableStream` inputs throw (normalize them to bytes first,
  * or use the async entry).
  */
-export function parsePresentationSync(data: DataType): PresentationOptions {
+export function parsePresentationSync(data: SyncDataType): PresentationOptions {
   return parsePresentationFromBytes(toUint8Array(data));
 }
 

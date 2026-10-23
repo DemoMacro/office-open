@@ -10,9 +10,9 @@ import { parseOnOff } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attr, attrNum, escapeXml, findChild } from "@office-open/xml";
 
+import { XlsxParseError } from "../error";
 import { parseOlapPr, stringifyOlapPr } from "./pivot/pivot-utils";
 import type { OLAPPropertiesOptions } from "./pivot/pivot-utils";
-import { XlsxParseError } from "./pivot/pivot-xml";
 
 // ── Options ──
 

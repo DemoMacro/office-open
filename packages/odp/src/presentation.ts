@@ -8,6 +8,7 @@ import {
   type OfficeFormsOptions,
   type OutputByType,
   type OutputType,
+  type SyncDataType,
 } from "@office-open/core";
 import {
   attributeString,
@@ -202,7 +203,7 @@ export async function parsePresentation(data: DataType): Promise<OdpPresentation
   return parsePresentationSync(await toUint8ArrayAsync(data));
 }
 
-export function parsePresentationSync(data: DataType): OdpPresentationOptions {
+export function parsePresentationSync(data: SyncDataType): OdpPresentationOptions {
   try {
     return parseOdpPackage(toUint8Array(data));
   } catch (cause) {

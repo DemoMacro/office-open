@@ -2,9 +2,9 @@ import type { ReadContext, WriteContext } from "@office-open/core/descriptor";
 import { parse as parseXml } from "@office-open/xml";
 import { expect, it } from "vite-plus/test";
 
+import { XlsxParseError } from "../error";
 import { pivotTableDesc, type PivotTableDescriptorOptions } from "./pivot-table";
 import type { PivotSourceData } from "./pivot/pivot-utils";
-import { XlsxParseError } from "./pivot/pivot-xml";
 
 const writeCtx = { addRelationship: () => "rId1", addMedia: () => "" } as unknown as WriteContext;
 const readCtx = {
