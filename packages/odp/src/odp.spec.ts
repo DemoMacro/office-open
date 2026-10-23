@@ -350,6 +350,19 @@ describe("ODP codec", () => {
                 "fo:margin-left": 360000,
                 "style:contextual-spacing": true,
               },
+              children: [
+                {
+                  name: "style:tab-stops",
+                  stops: [{ attributes: { "style:position": 914400, "style:type": "right" } }],
+                },
+              ],
+            },
+          ],
+          maps: [
+            {
+              name: "style:map",
+              condition: "true",
+              applyStyleName: "Strong",
             },
           ],
         },
@@ -376,6 +389,45 @@ describe("ODP codec", () => {
 
   it("wraps invalid packages in OdpParseError", async () => {
     await expect(parsePresentation(new Uint8Array([1, 2, 3]))).rejects.toThrow(OdpParseError);
+  });
+
+  it("round-trips slide table names, mixed length units, and covered cells", async () => {
+    const options: OdpPresentationOptions = {
+      slides: [
+        {
+          children: [
+            {
+              table: {
+                name: "Budget",
+                columnWidths: [914400, 1828800],
+                rows: [{ cells: [{ text: "A", columnSpan: 2 }, { text: "B" }] }],
+              },
+            },
+          ],
+        },
+      ],
+    };
+    const parsed = await parsePresentation(await generatePresentation(options));
+    expect(parsed.slides?.[0]?.children?.[0]).toMatchObject({
+      table: {
+        name: "Budget",
+        columnWidths: [914400, 1828800],
+        rows: [
+          {
+            cells: [{ children: [{ text: "A" }], columnSpan: 2 }, { children: [{ text: "B" }] }],
+          },
+        ],
+      },
+    });
+  });
+
+  it("rejects covered cells that do not match their preceding span", async () => {
+    const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:automatic-styles><style:style style:name="W" style:family="table-column"><style:table-column-properties style:column-width="25.4mm"/></style:style></office:automatic-styles><office:body><office:presentation><draw:page><table:table table:name="Budget"><table:table-column table:style-name="W"/><table:table-row><table:table-cell table:number-columns-spanned="2"><text:p>A</text:p></table:table-cell></table:table-row></table:table></draw:page></office:presentation></office:body></office:document-content>`;
+    await expect(
+      parsePresentation(
+        generateOcf("application/vnd.oasis.opendocument.presentation", { "content.xml": content }),
+      ),
+    ).rejects.toThrow(OdpParseError);
   });
 
   it("round-trips slide form containers and controls", async () => {

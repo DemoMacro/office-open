@@ -679,9 +679,7 @@ export function parseColumnWidths(container: Element | undefined): Map<string, n
       childNamed(style, "style:table-column-properties"),
       "style:column-width",
     );
-    if (width?.endsWith("cm")) {
-      result.set(attributeString(style, "style:name") ?? "", lengthToEmu(width) ?? 0);
-    }
+    if (width) result.set(attributeString(style, "style:name") ?? "", lengthToEmu(width) ?? 0);
   }
   return result;
 }
@@ -713,10 +711,7 @@ export function slideTableXml(table: TableOptions, styles: string[]): string {
       }),
     ),
   );
-  return xmlElement("table:table", { "table:name": `Table${styles.length + 1}` }, [
-    ...columns,
-    ...rows,
-  ]);
+  return xmlElement("table:table", { "table:name": table.name }, [...columns, ...rows]);
 }
 
 /** Parses a slide table:table back to a pptx table child. */
@@ -725,19 +720,62 @@ export function parseSlideTable(
   textStyles: Map<string, TextProperties>,
   columnWidths: Map<string, number>,
 ): { table: TableOptions } {
+  const rows = childrenNamed(element, "table:table-row").map((row) => ({
+    cells: parseTableRowCells(row, textStyles),
+  }));
   return {
     table: {
+      ...(attributeString(element, "table:name")
+        ? { name: attributeString(element, "table:name") }
+        : {}),
       columnWidths: childrenNamed(element, "table:table-column").map(
         (column) => columnWidths.get(attributeString(column, "table:style-name") ?? "") ?? 0,
       ),
-      rows: childrenNamed(element, "table:table-row").map((row) => ({
-        cells: childrenNamed(row, "table:table-cell").map((cell) => ({
-          columnSpan: attributeNumber(cell, "table:number-columns-spanned"),
-          children: childrenNamed(cell, "text:p").map((paragraph) =>
-            parseParagraph(paragraph, textStyles),
-          ),
-        })),
-      })),
+      rows,
     },
   };
+}
+
+function parseTableRowCells(
+  row: Element,
+  textStyles: Map<string, TextProperties>,
+): TableOptions["rows"][number]["cells"] {
+  const children = (row.elements ?? []).filter(
+    (child): child is Element => child.type === "element",
+  );
+  const cells: TableOptions["rows"][number]["cells"] = [];
+  for (let index = 0; index < children.length; index += 1) {
+    const cell = children[index]!;
+    if (cell.name !== "table:table-cell") throw unknownSlideChild(cell, "/draw:page/table:table");
+    const span = attributeNumber(cell, "table:number-columns-spanned") ?? 1;
+    cells.push({
+      columnSpan: attributeNumber(cell, "table:number-columns-spanned"),
+      children: childrenNamed(cell, "text:p").map((paragraph) =>
+        parseParagraph(paragraph, textStyles),
+      ),
+    });
+    const coveredCount = span - 1;
+    for (let offset = 1; offset <= coveredCount; offset += 1) {
+      if (children[index + offset]?.name !== "table:covered-table-cell") {
+        throw new OdpParseError(
+          "Invalid ODP table covered-cell sequence",
+          "content.xml",
+          "/draw:page/table:table/table:table-row",
+          cell.name ?? "",
+          "covered-cell-count-does-not-match-column-span",
+        );
+      }
+    }
+    if (children[index + coveredCount + 1]?.name === "table:covered-table-cell") {
+      throw new OdpParseError(
+        "Invalid ODP table covered-cell sequence",
+        "content.xml",
+        "/draw:page/table:table/table:table-row",
+        cell.name ?? "",
+        "covered-cell-count-does-not-match-column-span",
+      );
+    }
+    index += coveredCount;
+  }
+  return cells;
 }
