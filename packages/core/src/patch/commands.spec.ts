@@ -75,4 +75,33 @@ describe("canonical patch commands", () => {
 
     expect(options.items[0]).toEqual({ body: { text: "Hello Alice" } });
   });
+
+  it("rejects empty text selectors", () => {
+    const options = { values: ["a"] };
+
+    expect(() =>
+      applyPatchCommands(options, [
+        {
+          type: "replace",
+          at: { field: "values", text: { literal: "", all: true } },
+          value: "b",
+        },
+      ]),
+    ).toThrowError(PatchError);
+    expect(options.values).toEqual(["a"]);
+  });
+
+  it("replaces other fields in an item after a cross-leaf match", () => {
+    const options = { items: [{ text: "a", note: "a" }] };
+
+    applyPatchCommands(options, [
+      {
+        type: "replace",
+        at: { field: "items", text: { literal: "a", all: true } },
+        value: "aa",
+      },
+    ]);
+
+    expect(options.items[0]).toEqual({ text: "aa", note: "aa" });
+  });
 });

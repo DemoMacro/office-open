@@ -632,6 +632,15 @@ function replaceSelectedText(
     "placeholder" in selection
       ? `${delimiters.start}${selection.placeholder}${delimiters.end}`
       : selection.literal;
+  if (needle.length === 0) {
+    throw patchError(
+      command,
+      commandIndex,
+      path,
+      "invalid-operation",
+      "Text selection cannot be empty.",
+    );
+  }
   const replaceAll = selection.all === true;
   let replaced = false;
 
@@ -639,7 +648,8 @@ function replaceSelectedText(
   const markReplaced = (): void => {
     replaced = true;
   };
-  walkText(target, needle, replacement, markReplaced, hasReplaced, replaceAll);
+  const processedLeaves = new Set<PatchTextLeaf>();
+  walkText(target, needle, replacement, markReplaced, hasReplaced, replaceAll, processedLeaves);
 
   if (!replaced) {
     throw patchError(
@@ -659,10 +669,10 @@ function walkText(
   markReplaced: () => void,
   hasReplaced: () => boolean,
   replaceAll: boolean,
+  processedLeaves: Set<PatchTextLeaf>,
 ): void {
   if (!replaceAll && hasReplaced()) return;
   if (Array.isArray(value)) {
-    const replacedItems = new Set<number>();
     replaceAcrossItems(
       value,
       needle,
@@ -670,14 +680,15 @@ function walkText(
       markReplaced,
       hasReplaced,
       replaceAll,
-      replacedItems,
+      processedLeaves,
     );
     for (const [index, item] of value.entries()) {
-      if (replacedItems.has(index)) continue;
+      if (isProcessedLeaf(processedLeaves, value, index)) continue;
       if (!replaceAll && hasReplaced()) return;
       if (typeof item === "string")
         value[index] = replaceSingleText(item, needle, replacement, markReplaced, replaceAll);
-      else walkText(item, needle, replacement, markReplaced, hasReplaced, replaceAll);
+      else
+        walkText(item, needle, replacement, markReplaced, hasReplaced, replaceAll, processedLeaves);
     }
     return;
   }
@@ -687,6 +698,7 @@ function walkText(
   }
   if (!isRecord(value)) return;
   for (const [property, item] of Object.entries(value)) {
+    if (isProcessedLeaf(processedLeaves, value, undefined, property)) continue;
     if (!replaceAll && hasReplaced()) return;
     if (typeof item === "string")
       Reflect.set(
@@ -694,7 +706,8 @@ function walkText(
         property,
         replaceSingleText(item, needle, replacement, markReplaced, replaceAll),
       );
-    else walkText(item, needle, replacement, markReplaced, hasReplaced, replaceAll);
+    else
+      walkText(item, needle, replacement, markReplaced, hasReplaced, replaceAll, processedLeaves);
   }
 }
 
@@ -705,10 +718,10 @@ function replaceAcrossItems(
   markReplaced: () => void,
   hasReplaced: () => boolean,
   replaceAll: boolean,
-  replacedItems: Set<number>,
+  processedLeaves: Set<PatchTextLeaf>,
 ): void {
   const leaves: PatchTextLeaf[] = [];
-  for (const [index, item] of items.entries()) collectTextLeaves(item, items, index, index, leaves);
+  for (const [index, item] of items.entries()) collectTextLeaves(item, items, index, leaves);
   const joined = leaves.map((leaf) => leaf.value).join("");
   const starts: number[] = [];
   let offset = 0;
@@ -736,12 +749,12 @@ function replaceAcrossItems(
     const before = first.value.slice(0, start - starts[firstIndex]!);
     const after = last.value.slice(end - starts[lastIndex]!);
     const updated = `${before}${replacement}${after}`;
-    writeTextLeaf(first, updated);
-    for (let index = firstIndex + 1; index <= lastIndex; index += 1)
-      writeTextLeaf(leaves[index]!, "");
+    for (let index = firstIndex; index <= lastIndex; index += 1) {
+      const leaf = leaves[index]!;
+      writeTextLeaf(leaf, index === firstIndex ? updated : "");
+      processedLeaves.add(leaf);
+    }
     markReplaced();
-    replacedItems.add(first.topLevel);
-    replacedItems.add(last.topLevel);
     if (!replaceAll) return;
     cursor = end;
   }
@@ -760,40 +773,57 @@ function replaceSingleText(
 }
 
 interface PatchTextLeaf {
-  readonly array: unknown[];
+  readonly container: unknown;
   readonly index: number;
-  readonly topLevel: number;
   readonly property?: string;
   value: string;
 }
 
 function collectTextLeaves(
   value: unknown,
-  array: unknown[],
+  container: unknown,
   index: number,
-  topLevel: number,
   leaves: PatchTextLeaf[],
 ): void {
   if (typeof value === "string") {
-    leaves.push({ array, index, topLevel, value });
+    leaves.push({ container, index, value });
     return;
   }
   if (!isRecord(value)) return;
   if (typeof value.text === "string") {
-    leaves.push({ array, index, topLevel, property: "text", value: value.text });
+    leaves.push({ container: value, index: 0, property: "text", value: value.text });
     return;
   }
   if (Array.isArray(value.children)) {
     for (const [childIndex, child] of value.children.entries())
-      collectTextLeaves(child, value.children, childIndex, topLevel, leaves);
+      collectTextLeaves(child, value.children, childIndex, leaves);
   }
+}
+
+function isProcessedLeaf(
+  processedLeaves: ReadonlySet<PatchTextLeaf>,
+  container: unknown,
+  index: number | undefined,
+  property?: string,
+): boolean {
+  for (const leaf of processedLeaves) {
+    if (leaf.property !== property) continue;
+    if (property !== undefined) {
+      if (leaf.container === container) return true;
+      continue;
+    }
+    if (leaf.container === container && leaf.index === index) return true;
+  }
+  return false;
 }
 
 function writeTextLeaf(leaf: PatchTextLeaf, value: string): void {
   leaf.value = value;
-  if (leaf.property === undefined) leaf.array[leaf.index] = value;
-  else {
-    const container = leaf.array[leaf.index];
+  if (leaf.property === undefined) {
+    const array = leaf.container as unknown[];
+    array[leaf.index] = value;
+  } else {
+    const container = leaf.container;
     if (isRecord(container)) Reflect.set(container, leaf.property, value);
   }
 }
