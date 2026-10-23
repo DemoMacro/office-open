@@ -47,4 +47,32 @@ describe("canonical patch commands", () => {
 
     expect(options.values).toEqual(["X", ""]);
   });
+
+  it("replaces across array items without replacing individual items again", () => {
+    const options = { items: ["a"] };
+
+    applyPatchCommands(options, [
+      {
+        type: "replace",
+        at: { field: "items", text: { literal: "a", all: true } },
+        value: "aa",
+      },
+    ]);
+
+    expect(options.items).toEqual(["aa"]);
+  });
+
+  it("still replaces text in deeply nested array items", () => {
+    const options = { items: [{ body: { text: "Hello {{name}}" } }] };
+
+    applyPatchCommands(options, [
+      {
+        type: "replace",
+        at: { field: "items", text: { placeholder: "name" } },
+        value: "Alice",
+      },
+    ]);
+
+    expect(options.items[0]).toEqual({ body: { text: "Hello Alice" } });
+  });
 });

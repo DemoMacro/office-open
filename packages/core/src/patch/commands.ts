@@ -662,8 +662,18 @@ function walkText(
 ): void {
   if (!replaceAll && hasReplaced()) return;
   if (Array.isArray(value)) {
-    replaceAcrossItems(value, needle, replacement, markReplaced, hasReplaced, replaceAll);
+    const replacedItems = new Set<number>();
+    replaceAcrossItems(
+      value,
+      needle,
+      replacement,
+      markReplaced,
+      hasReplaced,
+      replaceAll,
+      replacedItems,
+    );
     for (const [index, item] of value.entries()) {
+      if (replacedItems.has(index)) continue;
       if (!replaceAll && hasReplaced()) return;
       if (typeof item === "string")
         value[index] = replaceSingleText(item, needle, replacement, markReplaced, replaceAll);
@@ -695,9 +705,10 @@ function replaceAcrossItems(
   markReplaced: () => void,
   hasReplaced: () => boolean,
   replaceAll: boolean,
+  replacedItems: Set<number>,
 ): void {
   const leaves: PatchTextLeaf[] = [];
-  for (const [index, item] of items.entries()) collectTextLeaves(item, items, index, leaves);
+  for (const [index, item] of items.entries()) collectTextLeaves(item, items, index, index, leaves);
   const joined = leaves.map((leaf) => leaf.value).join("");
   const starts: number[] = [];
   let offset = 0;
@@ -729,6 +740,8 @@ function replaceAcrossItems(
     for (let index = firstIndex + 1; index <= lastIndex; index += 1)
       writeTextLeaf(leaves[index]!, "");
     markReplaced();
+    replacedItems.add(first.topLevel);
+    replacedItems.add(last.topLevel);
     if (!replaceAll) return;
     cursor = end;
   }
@@ -749,6 +762,7 @@ function replaceSingleText(
 interface PatchTextLeaf {
   readonly array: unknown[];
   readonly index: number;
+  readonly topLevel: number;
   readonly property?: string;
   value: string;
 }
@@ -757,20 +771,21 @@ function collectTextLeaves(
   value: unknown,
   array: unknown[],
   index: number,
+  topLevel: number,
   leaves: PatchTextLeaf[],
 ): void {
   if (typeof value === "string") {
-    leaves.push({ array, index, value });
+    leaves.push({ array, index, topLevel, value });
     return;
   }
   if (!isRecord(value)) return;
   if (typeof value.text === "string") {
-    leaves.push({ array, index, property: "text", value: value.text });
+    leaves.push({ array, index, topLevel, property: "text", value: value.text });
     return;
   }
   if (Array.isArray(value.children)) {
     for (const [childIndex, child] of value.children.entries())
-      collectTextLeaves(child, value.children, childIndex, leaves);
+      collectTextLeaves(child, value.children, childIndex, topLevel, leaves);
   }
 }
 
