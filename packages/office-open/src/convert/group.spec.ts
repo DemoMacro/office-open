@@ -82,6 +82,31 @@ describe("round-trip pptx → xlsx → pptx", () => {
     expect(shape.properties?.fill).toBe("4472C4");
     expect(shape.textBody).toEqual({ text: "Child" });
   });
+
+  it("preserves a different child coordinate system", () => {
+    const scaled = {
+      ...PPTX_GROUP,
+      childOffsetX: 0,
+      childOffsetY: 0,
+      childExtentWidth: 1219200,
+      childExtentHeight: 381000,
+    };
+    const xlsx = toXlsxGroup(scaled);
+    expect(xlsx.properties.childOffsetX).toBe(0);
+    expect(xlsx.properties.childOffsetY).toBe(0);
+    expect(xlsx.properties.childExtentWidth).toBe(1219200);
+    expect(xlsx.properties.childExtentHeight).toBe(381000);
+    const docx = toDocxGroup(scaled);
+    expect(docx.childOffsetX).toBe(0);
+    expect(docx.childOffsetY).toBe(0);
+    expect(docx.childExtentWidth).toBe(1219200);
+    expect(docx.childExtentHeight).toBe(381000);
+    const back = toPptxGroup(xlsx);
+    expect(back.childOffsetX).toBe(0);
+    expect(back.childOffsetY).toBe(0);
+    expect(back.childExtentWidth).toBe(1219200);
+    expect(back.childExtentHeight).toBe(381000);
+  });
 });
 
 describe("round-trip pptx → docx → pptx", () => {

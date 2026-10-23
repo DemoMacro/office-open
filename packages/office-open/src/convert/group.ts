@@ -119,6 +119,25 @@ function docxChildMediaToBox(t: MediaTransformation): AbsoluteBox {
 
 // ── shape-child spPr bridge ──
 
+function childCoordinateSystem(source: PptxGroupOptions | XlsxGroupOptions | DocxGroupOptions) {
+  const sourceWithChildSpace: Partial<GroupTransform2DOptions> =
+    "properties" in source ? source.properties : source;
+  return {
+    ...(sourceWithChildSpace.childOffsetX !== undefined
+      ? { childOffsetX: toEmu(sourceWithChildSpace.childOffsetX) }
+      : {}),
+    ...(sourceWithChildSpace.childOffsetY !== undefined
+      ? { childOffsetY: toEmu(sourceWithChildSpace.childOffsetY) }
+      : {}),
+    ...(sourceWithChildSpace.childExtentWidth !== undefined
+      ? { childExtentWidth: toEmu(sourceWithChildSpace.childExtentWidth) }
+      : {}),
+    ...(sourceWithChildSpace.childExtentHeight !== undefined
+      ? { childExtentHeight: toEmu(sourceWithChildSpace.childExtentHeight) }
+      : {}),
+  };
+}
+
 /** pptx shape → core spPr (group-child position is absolute). */
 function pptxShapeToSpPr(shape: PptxShapeOptions): ShapePropertiesOptions {
   const paint = shape.properties ?? {};
@@ -236,6 +255,7 @@ export function toDocxGroup(source: PptxGroupOptions | XlsxGroupOptions): DocxGr
   return {
     children,
     transformation: boxToDocxTransformation(box),
+    ...childCoordinateSystem(source),
     ...altTextFromCnvPr(pickGroupBase(source)),
   };
 }
@@ -306,7 +326,7 @@ export function toPptxGroup(source: DocxGroupOptions | XlsxGroupOptions): PptxGr
     box = boxFromDocx(source.transformation);
     children = docxGroupChildrenToPptx(source.children);
   }
-  return { ...boxToPptx(box), children, ...cnvPr };
+  return { ...boxToPptx(box), children, ...childCoordinateSystem(source), ...cnvPr };
 }
 
 function xlsxGroupChildrenToPptx(
@@ -385,6 +405,7 @@ export function toXlsxGroup(source: DocxGroupOptions | PptxGroupOptions): XlsxGr
     ...(box.rotation !== undefined ? { rotation: box.rotation } : {}),
     ...(box.flipHorizontal ? { flipHorizontal: true } : {}),
     ...(box.flipVertical ? { flipVertical: true } : {}),
+    ...childCoordinateSystem(source),
   };
   return {
     ...pos.anchor,
