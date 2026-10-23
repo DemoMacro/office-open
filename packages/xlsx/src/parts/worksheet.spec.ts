@@ -22,6 +22,14 @@ describe("Worksheet", () => {
     expect(result.rows?.[0]?.cells?.[0]?.value).toBe("&amp;");
   });
 
+  it("removes comments and processing instructions from cell text", () => {
+    const rows = parseSheetDataRows(
+      `<row r="1"><c r="A1"><v>1<!--note-->a2<?render short?></v></c></row>`,
+      [],
+    );
+    expect(rows[0]?.cells?.[0]?.value).toBe("1a2");
+  });
+
   describe("cell formula", () => {
     it("finds real close tags behind CDATA literals", () => {
       const rows = parseSheetDataRows(

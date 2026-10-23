@@ -221,20 +221,44 @@ function isOff(value: string): boolean {
 function textContent(src: string, from: number, to: number): string {
   if (to <= from) return "";
   const text = src.slice(from, to);
-  if (!text.includes("<![CDATA[")) return unescapeXml(text);
+  if (!text.includes("<")) return unescapeXml(text);
 
   // Outside CDATA, character data is escaped; CDATA content is literal. Copy
-  // the two classes separately so `<![CDATA[&amp;]]>` remains `&amp;`.
+  // markup-free text separately from CDATA so `<![CDATA[&amp;]]>` remains
+  // `&amp;`; comments and processing instructions contribute no text.
   let result = "";
   let cursor = 0;
-  const cdata = /<!\[CDATA\[([\s\S]*?)\]\]>/g;
-  for (const match of text.matchAll(cdata)) {
-    const start = match.index ?? 0;
+  while (cursor < text.length) {
+    const start = text.indexOf("<", cursor);
+    if (start === -1) {
+      result += unescapeXml(text.slice(cursor));
+      break;
+    }
     result += unescapeXml(text.slice(cursor, start));
-    result += match[1] ?? "";
-    cursor = start + match[0].length;
+
+    if (text.startsWith("<![CDATA[", start)) {
+      const end = text.indexOf("]]>", start + 9);
+      if (end === -1) throw new Error("Malformed XML: unclosed CDATA section.");
+      result += text.slice(start + 9, end);
+      cursor = end + 3;
+      continue;
+    }
+    if (text.startsWith("<!--", start)) {
+      const end = text.indexOf("-->", start + 4);
+      if (end === -1) throw new Error("Malformed XML: unclosed comment.");
+      cursor = end + 3;
+      continue;
+    }
+    if (text.startsWith("<?", start)) {
+      const end = text.indexOf("?>", start + 2);
+      if (end === -1) throw new Error("Malformed XML: unclosed processing instruction.");
+      cursor = end + 2;
+      continue;
+    }
+
+    throw new Error("Malformed XML: unexpected markup in text content.");
   }
-  return result + unescapeXml(text.slice(cursor));
+  return result;
 }
 
 /**
