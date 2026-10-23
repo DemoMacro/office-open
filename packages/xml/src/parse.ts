@@ -111,6 +111,87 @@ function setXmlAttribute(
   return result;
 }
 
+interface DeferredClose {
+  closeIndex: number;
+  nextIndex: number;
+}
+
+function openingTagEnd(source: string, from: number): number {
+  let index = from;
+  while (index < source.length) {
+    const char = source.charCodeAt(index);
+    if (char === 0x22 || char === 0x27) {
+      const close = source.indexOf(char === 0x22 ? '"' : "'", index + 1);
+      if (close === -1) return -1;
+      index = close + 1;
+      continue;
+    }
+    if (char === 0x3e) return index + 1;
+    index++;
+  }
+  return -1;
+}
+
+function markupEnd(source: string, from: number, terminator: string): number {
+  const end = source.indexOf(terminator, from);
+  return end === -1 ? -1 : end + terminator.length;
+}
+
+function findDeferredClose(source: string, tagName: string, from: number): DeferredClose {
+  let depth = 1;
+  let cursor = from;
+  while (cursor < source.length) {
+    const openIndex = source.indexOf("<", cursor);
+    if (openIndex === -1) break;
+
+    if (source.startsWith("<![CDATA[", openIndex)) {
+      cursor = markupEnd(source, openIndex + 9, "]]>");
+      if (cursor === -1) throw new Error("Malformed XML: unclosed CDATA section.");
+      continue;
+    }
+    if (source.startsWith("<!--", openIndex)) {
+      cursor = markupEnd(source, openIndex + 4, "-->");
+      if (cursor === -1) throw new Error("Malformed XML: unclosed comment.");
+      continue;
+    }
+    if (source.startsWith("<?", openIndex)) {
+      cursor = markupEnd(source, openIndex + 2, "?>");
+      if (cursor === -1) throw new Error("Malformed XML: unclosed processing instruction.");
+      continue;
+    }
+    if (source.startsWith("<!DOCTYPE", openIndex)) {
+      cursor = markupEnd(source, openIndex + 9, ">");
+      if (cursor === -1) throw new Error("Malformed XML: unclosed DOCTYPE declaration.");
+      continue;
+    }
+
+    const isClosing = source.charCodeAt(openIndex + 1) === 0x2f;
+    const nameStart = openIndex + (isClosing ? 2 : 1);
+    const nameEnd = findTagNameEnd(source, nameStart);
+    const name = source.slice(nameStart, nameEnd);
+    const tagEnd = isClosing ? nameEnd : openingTagEnd(source, nameEnd);
+    if (tagEnd === -1) throw new Error(`Malformed XML: unclosed tag <${name}>.`);
+    if (isClosing) {
+      let afterName = nameEnd;
+      while (afterName < source.length && /\s/.exec(source[afterName]!)) afterName++;
+      if (source.charCodeAt(afterName) !== 0x3e) {
+        throw new Error(`Malformed XML: invalid closing tag </${name}>.`);
+      }
+      if (name === tagName) {
+        depth--;
+        if (depth === 0) return { closeIndex: openIndex, nextIndex: afterName + 1 };
+      }
+      cursor = afterName + 1;
+      continue;
+    }
+
+    const selfClosing = source.charCodeAt(tagEnd - 2) === 0x2f;
+    if (name === tagName && !selfClosing) depth++;
+    cursor = tagEnd;
+  }
+  throw new Error(`Malformed XML: unclosed element <${tagName}>.`);
+}
+
 export function parse(xmlString: string, options?: ParseOptions): Element {
   const captureSpaces = options?.captureSpacesBetweenElements ?? false;
   const trim = options?.trim ?? false;
@@ -429,43 +510,11 @@ export function parse(xmlString: string, options?: ParseOptions): Element {
 
     if (!isSelfClosing) {
       if (deferSet !== undefined && deferSet.has(tagName)) {
-        // Deferred container: capture inner XML verbatim instead of parsing
-        // children. Scan to the matching close tag, counting same-name opens
-        // so nested occurrences (if any) don't end the capture early.
-        const closeTag = `</${tagName}>`;
-        let depth = 1;
-        let scan = pos;
-        let closeIdx = -1;
-        for (;;) {
-          closeIdx = xmlString.indexOf(closeTag, scan);
-          if (closeIdx === -1) break;
-          let p = scan;
-          for (;;) {
-            const openIdx = xmlString.indexOf(`<${tagName}`, p);
-            if (openIdx === -1 || openIdx >= closeIdx) break;
-            // Boundary check so `<rowx>` doesn't count as `<row`.
-            const after = xmlString.charCodeAt(openIdx + tagName.length + 1);
-            if (
-              after === 0x20 ||
-              after === 0x09 ||
-              after === 0x0a ||
-              after === 0x0d ||
-              after === 0x3e
-            ) {
-              depth++;
-            }
-            p = openIdx + tagName.length + 1;
-          }
-          scan = closeIdx + closeTag.length;
-          depth--;
-          if (depth === 0) break;
-        }
-        if (closeIdx === -1) {
-          throw new Error(`Malformed XML: unclosed element <${tagName}>.`);
-        } else {
-          element.raw = xmlString.slice(pos, closeIdx);
-          i = scan;
-        }
+        // Deferred content can contain CDATA whose text names this element or
+        // quoted attribute values that look like tags.
+        const close = findDeferredClose(xmlString, tagName, pos);
+        element.raw = xmlString.slice(pos, close.closeIndex);
+        i = close.nextIndex;
         continue;
       }
       stack.push(element);

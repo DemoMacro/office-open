@@ -127,6 +127,24 @@ describe("parse", () => {
     expect(stringify({ elements: [deferred!] })).toBe("<sheetData><sheetData/><row/></sheetData>");
   });
 
+  it("captures deferred content when CDATA contains the close tag", () => {
+    const parsed = parse(
+      "<root><sheetData><row><v><![CDATA[</sheetData>]]></v></row></sheetData></root>",
+      { deferElements: ["sheetData"] },
+    );
+    const deferred = parsed.elements?.[0]?.elements?.[0];
+    expect(deferred?.raw).toBe("<row><v><![CDATA[</sheetData>]]></v></row>");
+    expect(parsed.elements?.[0]?.name).toBe("root");
+  });
+
+  it("skips quoted attribute text while capturing deferred content", () => {
+    const parsed = parse(
+      `<root><sheetData><row a="</sheetData>"><b x='<'/></row></sheetData></root>`,
+      { deferElements: ["sheetData"] },
+    );
+    expect(parsed.elements?.[0]?.elements?.[0]?.raw).toBe(`<row a="</sheetData>"><b x='<'/></row>`);
+  });
+
   it("rejects unclosed deferred content", () => {
     expect(() =>
       parse("<root><sheetData><row/></root>", { deferElements: ["sheetData"] }),
