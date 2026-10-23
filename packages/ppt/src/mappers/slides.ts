@@ -125,19 +125,15 @@ export function readSlideAnimations(view: DataView, drawing: RecordNode): Legacy
   const shapes = collectDescendants(drawing, RecordType.escherShapeContainer);
   const animations: LegacyAnimation[] = [];
   for (const shape of shapes) {
-    try {
-      const shapeRecord = findDirect(shape, RecordType.escherShape);
-      const container = findDirect(shape, RecordType.animationInfo);
-      const atom = container && findDirect(container, RecordType.animationInfoAtom);
-      if (atom && atom.length >= 28) {
-        animations.push({
-          shapeId:
-            shapeRecord && shapeRecord.length >= 4 ? readInt32(view, shapeRecord, 0) : undefined,
-          atom,
-        });
-      }
-    } catch {
-      continue;
+    const shapeRecord = findDirect(shape, RecordType.escherShape);
+    const container = findDirect(shape, RecordType.animationInfo);
+    const atom = container && findDirect(container, RecordType.animationInfoAtom);
+    if (atom && atom.length >= 28) {
+      animations.push({
+        shapeId:
+          shapeRecord && shapeRecord.length >= 4 ? readInt32(view, shapeRecord, 0) : undefined,
+        atom,
+      });
     }
   }
   return animations.sort(
@@ -146,11 +142,7 @@ export function readSlideAnimations(view: DataView, drawing: RecordNode): Legacy
 }
 
 function animationOrder(view: DataView, animation: LegacyAnimation): number {
-  try {
-    return readInt16(view, animation.atom, 16);
-  } catch {
-    return 0;
-  }
+  return readInt16(view, animation.atom, 16);
 }
 
 function projectAnimation(view: DataView, animation: LegacyAnimation): AnimationEntry {
@@ -158,12 +150,7 @@ function projectAnimation(view: DataView, animation: LegacyAnimation): Animation
   const effect = view.getUint8(atom.offset + RECORD_BODY_OFFSET + 21);
   const mask = view.getUint16(atom.offset + RECORD_BODY_OFFSET + 4, true);
   const automatic = ((mask >>> 2) & 1) === 1;
-  let delay = 0;
-  try {
-    delay = Math.max(0, readInt32(view, atom, 12));
-  } catch {
-    delay = 0;
-  }
+  const delay = Math.max(0, readInt32(view, atom, 12));
   return {
     type: animationType(effect),
     class: "entrance",
