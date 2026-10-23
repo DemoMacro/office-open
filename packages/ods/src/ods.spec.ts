@@ -311,6 +311,19 @@ describe("ODS codec", () => {
     ]);
   });
 
+  it("renames merged ranges across repeated rows", async () => {
+    const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:spreadsheet><table:table table:name="Sheet1"><table:table-row table:number-rows-repeated="3"><table:table-cell table:number-columns-spanned="2" office:value-type="string"><text:p>Merged</text:p></table:table-cell><table:covered-table-cell/></table:table-row></table:table></office:spreadsheet></office:body></office:document-content>`;
+    const parsed = await parseWorkbook(
+      generateOcf("application/vnd.oasis.opendocument.spreadsheet", { "content.xml": content }),
+    );
+    expect(parsed.worksheets?.[0]?.mergeCells).toEqual([
+      { ref: "A1:B1" },
+      { ref: "A2:B2" },
+      { ref: "A3:B3" },
+    ]);
+    expect(parsed.worksheets?.[0]?.rows?.map((row) => row.rowNumber)).toEqual([1, 2, 3]);
+  });
+
   it("requires an embedded object body but tolerates a missing replacement", async () => {
     const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:spreadsheet><table:table table:name="Sheet1"><table:table-row><table:table-cell><draw:frame svg:width="1cm" svg:height="1cm"><draw:object-ole xlink:href="./Object 1" xlink:type="simple"/></draw:frame></table:table-cell></table:table-row></table:table></office:spreadsheet></office:body></office:document-content>`;
     const source = generateOcf("application/vnd.oasis.opendocument.spreadsheet", {

@@ -1,4 +1,4 @@
-import { generateOcf, ODF_NAMESPACES } from "@office-open/odf";
+import { generateOcf, ODF_NAMESPACES, readOcf } from "@office-open/odf";
 import { describe, expect, it } from "vite-plus/test";
 
 import { generateWorkbook, parseWorkbook } from "./index";
@@ -147,7 +147,7 @@ describe("ODS spreadsheet semantics", () => {
       '<style:style style:name="gr1" style:family="graphic"><style:graphic-properties draw:fill="solid" draw:fill-color="#3366ff" draw:stroke="solid" svg:stroke-width="1pt" svg:stroke-color="#ff0000"/></style:style>';
     const { parsed, regenerated } = await roundTrip(
       packageWith(
-        `<table:table table:name="Sheet1"><table:table-row><table:table-cell><draw:rect draw:name="Card" draw:style-name="gr1" draw:z-index="2" svg:x="0.25cm" svg:y="0.5cm" svg:width="2cm" svg:height="1cm"><text:p>Label</text:p></draw:rect></table:table-cell></table:table-row></table:table>`,
+        `<table:table table:name="Sheet1"><table:table-row><table:table-cell><draw:rect draw:name="Card" draw:style-name="gr1" draw:z-index="2" svg:x="0.25cm" svg:y="0.5cm" svg:width="2cm" svg:height="1cm"><text:p>&lt; &amp; &gt;</text:p></draw:rect></table:table-cell></table:table-row></table:table>`,
         automaticStyles,
       ),
     );
@@ -163,7 +163,7 @@ describe("ODS spreadsheet semantics", () => {
         fill: { type: "solid", color: "3366ff" },
         outline: { width: 12700, type: "solidFill", color: "ff0000" },
       },
-      textBody: { text: "Label" },
+      textBody: { text: "< & >" },
     });
     expect(regenerated.worksheets?.[0]?.shapes?.[0]).toMatchObject({
       name: "Card",
@@ -173,7 +173,14 @@ describe("ODS spreadsheet semantics", () => {
       extentCx: 720000,
       extentCy: 360000,
       properties: { geometry: "rect" },
-      textBody: { text: "Label" },
+      textBody: { text: "< & >" },
     });
+    const content = (
+      await readOcf(
+        await generateWorkbook(parsed),
+        "application/vnd.oasis.opendocument.spreadsheet",
+      )
+    ).files["content.xml"]!;
+    expect(content).toContain("<text:p>&lt; &amp; &gt;</text:p>");
   });
 });

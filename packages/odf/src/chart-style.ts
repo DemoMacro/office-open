@@ -34,6 +34,15 @@ export interface ChartStyle {
 
 const chartStyleNameCaches = new WeakMap<ChartStyleResources, Map<string, string>>();
 const drawingResourceKeys = new WeakMap<ChartStyleResources, Map<string, string[]>>();
+const BITMAP_REPEATS = ["no-repeat", "repeat", "stretch"] as const;
+
+type BitmapRepeat = (typeof BITMAP_REPEATS)[number];
+
+function bitmapRepeat(style: ChartStyle, value: string | undefined): BitmapRepeat | undefined {
+  if (value === undefined) return undefined;
+  if (BITMAP_REPEATS.includes(value as BitmapRepeat)) return value as BitmapRepeat;
+  throw projectionError(style, "style:repeat", "unknown-bitmap-repeat");
+}
 
 function chartNameCache(resources: ChartStyleResources): Map<string, string> {
   let cache = chartStyleNameCaches.get(resources);
@@ -492,7 +501,7 @@ function bitmapFill(
   if (href?.startsWith("#")) {
     return { type: "blip", noEmbed: true, sourceReferenceId: href.slice(1) };
   }
-  const repeat = graphic["style:repeat"] as "no-repeat" | "repeat" | "stretch" | undefined;
+  const repeat = bitmapRepeat(style, graphic["style:repeat"]);
   const overlay = {
     type: "bitmap" as const,
     name,

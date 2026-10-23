@@ -926,6 +926,7 @@ function parseRows(
   let rowNumber = 1;
   for (const row of tableRows(table)) {
     const repeat = repeatCount(row, "table:number-rows-repeated");
+    const mergeStart = mergeCells.length;
     const parsed = parseRow(
       row,
       rowNumber,
@@ -954,8 +955,15 @@ function parseRows(
       continue;
     }
     if (repeat > 1) {
+      const sourceMergeCells = mergeCells.slice(mergeStart);
+      mergeCells.splice(mergeStart, sourceMergeCells.length);
       for (let index = 0; index < repeat; index += 1) {
         const currentRow = rowNumber + index;
+        const rowMergeCells = sourceMergeCells.map((mergeCell) => ({
+          ...mergeCell,
+          ref: replaceRangeRowReference(mergeCell.ref, currentRow),
+        }));
+        mergeCells.push(...rowMergeCells);
         rows.push({
           ...parsed,
           rowNumber: currentRow,
@@ -990,6 +998,12 @@ function renumberCell(cell: CellOptions, rowNumber: number): CellOptions {
 function replaceRowReference(reference: string, rowNumber: number): string {
   const match = /^([A-Z]+)(\d+)$/u.exec(reference);
   return match ? `${match[1]}${rowNumber}` : reference;
+}
+
+function replaceRangeRowReference(reference: string, rowNumber: number): string {
+  const [start, end] = reference.split(":");
+  const startReference = replaceRowReference(start ?? "", rowNumber);
+  return end ? `${startReference}:${replaceRowReference(end, rowNumber)}` : startReference;
 }
 
 export function parseRow(
@@ -1358,9 +1372,10 @@ export function parseCell(
     );
   }
   if (columnSpan > 1 || rowSpan > 1) {
-    mergeCells.push({
-      ref: `${columnName(column)}${row}:${columnName(column + columnSpan - 1)}${row + rowSpan - 1}`,
-    });
+    const reference = `${columnName(column)}${row}:${columnName(column + columnSpan - 1)}${row + rowSpan - 1}`;
+    if (!mergeCells.some((mergeCell) => mergeCell.ref === reference)) {
+      mergeCells.push({ ref: reference });
+    }
   }
   for (const child of cell.elements ?? []) {
     if (

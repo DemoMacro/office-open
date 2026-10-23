@@ -192,6 +192,29 @@ describe("ODF chart style resources", () => {
     expect(parsed.shapeProperties?.styleName).toBe("chart-style");
   });
 
+  it("requires known bitmap repeat tokens", async () => {
+    const resources = {
+      styles: [
+        style({
+          "draw:fill": "bitmap",
+          "draw:fill-image-name": "image",
+          "style:repeat": "sideways",
+        }),
+      ],
+      gradients: [],
+      hatches: [],
+      fillImages: [
+        {
+          name: "image",
+          attributes: { "xlink:href": "media/image.png" },
+          data: new Uint8Array([1]),
+        },
+      ],
+      strokeDashes: [],
+    } as ChartStyleResources;
+    await expect(parse(resources)).rejects.toMatchObject({ reason: "unknown-bitmap-repeat" });
+  });
+
   it("preserves square gradients and round dash caps without projecting them", async () => {
     const square = await parse({
       styles: [style({ "draw:fill": "gradient", "draw:fill-gradient-name": "gradient" })],

@@ -13,6 +13,7 @@ import type { Element } from "@office-open/xml";
 import { blockXml } from "./body";
 import type { OdtChart, OdtImage } from "./drawing";
 import type { OdtEmbeddedObjectOptions } from "./embedded-objects";
+import { OdtParseError } from "./error";
 import { lengthToTwips, twipsToLength } from "./master-pages";
 import { normalizeParagraph } from "./paragraph";
 import { NUM_FORMAT_DOCX, NUM_FORMAT_ODF, type NotesContext } from "./section";
@@ -24,14 +25,14 @@ export type AbstractNumbering = NonNullable<
 export type NumberingLevel = AbstractNumbering["levels"][number];
 
 /** Docx level suffix → ODF text:label-followed-by token. */
-export const SUFFIX_ODF: Record<string, string> = {
+export const SUFFIX_ODF: Record<NonNullable<NumberingLevel["suffix"]>, string> = {
   nothing: "nothing",
   space: "space",
   tab: "listtab",
 };
 
 /** ODF text:label-followed-by token → docx level suffix. */
-export const SUFFIX_DOCX: Record<string, string> = {
+export const SUFFIX_DOCX: Record<string, NonNullable<NumberingLevel["suffix"]>> = {
   listtab: "tab",
   nothing: "nothing",
   space: "space",
@@ -58,7 +59,7 @@ export function outlineLevelXml(level: NumberingLevel): string {
   return xmlElement("text:outline-level-style", {
     "text:level": level.level + 1,
     "text:style-name": level.paragraphStyle,
-    "style:num-format": level.format ? (NUM_FORMAT_ODF[level.format] ?? level.format) : undefined,
+    "style:num-format": odfNumberingFormat(level),
     "style:num-prefix": prefix || undefined,
     "style:num-suffix": suffix || undefined,
     "text:display-levels": tokens.length > 0 ? tokens.length : undefined,
@@ -85,9 +86,7 @@ export function parseOutlineStyle(files: OdfFiles): AbstractNumbering | undefine
     const start = attributeNumber(level, "text:start-value");
     return {
       level: oneBased - 1,
-      ...(rawFormat
-        ? { format: (NUM_FORMAT_DOCX[rawFormat] ?? rawFormat) as NumberingLevel["format"] }
-        : {}),
+      ...(rawFormat ? parseNumberingFormat(rawFormat) : {}),
       text: `${prefix}${tokens}${suffix}`,
       ...(start !== undefined ? { start } : {}),
       ...(attributeString(level, "text:style-name")
@@ -97,6 +96,21 @@ export function parseOutlineStyle(files: OdfFiles): AbstractNumbering | undefine
   });
   if (levels.length === 0) return undefined;
   return { reference: attributeString(outline, "style:name") ?? "Outline", levels };
+}
+
+/** Maps ODF numbering tokens; arbitrary ODF tokens are canonical custom formats. */
+function parseNumberingFormat(
+  rawFormat: string,
+): Pick<NumberingLevel, "format" | "formatOverride"> {
+  const mappedFormat = NUM_FORMAT_DOCX[rawFormat];
+  if (mappedFormat) return { format: mappedFormat };
+  return { format: "custom", formatOverride: rawFormat };
+}
+
+function odfNumberingFormat(level: NumberingLevel): string | undefined {
+  if (level.format === undefined) return undefined;
+  if (level.format === "custom") return level.formatOverride ?? "custom";
+  return NUM_FORMAT_ODF[level.format] ?? level.format;
 }
 
 /** Non-outline abstract numberings render as reusable text:list-style definitions. */
@@ -138,11 +152,7 @@ export function listLevelXml(level: NumberingLevel): string {
     isBullet ? "text:list-level-style-bullet" : "text:list-level-style-number",
     {
       "text:level": level.level + 1,
-      "style:num-format": isBullet
-        ? undefined
-        : level.format
-          ? (NUM_FORMAT_ODF[level.format] ?? level.format)
-          : undefined,
+      "style:num-format": isBullet ? undefined : odfNumberingFormat(level),
       "style:num-prefix": !isBullet && prefix ? prefix : undefined,
       "style:num-suffix": !isBullet && suffix ? suffix : undefined,
       "text:display-levels": !isBullet && tokens.length > 0 ? tokens.length : undefined,
@@ -274,21 +284,28 @@ export function parseListLevel(element: Element): NumberingLevel {
   const marginLeft = lengthToTwips(attributeString(labelAlignment, "fo:margin-left"));
   const textIndent = lengthToTwips(attributeString(labelAlignment, "fo:text-indent"));
   const followedBy = attributeString(labelAlignment, "text:label-followed-by");
+  const mappedSuffix = followedBy ? SUFFIX_DOCX[followedBy] : undefined;
+  if (followedBy && !mappedSuffix) {
+    throw new OdtParseError(
+      "Unknown OpenDocument numbering label suffix",
+      "styles.xml",
+      "office:styles/text:list-style/text:list-level-style-number",
+      element.name ?? "",
+      "unknown-label-followed-by",
+    );
+  }
   const indent: { left?: number; hanging?: number } = {};
   if (marginLeft !== undefined) indent.left = marginLeft;
   if (textIndent !== undefined && textIndent < 0) indent.hanging = -textIndent;
-  return {
+  const parsedLevel: NumberingLevel = {
     level: oneBased - 1,
-    format: isBullet
-      ? "bullet"
-      : ((NUM_FORMAT_DOCX[rawFormat ?? ""] ?? rawFormat) as NumberingLevel["format"]),
+    ...(isBullet ? { format: "bullet" } : rawFormat ? parseNumberingFormat(rawFormat) : {}),
     text: isBullet
       ? (attributeString(element, "text:bullet-char") ?? "•")
       : `${prefix}${tokens}${suffix}`,
     ...(start !== undefined ? { start } : {}),
-    ...(followedBy && SUFFIX_DOCX[followedBy]
-      ? { suffix: SUFFIX_DOCX[followedBy] as NumberingLevel["suffix"] }
-      : {}),
+    ...(mappedSuffix ? { suffix: mappedSuffix } : {}),
     ...(Object.keys(indent).length > 0 ? { paragraph: { indent } } : {}),
-  } as NumberingLevel;
+  };
+  return parsedLevel;
 }

@@ -4,6 +4,7 @@ import {
   childNamed,
   childrenNamed,
   emuToLength,
+  escapeText,
   graphicFill,
   graphicOutline,
   lengthToEmu,
@@ -237,7 +238,7 @@ export function cellShapeXml(
         },
         shape.textBody?.text === undefined
           ? []
-          : [xmlElement("text:p", undefined, [shape.textBody.text])],
+          : [xmlElement("text:p", undefined, [escapeText(shape.textBody.text)])],
       );
     });
 }

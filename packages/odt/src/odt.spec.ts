@@ -96,6 +96,32 @@ describe("ODT canonical projection", () => {
     await expect(parseDocument(new Uint8Array([1, 2, 3]))).rejects.toThrow(OdtParseError);
   });
 
+  it("preserves arbitrary ODF numbering formats as canonical custom formats", async () => {
+    const styles =
+      '<text:list-style style:name="Custom"><text:list-level-style-number text:level="1" style:num-format="か"><style:list-level-properties style:list-level-position-and-space-mode="label-alignment"><style:list-level-label-alignment text:label-followed-by="listtab"/></style:list-level-properties></text:list-level-style-number></text:list-style>';
+    const source = odtStyledPackage(
+      styles,
+      '<text:list text:style-name="Custom"><text:list-item><text:p>Item</text:p></text:list-item></text:list>',
+    );
+    const parsed = await parseDocument(source);
+    expect(parsed.numbering?.abstractNumberings?.[0]?.levels[0]).toMatchObject({
+      format: "custom",
+      formatOverride: "か",
+      suffix: "tab",
+    });
+    await expect(parseDocument(await generateDocument(parsed))).resolves.toMatchObject({
+      numbering: parsed.numbering,
+    });
+  });
+
+  it("rejects unknown numbering label suffixes structurally", async () => {
+    const styles =
+      '<text:list-style style:name="Custom"><text:list-level-style-number text:level="1" style:num-format="1"><style:list-level-properties style:list-level-position-and-space-mode="label-alignment"><style:list-level-label-alignment text:label-followed-by="unknown"/></style:list-level-properties></text:list-level-style-number></text:list-style>';
+    await expect(
+      parseDocument(odtStyledPackage(styles, "<text:p>Item</text:p>")),
+    ).rejects.toMatchObject({ reason: "unknown-label-followed-by" });
+  });
+
   it("round-trips ODF form-control shapes with typed references", async () => {
     const parsed = await parseDocument(
       odtPackage(
