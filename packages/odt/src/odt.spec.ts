@@ -1,11 +1,17 @@
-import { unzipSync } from "@office-open/core";
+import { strFromU8, unzipSync } from "@office-open/core";
 import type { FormControlOptions, OfficeFormsOptions } from "@office-open/core";
 import type { DocumentOptions, TableOptions } from "@office-open/docx";
 import type { ParagraphOptions } from "@office-open/docx";
 import { CHART_MIME, generateOcf, ODF_NAMESPACES } from "@office-open/odf";
 import { describe, expect, it } from "vite-plus/test";
 
-import { generateDocument, OdtGenerateError, OdtParseError, parseDocument } from "./index";
+import {
+  generateDocument,
+  OdtGenerateError,
+  OdtParseError,
+  parseDocument,
+  type OdtDocumentOptions,
+} from "./index";
 import { trackRevisionBlocks } from "./paragraph";
 
 const FORM_NAMESPACE = 'xmlns:form="urn:oasis:names:tc:opendocument:xmlns:form:1.0"';
@@ -208,7 +214,7 @@ describe("ODT canonical projection", () => {
         properties: [
           {
             name: "style:paragraph-properties",
-            attributes: { "fo:text-align": "center", "style:contextual-spacing": "true" },
+            attributes: { "fo:text-align": "center", "style:contextual-spacing": true },
           },
         ],
       },
@@ -218,6 +224,44 @@ describe("ODT canonical projection", () => {
       (await parseDocument(await generateDocument(parsed))).sections[0]?.children?.[0],
     ).toMatchObject({
       paragraph: { text: "Styled", style: "P1", alignment: "center" },
+    });
+  });
+
+  it("round-trips typed paragraph style properties", async () => {
+    const property = {
+      name: "style:paragraph-properties",
+      attributes: {
+        "fo:line-height": 150,
+        "fo:margin-left": 567,
+        "fo:widows": 2,
+        "style:contextual-spacing": true,
+      },
+    } as const;
+    const options: OdtDocumentOptions = {
+      sections: [{ children: [{ paragraph: { text: "Typed", style: "P1" } }] }],
+      styleResources: [{ name: "P1", family: "paragraph", properties: [property] }],
+    };
+    const generated = await generateDocument(options);
+    const content = strFromU8(unzipSync(generated)["content.xml"]!);
+    expect(content).toContain('fo:line-height="150%"');
+    expect(content).toContain('fo:margin-left="1.000125cm"');
+    expect(content).toContain('fo:widows="2"');
+    expect(content).toContain('style:contextual-spacing="true"');
+    expect((await parseDocument(generated)).styleResources).toEqual(options.styleResources);
+  });
+
+  it("rejects unknown paragraph style attributes", async () => {
+    await expect(
+      parseDocument(
+        odtStyledPackage(
+          '<style:style style:name="P1" style:family="paragraph"><style:paragraph-properties officeooo:spacing="1"/></style:style>',
+          '<text:p text:style-name="P1">Unknown</text:p>',
+        ),
+      ),
+    ).rejects.toMatchObject({
+      elementName: "officeooo:spacing",
+      part: "content.xml",
+      reason: "attribute has no ODF RNG mapping",
     });
   });
 

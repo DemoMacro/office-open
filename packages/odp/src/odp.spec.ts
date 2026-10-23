@@ -345,7 +345,11 @@ describe("ODP codec", () => {
           properties: [
             {
               name: "style:paragraph-properties",
-              attributes: { "fo:line-height": 150, "fo:margin-left": 360000 },
+              attributes: {
+                "fo:line-height": 150,
+                "fo:margin-left": 360000,
+                "style:contextual-spacing": true,
+              },
             },
           ],
         },
@@ -356,8 +360,10 @@ describe("ODP codec", () => {
       .files["content.xml"]!;
     expect(first).toContain('fo:line-height="150%"');
     expect(first).toContain('fo:margin-left="1cm"');
+    expect(first).toContain('style:contextual-spacing="true"');
 
     const parsed = await parsePresentation(generated);
+    expect(parsed.styleResources).toEqual(options.styleResources);
     const second = (
       await readOcf(
         await generatePresentation(parsed),

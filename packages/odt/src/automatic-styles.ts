@@ -4,8 +4,9 @@ import {
   attributeString,
   childNamed,
   childrenNamed,
-  emuToLength,
   lengthToEmu,
+  parseStyleProperty,
+  stylePropertyAttributes,
   xmlElement,
 } from "@office-open/odf";
 import type { Element } from "@office-open/xml";
@@ -107,15 +108,6 @@ export function parseStyles(container: Element | undefined): StyleMap {
     const propertyElements = (style.elements ?? []).filter(
       (child) => child.type === "element" && child.name !== "style:tab-stops",
     );
-    const allowedProperties = FAMILY_PROPERTIES[family];
-    for (const property of propertyElements) {
-      if (!allowedProperties.includes(property.name ?? ""))
-        throw styleError(style, property.name ?? "", "unknown style property element");
-      for (const attribute of Object.keys(property.attributes ?? {})) {
-        if (!ODF_STYLE_ATTRIBUTE.test(attribute))
-          throw styleError(style, attribute, "attribute has no ODF RNG mapping");
-      }
-    }
     const paragraph = childNamed(style, "style:paragraph-properties");
     const tabStops = childrenNamed(childNamed(paragraph, "style:tab-stops"), "style:tab-stop").map(
       parseTabStop,
@@ -131,15 +123,12 @@ export function parseStyles(container: Element | undefined): StyleMap {
         : Math.round((lengthToEmu(columnWidthValue) ?? 0) / 635);
     const color = attributeString(character, "fo:color");
     const size = attributeString(character, "fo:font-size");
-    const resourceProperties = propertyElements.map((property) => ({
-      name: property.name ?? "",
-      attributes: Object.fromEntries(
-        Object.entries(property.attributes ?? {}).map(([attribute, value]) => [
-          attribute,
-          resourceValue(attribute, String(value)),
-        ]),
-      ),
-    }));
+    const resourceProperties = propertyElements.map((property) => {
+      const parsed = parseStyleProperty(property, { family, scale: "hundredth-millimeter" });
+      if (!parsed.ok)
+        throw styleError(style, parsed.attributeName ?? parsed.elementName, parsed.reason);
+      return parsed.value;
+    });
     result.set(name, {
       alignment: attributeString(paragraph, "fo:text-align"),
       pageBreakBefore: attributeString(paragraph, "fo:break-before") === "page",
@@ -175,60 +164,12 @@ export function automaticStyleResourcesXml(
       { "style:name": overlay.name, "style:family": overlay.family },
       overlay.properties
         .filter((property) => Object.keys(property.attributes).length > 0)
-        .map((property) => xmlElement(property.name, resourceAttributesXml(property.attributes))),
+        .map((property) =>
+          xmlElement(property.name, stylePropertyAttributes(property, "hundredth-millimeter")),
+        ),
     ),
   );
 }
-
-function resourceAttributesXml(
-  attributes: Record<string, string | number | boolean>,
-): Record<string, string | number | boolean> {
-  return Object.fromEntries(
-    Object.entries(attributes).map(([name, value]) => [
-      name,
-      typeof value === "string"
-        ? value
-        : isPercentAttribute(name)
-          ? `${value}%`
-          : typeof value === "number" && isLengthAttribute(name)
-            ? emuToLength(value * 635)
-            : value,
-    ]),
-  );
-}
-
-function isLengthAttribute(name: string): boolean {
-  return /(width|height|margin|spacing|distance|indent|padding|position)/.test(name);
-}
-
-function isPercentAttribute(name: string): boolean {
-  return /(line-height|rel-width|rel-height|opacity|transparency)/.test(name);
-}
-
-const FAMILY_PROPERTIES: Record<StyleFamily, string[]> = {
-  paragraph: ["style:paragraph-properties", "loext:graphic-properties", "style:text-properties"],
-  text: ["style:text-properties"],
-  graphic: [
-    "style:graphic-properties",
-    "loext:graphic-properties",
-    "style:paragraph-properties",
-    "style:text-properties",
-  ],
-  table: ["style:table-properties"],
-  "table-column": ["style:table-column-properties"],
-  "table-row": ["style:table-row-properties"],
-  "table-cell": [
-    "style:table-cell-properties",
-    "style:paragraph-properties",
-    "style:text-properties",
-  ],
-  section: ["style:section-properties"],
-  "page-layout": ["style:page-layout-properties"],
-  "drawing-page": ["style:drawing-page-properties"],
-  ruby: ["style:ruby-properties"],
-};
-
-const ODF_STYLE_ATTRIBUTE = /^(?:[a-z][a-z0-9]*:[^:]+|[^:]+)$/;
 
 function parseFamily(value: string | undefined, style: Element): StyleFamily {
   const families: StyleFamily[] = [
@@ -258,19 +199,4 @@ function styleError(style: Element, name: string, reason: string): OdtParseError
     name,
     reason,
   );
-}
-
-function resourceValue(name: string, value: string): string | number {
-  if (/^\d+(?:\.\d+)?%$/.test(value)) return Number.parseFloat(value);
-  const length = lengthToEmu(value);
-  if (
-    length !== undefined &&
-    /(width|height|margin|spacing|distance|indent|padding|position)/.test(name)
-  )
-    return Math.round(length / 635);
-  if (/(angle|rotation)/.test(name)) {
-    const angle = Number(value);
-    if (Number.isFinite(angle)) return angle;
-  }
-  return value;
 }

@@ -3,7 +3,9 @@ import {
   childNamed,
   childrenNamed,
   emuToLength,
-  lengthToEmu,
+  parseStyleProperty,
+  removeStylePropertyAttributes,
+  stylePropertyAttributes,
   xmlElement,
 } from "@office-open/odf";
 import type { StyleFamily, StyleResourceOptions } from "@office-open/odf";
@@ -34,37 +36,10 @@ export function styleResourcesXml(overlays: StyleResourceOptions[] | undefined):
       "style:style",
       { "style:name": overlay.name, "style:family": overlay.family },
       overlay.properties.map((property) =>
-        xmlElement(property.name, resourceAttributesXml(property.attributes)),
+        xmlElement(property.name, stylePropertyAttributes(property, "emu")),
       ),
     ),
   );
-}
-
-function resourceAttributesXml(
-  attributes: Record<string, string | number | boolean>,
-): Record<string, string | number | boolean> {
-  return Object.fromEntries(
-    Object.entries(attributes).map(([name, value]) => [
-      name,
-      typeof value === "string"
-        ? value
-        : typeof value === "boolean"
-          ? value
-          : isPercentAttribute(name)
-            ? `${value}%`
-            : isLengthAttribute(name)
-              ? emuToLength(value)
-              : value,
-    ]),
-  );
-}
-
-function isLengthAttribute(name: string): boolean {
-  return /(width|height|margin|spacing|distance|indent|padding|position)/.test(name);
-}
-
-function isPercentAttribute(name: string): boolean {
-  return /(line-height|rel-width|rel-height|opacity|transparency)/.test(name);
 }
 
 /** Column width style — pptx widths are EMU. */
@@ -151,35 +126,21 @@ export function parseStyleResources(container: Element | undefined): StyleResour
     const properties: StyleResourceOptions["properties"] = [];
     for (const property of style.elements ?? []) {
       if (property.type !== "element" || property.name === "style:tab-stops") continue;
-      if (!allowed.includes(property.name ?? "")) {
-        const reason = "unknown style property element";
+      const parsed = parseStyleProperty(property, { family, scale: "emu" });
+      if (!parsed.ok) {
+        const name = parsed.attributeName ?? parsed.elementName;
         throw new OdpParseError(
-          `content.xml: ${path}: ${property.name}: ${reason}`,
+          `content.xml: ${path}: ${name}: ${parsed.reason}`,
           "content.xml",
           path,
-          property.name ?? "",
-          reason,
+          name,
+          parsed.reason,
         );
       }
-      const attributes: Record<string, string | number | boolean> = {};
-      for (const [attribute, value] of Object.entries(property.attributes ?? {})) {
-        if (
-          !/^(fo|style|text|draw|table|svg|dr3d|presentation|smil|officeooo|loext):/.test(attribute)
-        ) {
-          const reason = "attribute has no ODF RNG mapping";
-          throw new OdpParseError(
-            `content.xml: ${path}: ${attribute}: ${reason}`,
-            "content.xml",
-            path,
-            attribute,
-            reason,
-          );
-        }
-        if (!isMappedTextAttribute(property.name ?? "", attribute))
-          attributes[attribute] = resourceValue(attribute, String(value));
-      }
-      if (Object.keys(attributes).length > 0)
-        properties.push({ name: property.name ?? "", attributes });
+      const value = removeStylePropertyAttributes(parsed.value, (attribute) =>
+        isMappedTextAttribute(property.name ?? "", attribute),
+      );
+      if (Object.keys(value.attributes).length > 0) properties.push(value);
     }
     if (properties.length > 0) result.push({ name, family, properties });
   }
@@ -193,11 +154,4 @@ function isMappedTextAttribute(element: string, attribute: string): boolean {
       attribute,
     )
   );
-}
-
-function resourceValue(name: string, value: string): string | number {
-  if (/^\d+(?:\.\d+)?%$/.test(value)) return Number.parseFloat(value);
-  if (name === "style:column-width") return lengthToEmu(value) ?? value;
-  if (/(angle|rotation)/.test(name) && Number.isFinite(Number(value))) return Number(value);
-  return value;
 }

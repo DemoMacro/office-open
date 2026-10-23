@@ -168,7 +168,7 @@ export const ODF_CODEC_OWNERSHIP: readonly OdfCodecEntry[] = [
   },
   {
     id: "odt",
-    classification: "canonical",
+    classification: "subdocument",
     owner: { package: "odt", module: "src/index.ts", export: "generateDocument" },
     parts: DOCUMENT_PARTS,
     schemaElements: [...ODT_CONTENT, ...ODT_STYLES, ...ODT_META],
@@ -206,7 +206,7 @@ export const ODF_CODEC_OWNERSHIP: readonly OdfCodecEntry[] = [
     ],
   },
   {
-    id: "ods-style-overlay",
+    id: "ods-style-properties",
     classification: "subdocument",
     owner: { package: "ods", module: "src/index.ts", export: "generateWorkbook" },
     parts: ["content.xml", "styles.xml"],
@@ -215,9 +215,8 @@ export const ODF_CODEC_OWNERSHIP: readonly OdfCodecEntry[] = [
       { name: "style:paragraph-properties", attributes: ["fo:line-height"] },
     ],
     roundTrip: ["generateWorkbook", "parseWorkbook"],
-    testId: "ODS raw style overlay semantic round trip",
+    testId: "ODS typed style property semantic round trip",
     fixtureKey: "percent-length-overlay",
-    rawFallbacks: ["style:paragraph-properties"],
   },
   {
     id: "ods-linked-graphics",

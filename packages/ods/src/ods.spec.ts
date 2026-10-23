@@ -487,7 +487,11 @@ describe("ODS codec", () => {
           properties: [
             {
               name: "style:paragraph-properties",
-              attributes: { "fo:line-height": 150 },
+              attributes: {
+                "fo:line-height": 150,
+                "fo:margin-left": 38,
+                "style:contextual-spacing": true,
+              },
             },
           ],
         },
@@ -498,7 +502,27 @@ describe("ODS codec", () => {
       .files["content.xml"]!;
     expect(content).toContain('style:row-height="20pt"');
     expect(content).toContain('fo:line-height="150%"');
+    expect(content).toContain('fo:margin-left="1.005417cm"');
+    expect(content).toContain('style:contextual-spacing="true"');
     expect(content).not.toMatch(/(?:row-height|line-height)="(?:150|20)"(?:\s|\/>)/);
+    expect(await parseWorkbook(generated)).toMatchObject({
+      styleResources: [
+        {
+          name: "P1",
+          family: "paragraph",
+          properties: [
+            {
+              name: "style:paragraph-properties",
+              attributes: {
+                "fo:line-height": 150,
+                "fo:margin-left": 38,
+                "style:contextual-spacing": true,
+              },
+            },
+          ],
+        },
+      ],
+    });
   });
 
   it("rejects a cell image with neither embedded data nor a source URL", async () => {

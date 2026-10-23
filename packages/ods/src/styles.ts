@@ -3,8 +3,10 @@ import {
   attributeString,
   childNamed,
   childrenNamed,
-  emuToLength,
   lengthToEmu,
+  parseStyleProperty,
+  removeStylePropertyAttributes,
+  stylePropertyAttributes,
   xmlElement,
   type XmlAttributes,
 } from "@office-open/odf";
@@ -99,35 +101,10 @@ export function styleResourcesXml(overlays: StyleResourceOptions[] | undefined):
       "style:style",
       { "style:name": overlay.name, "style:family": overlay.family },
       overlay.properties.map((property) =>
-        xmlElement(property.name, resourceAttributesXml(property.attributes)),
+        xmlElement(property.name, stylePropertyAttributes(property, "spreadsheet")),
       ),
     ),
   );
-}
-
-function resourceAttributesXml(
-  attributes: Record<string, string | number | boolean>,
-): Record<string, string | number | boolean> {
-  return Object.fromEntries(
-    Object.entries(attributes).map(([name, value]) => [
-      name,
-      typeof value === "string"
-        ? value
-        : isPercentAttribute(name)
-          ? `${value}%`
-          : typeof value === "boolean"
-            ? value
-            : name === "style:column-width"
-              ? emuToLength(value * 9525)
-              : name === "style:row-height" || name === "style:min-row-height"
-                ? `${value}pt`
-                : value,
-    ]),
-  );
-}
-
-function isPercentAttribute(name: string): boolean {
-  return /(line-height|rel-width|rel-height|opacity|transparency)/.test(name);
 }
 
 /** Font/fill properties as ODF style children; empty array when styleless. */
@@ -491,38 +468,30 @@ export function parseStyleResources(container: Element | undefined): StyleResour
     );
     const properties: StyleResourceOptions["properties"] = [];
     for (const property of propertyElements) {
-      const propertyName = property.name ?? "";
-      if (!ODS_STYLE_PROPERTIES[family]!.includes(propertyName)) {
-        const reason = "unknown style property element";
+      const sourceAttributes = Object.fromEntries(
+        Object.entries(property.attributes ?? {}).filter(
+          ([attribute]) => !isMappedDimensionAttribute(property.name ?? "", attribute),
+        ),
+      );
+      if (Object.keys(sourceAttributes).length === 0) continue;
+      const parsed = parseStyleProperty(
+        { ...property, attributes: sourceAttributes },
+        { family, scale: "spreadsheet" },
+      );
+      if (!parsed.ok) {
+        const name = parsed.attributeName ?? parsed.elementName;
         throw new OdsParseError(
-          `content.xml: ${path}: ${propertyName}: ${reason}`,
+          `content.xml: ${path}: ${name}: ${parsed.reason}`,
           "content.xml",
           path,
-          propertyName,
-          reason,
+          name,
+          parsed.reason,
         );
       }
-      const attributes: Record<string, string | number | boolean> = {};
-      for (const [attribute, value] of Object.entries(property.attributes ?? {})) {
-        if (isMappedDimensionAttribute(property.name ?? "", attribute)) continue;
-        if (
-          !/^(fo|style|text|draw|table|svg|dr3d|presentation|smil|officeooo|loext|css3t|tableooo|gnm):/.test(
-            attribute,
-          )
-        ) {
-          const reason = "attribute has no ODF RNG mapping";
-          throw new OdsParseError(
-            `content.xml: ${path}: ${attribute}: ${reason}`,
-            "content.xml",
-            path,
-            attribute,
-            reason,
-          );
-        }
-        attributes[attribute] = resourceValue(attribute, String(value));
-      }
-      if (Object.keys(attributes).length > 0)
-        properties.push({ name: property.name ?? "", attributes });
+      const value = removeStylePropertyAttributes(parsed.value, (attribute) =>
+        isMappedDimensionAttribute(property.name ?? "", attribute),
+      );
+      if (Object.keys(value.attributes).length > 0) properties.push(value);
     }
     if (properties.length > 0) result.push({ name, family, properties });
   }
@@ -549,17 +518,6 @@ function isMappedDimensionAttribute(element: string, attribute: string): boolean
       ].includes(attribute)) ||
     (element === "style:table-cell-properties" && attribute.startsWith("gnm:"))
   );
-}
-
-function resourceValue(name: string, value: string): string | number {
-  if (/^\d+(?:\.\d+)?%$/.test(value)) return Number.parseFloat(value);
-  if (name === "style:column-width") return Math.round((lengthToEmu(value) ?? 0) / 9525);
-  if (name === "style:row-height" || name === "style:min-row-height") {
-    const emu = lengthToEmu(value);
-    return emu === undefined ? value : emu / 12700;
-  }
-  if (/(angle|rotation)/.test(name) && Number.isFinite(Number(value))) return Number(value);
-  return value;
 }
 
 /** ODF #RRGGBB → xlsx RRGGBB hex. */

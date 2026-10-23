@@ -112,6 +112,7 @@ export {
   parseOfficeForms,
   parseXFormsModel,
 } from "./forms";
+export type { FormEventListenerOptions } from "@office-open/core";
 export {
   graphicFill,
   graphicOutline,
@@ -126,7 +127,13 @@ export { PRESET_GEOMETRY_DOCX, presetGeometryOdf } from "./drawing/preset-geomet
 export {
   type PackageMemberOptions,
   type PackageOptions,
+  parseStyleProperty,
   type StyleFamily,
+  removeStylePropertyAttributes,
+  stylePropertyAttributes,
   type StyleResourceOptions,
   type StylePropertyOptions,
+  type StylePropertyParseContext,
+  type StylePropertyParseResult,
+  type StylePropertyScale,
 } from "./package-options";

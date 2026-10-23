@@ -468,10 +468,9 @@ export const ODF_COVERAGE_FIXTURES = {
     });
     const parsed = await parseWorkbook(referenced);
     assertEqual(parsed.worksheets?.[0]?.rows?.[0]?.height, 20, "raw length fallback semantics");
-    assertEqual(parsed.styleResources, [overlays[1]], "raw percent overlay semantic round trip");
+    assertEqual(parsed.styleResources, [overlays[1]], "typed percent overlay semantic round trip");
     return {
       semanticRoundTrip: true,
-      rawFallbackElements: ["style:paragraph-properties"],
     };
   },
 } as const;
