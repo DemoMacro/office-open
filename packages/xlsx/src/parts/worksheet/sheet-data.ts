@@ -123,12 +123,21 @@ function isOff(value: string): boolean {
  */
 function textContent(src: string, from: number, to: number): string {
   if (to <= from) return "";
-  let text = src.slice(from, to);
-  // CDATA sections carry text content verbatim; keep the inner characters.
-  if (text.indexOf("<![CDATA[") !== -1) {
-    text = text.replace(/<!\[CDATA\[(.*?)\]\]>/gs, "$1");
+  const text = src.slice(from, to);
+  if (!text.includes("<![CDATA[")) return unescapeXml(text);
+
+  // Outside CDATA, character data is escaped; CDATA content is literal. Copy
+  // the two classes separately so `<![CDATA[&amp;]]>` remains `&amp;`.
+  let result = "";
+  let cursor = 0;
+  const cdata = /<!\[CDATA\[([\s\S]*?)\]\]>/g;
+  for (const match of text.matchAll(cdata)) {
+    const start = match.index ?? 0;
+    result += unescapeXml(text.slice(cursor, start));
+    result += match[1] ?? "";
+    cursor = start + match[0].length;
   }
-  return unescapeXml(text);
+  return result + unescapeXml(text.slice(cursor));
 }
 
 /**

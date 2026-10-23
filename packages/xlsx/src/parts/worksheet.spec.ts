@@ -9,6 +9,18 @@ import { worksheetDesc } from "./worksheet";
 import type { AutoFilterOptions, WorksheetOptions } from "./worksheet";
 
 describe("Worksheet", () => {
+  it("keeps escaped text literal inside CDATA cell values", () => {
+    const el = parseXml(
+      `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">` +
+        `<sheetData><row r="1"><c r="A1" t="str">` +
+        `<v><![CDATA[&amp;]]></v></c></row></sheetData></worksheet>`,
+      { nativeTypeAttributes: true },
+    ).elements?.[0];
+    if (!el) throw new Error("parsed worksheet has no root element");
+    const result = worksheetDesc.parse(el, {} as unknown as ReadContext) as WorksheetOptions;
+    expect(result.rows?.[0]?.cells?.[0]?.value).toBe("&amp;");
+  });
+
   describe("cell formula", () => {
     it("accepts a bare string as shorthand for { formula }", () => {
       const shorthand = buildWorksheetXml(
