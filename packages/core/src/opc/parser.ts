@@ -270,8 +270,10 @@ export class ParsedArchive {
   public remove(path: string): boolean {
     path = this.resolvePath(path);
     this.wrapperCache.delete(path);
-    const removed =
-      this.modified.delete(path) || this.parts.delete(path) || this.index.delete(path);
+    const removedModified = this.modified.delete(path);
+    const removedPart = this.parts.delete(path);
+    const removedIndex = this.index.delete(path);
+    const removed = removedModified || removedPart || removedIndex;
     if (removed && this.byLower.get(path.toLowerCase()) === path)
       this.byLower.delete(path.toLowerCase());
     return removed;

@@ -40,6 +40,13 @@ describe("ParsedArchive case-insensitive part names", () => {
     expect(doc.has("xl/SharedStrings.xml")).toBe(false);
   });
 
+  it("remove discards an indexed part after it is modified", () => {
+    const doc = archiveOf();
+    doc.set("xl/sharedStrings.xml", { type: "element", name: "sst" });
+    expect(doc.remove("xl/sharedstrings.xml")).toBe(true);
+    expect(doc.has("xl/SharedStrings.xml")).toBe(false);
+  });
+
   it("rejects ZIP members that collide as OPC part names", () => {
     expect(() =>
       parseArchive(
