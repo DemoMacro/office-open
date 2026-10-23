@@ -143,7 +143,7 @@ describe("deriveContentTypes", () => {
 });
 
 describe("finalizeContentTypes", () => {
-  it("preserves source declarations for absent parts and adds only uncovered outputs", () => {
+  it("preserves source defaults and drops overrides for absent parts", () => {
     const source: ContentTypesInput = {
       preserveSourceDeclarations: true,
       defaults: [
@@ -167,7 +167,7 @@ describe("finalizeContentTypes", () => {
       {} as never,
     );
 
-    expect(xml).toContain('PartName="/docProps/core.xml"');
+    expect(xml).not.toContain('PartName="/docProps/core.xml"');
     expect(xml).toContain('Extension="rels"');
     expect(xml).toContain('PartName="/xl/workbook.xml"');
   });

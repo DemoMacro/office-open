@@ -43,7 +43,7 @@ export interface ContentTypeOverride {
 export interface ContentTypesInput {
   /** Legacy Microsoft OPC namespace flavor; omitted for standard OPC. */
   namespace?: "microsoft2005";
-  /** Preserve every source declaration, including entries for absent parts. Round-trip only. */
+  /** Preserve source Defaults and Overrides for parts still present. Round-trip only. */
   preserveSourceDeclarations?: boolean;
   defaults: ContentTypeDefault[];
   overrides: ContentTypeOverride[];
@@ -228,8 +228,12 @@ export function deriveContentTypes(
   if (!options.source) return { defaults, overrides: [...overrideMap.values()] };
   if (options.source.preserveSourceDeclarations === true) {
     const source = options.source;
+    const outputPartNames = new Set(files.map((file) => withLeadingSlash(file).toLowerCase()));
+    const sourceOverrides = source.overrides.filter((entry) =>
+      outputPartNames.has(entry.partName.toLowerCase()),
+    );
     const sourceOverrideByPath = new Set(
-      source.overrides.map((entry) => entry.partName.toLowerCase()),
+      sourceOverrides.map((entry) => entry.partName.toLowerCase()),
     );
     const sourceDefaultByExt = new Map(
       source.defaults.map((entry) => [entry.extension.toLowerCase(), entry.contentType]),
@@ -261,7 +265,7 @@ export function deriveContentTypes(
       ...(source.namespace ? { namespace: source.namespace } : {}),
       preserveSourceDeclarations: true,
       defaults: [...source.defaults],
-      overrides: [...source.overrides, ...additions],
+      overrides: [...sourceOverrides, ...additions],
     };
   }
   return {

@@ -8292,7 +8292,7 @@
           "type": "array"
         },
         "preserveSourceDeclarations": {
-          "description": "Preserve every source declaration, including entries for absent parts. Round-trip only.",
+          "description": "Preserve source Defaults and Overrides for parts still present. Round-trip only.",
           "readOnly": true,
           "type": "boolean"
         }

@@ -1,3 +1,4 @@
+import { unzipSync } from "@office-open/core/opc";
 import { describe, expect, it } from "vite-plus/test";
 
 import { generateWorkbook } from "./generate";
@@ -19,7 +20,22 @@ const workbook = (): WorkbookOptions => ({
 const source = async (): Promise<Uint8Array> =>
   (await generateWorkbook(workbook(), { type: "uint8array" })) as Uint8Array;
 
+const twoSheetSource = async (): Promise<Uint8Array> =>
+  (await generateWorkbook({ worksheets: [{ name: "A" }, { name: "B" }] })) as Uint8Array;
+
 describe("patchWorkbook commands", () => {
+  it("removes the content-type override for a deleted worksheet", async () => {
+    const patched = (await patchWorkbook({
+      data: await twoSheetSource(),
+      commands: [{ type: "remove", at: { field: "worksheets", route: [{ name: "B" }] } }],
+    })) as Uint8Array;
+    const archive = unzipSync(patched);
+    const contentTypes = new TextDecoder().decode(archive["[Content_Types].xml"]!);
+
+    expect(archive["xl/worksheets/sheet2.xml"]).toBeUndefined();
+    expect(contentTypes).not.toContain('PartName="/xl/worksheets/sheet2.xml"');
+  });
+
   it("replaces addressed canonical text", async () => {
     const parsed = parseWorkbookSync(
       await patchWorkbook({
