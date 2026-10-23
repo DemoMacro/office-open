@@ -3,8 +3,10 @@ import {
   childNamed,
   childrenNamed,
   emuToLength,
+  parseStyleMaps,
   parseStyleProperty,
   removeStylePropertyAttributes,
+  styleMapsXml,
   stylePropertyXml,
   xmlElement,
 } from "@office-open/odf";
@@ -32,11 +34,10 @@ export function addTextStyle(properties: TextProperties, styles: string[]): stri
 
 export function styleResourcesXml(overlays: StyleResourceOptions[] | undefined): string[] {
   return (overlays ?? []).map((overlay) =>
-    xmlElement(
-      "style:style",
-      { "style:name": overlay.name, "style:family": overlay.family },
-      overlay.properties.map((property) => stylePropertyXml(property, "emu")),
-    ),
+    xmlElement("style:style", { "style:name": overlay.name, "style:family": overlay.family }, [
+      ...styleMapsXml(overlay.maps),
+      ...overlay.properties.map((property) => stylePropertyXml(property, "emu")),
+    ]),
   );
 }
 
@@ -122,8 +123,9 @@ export function parseStyleResources(container: Element | undefined): StyleResour
       );
     }
     const properties: StyleResourceOptions["properties"] = [];
+    const maps = parseStyleMaps(style);
     for (const property of style.elements ?? []) {
-      if (property.type !== "element" || property.name === "style:tab-stops") continue;
+      if (property.type !== "element" || property.name === "style:map") continue;
       const parsed = parseStyleProperty(property, { family, scale: "emu" });
       if (!parsed.ok) {
         const name = parsed.attributeName ?? parsed.elementName;
@@ -140,7 +142,9 @@ export function parseStyleResources(container: Element | undefined): StyleResour
       );
       if (hasStyleProjection(value)) properties.push(value);
     }
-    if (properties.length > 0) result.push({ name, family, properties });
+    if (properties.length > 0 || maps.length > 0) {
+      result.push({ name, family, properties, ...(maps.length > 0 ? { maps } : {}) });
+    }
   }
   return result;
 }

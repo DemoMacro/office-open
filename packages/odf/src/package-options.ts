@@ -4,9 +4,11 @@ import type { Element } from "@office-open/xml";
 
 import type { OcfManifestOptions } from "./container/manifest";
 import {
+  attributeString,
   emuToLength,
   escapeText,
   lengthToEmu,
+  unknownAttributeNames,
   xmlElement,
   type XmlAttributes,
 } from "./runtime/xml";
@@ -710,6 +712,13 @@ export interface StyleTabStopsOptions {
   stops: StyleTabStopOptions[];
 }
 
+export interface StyleMapOptions {
+  name: "style:map";
+  condition: string;
+  applyStyleName: string;
+  baseCellAddress?: string;
+}
+
 export interface StyleDropCapOptions {
   name: "style:drop-cap";
   attributes: Partial<Record<(typeof DROP_CAP_ATTRIBUTES)[number], StylePropertyValue>>;
@@ -1177,6 +1186,45 @@ export interface StyleResourceOptions {
   name: string;
   family: StyleFamily;
   properties: StylePropertyOptions[];
+  maps?: StyleMapOptions[];
+}
+
+const STYLE_MAP_ATTRIBUTES = [
+  "style:condition",
+  "style:apply-style-name",
+  "style:base-cell-address",
+] as const;
+
+export function parseStyleMaps(style: Element): StyleMapOptions[] {
+  return (style.elements ?? [])
+    .filter((child): child is Element => child.type === "element" && child.name === "style:map")
+    .map((element) => {
+      const condition = attributeString(element, "style:condition");
+      const applyStyleName = attributeString(element, "style:apply-style-name");
+      if (condition === undefined || applyStyleName === undefined) {
+        throw new Error("style:map requires condition and apply-style-name");
+      }
+      const unknown = unknownAttributeNames(element, STYLE_MAP_ATTRIBUTES);
+      if (unknown.length > 0) throw new Error(`Unknown style:map attribute: ${unknown[0]}`);
+      return {
+        name: "style:map",
+        condition,
+        applyStyleName,
+        ...(attributeString(element, "style:base-cell-address") === undefined
+          ? {}
+          : { baseCellAddress: attributeString(element, "style:base-cell-address") }),
+      };
+    });
+}
+
+export function styleMapsXml(maps: StyleMapOptions[] | undefined): string[] {
+  return (maps ?? []).map((map) =>
+    xmlElement("style:map", {
+      "style:condition": map.condition,
+      "style:apply-style-name": map.applyStyleName,
+      "style:base-cell-address": map.baseCellAddress,
+    }),
+  );
 }
 
 /** ODF flavor used to normalize ODF length attributes without losing scale. */

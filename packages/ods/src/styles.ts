@@ -4,8 +4,10 @@ import {
   childNamed,
   childrenNamed,
   lengthToEmu,
+  parseStyleMaps,
   parseStyleProperty,
   removeStylePropertyAttributes,
+  styleMapsXml,
   stylePropertyXml,
   xmlElement,
   type XmlAttributes,
@@ -97,11 +99,10 @@ export function addCellStyle(style: StyleOptions, styles: string[]): string {
 
 export function styleResourcesXml(overlays: StyleResourceOptions[] | undefined): string[] {
   return (overlays ?? []).map((overlay) =>
-    xmlElement(
-      "style:style",
-      { "style:name": overlay.name, "style:family": overlay.family },
-      overlay.properties.map((property) => stylePropertyXml(property, "spreadsheet")),
-    ),
+    xmlElement("style:style", { "style:name": overlay.name, "style:family": overlay.family }, [
+      ...styleMapsXml(overlay.maps),
+      ...overlay.properties.map((property) => stylePropertyXml(property, "spreadsheet")),
+    ]),
   );
 }
 
@@ -461,10 +462,10 @@ export function parseStyleResources(container: Element | undefined): StyleResour
       );
     }
     const propertyElements = (style.elements ?? []).filter(
-      (child) =>
-        child.type === "element" && child.name !== "style:tab-stops" && child.name !== "style:map",
+      (child) => child.type === "element" && child.name !== "style:map",
     );
     const properties: StyleResourceOptions["properties"] = [];
+    const maps = parseStyleMaps(style);
     for (const property of propertyElements) {
       const sourceAttributes = Object.fromEntries(
         Object.entries(property.attributes ?? {}).filter(
@@ -491,7 +492,9 @@ export function parseStyleResources(container: Element | undefined): StyleResour
       );
       if (hasStyleProjection(value)) properties.push(value);
     }
-    if (properties.length > 0) result.push({ name, family, properties });
+    if (properties.length > 0 || maps.length > 0) {
+      result.push({ name, family, properties, ...(maps.length > 0 ? { maps } : {}) });
+    }
   }
   return result;
 }

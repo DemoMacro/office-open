@@ -492,6 +492,20 @@ describe("ODS codec", () => {
                 "fo:margin-left": 38,
                 "style:contextual-spacing": true,
               },
+              children: [
+                {
+                  name: "style:tab-stops",
+                  stops: [{ attributes: { "style:position": 914400, "style:type": "right" } }],
+                },
+              ],
+            },
+          ],
+          maps: [
+            {
+              name: "style:map",
+              condition: "cell-content()=1",
+              applyStyleName: "Strong",
+              baseCellAddress: "Sheet1.A1",
             },
           ],
         },
@@ -518,8 +532,15 @@ describe("ODS codec", () => {
                 "fo:margin-left": 38,
                 "style:contextual-spacing": true,
               },
+              children: [
+                {
+                  name: "style:tab-stops",
+                  stops: [{ attributes: { "style:position": 914400, "style:type": "right" } }],
+                },
+              ],
             },
           ],
+          maps: options.styleResources?.[1]?.maps,
         },
       ],
     });
