@@ -130,6 +130,39 @@ describe("ODT canonical projection", () => {
     ).rejects.toMatchObject({ reason: "unknown-label-followed-by" });
   });
 
+  it("treats inherited object names as unknown drawing presets", async () => {
+    await expect(
+      parseDocument(
+        odtPackage(
+          '<draw:custom-shape svg:x="1cm" svg:y="2cm" svg:width="3cm" svg:height="4cm"><draw:enhanced-geometry draw:type="constructor"/></draw:custom-shape>',
+        ),
+      ),
+    ).rejects.toMatchObject({ reason: "unknown-drawing-preset" });
+  });
+
+  it("escapes header field cached values", async () => {
+    const options: DocumentOptions = {
+      sections: [
+        {
+          children: [],
+          headers: {
+            default: [
+              {
+                paragraph: {
+                  children: [{ simpleField: { instruction: "PAGE", cachedValue: "A&B<C>" } }],
+                },
+              },
+            ],
+          },
+        },
+      ],
+    };
+    const styles = new TextDecoder().decode(
+      unzipSync(await generateDocument(options))["styles.xml"]!,
+    );
+    expect(styles).toContain("A&amp;B&lt;C&gt;");
+  });
+
   it("round-trips ODF form-control shapes with typed references", async () => {
     const parsed = await parseDocument(
       odtPackage(

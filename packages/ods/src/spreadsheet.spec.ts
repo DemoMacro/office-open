@@ -63,6 +63,14 @@ describe("ODS spreadsheet semantics", () => {
     expect(regenerated.worksheets?.[0]?.dataValidations).toEqual(
       parsed.worksheets?.[0]?.dataValidations,
     );
+    await expect(
+      parseWorkbook(
+        packageWith(
+          '<table:table table:name="Sheet1"><table:table-row><table:table-cell/></table:table-row></table:table>',
+          '<style:style style:name="bad" style:family="constructor"/>',
+        ),
+      ),
+    ).rejects.toMatchObject({ reason: "unknown style family" });
     const content = (
       await readOcf(
         await generateWorkbook(parsed),

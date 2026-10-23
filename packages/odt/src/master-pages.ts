@@ -4,6 +4,7 @@ import {
   childNamed,
   childrenNamed,
   emuToLength,
+  escapeText,
   lengthToEmu,
   readXml,
   textOf,
@@ -53,8 +54,8 @@ export function headerParagraphXml(options: ParagraphOptions): string {
 export function headerFieldXml(field: { instruction?: string; cachedValue?: string }): string {
   const value = field.cachedValue ?? "1";
   if (/NUMPAGES/i.test(field.instruction ?? ""))
-    return xmlElement("text:page-count", undefined, [value]);
-  return xmlElement("text:page-number", { "text:select-page": "current" }, [value]);
+    return xmlElement("text:page-count", undefined, [escapeText(value)]);
+  return xmlElement("text:page-number", { "text:select-page": "current" }, [escapeText(value)]);
 }
 
 /** Master-page header/footer paragraphs → docx section header/footer children. */

@@ -26,7 +26,6 @@ describe("ODS codec", () => {
     expect(content).toContain('table:number-columns-repeated="2"');
     expect(content).toContain('table:number-rows-repeated="3"');
     const parsed = await parseWorkbook(generated);
-    console.log(JSON.stringify(parsed.worksheets?.[0]?.rows));
     expect(parsed.worksheets?.[0]?.rows?.map((entry) => entry.rowNumber)).toEqual([1, 2, 3]);
     expect(parsed.worksheets?.[0]?.rows?.[2]?.cells).toEqual([
       { reference: "A3", value: "Shared" },
@@ -312,7 +311,7 @@ describe("ODS codec", () => {
   });
 
   it("preserves row spans across repeated merged blocks", async () => {
-    const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:spreadsheet><table:table table:name="Sheet1"><table:table-row table:number-rows-repeated="3"><table:table-cell table:number-columns-spanned="2" table:number-rows-spanned="2" office:value-type="string"><text:p>Merged</text:p></table:table-cell></table:table-row></table:table></office:spreadsheet></office:body></office:document-content>`;
+    const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:spreadsheet><table:table table:name="Sheet1"><table:table-row table:number-rows-repeated="3"><table:table-cell table:number-columns-spanned="2" table:number-rows-spanned="2" office:value-type="string"><text:p>Merged</text:p></table:table-cell></table:table-row><table:table-row><table:table-cell office:value-type="string"><text:p>After</text:p></table:table-cell></table:table-row></table:table></office:spreadsheet></office:body></office:document-content>`;
     const parsed = await parseWorkbook(
       generateOcf("application/vnd.oasis.opendocument.spreadsheet", { "content.xml": content }),
     );
@@ -321,7 +320,7 @@ describe("ODS codec", () => {
       { ref: "A3:B4" },
       { ref: "A5:B6" },
     ]);
-    expect(parsed.worksheets?.[0]?.rows?.map((row) => row.rowNumber)).toEqual([1, 3, 5]);
+    expect(parsed.worksheets?.[0]?.rows?.map((row) => row.rowNumber)).toEqual([1, 3, 5, 7]);
   });
 
   it("requires an embedded object body but tolerates a missing replacement", async () => {

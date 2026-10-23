@@ -259,7 +259,19 @@ export function parseShapeElement(
     : (lengthToEmu(attributeString(element, "svg:height")) ?? 0);
   const enhanced = childNamed(element, "draw:enhanced-geometry");
   const presetType = attributeString(enhanced, "draw:type");
-  const preset = presetType ? PRESET_GEOMETRY_DOCX[presetType] : undefined;
+  const preset =
+    presetType && Object.hasOwn(PRESET_GEOMETRY_DOCX, presetType)
+      ? PRESET_GEOMETRY_DOCX[presetType]
+      : undefined;
+  if (presetType && !preset) {
+    throw new OdtParseError(
+      `Unknown OpenDocument drawing preset geometry: ${presetType}`,
+      "content.xml",
+      "/draw:custom-shape/draw:enhanced-geometry",
+      "draw:type",
+      "unknown-drawing-preset",
+    );
+  }
   const geometry = shapeGeometry(element.name, preset);
   const fill = graphic ? graphicFill(graphic) : undefined;
   const outline = graphic ? graphicOutline(graphic) : undefined;
@@ -494,7 +506,19 @@ export function parseCustomShape(
   const graphic = styleName ? context.graphicStyles.get(styleName) : undefined;
   const enhanced = childNamed(element, "draw:enhanced-geometry");
   const presetType = attributeString(enhanced, "draw:type");
-  const preset = presetType ? PRESET_GEOMETRY_DOCX[presetType] : undefined;
+  const preset =
+    presetType && Object.hasOwn(PRESET_GEOMETRY_DOCX, presetType)
+      ? PRESET_GEOMETRY_DOCX[presetType]
+      : undefined;
+  if (presetType && !preset) {
+    throw new OdtParseError(
+      `Unknown OpenDocument drawing preset geometry: ${presetType}`,
+      "content.xml",
+      "/draw:custom-shape/draw:enhanced-geometry",
+      "draw:type",
+      "unknown-drawing-preset",
+    );
+  }
   const x = lengthToEmu(attributeString(element, "svg:x")) ?? 0;
   const y = lengthToEmu(attributeString(element, "svg:y")) ?? 0;
   const width = lengthToEmu(attributeString(element, "svg:width")) ?? 0;

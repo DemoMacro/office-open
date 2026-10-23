@@ -475,7 +475,7 @@ export function parseStyleResources(container: Element | undefined): StyleResour
     const name = attributeString(style, "style:name") ?? "";
     const family = attributeString(style, "style:family") as StyleFamily;
     const path = `/office:document-content/office:automatic-styles/style:style[@style:name="${name}"]`;
-    if (!ODS_STYLE_PROPERTIES[family]) {
+    if (!Object.hasOwn(ODS_STYLE_PROPERTIES, family)) {
       const reason = "unknown style family";
       throw new OdsParseError(
         `content.xml: ${path}: ${family}: ${reason}`,

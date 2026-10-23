@@ -957,11 +957,11 @@ function parseRows(
     if (repeat > 1) {
       const sourceMergeCells = mergeCells.slice(mergeStart);
       mergeCells.splice(mergeStart, sourceMergeCells.length);
+      const repeatRowSpan = Math.max(
+        1,
+        ...sourceMergeCells.map((merge) => rangeRowSpan(merge.ref)),
+      );
       for (let index = 0; index < repeat; index += 1) {
-        const repeatRowSpan = Math.max(
-          1,
-          ...sourceMergeCells.map((merge) => rangeRowSpan(merge.ref)),
-        );
         const rowOffset = index * repeatRowSpan;
         const currentRow = rowNumber + rowOffset;
         const rowMergeCells = sourceMergeCells.map((mergeCell) => ({
@@ -975,7 +975,7 @@ function parseRows(
           cells: (parsed.cells ?? []).map((cell) => renumberCell(cell, currentRow)),
         });
       }
-      rowNumber += repeat;
+      rowNumber += repeat * repeatRowSpan;
       continue;
     }
     rows.push(parsed);

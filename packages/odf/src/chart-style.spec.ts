@@ -170,26 +170,26 @@ describe("ODF chart style resources", () => {
     });
   });
 
-  it("preserves no-repeat bitmap semantics while rejecting DrawingML projection", async () => {
-    const parsed = await parse({
-      styles: [
-        style({
-          "draw:fill": "bitmap",
-          "draw:fill-image-name": "image",
-          "style:repeat": "no-repeat",
-          "draw:tile-repeat-offset": "10% horizontal",
-          "draw:opacity-name": "opaque",
-        }),
-      ],
-      gradients: [],
-      hatches: [],
-      fillImages: [
-        { name: "image", attributes: { "xlink:href": "https://example.invalid/image.png" } },
-      ],
-      strokeDashes: [],
-    });
-    expect(parsed.shapeProperties?.fill).toBeUndefined();
-    expect(parsed.shapeProperties?.styleName).toBe("chart-style");
+  it("rejects unsupported no-repeat bitmap projection", async () => {
+    await expect(
+      parse({
+        styles: [
+          style({
+            "draw:fill": "bitmap",
+            "draw:fill-image-name": "image",
+            "style:repeat": "no-repeat",
+            "draw:tile-repeat-offset": "10% horizontal",
+            "draw:opacity-name": "opaque",
+          }),
+        ],
+        gradients: [],
+        hatches: [],
+        fillImages: [
+          { name: "image", attributes: { "xlink:href": "https://example.invalid/image.png" } },
+        ],
+        strokeDashes: [],
+      }),
+    ).rejects.toMatchObject({ reason: "unsupported-bitmap-repeat" });
   });
 
   it("validates repeat tokens for source-reference bitmap fills", async () => {

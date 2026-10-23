@@ -500,7 +500,9 @@ function bitmapFill(
   const repeat = bitmapRepeat(style, graphic["style:repeat"]);
   const href = resource.attributes["xlink:href"];
   if (href?.startsWith("#")) {
-    if (repeat === "no-repeat") return undefined;
+    if (repeat === "no-repeat") {
+      throw projectionError(style, "style:repeat", "unsupported-bitmap-repeat");
+    }
     return { type: "blip", noEmbed: true, sourceReferenceId: href.slice(1) };
   }
   const overlay = {
@@ -528,21 +530,21 @@ function bitmapFill(
   const linkedUrl = isExternalOdfUrl(href) ? href : undefined;
   if (!data && !linkedUrl)
     throw projectionError(style, "draw:fill-image-name", "missing-fill-image-part");
-  const unsupportedBitmap =
-    repeat === "no-repeat" ||
-    overlay.tileRepeatOffset !== undefined ||
-    overlay.opacityName !== undefined;
+  const unsupportedBitmapOverlay =
+    overlay.tileRepeatOffset !== undefined || overlay.opacityName !== undefined;
+  if (repeat === "no-repeat") {
+    throw projectionError(style, "style:repeat", "unsupported-bitmap-repeat");
+  }
+  if (unsupportedBitmapOverlay) {
+    throw projectionError(style, "style:repeat", "unsupported-bitmap-overlay");
+  }
   const imageType = imageTypeFromHref(href);
-  const tile = unsupportedBitmap || repeat !== "repeat" ? undefined : bitmapTile(graphic, resource);
-  const value: FillOptions | undefined = unsupportedBitmap
-    ? undefined
-    : {
-        type: "blip",
-        ...(data
-          ? { data, imageType, fileName: resolvePackagePath(basePath, href) }
-          : { linkedUrl }),
-        ...(tile ? { stretch: false, tile } : {}),
-      };
+  const tile = repeat !== "repeat" ? undefined : bitmapTile(graphic, resource);
+  const value: FillOptions = {
+    type: "blip",
+    ...(data ? { data, imageType, fileName: resolvePackagePath(basePath, href) } : { linkedUrl }),
+    ...(tile ? { stretch: false, tile } : {}),
+  };
   return value;
 }
 

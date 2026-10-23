@@ -228,6 +228,14 @@ export function applyPatchCommands<TOptions extends object>(
       case "move":
         moveCommand(options, command, index, placeholderDelimiters);
         return;
+      default:
+        throw patchError(
+          command as RuntimePatchCommand,
+          index,
+          addressPath((command as RuntimePatchCommand).at),
+          "invalid-operation",
+          `Unknown patch command type: ${String((command as RuntimePatchCommand).type)}`,
+        );
     }
   });
 }

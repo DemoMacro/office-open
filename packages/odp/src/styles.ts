@@ -135,7 +135,9 @@ export function parseStyleResources(container: Element | undefined): StyleResour
     const name = attributeString(style, "style:name") ?? "";
     const family = attributeString(style, "style:family") as StyleFamily;
     const path = `/office:document-content/office:automatic-styles/style:style[@style:name="${name}"]`;
-    const allowed = ODP_STYLE_PROPERTIES[family];
+    const allowed = Object.hasOwn(ODP_STYLE_PROPERTIES, family)
+      ? ODP_STYLE_PROPERTIES[family]
+      : undefined;
     if (!allowed) {
       const reason = "unknown style family";
       throw new OdpParseError(

@@ -487,7 +487,19 @@ export function parseCustomSlideShape(
   const graphic = graphicStyles.get(attributeString(element, "draw:style-name") ?? "");
   const enhanced = childNamed(element, "draw:enhanced-geometry");
   const presetType = attributeString(enhanced, "draw:type");
-  const preset = presetType ? PRESET_GEOMETRY_DOCX[presetType] : undefined;
+  const preset =
+    presetType && Object.hasOwn(PRESET_GEOMETRY_DOCX, presetType)
+      ? PRESET_GEOMETRY_DOCX[presetType]
+      : undefined;
+  if (presetType && !preset) {
+    throw new OdpParseError(
+      `Unknown OpenDocument drawing preset geometry: ${presetType}`,
+      "content.xml",
+      "/draw:custom-shape/draw:enhanced-geometry",
+      "draw:type",
+      "unknown-drawing-preset",
+    );
+  }
   const paragraphs = childrenNamed(element, "text:p");
   const fill = graphicFill(graphic);
   const outline = graphicOutline(graphic);
