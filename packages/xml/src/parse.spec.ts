@@ -179,6 +179,34 @@ describe("parse", () => {
     ).toThrowError("Malformed XML: duplicate attribute w:a.");
   });
 
+  it("rejects canonical prefixes claimed by different namespaces", () => {
+    expect(() =>
+      parse(
+        '<root xmlns:a="http://example/known" xmlns:w="http://example/unknown"><a:e/><w:e/></root>',
+        { normalizeNamespaces: { "http://example/known": "w" } },
+      ),
+    ).toThrowError("Malformed XML: normalized prefix w has conflicting namespaces.");
+  });
+
+  it("rejects unsupported and invalid character references", () => {
+    expect(() => parse("<root>&nbsp;</root>")).toThrowError(
+      "Malformed XML: unsupported or malformed entity.",
+    );
+    expect(() => parse("<root>&#0;</root>")).toThrowError(
+      "Malformed XML: invalid character reference &#0;.",
+    );
+    expect(parse("<root>&#65;</root>").elements?.[0]?.elements?.[0]).toEqual({
+      type: "text",
+      text: "A",
+    });
+  });
+
+  it("rejects raw characters outside XML 1.0", () => {
+    expect(() => parse("<root>\u0000</root>")).toThrowError(
+      "Malformed XML: invalid character U+0000.",
+    );
+  });
+
   it("parses empty element", () => {
     const result = parse("<root></root>");
     expect(result.elements?.[0]?.name).toBe("root");

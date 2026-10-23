@@ -8,11 +8,48 @@ const ENTITY_MAP: Record<string, string> = {
   "&apos;": "'",
 };
 // Matches the five named entities plus numeric character references
-// (&#65; decimal, &#x42; hex).
-const ENTITY_PATTERN = /&(?:amp|lt|gt|quot|apos|#x[0-9a-fA-F]+|#[0-9]+);/g;
+// (&#65; decimal, &#x42; hex). The final alternative catches malformed and
+// unsupported references so callers never receive their source text.
+const ENTITY_PATTERN = /&(?:amp|lt|gt|quot|apos);|&#x[0-9a-fA-F]+;|&#[0-9]+;|&/g;
+// XML 1.0 allows TAB, LF, CR, U+0020–D7FF, E000–FFFD, and paired U+10000–
+// 10FFFF. Native regex first rejects the common valid document in one scan;
+// the byte loop only runs for malformed input to produce a precise diagnostic.
+const INVALID_XML_CHARACTERS =
+  /[\p{Control}--[\t\n\r]]|[\uFFFE\uFFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/v;
 // "Contains a non-whitespace character" — same predicate as
 // `text.trim().length > 0` without allocating the trimmed copy.
 const HAS_CONTENT = /\S/;
+
+function isValidXmlCharacter(code: number): boolean {
+  return (
+    code === 0x09 ||
+    code === 0x0a ||
+    code === 0x0d ||
+    (code >= 0x20 && code <= 0xd7ff) ||
+    (code >= 0xe000 && code <= 0xfffd) ||
+    (code >= 0x10000 && code <= 0x10ffff)
+  );
+}
+
+function validateXmlCharacters(source: string): void {
+  if (!INVALID_XML_CHARACTERS.test(source)) return;
+  for (let index = 0; index < source.length; index += 1) {
+    const code = source.charCodeAt(index);
+    if (code >= 0xd800 && code <= 0xdbff) {
+      const low = source.charCodeAt(index + 1);
+      const combined =
+        low >= 0xdc00 && low <= 0xdfff ? 0x10000 + ((code - 0xd800) << 10) + (low - 0xdc00) : 0;
+      if (combined >= 0x10000 && combined <= 0x10ffff) {
+        index += 1;
+        continue;
+      }
+      throw new Error(`Malformed XML: invalid character U+${code.toString(16).padStart(4, "0")}.`);
+    }
+    if (!isValidXmlCharacter(code)) {
+      throw new Error(`Malformed XML: invalid character U+${code.toString(16).padStart(4, "0")}.`);
+    }
+  }
+}
 
 export function unescapeXml(str: string): string {
   // Fast path: entities all start with '&', and OOXML parts overwhelmingly
@@ -21,12 +58,16 @@ export function unescapeXml(str: string): string {
   // profiles, so gate it on the sentinel byte.
   if (str.indexOf("&") === -1) return str;
   return str.replace(ENTITY_PATTERN, (match) => {
+    if (match === "&") throw new Error("Malformed XML: unsupported or malformed entity.");
     if (ENTITY_MAP[match] !== undefined) return ENTITY_MAP[match];
     // Numeric character reference: strip "&#" prefix and ";" suffix.
     const body = match.slice(2, -1);
     const code =
       body[0] === "x" || body[0] === "X" ? parseInt(body.slice(1), 16) : parseInt(body, 10);
-    return Number.isFinite(code) && code >= 0 ? String.fromCodePoint(code) : match;
+    if (!Number.isSafeInteger(code) || code < 0 || !isValidXmlCharacter(code)) {
+      throw new Error(`Malformed XML: invalid character reference ${match}.`);
+    }
+    return String.fromCodePoint(code);
   });
 }
 
@@ -77,6 +118,7 @@ export function nativeTypeValue(value: string): string | number | boolean {
 interface XmlNamespaceLayer {
   prefixes: Map<string, string> | undefined;
   defaultCanonical: string | undefined;
+  canonicalNamespaces: Map<string, string> | undefined;
 }
 
 function canonicalXmlName(
@@ -109,6 +151,35 @@ function setXmlAttribute(
   const result = attrs ?? {};
   result[name] = value;
   return result;
+}
+
+function claimCanonicalNamespace(
+  namespaces: Map<string, string>,
+  canonicalPrefix: string,
+  namespace: string,
+): void {
+  const owner = namespaces.get(canonicalPrefix);
+  if (owner !== undefined && owner !== namespace) {
+    const label = canonicalPrefix === "" ? "default namespace" : `prefix ${canonicalPrefix}`;
+    throw new Error(`Malformed XML: normalized ${label} has conflicting namespaces.`);
+  }
+  namespaces.set(canonicalPrefix, namespace);
+}
+
+function setNamespaceDeclaration(
+  attrs: Record<string, string> | undefined,
+  canonicalPrefix: string,
+  namespace: string,
+): Record<string, string> {
+  const name = canonicalPrefix === "" ? "xmlns" : `xmlns:${canonicalPrefix}`;
+  const existing = attrs?.[name];
+  if (existing !== undefined) {
+    if (existing !== namespace) {
+      throw new Error(`Malformed XML: duplicate attribute ${name}.`);
+    }
+    return attrs ?? {};
+  }
+  return setXmlAttribute(attrs, name, namespace);
 }
 
 interface DeferredClose {
@@ -193,6 +264,7 @@ function findDeferredClose(source: string, tagName: string, from: number): Defer
 }
 
 export function parse(xmlString: string, options?: ParseOptions): Element {
+  validateXmlCharacters(xmlString);
   const captureSpaces = options?.captureSpacesBetweenElements ?? false;
   const trim = options?.trim ?? false;
   const ignoreDeclaration = options?.ignoreDeclaration ?? false;
@@ -218,7 +290,11 @@ export function parse(xmlString: string, options?: ParseOptions): Element {
     options?.normalizeNamespaces !== undefined
       ? new Map(Object.entries(options.normalizeNamespaces))
       : undefined;
-  const nsRootLayer: XmlNamespaceLayer = { prefixes: undefined, defaultCanonical: undefined };
+  const nsRootLayer: XmlNamespaceLayer = {
+    prefixes: undefined,
+    defaultCanonical: undefined,
+    canonicalNamespaces: undefined,
+  };
   const nsStack: XmlNamespaceLayer[] = [nsRootLayer];
 
   const result: Element = {};
@@ -368,6 +444,7 @@ export function parse(xmlString: string, options?: ParseOptions): Element {
     const nsParent = nsTable !== undefined ? nsStack[nsStack.length - 1]! : undefined;
     let nsPrefixes = nsParent?.prefixes;
     let nsDefault = nsParent?.defaultCanonical;
+    let canonicalNamespaces = nsParent?.canonicalNamespaces;
     let nsDeclared = false;
 
     // Attribute scan, inlined from parseAttributesFromXml: called once per
@@ -405,37 +482,22 @@ export function parse(xmlString: string, options?: ParseOptions): Element {
       pos++;
 
       if (nsTable !== undefined && (name === "xmlns" || name.startsWith("xmlns:"))) {
-        if (attrs === undefined) attrs = {};
         const canonical = nsTable.get(value);
-        if (name === "xmlns") {
-          nsDefault = canonical;
-          if (canonical !== undefined && canonical !== "") {
-            // Known non-default canonical form: upgrade the declaration to a
-            // prefixed one (xmlns="uri" → xmlns:w="uri") so the rewritten
-            // element names stay declared.
-            attrs[`xmlns:${canonical}`] = value;
-          } else {
-            attrs[name] = value;
-          }
-        } else {
-          const prefix = name.slice(6);
-          if (canonical !== undefined && canonical !== "") {
-            attrs[`xmlns:${canonical}`] = value;
-          } else if (canonical === "" && !("xmlns" in attrs)) {
-            // Canonical form is unprefixed: demote to a default declaration.
-            attrs.xmlns = value;
-          } else {
-            attrs[name] = value;
-          }
-          if (!nsDeclared) {
-            nsPrefixes = new Map(nsPrefixes ?? []);
-            nsDeclared = true;
-          }
-          // Unknown URI keeps the source prefix bound to itself, which the
-          // rewrite step treats as "leave names as written". Non-null: either
-          // just assigned above or already a Map from a prior nsDeclared pass.
-          nsPrefixes!.set(prefix, canonical ?? prefix);
+        const prefix = name === "xmlns" ? "" : name.slice(6);
+        const canonicalPrefix = canonical ?? prefix;
+        canonicalNamespaces ??= new Map(nsParent?.canonicalNamespaces ?? []);
+        claimCanonicalNamespace(canonicalNamespaces, canonicalPrefix, value);
+        if (!nsDeclared) {
+          nsPrefixes = new Map(nsPrefixes ?? []);
+          nsDeclared = true;
         }
+        if (name === "xmlns") {
+          nsDefault = canonicalPrefix;
+        } else {
+          nsPrefixes!.set(prefix, canonicalPrefix);
+          if (canonical === "") nsDefault = canonical;
+        }
+        attrs = setNamespaceDeclaration(attrs, canonicalPrefix, value);
         continue;
       }
       attrs = setXmlAttribute(attrs, name, value);
@@ -524,7 +586,13 @@ export function parse(xmlString: string, options?: ParseOptions): Element {
         // cloned prefix map, or a default declaration that can shadow one).
         const layerChanged = nsDeclared || nsDefault !== nsParent!.defaultCanonical;
         nsStack.push(
-          layerChanged ? { prefixes: nsPrefixes, defaultCanonical: nsDefault } : nsParent!,
+          layerChanged
+            ? {
+                prefixes: nsPrefixes,
+                defaultCanonical: nsDefault,
+                canonicalNamespaces,
+              }
+            : nsParent!,
         );
       }
     }
