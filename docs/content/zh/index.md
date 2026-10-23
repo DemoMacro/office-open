@@ -2,7 +2,7 @@
 prose: true
 seo:
     title: 使用 JavaScript/TypeScript 生成 Office Open XML 文档
-    description: 用 JSON 或 TypeScript 生成、解析和修补 .docx、.pptx 和 .xlsx 文件——AI 原生、全类型，并完整覆盖 17 个核心 OOXML schema。支持 Node.js、浏览器、Deno 和 Bun。
+    description: 用 JSON 或 TypeScript 生成、解析和修补 .docx、.pptx 和 .xlsx 文件——AI 原生、全类型，并完整覆盖 21 个纳入覆盖率统计的 OOXML schema。支持 Node.js、浏览器、Deno 和 Bun。
 ---
 
 ::page-hero{orientation="horizontal"}

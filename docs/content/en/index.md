@@ -2,7 +2,7 @@
 prose: true
 seo:
     title: Generate Office Open XML documents with JavaScript/TypeScript
-    description: Generate, parse, and patch .docx, .pptx, and .xlsx files with JSON or TypeScript — AI-native, fully typed, and complete across 17 core OOXML schemas. Runs in Node.js, browsers, Deno, and Bun.
+    description: Generate, parse, and patch .docx, .pptx, and .xlsx files with JSON or TypeScript — AI-native, fully typed, and complete across 21 coverage-tracked OOXML schemas. Runs in Node.js, browsers, Deno, and Bun.
 ---
 
 ::page-hero{orientation="horizontal"}
