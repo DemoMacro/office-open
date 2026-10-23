@@ -7,6 +7,8 @@
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attr, children, escapeXml } from "@office-open/xml";
 
+import { XlsxPartParseError } from "../error";
+
 const TC_NS = "http://schemas.microsoft.com/office/spreadsheetml/2018/threadedcomments";
 const PERSON_ATTRIBUTES = ["displayName", "userId", "providerId", "id"] as const;
 
@@ -28,14 +30,9 @@ export interface PersonsOptions {
 }
 
 /** Structured parse failure with the exact persons-part location. */
-export class PersonsParseError extends Error {
-  constructor(
-    readonly part: string,
-    readonly path: string,
-    readonly name: string,
-    readonly reason: string,
-  ) {
-    super(`${part}${path}: ${name}: ${reason}`);
+export class PersonsParseError extends XlsxPartParseError {
+  constructor(part: string, path: string, name: string, reason: string) {
+    super(part, path, name, reason, "PersonsParseError");
   }
 }
 

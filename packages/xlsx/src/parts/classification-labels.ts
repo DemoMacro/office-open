@@ -7,6 +7,8 @@
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attr, attrBool, children, escapeXml, stringifyElement } from "@office-open/xml";
 
+import { XlsxPartParseError } from "../error";
+
 const CLBL_NS = "http://schemas.microsoft.com/office/2020/mipLabelMetadata";
 const CLASSIFICATION_LABEL_ATTRIBUTES = [
   "id",
@@ -57,14 +59,9 @@ export interface ClassificationLabelListOptions {
 }
 
 /** Structured parse failure with the exact metadata-part location. */
-export class ClassificationLabelsParseError extends Error {
-  constructor(
-    readonly part: string,
-    readonly path: string,
-    readonly name: string,
-    readonly reason: string,
-  ) {
-    super(`${part}${path}: ${name}: ${reason}`);
+export class ClassificationLabelsParseError extends XlsxPartParseError {
+  constructor(part: string, path: string, name: string, reason: string) {
+    super(part, path, name, reason, "ClassificationLabelsParseError");
   }
 }
 

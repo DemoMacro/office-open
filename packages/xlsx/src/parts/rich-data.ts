@@ -17,6 +17,8 @@ import {
 } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 
+import { XlsxPartParseError } from "../error";
+
 const RD_NS = "http://schemas.microsoft.com/office/spreadsheetml/2017/richdata";
 const RD2_NS = "http://schemas.microsoft.com/office/spreadsheetml/2017/richdata2";
 const REL_NS = "http://schemas.microsoft.com/office/spreadsheetml/2022/richvaluerel";
@@ -178,14 +180,9 @@ export function parseRichDataPartRelationships(
   });
 }
 
-export class RichDataParseError extends Error {
-  constructor(
-    readonly part: string,
-    readonly path: string,
-    readonly name: string,
-    readonly reason: string,
-  ) {
-    super(`${part}${path}: ${name}: ${reason}`);
+export class RichDataParseError extends XlsxPartParseError {
+  constructor(part: string, path: string, name: string, reason: string) {
+    super(part, path, name, reason, "RichDataParseError");
   }
 }
 

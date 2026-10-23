@@ -8,6 +8,8 @@ import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attr, attrNum, escapeXml } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 
+import { XlsxPartParseError } from "../error";
+
 /** Form-control kind (x14:formControlPr `@objectType`). */
 export type FormControlObjectType =
   | "Button"
@@ -83,18 +85,9 @@ export interface FormControlPropertiesOptions {
 }
 
 /** Structured parse failure with the exact control-part location. */
-export class ControlPropertiesParseError extends Error {
-  readonly part: string;
-  readonly path: string;
-  readonly name: string;
-  readonly reason: string;
-
+export class ControlPropertiesParseError extends XlsxPartParseError {
   constructor(part: string, path: string, name: string, reason: string) {
-    super(`${part}${path}: ${name}: ${reason}`);
-    this.part = part;
-    this.path = path;
-    this.name = name;
-    this.reason = reason;
+    super(part, path, name, reason, "ControlPropertiesParseError");
   }
 }
 
