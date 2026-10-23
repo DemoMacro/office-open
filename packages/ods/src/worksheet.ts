@@ -238,6 +238,23 @@ export function worksheetXml(
     if (firstColumn > lastColumn || firstRow > lastRow) return [];
     return [{ firstColumn, firstRow, lastColumn, lastRow }];
   });
+  const sourceRows = (worksheet.rows ?? []).map((row, rowIndex) => ({
+    ...row,
+    rowNumber: row.rowNumber ?? rowIndex + 1,
+  }));
+  const sourceRowNumbers = new Set(sourceRows.map((row) => row.rowNumber!));
+  const mergeRows = merges.flatMap((merge) =>
+    Array.from(
+      { length: merge.lastRow - merge.firstRow + 1 },
+      (_, offset) => merge.firstRow + offset,
+    ),
+  );
+  const rowsForOutput: RowOptions[] = [
+    ...sourceRows,
+    ...mergeRows
+      .filter((rowNumber) => !sourceRowNumbers.has(rowNumber))
+      .map((rowNumber) => ({ rowNumber })),
+  ].sort((left, right) => (left.rowNumber ?? 0) - (right.rowNumber ?? 0));
   const explicitColumns = (worksheet.columns ?? []).flatMap((column) => {
     const count = Math.max(1, (column.max ?? column.min) - column.min + 1);
     const styleName =
@@ -249,7 +266,7 @@ export function worksheetXml(
     );
   });
   let maxRowCells = 0;
-  for (const row of worksheet.rows ?? []) {
+  for (const row of rowsForOutput) {
     maxRowCells = Math.max(maxRowCells, row.cells?.length ?? 0);
   }
   const columnCount = Math.max(explicitColumns.length, maxRowCells, 1);
@@ -276,12 +293,14 @@ export function worksheetXml(
   const mergesByRow = new Map<number, MergedRange[]>();
   const mergeStartsByCell = new Map<string, MergedRange>();
   for (const merge of merges) {
-    const rowMerges = mergesByRow.get(merge.firstRow);
-    if (rowMerges) rowMerges.push(merge);
-    else mergesByRow.set(merge.firstRow, [merge]);
+    for (let row = merge.firstRow; row <= merge.lastRow; row += 1) {
+      const rowMerges = mergesByRow.get(row);
+      if (rowMerges) rowMerges.push(merge);
+      else mergesByRow.set(row, [merge]);
+    }
     mergeStartsByCell.set(`${merge.firstRow}:${merge.firstColumn}`, merge);
   }
-  const repeatedRows = groupRepeatedRows(worksheet.rows ?? [], canShareRepeatedRows);
+  const repeatedRows = groupRepeatedRows(rowsForOutput, canShareRepeatedRows);
   const emptyRow = { repeat: 1, xml: xmlElement("table:table-row") };
   const bodyRows: Array<{ repeat: number; xml: string }> = [];
   let expectedRowNumber = 1;
@@ -337,14 +356,16 @@ export function worksheetXml(
     const xml = xmlElement(
       "table:table-row",
       { "table:style-name": styleName },
-      groupedCellXml.map(({ count, xml }) =>
-        count === 1
-          ? xml
-          : xml.replace(
-              /^<table:(?:covered-)?table-cell(?=[ />])/u,
-              `<table:table-cell table:number-columns-repeated="${count}"`,
-            ),
-      ),
+      groupedCellXml.map(({ count, xml }) => {
+        if (count === 1) return xml;
+        const tag = xml.startsWith("<table:covered-table-cell")
+          ? "table:covered-table-cell"
+          : "table:table-cell";
+        return xml.replace(
+          /^<table:(?:covered-)?table-cell(?=[ />])/u,
+          `<${tag} table:number-columns-repeated="${count}"`,
+        );
+      }),
     );
     const previousRow = bodyRows[bodyRows.length - 1];
     if (previousRow?.xml === xml) previousRow.repeat += repeat;

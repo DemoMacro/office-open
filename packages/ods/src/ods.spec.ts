@@ -26,6 +26,7 @@ describe("ODS codec", () => {
     expect(content).toContain('table:number-columns-repeated="2"');
     expect(content).toContain('table:number-rows-repeated="3"');
     const parsed = await parseWorkbook(generated);
+    console.log(JSON.stringify(parsed.worksheets?.[0]?.rows));
     expect(parsed.worksheets?.[0]?.rows?.map((entry) => entry.rowNumber)).toEqual([1, 2, 3]);
     expect(parsed.worksheets?.[0]?.rows?.[2]?.cells).toEqual([
       { reference: "A3", value: "Shared" },
@@ -287,6 +288,26 @@ describe("ODS codec", () => {
     expect(roundTrip.worksheets?.[0]?.rows?.[1]?.cells?.map((cell) => cell.reference)).toEqual([
       "A2",
       "B2",
+    ]);
+  });
+
+  it("generates covered cells on every row of an authored merge", async () => {
+    const generated = await generateWorkbook({
+      worksheets: [
+        {
+          mergeCells: [{ ref: "A2:B3" }],
+          rows: [{ rowNumber: 2, cells: [{ reference: "A2", value: "Merged" }] }],
+        },
+      ],
+    });
+    const parsed = await parseWorkbook(generated);
+    expect(parsed.worksheets?.[0]?.mergeCells).toEqual([{ ref: "A2:B3" }]);
+    const content = (await readOcf(generated, "application/vnd.oasis.opendocument.spreadsheet"))
+      .files["content.xml"]!;
+    expect(content).toContain('<table:covered-table-cell table:number-columns-repeated="2"/>');
+    expect(parsed.worksheets?.[0]?.rows?.[2]?.cells?.map((cell) => cell.reference)).toEqual([
+      "A3",
+      "B3",
     ]);
   });
 
