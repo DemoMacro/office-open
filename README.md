@@ -23,7 +23,7 @@ Used in production by [json-to-office](https://json-to-office.com/) — its qual
 - 📄 **All-in-One** — Word (.docx), Excel (.xlsx), and PowerPoint (.pptx) in one cohesive API — no server required, works offline
 - 🗂 **Multi-Format I/O** — Parse legacy Word/Excel/PowerPoint (.doc/.xls/.ppt), RTF, ODF, and OOXML package variants through the same option models; generate RTF, ODT/ODS/ODP, and CSV/TSV
 - 🤖 **AI Tooling** — Draft-07 JSON Schemas frozen from the TypeScript API, on-demand schema slicing for LLM context budgets (CLI + SDK tool), Vercel AI SDK tool definitions, and an installable Agent Skill
-- 🧭 **Core OOXML Coverage** — All 2,191 elements and 1,923 attributes across the 17 core OOXML Transitional schemas (WordprocessingML, PresentationML, SpreadsheetML, DrawingML, shared math, and VML) are implemented for both generation and parsing; newer Word extension schemas are partially covered and tracked by automated XSD coverage tooling
+- 🧭 **Core OOXML Coverage** — All 2,273 elements and 1,969 attributes across the 21 OOXML Transitional schemas (WordprocessingML, PresentationML, SpreadsheetML, DrawingML, shared math, VML, and Word extensions) are implemented for both generation and parsing, verified by automated XSD coverage tooling
 - 📐 **Spec-Compliant** — Output validates against the OOXML Transitional XSD schemas (ISO/IEC 29500) and is verified to open in Microsoft Office, WPS Office, LibreOffice, and Google Workspace
 - 🔒 **Fully Typed** — Comprehensive TypeScript definitions for autocomplete and type safety across every API
 - 🔄 **Parse & Patch** — Read existing .docx, .pptx, .xlsx files for round-trip workflows, or patch templates by placeholder replacement
@@ -84,7 +84,7 @@ Most Office libraries only generate files. office-open closes the loop with gene
 
 The matrix is a capability contract, not an invitation to synthesize unsupported editing: legacy formats have no writers, RTF rejects unsupported canonical fields rather than dropping them, and ODF patching edits the canonical model before regenerating the package.
 
-The package graph follows format ownership: `odf` owns the OCF container, XML runtime, metadata, and shared chart/database codecs, each ODF document codec may type-import its OOXML peer while using `odf` at runtime, peer codecs do not import one another, `core` never imports a format codec, and only `office-open` aggregates every public document codec.
+The package graph follows format ownership: `odf` owns the OCF container, XML runtime, metadata, and shared chart/database codecs, each ODF document codec may type-import its OOXML peer while using `core` and `odf` at runtime, peer codecs do not import one another, `core` never imports a format codec, and only `office-open` aggregates every public document codec.
 
 ## Quick Start
 

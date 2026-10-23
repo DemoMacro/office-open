@@ -109,7 +109,7 @@ bun add office-open
   核心 OOXML 完整实现
 
   #description
-  完整覆盖 17 个核心 OOXML Transitional schema 的全部元素与属性，生成解析双向；较新的 Word 扩展另行追踪。
+  完整覆盖全部 21 个 OOXML Transitional schema（包括 Word 扩展）的元素与属性，生成解析双向。
   :::
 
   :::page-card

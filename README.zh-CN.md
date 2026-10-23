@@ -23,7 +23,7 @@
 - 📄 **三格式一体** — Word (.docx)、Excel (.xlsx)、PowerPoint (.pptx) 共用一套连贯 API——无需服务器，离线可用
 - 🗂 **多格式读写** — 通过同一套 options 模型解析旧版 Word/Excel/PowerPoint（.doc/.xls/.ppt）、RTF、ODF 与 OOXML 包变体；支持生成 RTF、ODT/ODS/ODP 与转换 CSV/TSV
 - 🤖 **AI 工具链** — 由 TypeScript API 冻结的 Draft-07 JSON Schema、按需切片适配 LLM 上下文预算（CLI + SDK 工具）、Vercel AI SDK 工具定义、可安装的 Agent Skill
-- 🧭 **核心 OOXML 覆盖** — 17 个核心 OOXML Transitional schema（WordprocessingML、PresentationML、SpreadsheetML、DrawingML、共享 math 与 VML）的全部 2,191 个元素与 1,923 个属性均已实现生成与解析；较新的 Word 扩展 schema 为部分覆盖，并由自动化 XSD 覆盖率工具持续追踪
+- 🧭 **核心 OOXML 覆盖** — 21 个 OOXML Transitional schema（WordprocessingML、PresentationML、SpreadsheetML、DrawingML、共享 math、VML 与 Word 扩展）的全部 2,273 个元素与 1,969 个属性均已实现生成与解析，并由自动化 XSD 覆盖率工具验证
 - 📐 **符合规范** — 输出通过 OOXML Transitional XSD schema（ISO/IEC 29500）校验，并经实测可在 Microsoft Office、WPS Office、LibreOffice、Google Workspace 中打开
 - 🔒 **全量类型** — 每个 API 都有完整 TypeScript 定义，自动补全与类型安全全覆盖
 - 🔄 **解析与补丁** — 读回现有 .docx、.pptx、.xlsx 文件做往返（round-trip）工作流，或按占位符替换补丁模板
@@ -84,7 +84,7 @@
 
 能力矩阵是契约，不代表可以虚构不支持的编辑能力：旧版格式没有写入器，RTF 会结构化拒绝无法表示的字段而不是静默丢弃，ODF 补丁会先编辑 canonical 模型再重新生成包。
 
-包依赖图遵循格式归属：`odf` 负责 OCF 容器、XML 运行时、元数据以及共享图表/数据库编解码器；每个 ODF 文档编解码器可以类型引用对应 OOXML 包，运行时只依赖 `odf`；同级 ODF 编解码器互不依赖；`core` 永不导入格式编解码器；只有 `office-open` 聚合全部公开文档编解码器。
+包依赖图遵循格式归属：`odf` 负责 OCF 容器、XML 运行时、元数据以及共享图表/数据库编解码器；每个 ODF 文档编解码器可以类型引用对应 OOXML 包，运行时使用 `core` 与 `odf`；同级 ODF 编解码器互不依赖；`core` 永不导入格式编解码器；只有 `office-open` 聚合全部公开文档编解码器。
 
 ## 快速开始
 

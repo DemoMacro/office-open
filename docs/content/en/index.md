@@ -109,7 +109,7 @@ Create `.docx`, `.pptx`, and `.xlsx` files from plain JSON or fully typed TypeSc
   OOXML Core Complete
 
   #description
-  Every element and attribute in the 17 core OOXML Transitional schemas, both generating and parsing — newer Word extensions are tracked separately.
+  Every element and attribute in all 21 OOXML Transitional schemas, including Word extensions, both generating and parsing.
   :::
 
   :::page-card
