@@ -238,7 +238,7 @@ export function addListStyle(
                 name: "style:list-level-properties",
                 attributes: { "text:list-level-position-and-space-mode": "label-alignment" },
               },
-              "hundredth-millimeter",
+              "emu",
             ),
           ])
         : xmlElement("text:list-level-style-bullet", { "text:level": 1, "text:bullet-char": "•" }, [
@@ -247,7 +247,7 @@ export function addListStyle(
                 name: "style:list-level-properties",
                 attributes: { "text:list-level-position-and-space-mode": "label-alignment" },
               },
-              "hundredth-millimeter",
+              "emu",
             ),
             xmlElement("style:text-properties", { "fo:font-family": "OpenSymbol" }),
           ]),
@@ -295,7 +295,7 @@ export function parseListLevel(element: Element): NumberingLevel {
   const start = attributeNumber(element, "text:start-value");
   const propertiesElement = childNamed(element, "style:list-level-properties");
   const parsedProperties = propertiesElement
-    ? parseListLevelProperties(propertiesElement, "hundredth-millimeter")
+    ? parseListLevelProperties(propertiesElement, "emu")
     : undefined;
   if (parsedProperties && !parsedProperties.ok) {
     throw new OdtParseError(

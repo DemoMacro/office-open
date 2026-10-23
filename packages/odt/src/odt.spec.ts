@@ -77,7 +77,11 @@ describe("ODT canonical projection", () => {
 
   it("round-trips common style identity, relationships, indents, and spacing", async () => {
     const options: DocumentOptions = {
-      sections: [],
+      sections: [
+        {
+          children: [{ paragraph: { text: "Item", numbering: { reference: "List", level: 0 } } }],
+        },
+      ],
       styles: {
         paragraphStyles: [
           {
@@ -118,6 +122,34 @@ describe("ODT canonical projection", () => {
     await expect(parseDocument(await generateDocument(parsed))).resolves.toMatchObject({
       numbering: parsed.numbering,
     });
+  });
+
+  it("round-trips list label indents without unit drift", async () => {
+    const options: DocumentOptions = {
+      sections: [
+        {
+          children: [{ paragraph: { text: "Item", numbering: { reference: "List", level: 0 } } }],
+        },
+      ],
+      numbering: {
+        abstractNumberings: [
+          {
+            reference: "List",
+            levels: [
+              {
+                level: 0,
+                format: "decimal",
+                text: "%1.",
+                suffix: "tab",
+                paragraph: { indent: { left: 720, hanging: 180 } },
+              },
+            ],
+          },
+        ],
+      },
+    };
+    const parsed = await parseDocument(await generateDocument(options));
+    expect(parsed.numbering).toEqual(options.numbering);
   });
 
   it("rejects unknown numbering label suffixes structurally", async () => {

@@ -175,10 +175,7 @@ describe("ODF style property codecs", () => {
       },
     };
     expect(
-      parseListLevelProperties(
-        element(listLevelPropertiesXml(options, "hundredth-millimeter")),
-        "hundredth-millimeter",
-      ),
+      parseListLevelProperties(element(listLevelPropertiesXml(options, "emu")), "emu"),
     ).toEqual({ ok: true, value: options });
   });
 
