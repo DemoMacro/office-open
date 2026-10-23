@@ -98,6 +98,39 @@ describe("toXlsxTable (docx → xlsx visual restoration)", () => {
 });
 
 describe("xlsx visual table source coordinates", () => {
+  it("omits covered cells behind xlsx merge anchors", () => {
+    const source = {
+      mergeCells: [{ ref: "A1:B2" }],
+      rows: [
+        {
+          rowNumber: 1,
+          cells: [
+            { reference: "A1", value: "merged" },
+            { reference: "B1", value: "covered" },
+          ],
+        },
+        {
+          rowNumber: 2,
+          cells: [
+            { reference: "A2", value: "covered" },
+            { reference: "B2", value: "covered" },
+          ],
+        },
+      ],
+    };
+    const docx = toDocxTable(source);
+    const docxAnchor = docx.rows[0]!;
+    if (!("cells" in docxAnchor)) throw new Error("expected plain row");
+    expect(docxAnchor.cells).toHaveLength(1);
+    expect(docxAnchor.cells[0]).toMatchObject({ columnSpan: 2, rowSpan: 2 });
+    expect(docx.rows[1]!).toEqual({ cells: [] });
+
+    const pptx = toPptxTable(source);
+    expect(pptx.rows[0]!.cells).toHaveLength(1);
+    expect(pptx.rows[0]!.cells[0]).toMatchObject({ columnSpan: 2, rowSpan: 2 });
+    expect(pptx.rows[1]!.cells).toEqual([]);
+  });
+
   it("preserves sparse physical rows and merge spans", () => {
     const docx = toDocxTable({
       mergeCells: [{ ref: "A1:B2" }],

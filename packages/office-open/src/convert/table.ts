@@ -323,6 +323,18 @@ interface XlsxVisualGrid {
   lastCol: number;
 }
 
+function coveredMergeCells(merges: ParsedMergeRef[]): Set<string> {
+  const covered = new Set<string>();
+  for (const merge of merges) {
+    for (let row = merge.row; row <= merge.rowEnd; row++) {
+      for (let col = merge.col; col <= merge.colEnd; col++) {
+        if (row !== merge.row || col !== merge.col) covered.add(`${row}:${col}`);
+      }
+    }
+  }
+  return covered;
+}
+
 function xlsxVisualGrid(source: XlsxVisualTable): XlsxVisualGrid {
   const rowsByNumber = new Map<number, XlsxRowOptions>();
   let lastRow = 0;
@@ -372,13 +384,15 @@ function xlsxToDocx(src: XlsxVisualTable): DocxTableOptions {
       .filter((m): m is NonNullable<typeof m> => m !== undefined),
   );
   const grid = xlsxVisualGrid(src);
+  const covered = coveredMergeCells([...merges.values()]);
   const rows: DocxTableRowOptions[] = Array.from({ length: grid.lastRow + 1 }, (_, ri) => {
     const row = grid.rowAt(ri);
     return {
       ...(row.height !== undefined
         ? { height: { value: convertPointsToTwip(convertToPt(row.height)) } }
         : {}),
-      cells: Array.from({ length: grid.lastCol + 1 }, (_, ci): DocxTableCellOptions => {
+      cells: Array.from({ length: grid.lastCol + 1 }, (_, ci): DocxTableCellOptions | undefined => {
+        if (covered.has(`${ri}:${ci}`)) return undefined;
         const cell = grid.cellAt(ri, ci);
         const merge = merges.get(`${ri}:${ci}`);
         const columnSpan = merge ? merge.colEnd - merge.col + 1 : undefined;
@@ -389,7 +403,7 @@ function xlsxToDocx(src: XlsxVisualTable): DocxTableOptions {
           ...(columnSpan && columnSpan > 1 ? { columnSpan } : {}),
           ...(rowSpan && rowSpan > 1 ? { rowSpan } : {}),
         };
-      }),
+      }).filter((cell): cell is DocxTableCellOptions => cell !== undefined),
     };
   });
   return {
@@ -444,11 +458,13 @@ function xlsxToPptx(src: XlsxVisualTable): PptxTableOptions {
       .filter((m): m is NonNullable<typeof m> => m !== undefined),
   );
   const grid = xlsxVisualGrid(src);
+  const covered = coveredMergeCells([...merges.values()]);
   const rows: PptxTableRowOptions[] = Array.from({ length: grid.lastRow + 1 }, (_, ri) => {
     const row = grid.rowAt(ri);
     return {
       ...(row.height !== undefined ? { height: convertPointsToEmu(convertToPt(row.height)) } : {}),
-      cells: Array.from({ length: grid.lastCol + 1 }, (_, ci): PptxTableCellOptions => {
+      cells: Array.from({ length: grid.lastCol + 1 }, (_, ci): PptxTableCellOptions | undefined => {
+        if (covered.has(`${ri}:${ci}`)) return undefined;
         const cell = grid.cellAt(ri, ci);
         const merge = merges.get(`${ri}:${ci}`);
         const columnSpan = merge ? merge.colEnd - merge.col + 1 : undefined;
@@ -459,7 +475,7 @@ function xlsxToPptx(src: XlsxVisualTable): PptxTableOptions {
           ...(columnSpan && columnSpan > 1 ? { columnSpan } : {}),
           ...(rowSpan && rowSpan > 1 ? { rowSpan } : {}),
         };
-      }),
+      }).filter((cell): cell is PptxTableCellOptions => cell !== undefined),
     };
   });
   return {
