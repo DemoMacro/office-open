@@ -52,6 +52,20 @@ describe("stringify", () => {
     expect(stringify(el)).toBe('<?xml version="1.0" encoding="UTF-8" standalone="yes"?><root/>');
   });
 
+  it("preserves supported XML declaration versions", () => {
+    const el: Element = {
+      declaration: { attributes: { version: "1.1" } },
+      elements: [{ type: "element", name: "root" }],
+    };
+    expect(stringify(el)).toBe('<?xml version="1.1"?><root/>');
+    expect(() =>
+      stringify({
+        declaration: { attributes: { version: "2.0" } },
+        elements: [{ type: "element", name: "root" }],
+      }),
+    ).toThrowError("Unsupported XML declaration version 2.0.");
+  });
+
   it("handles empty elements (self-closing)", () => {
     const el: Element = { elements: [{ type: "element", name: "root" }] };
     expect(stringify(el)).toBe("<root/>");

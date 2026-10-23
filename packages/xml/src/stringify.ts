@@ -85,7 +85,11 @@ function writeDeclaration(declaration: NonNullable<Element["declaration"]>): str
   const attrs = declaration.attributes;
   if (!attrs) return '<?xml version="1.0"?>';
 
-  const parts: string[] = [`<?xml version="1.0"`];
+  const version = attrs.version === undefined ? "1.0" : String(attrs.version);
+  if (version !== "1.0" && version !== "1.1") {
+    throw new Error(`Unsupported XML declaration version ${version}.`);
+  }
+  const parts: string[] = [`<?xml version="${version}"`];
   if (attrs.encoding) parts.push(` encoding="${attrs.encoding}"`);
   if (attrs.standalone) parts.push(` standalone="${attrs.standalone}"`);
   return parts.join("") + "?>";

@@ -191,7 +191,7 @@ export function parse(xmlString: string, options?: ParseOptions): Element {
     // <? processing instruction / declaration
     if (xmlString.charCodeAt(i) === 0x3f /* ? */) {
       const end = xmlString.indexOf("?>", i + 1);
-      if (end === -1) break;
+      if (end === -1) throw new Error("Malformed XML: unclosed processing instruction.");
       const body = xmlString.slice(i + 1, end);
       i = end + 2;
 
@@ -220,7 +220,7 @@ export function parse(xmlString: string, options?: ParseOptions): Element {
     // !-- comment
     if (xmlString.charCodeAt(i) === 0x21 && xmlString.slice(i, i + 3) === "!--") {
       const end = xmlString.indexOf("-->", i + 3);
-      if (end === -1) break;
+      if (end === -1) throw new Error("Malformed XML: unclosed comment.");
       const comment = xmlString.slice(i + 3, end);
       i = end + 3;
       if (!ignoreComment) {
@@ -233,7 +233,7 @@ export function parse(xmlString: string, options?: ParseOptions): Element {
     // ![CDATA[
     if (xmlString.charCodeAt(i) === 0x21 && xmlString.slice(i, i + 8) === "![CDATA[") {
       const end = xmlString.indexOf("]]>", i + 8);
-      if (end === -1) break;
+      if (end === -1) throw new Error("Malformed XML: unclosed CDATA section.");
       const cdata = xmlString.slice(i + 8, end);
       i = end + 3;
       if (!ignoreCdata) {
@@ -246,7 +246,7 @@ export function parse(xmlString: string, options?: ParseOptions): Element {
     // <!DOCTYPE
     if (xmlString.charCodeAt(i) === 0x21 && xmlString.slice(i, i + 8) === "!DOCTYPE") {
       const end = xmlString.indexOf(">", i + 9);
-      if (end === -1) break;
+      if (end === -1) throw new Error("Malformed XML: unclosed DOCTYPE declaration.");
       const doctype = xmlString.slice(i + 9, end).trim();
       i = end + 1;
       if (!ignoreDoctype) {
@@ -258,7 +258,7 @@ export function parse(xmlString: string, options?: ParseOptions): Element {
     // </ closing tag
     if (xmlString.charCodeAt(i) === 0x2f /* / */) {
       const end = xmlString.indexOf(">", i + 1);
-      if (end === -1) break;
+      if (end === -1) throw new Error("Malformed XML: unclosed closing tag.");
       const closingName = xmlString.slice(i + 1, end).trim();
       if (closingName.length === 0) throw new Error("Malformed XML: empty closing tag.");
       const closingLayer = nsStack[nsStack.length - 1]!;
@@ -450,7 +450,6 @@ export function parse(xmlString: string, options?: ParseOptions): Element {
               after === 0x09 ||
               after === 0x0a ||
               after === 0x0d ||
-              after === 0x2f ||
               after === 0x3e
             ) {
               depth++;
@@ -462,8 +461,7 @@ export function parse(xmlString: string, options?: ParseOptions): Element {
           if (depth === 0) break;
         }
         if (closeIdx === -1) {
-          element.raw = xmlString.slice(pos);
-          i = len;
+          throw new Error(`Malformed XML: unclosed element <${tagName}>.`);
         } else {
           element.raw = xmlString.slice(pos, closeIdx);
           i = scan;

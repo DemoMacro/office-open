@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { parse } from "../src/parse";
+import { stringify } from "../src/stringify";
 import { attr } from "../src/utils";
 
 describe("parse", () => {
@@ -107,6 +108,29 @@ describe("parse", () => {
     expect(() => parse('<root x="1" x="2"/>')).toThrowError(
       "Malformed XML: duplicate attribute x.",
     );
+  });
+
+  it("rejects unclosed markup constructs", () => {
+    expect(() => parse("<?xml ")).toThrowError("Malformed XML: unclosed processing instruction.");
+    expect(() => parse("<!--")).toThrowError("Malformed XML: unclosed comment.");
+    expect(() => parse("<![CDATA[")).toThrowError("Malformed XML: unclosed CDATA section.");
+    expect(() => parse("<!DOCTYPE")).toThrowError("Malformed XML: unclosed DOCTYPE declaration.");
+    expect(() => parse("<root")).toThrowError("Malformed XML: unclosed element <root>.");
+    expect(() => parse("<root></root")).toThrowError("Malformed XML: unclosed closing tag.");
+  });
+
+  it("captures deferred content through self-closing same-name children", () => {
+    const deferred = parse("<root><sheetData><sheetData/><row/></sheetData></root>", {
+      deferElements: ["sheetData"],
+    }).elements?.[0]?.elements?.[0];
+    expect(deferred?.raw).toBe("<sheetData/><row/>");
+    expect(stringify({ elements: [deferred!] })).toBe("<sheetData><sheetData/><row/></sheetData>");
+  });
+
+  it("rejects unclosed deferred content", () => {
+    expect(() =>
+      parse("<root><sheetData><row/></root>", { deferElements: ["sheetData"] }),
+    ).toThrowError("Malformed XML: unclosed element <sheetData>.");
   });
 
   it("matches namespace-equivalent opening and closing names", () => {
