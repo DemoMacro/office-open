@@ -111,6 +111,44 @@ describe("stringify", () => {
     expect(stringify(el, { ignoreInstruction: true })).toBe("<root/>");
   });
 
+  it("preserves valid raw deferred content", () => {
+    const el: Element = {
+      elements: [{ type: "element", name: "root", raw: '<child value="1" /><child/>' }],
+    };
+    expect(stringify(el)).toBe('<root><child value="1" /><child/></root>');
+  });
+
+  it("rejects malformed raw deferred content", () => {
+    const cases: Array<[string, Element]> = [
+      ["unclosed element", { elements: [{ type: "element", name: "root", raw: "<child>" }] }],
+      [
+        "mismatched element",
+        { elements: [{ type: "element", name: "root", raw: "<child></other>" }] },
+      ],
+      [
+        "unclosed attribute",
+        { elements: [{ type: "element", name: "root", raw: '<child value="1>' }] },
+      ],
+    ];
+    for (const [, el] of cases) {
+      expect(() => stringify(el)).toThrowError("Malformed XML: raw content for <root>");
+    }
+  });
+
+  it("rejects reserved XML instruction and comment content", () => {
+    expect(() =>
+      stringify({
+        elements: [{ type: "instruction", instruction: "a?>b" }],
+      }),
+    ).toThrowError("Malformed XML: processing instruction contains its closing delimiter.");
+    expect(() => stringify({ elements: [{ type: "comment", comment: "a--b" }] })).toThrowError(
+      "Malformed XML: comment contains the reserved double hyphen.",
+    );
+    expect(() => stringify({ elements: [{ type: "comment", comment: "a-" }] })).toThrowError(
+      "Malformed XML: comment ends with a hyphen.",
+    );
+  });
+
   it("omits attributes when ignoreAttributes is enabled", () => {
     const el: Element = {
       elements: [{ type: "element", name: "root", attributes: { flag: 1 } }],

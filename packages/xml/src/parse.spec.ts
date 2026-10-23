@@ -119,6 +119,15 @@ describe("parse", () => {
     expect(() => parse("<root></root")).toThrowError("Malformed XML: unclosed closing tag.");
   });
 
+  it("rejects malformed opening-tag attributes", () => {
+    expect(() => parse('<root a="1" b></root>')).toThrowError(
+      "Malformed XML: attribute b is missing a value.",
+    );
+    expect(() => parse("<root a=1></root>")).toThrowError(
+      "Malformed XML: attribute a is missing a quoted value.",
+    );
+  });
+
   it("captures deferred content through self-closing same-name children", () => {
     const deferred = parse("<root><sheetData><sheetData/><row/></sheetData></root>", {
       deferElements: ["sheetData"],

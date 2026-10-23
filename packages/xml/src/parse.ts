@@ -499,13 +499,22 @@ export function parse(xmlString: string, options?: ParseOptions): Element {
       // name so `Target = "…"` resolves like `Target="…"`.
       const name = xmlString.slice(nameStart, pos).trim();
 
-      if (xmlString.charCodeAt(pos) !== 0x3d) break;
+      while (pos < len && isWhitespace(xmlString.charCodeAt(pos))) pos++;
+      const hasEquals = xmlString.charCodeAt(pos) === 0x3d;
+      if (!hasEquals) {
+        if (name.length > 0) {
+          throw new Error(`Malformed XML: attribute ${name} is missing a value.`);
+        }
+        break;
+      }
       pos++;
 
       while (pos < len && isWhitespace(xmlString.charCodeAt(pos))) pos++;
 
       const quote = xmlString.charCodeAt(pos);
-      if (quote !== 0x22 && quote !== 0x27) break;
+      if (quote !== 0x22 && quote !== 0x27) {
+        throw new Error(`Malformed XML: attribute ${name} is missing a quoted value.`);
+      }
       pos++;
       const valueStart = pos;
       while (pos < len && xmlString.charCodeAt(pos) !== quote) pos++;
@@ -532,6 +541,11 @@ export function parse(xmlString: string, options?: ParseOptions): Element {
         continue;
       }
       attrs = setXmlAttribute(attrs, name, value);
+    }
+    if (pos >= len) throw new Error(`Malformed XML: unclosed element <${tagName}>.`);
+    const terminal = xmlString.charCodeAt(pos);
+    if (terminal !== 0x3e && terminal !== 0x2f) {
+      throw new Error("Malformed XML: malformed opening tag.");
     }
 
     let rawValues: Record<string, string> | undefined;

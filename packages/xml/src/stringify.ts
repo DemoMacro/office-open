@@ -13,6 +13,7 @@ export function stringify(js: Element, options?: StringifyOptions): string {
     parts.push(writeDeclaration(js.declaration));
   }
   if (js.instruction !== undefined && !opts.ignoreInstruction) {
+    assertInstruction(js.instruction);
     parts.push(`<?${js.instruction}?>`);
   }
 
@@ -120,6 +121,21 @@ function writeAttributes(
   return s;
 }
 
+function assertInstruction(instruction: string): void {
+  if (instruction.includes("?>")) {
+    throw new Error("Malformed XML: processing instruction contains its closing delimiter.");
+  }
+}
+
+function assertComment(comment: string): void {
+  if (comment.includes("--")) {
+    throw new Error("Malformed XML: comment contains the reserved double hyphen.");
+  }
+  if (comment.endsWith("-")) {
+    throw new Error("Malformed XML: comment ends with a hyphen.");
+  }
+}
+
 function writeElements(
   elements: Element[],
   opts: NormalizedOptions,
@@ -149,6 +165,7 @@ function writeElements(
       // Deferred content: re-emit the captured inner XML verbatim — children
       // were never parsed, and the bytes must survive a set/save round-trip.
       if (element.raw !== undefined) {
+        validateRawXml(element.name!, element.raw);
         s += `<${name}${attrStr}>${element.raw}</${name}>`;
         continue;
       }
@@ -193,7 +210,9 @@ function writeElements(
     } else if (type === "instruction") {
       if (opts.ignoreInstruction) continue;
       if (opts.spaces) s += writeIndentation(opts.spaces, depth, isFirst);
-      s += `<?${element.instruction ?? ""}?>`;
+      const instruction = element.instruction ?? "";
+      assertInstruction(instruction);
+      s += `<?${instruction}?>`;
     } else if (type === "cdata") {
       if (opts.ignoreCdata) continue;
       if (opts.indentCdata && opts.spaces) s += writeIndentation(opts.spaces, depth, isFirst);
@@ -219,12 +238,81 @@ function writeCdata(cdata: string | undefined | null): string {
 
 function writeComment(comment: string | undefined | null): string {
   if (comment == null) return "";
+  assertComment(comment);
   return `<!--${comment}-->`;
+}
+
+function validateRawXml(name: string, raw: string): void {
+  const stack: string[] = [];
+  let cursor = 0;
+  while (cursor < raw.length) {
+    const open = raw.indexOf("<", cursor);
+    if (open === -1) break;
+    if (raw.startsWith("<!--", open)) {
+      const end = raw.indexOf("-->", open + 4);
+      if (end === -1)
+        throw new Error(`Malformed XML: raw content for <${name}> has an unclosed comment.`);
+      cursor = end + 3;
+      continue;
+    }
+    if (raw.startsWith("<![CDATA[", open)) {
+      const end = raw.indexOf("]]>", open + 9);
+      if (end === -1)
+        throw new Error(`Malformed XML: raw content for <${name}> has an unclosed CDATA section.`);
+      cursor = end + 3;
+      continue;
+    }
+    if (raw.startsWith("<?", open)) {
+      const end = raw.indexOf("?>", open + 2);
+      if (end === -1)
+        throw new Error(`Malformed XML: raw content for <${name}> has an unclosed instruction.`);
+      cursor = end + 2;
+      continue;
+    }
+    const isClosing = raw.charCodeAt(open + 1) === 0x2f;
+    const nameStart = open + (isClosing ? 2 : 1);
+    let nameEnd = nameStart;
+    while (nameEnd < raw.length && !/\s|>|\//.exec(raw[nameEnd]!)) nameEnd++;
+    const tag = raw.slice(nameStart, nameEnd);
+    if (!tag) throw new Error(`Malformed XML: raw content for <${name}> has an empty tag name.`);
+    let cursor2 = nameEnd;
+    while (cursor2 < raw.length && raw.charCodeAt(cursor2) !== 0x3e) {
+      const quote = raw.charCodeAt(cursor2);
+      if (quote === 0x22 || quote === 0x27) {
+        const close = raw.indexOf(quote === 0x22 ? '"' : "'", cursor2 + 1);
+        if (close === -1)
+          throw new Error(
+            `Malformed XML: raw content for <${name}> has an unclosed attribute value.`,
+          );
+        cursor2 = close + 1;
+        continue;
+      }
+      cursor2++;
+    }
+    if (cursor2 >= raw.length)
+      throw new Error(`Malformed XML: raw content for <${name}> has an unclosed tag.`);
+    let contentEnd = cursor2;
+    while (contentEnd > 0 && isXmlWhitespace(raw.charCodeAt(contentEnd - 1))) contentEnd--;
+    const selfClosing = raw.charCodeAt(contentEnd - 1) === 0x2f;
+    cursor = cursor2 + 1;
+    if (isClosing) {
+      if (stack.pop() !== tag) {
+        throw new Error(`Malformed XML: raw content for <${name}> has a mismatched closing tag.`);
+      }
+    } else if (!selfClosing) stack.push(tag);
+  }
+  if (stack.length > 0) {
+    throw new Error(`Malformed XML: raw content for <${name}> has unclosed elements.`);
+  }
 }
 
 function writeDoctype(doctype: string | undefined | null): string {
   if (doctype == null) return "";
   return `<!DOCTYPE ${doctype}>`;
+}
+
+function isXmlWhitespace(charCode: number): boolean {
+  return charCode === 0x20 || charCode === 0x09 || charCode === 0x0a || charCode === 0x0d;
 }
 
 type NonNullable<T> = T extends null | undefined ? never : T;
