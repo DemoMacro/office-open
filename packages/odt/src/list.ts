@@ -102,7 +102,9 @@ export function parseOutlineStyle(files: OdfFiles): AbstractNumbering | undefine
 function parseNumberingFormat(
   rawFormat: string,
 ): Pick<NumberingLevel, "format" | "formatOverride"> {
-  const mappedFormat = NUM_FORMAT_DOCX[rawFormat];
+  const mappedFormat = Object.hasOwn(NUM_FORMAT_DOCX, rawFormat)
+    ? NUM_FORMAT_DOCX[rawFormat]
+    : undefined;
   if (mappedFormat) return { format: mappedFormat };
   return { format: "custom", formatOverride: rawFormat };
 }
@@ -284,7 +286,8 @@ export function parseListLevel(element: Element): NumberingLevel {
   const marginLeft = lengthToTwips(attributeString(labelAlignment, "fo:margin-left"));
   const textIndent = lengthToTwips(attributeString(labelAlignment, "fo:text-indent"));
   const followedBy = attributeString(labelAlignment, "text:label-followed-by");
-  const mappedSuffix = followedBy ? SUFFIX_DOCX[followedBy] : undefined;
+  const mappedSuffix =
+    followedBy && Object.hasOwn(SUFFIX_DOCX, followedBy) ? SUFFIX_DOCX[followedBy] : undefined;
   if (followedBy && !mappedSuffix) {
     throw new OdtParseError(
       "Unknown OpenDocument numbering label suffix",

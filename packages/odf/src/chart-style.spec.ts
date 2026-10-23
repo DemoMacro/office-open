@@ -192,6 +192,24 @@ describe("ODF chart style resources", () => {
     expect(parsed.shapeProperties?.styleName).toBe("chart-style");
   });
 
+  it("validates repeat tokens for source-reference bitmap fills", async () => {
+    await expect(
+      parse({
+        styles: [
+          style({
+            "draw:fill": "bitmap",
+            "draw:fill-image-name": "image",
+            "style:repeat": "sideways",
+          }),
+        ],
+        gradients: [],
+        hatches: [],
+        fillImages: [{ name: "image", attributes: { "xlink:href": "#source" } }],
+        strokeDashes: [],
+      }),
+    ).rejects.toMatchObject({ reason: "unknown-bitmap-repeat" });
+  });
+
   it("requires known bitmap repeat tokens", async () => {
     const resources = {
       styles: [

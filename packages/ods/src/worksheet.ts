@@ -958,10 +958,15 @@ function parseRows(
       const sourceMergeCells = mergeCells.slice(mergeStart);
       mergeCells.splice(mergeStart, sourceMergeCells.length);
       for (let index = 0; index < repeat; index += 1) {
-        const currentRow = rowNumber + index;
+        const repeatRowSpan = Math.max(
+          1,
+          ...sourceMergeCells.map((merge) => rangeRowSpan(merge.ref)),
+        );
+        const rowOffset = index * repeatRowSpan;
+        const currentRow = rowNumber + rowOffset;
         const rowMergeCells = sourceMergeCells.map((mergeCell) => ({
           ...mergeCell,
-          ref: replaceRangeRowReference(mergeCell.ref, currentRow),
+          ref: shiftRangeRowReference(mergeCell.ref, rowOffset),
         }));
         mergeCells.push(...rowMergeCells);
         rows.push({
@@ -1000,10 +1005,18 @@ function replaceRowReference(reference: string, rowNumber: number): string {
   return match ? `${match[1]}${rowNumber}` : reference;
 }
 
-function replaceRangeRowReference(reference: string, rowNumber: number): string {
-  const [start, end] = reference.split(":");
-  const startReference = replaceRowReference(start ?? "", rowNumber);
-  return end ? `${startReference}:${replaceRowReference(end, rowNumber)}` : startReference;
+function shiftRangeRowReference(reference: string, rowOffset: number): string {
+  return reference.replace(
+    /^([A-Z]+)(\d+):([A-Z]+)(\d+)$/u,
+    (_, startColumn: string, startRow: string, endColumn: string, endRow: string) =>
+      `${startColumn}${Number(startRow) + rowOffset}:${endColumn}${Number(endRow) + rowOffset}`,
+  );
+}
+
+function rangeRowSpan(reference: string): number {
+  const match = /^([A-Z]+)(\d+):([A-Z]+)(\d+)$/u.exec(reference);
+  if (!match) return 1;
+  return Math.max(1, Number(match[4]) - Number(match[2]) + 1);
 }
 
 export function parseRow(

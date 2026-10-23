@@ -122,6 +122,14 @@ describe("ODT canonical projection", () => {
     ).rejects.toMatchObject({ reason: "unknown-label-followed-by" });
   });
 
+  it("treats inherited object names as unknown ODF numbering tokens", async () => {
+    const styles =
+      '<text:list-style style:name="Custom"><text:list-level-style-number text:level="1" style:num-format="constructor"><style:list-level-properties style:list-level-position-and-space-mode="label-alignment"><style:list-level-label-alignment text:label-followed-by="constructor"/></style:list-level-properties></text:list-level-style-number></text:list-style>';
+    await expect(
+      parseDocument(odtStyledPackage(styles, "<text:p>Item</text:p>")),
+    ).rejects.toMatchObject({ reason: "unknown-label-followed-by" });
+  });
+
   it("round-trips ODF form-control shapes with typed references", async () => {
     const parsed = await parseDocument(
       odtPackage(

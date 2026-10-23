@@ -1,6 +1,9 @@
+import { unzipSync } from "@office-open/core";
 import { describe, expect, it } from "vite-plus/test";
 
 import { generateChartDocument, parseChartDocument } from "./index";
+
+const decoder = new TextDecoder();
 
 describe("ODF chart inline decorations", () => {
   it("round-trips custom shapes and polylines", async () => {
@@ -19,6 +22,7 @@ describe("ODF chart inline decorations", () => {
             endCellAddress: "Sheet1.F12",
             endX: 50000,
             endY: 60000,
+            text: "Chart & <shape>",
             enhancedGeometry: {
               type: "mso-spt32",
               enhancedPath: "M 0 0 L 21600 21600 N",
@@ -40,6 +44,8 @@ describe("ODF chart inline decorations", () => {
       },
     };
     const parsed = await parseChartDocument(generateChartDocument(options));
+    const generated = decoder.decode(unzipSync(generateChartDocument(options))["content.xml"]!);
+    expect(generated).toContain("Chart &amp; &lt;shape&gt;");
     expect(parsed.chart.odfShapes).toMatchObject(options.chart.odfShapes);
   });
 });

@@ -71,7 +71,10 @@ export function parseNotesConfiguration(files: OdfFiles): {
     const noteClass = attributeString(config, "text:note-class");
     if (noteClass !== "footnote" && noteClass !== "endnote") continue;
     const rawNumFormat = attributeString(config, "style:num-format");
-    const mappedNumFormat = rawNumFormat ? NUM_FORMAT_DOCX[rawNumFormat] : undefined;
+    const mappedNumFormat =
+      rawNumFormat && Object.hasOwn(NUM_FORMAT_DOCX, rawNumFormat)
+        ? NUM_FORMAT_DOCX[rawNumFormat]
+        : undefined;
     const base = {
       pos: docxNotePosition(attributeString(config, "text:footnotes-position")),
       numFmt: mappedNumFormat,

@@ -657,7 +657,9 @@ export function contentValidationNames(worksheets: WorksheetOptions[]): Map<stri
 
 function paragraphsXml(text: string | undefined): string[] {
   if (text === undefined) return [];
-  return text.split("\n").map((paragraph) => xmlElement("text:p", undefined, [paragraph]));
+  return text
+    .split("\n")
+    .map((paragraph) => xmlElement("text:p", undefined, [escapeText(paragraph)]));
 }
 
 export function parseDatabaseRanges(

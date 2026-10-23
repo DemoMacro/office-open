@@ -63,6 +63,13 @@ describe("ODS spreadsheet semantics", () => {
     expect(regenerated.worksheets?.[0]?.dataValidations).toEqual(
       parsed.worksheets?.[0]?.dataValidations,
     );
+    const content = (
+      await readOcf(
+        await generateWorkbook(parsed),
+        "application/vnd.oasis.opendocument.spreadsheet",
+      )
+    ).files["content.xml"]!;
+    expect(content).toContain("<text:p>Choose A or B</text:p>");
   });
 
   it("round-trips conditional expression formatting and its differential style", async () => {

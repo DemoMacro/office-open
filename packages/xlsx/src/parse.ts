@@ -377,7 +377,7 @@ const WORKSHEET_PARSE_OPTIONS: ParseOptions = { deferElements: ["sheetData"] };
 /**
  * Parse raw .xlsx data into a low-level XlsxDocument.
  */
-export function parseXlsx(data: DataType): XlsxDocument {
+export function parseXlsx(data: SyncDataType): XlsxDocument {
   return parseXlsxArchive(parseArchive(toUint8Array(data)));
 }
 

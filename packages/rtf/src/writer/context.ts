@@ -44,9 +44,20 @@ export function assertAllowed(
 export function registerFont(
   context: RtfGenerateContext,
   font: NonNullable<DocumentOptions["fonts"]>[number],
+  source: "definition" | "reference" = "reference",
 ): number {
   const existing = context.fonts.findIndex((entry) => entry.name === font.name);
-  if (existing >= 0) return existing;
+  if (existing >= 0) {
+    if (source === "definition") {
+      reject(
+        "document",
+        `fonts[${context.fonts.length}]`,
+        "name",
+        "RTF font-table names must be unique",
+      );
+    }
+    return existing;
+  }
   context.fonts.push(font);
   return context.fonts.length - 1;
 }

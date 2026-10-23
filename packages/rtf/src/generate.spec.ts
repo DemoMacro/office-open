@@ -310,6 +310,15 @@ describe("generateDocument RTF projections", () => {
     ).toThrow(RtfGenerateError);
   });
 
+  it("rejects duplicate RTF font-table definitions", () => {
+    expect(() =>
+      generateDocument({
+        fonts: [{ name: "Arial" }, { name: "Arial", family: "swiss" }],
+        sections: [],
+      }),
+    ).toThrow(RtfGenerateError);
+  });
+
   it("projects run language controls", () => {
     const source = String.raw`{\rtf1{\lang1033 Word}{\lang1036 Autre}\par}`;
     expect(roundTrip(source)).toEqual(parseDocument(source));

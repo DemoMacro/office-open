@@ -497,11 +497,12 @@ function bitmapFill(
   const name = graphic["draw:fill-image-name"];
   const resource = resources.fillImages.find((item) => item.name === name);
   if (resource === undefined) return undefined;
+  const repeat = bitmapRepeat(style, graphic["style:repeat"]);
   const href = resource.attributes["xlink:href"];
   if (href?.startsWith("#")) {
+    if (repeat === "no-repeat") return undefined;
     return { type: "blip", noEmbed: true, sourceReferenceId: href.slice(1) };
   }
-  const repeat = bitmapRepeat(style, graphic["style:repeat"]);
   const overlay = {
     type: "bitmap" as const,
     name,

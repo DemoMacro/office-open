@@ -381,7 +381,7 @@ export function writeRtf(options: DocumentOptions): string {
     if (typeof font.name !== "string" || font.name === "") {
       reject("document", `fonts[${index}]`, "name", "RTF requires a concrete font name");
     }
-    registerFont(context, font);
+    registerFont(context, font, "definition");
   }
   const first = options.sections[0] ?? { children: [] };
   const body = [

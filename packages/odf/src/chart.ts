@@ -349,7 +349,9 @@ function odfShapeXml(shape: ChartOdfShapeOptions, styles: string[]): string {
         : {}),
     },
     [
-      ...(shape.text === undefined ? [] : [xmlElement("text:p", undefined, [shape.text])]),
+      ...(shape.text === undefined
+        ? []
+        : [xmlElement("text:p", undefined, [escapeText(shape.text)])]),
       ...(shape.kind === "customShape" ? odfEnhancedGeometryXml(shape.enhancedGeometry) : []),
     ],
   );
