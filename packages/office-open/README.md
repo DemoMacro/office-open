@@ -82,6 +82,8 @@ const patched = await patchDocument({
 });
 ```
 
+The aggregate and family `patch*` calls require the `format` discriminant. Per-format entries already know their format, so their request objects omit it.
+
 ### Family Entries
 
 ```typescript
@@ -150,7 +152,7 @@ Every parser returns the same family model. Therefore legacy and ODF content can
 
 - DOC, XLS, and PPT are parse-only; legacy binary writers are not provided.
 - RTF generation rejects options that cannot be represented in RTF instead of dropping them.
-- ODT, ODS, and ODP support parse and generate but do not provide a patch API.
+- ODT, ODS, and ODP patch by editing the canonical model and regenerating the package; they do not perform byte-level rewrites.
 - Parse errors expose structured context such as part, path, element name, and reason.
 - Unsupported commands throw explicit errors; they do not silently change format.
 
