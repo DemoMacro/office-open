@@ -101,7 +101,7 @@ export async function parseDocument(
     case "dotm":
       return parseDocxDocument(data);
     case "rtf":
-      return parseRtfDocument(new TextDecoder().decode(data)) as DocumentOptions;
+      return parseRtfDocument(data) as DocumentOptions;
     case "odt":
       return parseOdtDocument(data);
     default:

@@ -324,6 +324,16 @@ describe("generateDocument RTF projections", () => {
     expect(roundTrip(source)).toEqual(parseDocument(source));
   });
 
+  it("encodes bare LF text as an RTF line control", () => {
+    const generated = decoder.decode(
+      generateDocument({
+        sections: [{ children: [{ paragraph: { children: [{ text: "a\nb" }] } }] }],
+      }),
+    );
+    expect(generated).toContain(String.raw`\line `);
+    expect(generated).not.toContain("\nBody");
+  });
+
   it("projects hidden text controls", () => {
     const source = String.raw`{\rtf1{\v hidden}visible\par}`;
     expect(roundTrip(source)).toEqual(parseDocument(source));
@@ -415,5 +425,12 @@ describe("generateDocument RTF projections", () => {
         context: expect.objectContaining({ part: "document", path: "options", name: "comments" }),
       }),
     );
+  });
+
+  it("rejects text control characters without inventing RTF escapes", () => {
+    const options: DocumentOptions = {
+      sections: [{ children: [{ paragraph: { children: [{ text: "a\u0000b" }] } }] }],
+    };
+    expect(() => generateDocument(options)).toThrow(RtfGenerateError);
   });
 });

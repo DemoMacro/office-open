@@ -56,6 +56,20 @@ const RTF_HIGHLIGHT_COLORS = [
   "lightGray",
 ] as const;
 
+function sanitizeRtfText(value: string): string {
+  let result = "";
+  for (let index = 0; index < value.length;) {
+    const codePoint = value.codePointAt(index)!;
+    const character = String.fromCodePoint(codePoint);
+    const isSurrogate = codePoint >= 0xd800 && codePoint <= 0xdfff;
+    const isXmlControl =
+      codePoint < 0x20 && codePoint !== 0x09 && codePoint !== 0x0a && codePoint !== 0x0d;
+    if (!isSurrogate && !isXmlControl) result += character;
+    index += character.length;
+  }
+  return result;
+}
+
 const RTF_CODE_PAGE_ENCODINGS: Record<number, string> = {
   932: "shift_jis",
   936: "gbk",
@@ -195,6 +209,7 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
   let paragraph: ParagraphDraft | undefined;
   let unicodeByteCount = 1;
   let unicodeSkip = 0;
+  let pendingHighSurrogate: number | undefined;
   let fontId: number | undefined;
   let fontName: string | undefined;
   let fontNameBytes: number[] = [];
@@ -225,15 +240,30 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
     let line = "";
     let skip = 0;
     let byteCount = 1;
+    let destinationHex: number[] = [];
+    const flushDestinationHex = () => {
+      if (destinationHex.length === 0) return;
+      const encoding = RTF_CODE_PAGE_ENCODINGS[ansiCodePage];
+      if (!encoding) {
+        throw new RtfParseError(
+          `unsupported RTF ANSI code page ${ansiCodePage}`,
+          tokens[start]?.position ?? 0,
+          source,
+        );
+      }
+      line += new TextDecoder(encoding).decode(new Uint8Array(destinationHex));
+      destinationHex = [];
+    };
     for (let index = start; index < end; index += 1) {
       const token = tokens[index];
       if (!token) continue;
       if (token.kind === "group-start" || token.kind === "group-end") continue;
       if (token.kind === "hex") {
         if (skip > 0) skip -= 1;
-        else line += String.fromCharCode(Number.parseInt(token.value, 16));
+        else destinationHex.push(Number.parseInt(token.value, 16));
         continue;
       }
+      flushDestinationHex();
       if (token.kind === "text") {
         if (skip > 0) {
           line += token.value.slice(skip);
@@ -370,11 +400,12 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
         else if (token.word === "fldrslt") target = "result";
         continue;
       }
-      if (target === "instruction" && token.kind === "text") instruction += token.value;
+      if (target === "instruction" && token.kind === "text")
+        instruction += sanitizeRtfText(token.value);
       if (target === "result" && (token.kind === "text" || token.kind === "hex")) {
         result +=
           token.kind === "text"
-            ? token.value
+            ? sanitizeRtfText(token.value)
             : String.fromCharCode(Number.parseInt(token.value, 16));
       }
     }
@@ -458,6 +489,7 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
   };
 
   const appendText = (value: string) => {
+    value = sanitizeRtfText(value);
     const draft = ensureParagraph();
     if (pendingHyperlink) {
       appendInline({ hyperlink: { url: pendingHyperlink, children: [value] } });
@@ -566,6 +598,30 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
     if (!Number.isInteger(codePoint) || codePoint < 0 || codePoint > 0x10ffff) {
       throw new RtfParseError(
         `\\u value ${value} is not a valid character code`,
+        tokens[tokenIndex]?.position ?? 0,
+        source,
+      );
+    }
+    if (codePoint >= 0xd800 && codePoint <= 0xdbff) {
+      pendingHighSurrogate = codePoint;
+      return;
+    }
+    if (codePoint >= 0xdc00 && codePoint <= 0xdfff) {
+      if (pendingHighSurrogate === undefined) {
+        throw new RtfParseError(
+          "\\u low surrogate has no preceding high surrogate",
+          tokens[tokenIndex]?.position ?? 0,
+          source,
+        );
+      }
+      const combined = 0x10000 + ((pendingHighSurrogate - 0xd800) << 10) + (codePoint - 0xdc00);
+      pendingHighSurrogate = undefined;
+      appendText(String.fromCodePoint(combined));
+      return;
+    }
+    if (pendingHighSurrogate !== undefined) {
+      throw new RtfParseError(
+        "\\u high surrogate has no following low surrogate",
         tokens[tokenIndex]?.position ?? 0,
         source,
       );

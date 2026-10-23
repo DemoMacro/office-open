@@ -15,7 +15,7 @@ function roundTrip(source: string): ReturnType<typeof parseDocument> {
   return parseDocument(new TextDecoder().decode(generateDocument(options)));
 }
 
-function firstParagraph(source: string): ParagraphOptions {
+function firstParagraph(source: string | Uint8Array): ParagraphOptions {
   const children = parseDocument(source).sections[0]?.children ?? [];
   const child = children[0];
   if (!child || !("paragraph" in child) || typeof child.paragraph === "string") {
@@ -580,6 +580,32 @@ describe("parseDocument RTF rich destinations", () => {
           ],
         },
       ],
+    });
+  });
+
+  it("preserves binary object bytes from a Uint8Array source", () => {
+    const source = new TextEncoder().encode(
+      String.raw`{\rtf1{\object{\objclass Excel.Sheet.8}{\objdata\bin4 ABCD}}}`,
+    );
+    expect(firstParagraph(source)).toEqual({
+      children: [
+        {
+          children: [
+            {
+              object: {
+                embed: { data: new Uint8Array([65, 66, 67, 68]), progId: "Excel.Sheet.8" },
+              },
+            },
+          ],
+        },
+      ],
+    });
+  });
+
+  it("decodes destination hexadecimal bytes with the ANSI code page", () => {
+    const document = parseDocument("{\\rtf1\\ansicpg936 \\'d7\\'f7\\'d5\\'df\\par}");
+    expect(document.sections?.[0]?.children?.[0]).toEqual({
+      paragraph: { children: [{ text: "作者" }] },
     });
   });
 });

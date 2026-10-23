@@ -36,7 +36,7 @@ export async function patchDocument<T extends OutputType = "uint8array">({
   outputType,
   placeholderDelimiters,
 }: RtfPatchOptions<T>): Promise<OutputByType[T]> {
-  const options = parseDocument(new TextDecoder().decode(await toUint8ArrayAsync(data)));
+  const options = parseDocument(await toUint8ArrayAsync(data));
   applyPatchCommands(options, commands, placeholderDelimiters);
   return convertRtfOutput(generateDocument(options), outputType);
 }

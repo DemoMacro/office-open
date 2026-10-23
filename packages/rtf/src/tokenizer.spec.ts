@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
 
-import { tokenizeRtf } from "./tokenizer";
+import { latin1Source, tokenizeRtf } from "./tokenizer";
 
 describe("tokenizeRtf", () => {
   it("separates groups, control words, parameters, and text", () => {
@@ -45,5 +45,34 @@ describe("tokenizeRtf", () => {
     ]);
     expect(() => tokenizeRtf("\\bin-1")).toThrow("non-negative byte count");
     expect(() => tokenizeRtf("\\bin4 AB")).toThrow("extends past end");
+  });
+
+  it("extracts binary bytes before byte-oriented decoding", () => {
+    const bytes = new TextEncoder().encode(String.raw`\bin4 ABCD`);
+    expect(tokenizeRtf(bytes)[0]).toEqual({
+      kind: "binary",
+      byteLength: 4,
+      data: new Uint8Array([65, 66, 67, 68]),
+      position: 0,
+    });
+  });
+
+  it("slices binary payloads from arbitrary non-ASCII byte values", () => {
+    const payload = new Uint8Array([0, 127, 128, 255]);
+    const source = `\\bin4 ${latin1Source(payload)}`;
+    expect(tokenizeRtf(source)[0]).toEqual({
+      kind: "binary",
+      byteLength: 4,
+      data: payload,
+      position: 0,
+    });
+    expect(
+      tokenizeRtf(new Uint8Array([...new TextEncoder().encode("\\bin4 "), ...payload]))[0],
+    ).toEqual({
+      kind: "binary",
+      byteLength: 4,
+      data: payload,
+      position: 0,
+    });
   });
 });

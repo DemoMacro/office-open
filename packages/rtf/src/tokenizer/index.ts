@@ -24,24 +24,42 @@ function readParameter(source: string, start: number): { value?: number; end: nu
   return { value: Number(source.slice(start, end)), end };
 }
 
-export function tokenizeRtf(source: string): RtfToken[] {
-  if (typeof source !== "string") throw new TypeError("RTF source must be a string");
+export function latin1Source(data: Uint8Array): string {
+  const parts: string[] = [];
+  const chunkSize = 0x8000;
+  for (let offset = 0; offset < data.length; offset += chunkSize) {
+    parts.push(String.fromCharCode(...data.subarray(offset, offset + chunkSize)));
+  }
+  return parts.join("");
+}
+
+export function tokenizeRtf(source: string | Uint8Array): RtfToken[] {
+  if (typeof source !== "string" && !(source instanceof Uint8Array))
+    throw new TypeError("RTF source must be a string or Uint8Array");
+
+  const text = typeof source === "string" ? source : latin1Source(source);
+  const bytes =
+    typeof source === "string"
+      ? Uint8Array.from(source, (character) => character.charCodeAt(0) & 0xff)
+      : source;
 
   const tokens: RtfToken[] = [];
   let position = 0;
+  let byteOffset = 0;
   let textStart: number | undefined;
 
   const flushText = (end: number) => {
     if (textStart === undefined) return;
-    tokens.push({ kind: "text", value: source.slice(textStart, end), position: textStart });
+    tokens.push({ kind: "text", value: text.slice(textStart, end), position: textStart });
     textStart = undefined;
   };
 
-  while (position < source.length) {
-    const character = source[position];
+  while (position < text.length) {
+    const character = text[position];
     if (character !== "{" && character !== "}" && character !== "\\") {
       textStart ??= position;
       position += 1;
+      byteOffset += 1;
       continue;
     }
 
@@ -49,82 +67,87 @@ export function tokenizeRtf(source: string): RtfToken[] {
     if (character === "{") {
       tokens.push({ kind: "group-start", position });
       position += 1;
+      byteOffset += 1;
       continue;
     }
     if (character === "}") {
       tokens.push({ kind: "group-end", position });
       position += 1;
+      byteOffset += 1;
       continue;
     }
 
     position += 1;
-    const escaped = source[position];
+    byteOffset += 1;
+    const escaped = text[position];
     if (escaped === undefined) {
-      throw new RtfParseError("a control sequence ends at end of input", position - 1, source);
+      throw new RtfParseError("a control sequence ends at end of input", position - 1, text);
     }
     if (escaped === "\r" || escaped === "\n") {
-      position += escaped === "\r" && source[position + 1] === "\n" ? 2 : 1;
+      position += escaped === "\r" && text[position + 1] === "\n" ? 2 : 1;
+      byteOffset = position;
       continue;
     }
     if (CONTROL_WORD.test(escaped)) {
       const wordStart = position;
       position += 1;
-      while (position < source.length) {
-        const character = source[position];
+      while (position < text.length) {
+        const character = text[position];
         if (character === undefined || !CONTROL_WORD.test(character)) break;
         position += 1;
       }
-      const word = source.slice(wordStart, position);
+      const word = text.slice(wordStart, position);
+      byteOffset = position;
       let parameter: number | undefined;
-      const nextCharacter = source[position];
+      const nextCharacter = text[position];
       if (
         nextCharacter === "-" ||
         (nextCharacter !== undefined && nextCharacter >= "0" && nextCharacter <= "9")
       ) {
-        const parameterResult = readParameter(source, position);
+        const parameterResult = readParameter(text, position);
         parameter = parameterResult.value;
+        byteOffset += parameterResult.end - position;
         position = parameterResult.end;
       }
       if (word === "bin") {
         if (parameter !== undefined && parameter < 0) {
-          throw new RtfParseError(
-            "\\bin requires a non-negative byte count",
-            wordStart - 1,
-            source,
-          );
+          throw new RtfParseError("\\bin requires a non-negative byte count", wordStart - 1, text);
         }
-        if (source[position] === " ") position += 1;
         const byteLength = parameter ?? 0;
+        const hasDelimiter = text[position] === " ";
+        if (hasDelimiter) position += 1;
+        byteOffset += hasDelimiter ? 1 : 0;
+        if (byteOffset + byteLength > bytes.length) {
+          throw new RtfParseError("\\bin data extends past end of input", wordStart - 1, text);
+        }
+        const data = bytes.slice(byteOffset, byteOffset + byteLength);
+        byteOffset += byteLength;
         position += byteLength;
-        if (position > source.length) {
-          throw new RtfParseError("\\bin data extends past end of input", wordStart - 1, source);
-        }
-        const data = new Uint8Array(byteLength);
-        for (let index = 0; index < byteLength; index += 1) {
-          data[index] = source.charCodeAt(position - byteLength + index) & 0xff;
-        }
         tokens.push({ kind: "binary", byteLength, data, position: wordStart - 1 });
         continue;
       }
-      if (source[position] === " ") position += 1;
+      if (text[position] === " ") position += 1;
+      byteOffset = position;
       tokens.push({ kind: "control", word, param: parameter, position: wordStart - 1 });
       continue;
     }
 
     if (escaped === "'") {
-      const hex = source.slice(position + 1, position + 3);
+      const hex = text.slice(position + 1, position + 3);
       if (!HEX_DIGITS.test(hex)) {
-        throw new RtfParseError("\\' requires two hexadecimal digits", position - 1, source);
+        throw new RtfParseError("\\' requires two hexadecimal digits", position - 1, text);
       }
       tokens.push({ kind: "hex", value: hex, position: position - 1 });
       position += 3;
+      byteOffset += 3;
       continue;
     }
 
     tokens.push({ kind: "control", symbol: escaped, position: position - 1 });
     position += 1;
+    byteOffset += 1;
   }
 
-  flushText(source.length);
+  flushText(text.length);
   return tokens;
 }
