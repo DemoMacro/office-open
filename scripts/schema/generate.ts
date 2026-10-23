@@ -734,6 +734,38 @@ function canonicalJson(value: unknown): string {
   return JSON.stringify(sortKeys(value), null, 2) + "\n";
 }
 
+/** Replace generator-private anonymous type names that embed process-local
+ * TypeScript node ids with a stable public definition name. */
+function normalizeGeneratedNames(schema: Record<string, unknown>): void {
+  const definitions = schema.definitions as Record<string, Record<string, unknown>> | undefined;
+  if (!definitions) return;
+  const renames = new Map<string, string>();
+  for (const [name, definition] of Object.entries(definitions)) {
+    if (!/^PatchNestedValue<.+>$/u.test(name)) continue;
+    renames.set(name, "PatchNestedValue");
+    delete definitions[name];
+    definitions.PatchNestedValue = definition;
+  }
+  if (renames.size === 0) return;
+  normalizeGeneratedRefs(schema, renames);
+}
+
+function normalizeGeneratedRefs(value: unknown, renames: Map<string, string>): void {
+  if (Array.isArray(value)) {
+    for (const item of value) normalizeGeneratedRefs(item, renames);
+    return;
+  }
+  if (!value || typeof value !== "object") return;
+  const node = value as Record<string, unknown>;
+  const reference = node.$ref;
+  if (typeof reference === "string" && reference.startsWith("#/definitions/")) {
+    const name = decodeURIComponent(reference.slice("#/definitions/".length).split("/")[0] ?? "");
+    const renamed = renames.get(name);
+    if (renamed) node.$ref = `#/definitions/${encodeURIComponent(renamed)}`;
+  }
+  for (const child of Object.values(node)) normalizeGeneratedRefs(child, renames);
+}
+
 // ── Main ──
 
 interface FormatResult {
@@ -766,6 +798,7 @@ function generateFormat(config: FormatConfig): FormatResult {
     string,
     unknown
   >;
+  normalizeGeneratedNames(schema);
 
   const definitions = (schema.definitions ?? {}) as Record<string, unknown>;
   // P0: collision detection via ref resolution
