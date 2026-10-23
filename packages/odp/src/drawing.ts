@@ -8,6 +8,7 @@ import {
   attributeString,
   childNamed,
   isExternalOdfUrl,
+  textOf,
   lengthToEmu,
   resolveEmbeddedChart,
   xmlElement,
@@ -63,6 +64,10 @@ export function pictureFrameXml(picture: PictureOptions, images: OdpImage[]): st
         "xlink:href": path,
         ...(picture.sourceUrl && picture.data === undefined ? { "xlink:type": "simple" } : {}),
       }),
+      ...(picture.title === undefined ? [] : [xmlElement("svg:title", undefined, [picture.title])]),
+      ...(picture.description === undefined
+        ? []
+        : [xmlElement("svg:desc", undefined, [picture.description])]),
     ],
   );
 }
@@ -143,8 +148,23 @@ export function mediaFrameXml(
       ...(posterPath
         ? [xmlElement("draw:image", { "xlink:href": posterPath, "xlink:type": "simple" })]
         : []),
+      ...(media.title === undefined ? [] : [xmlElement("svg:title", undefined, [media.title])]),
+      ...(media.description === undefined
+        ? []
+        : [xmlElement("svg:desc", undefined, [media.description])]),
     ],
   );
+}
+
+function parseFrameMetadata(frame: Element): { title?: string; description?: string } {
+  const titleElement = childNamed(frame, "svg:title");
+  const descriptionElement = childNamed(frame, "svg:desc");
+  const title = titleElement === undefined ? undefined : textOf(titleElement);
+  const description = descriptionElement === undefined ? undefined : textOf(descriptionElement);
+  return {
+    ...(title === undefined ? {} : { title }),
+    ...(description === undefined ? {} : { description }),
+  };
 }
 
 /** Parses a draw:frame + embedded chart subdocument back to a slide chart. */
@@ -213,6 +233,7 @@ export function parsePictureFrame(
         y: lengthToEmu(attributeString(frame, "svg:y")),
         width: lengthToEmu(attributeString(frame, "svg:width")),
         height: lengthToEmu(attributeString(frame, "svg:height")),
+        ...parseFrameMetadata(frame),
       },
     };
   }
@@ -224,15 +245,28 @@ export function parsePictureFrame(
       y: lengthToEmu(attributeString(frame, "svg:y")),
       width: lengthToEmu(attributeString(frame, "svg:width")),
       height: lengthToEmu(attributeString(frame, "svg:height")),
+      ...parseFrameMetadata(frame),
     },
   };
 }
 
 function pictureTypeFromUrl(value: string): PictureOptions["type"] {
   const extension = value.split(/[?#]/, 1)[0]?.split("/").pop()?.split(".").pop()?.toLowerCase();
-  if (extension === "jpeg") return "jpg";
-  const supported = ["png", "jpg", "gif", "bmp", "emf", "wmf"].includes(extension ?? "");
-  return (supported ? extension : "png") as PictureOptions["type"];
+  const type =
+    extension === "jpeg"
+      ? "jpg"
+      : (["png", "jpg", "gif", "bmp", "tif", "ico", "emf", "wmf"] as const).find(
+          (candidate) => candidate === extension,
+        );
+  if (!type)
+    throw new OdpParseError(
+      "Unsupported external image extension",
+      "content.xml",
+      "/office:document-content/office:presentation/draw:page/draw:frame/draw:image",
+      value,
+      "unsupported-image-extension",
+    );
+  return type;
 }
 
 function embeddedPictureType(path: string): PictureOptions["type"] {
@@ -271,6 +305,7 @@ export function parseMediaFrame(
   if (data) usedBinaryPaths.add(href);
   else if (!isExternalOdfUrl(href)) throw missingMediaPart(href);
   const name = attributeString(frame, "draw:name");
+  const metadata = parseFrameMetadata(frame);
   const x = lengthToEmu(attributeString(frame, "svg:x"));
   const y = lengthToEmu(attributeString(frame, "svg:y"));
   const width = lengthToEmu(attributeString(frame, "svg:width"));
@@ -289,6 +324,7 @@ export function parseMediaFrame(
       audio.fileName = href.split("/").pop();
     }
     audio.playback = parseMediaPlayback(plugin);
+    Object.assign(audio, metadata);
     return { audio };
   }
   const geometry: MediaGeometry = {};
@@ -300,6 +336,7 @@ export function parseMediaFrame(
     video.fileName = href.split("/").pop();
   }
   video.playback = parseMediaPlayback(plugin);
+  Object.assign(video, metadata);
   if (posterData && posterHref) {
     video.poster = posterData;
     video.posterType = posterType(posterHref);

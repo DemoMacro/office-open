@@ -94,7 +94,11 @@ export function slideXml(
   for (const node of [...(slide.odpNodes ?? [])].sort(
     (left, right) => left.position - right.position,
   ))
-    frames.splice(Math.min(node.position, frames.length), 0, slideNodeXml(node.node, styles));
+    frames.splice(
+      Math.min(node.position, frames.length),
+      0,
+      slideNodeXml(node.node, styles, charts),
+    );
   const notes = typeof slide.notes === "string" ? slide.notes : slide.notes?.text;
   const notesXml = notes
     ? xmlElement("presentation:notes", undefined, [
@@ -203,13 +207,13 @@ export function slideChildXml(
           children.splice(
             Math.min(node.position, children.length),
             0,
-            slideNodeXml(node.node, styles),
+            slideNodeXml(node.node, styles, charts),
           );
         return children;
       })(),
     );
   if ("frame" in child || "measure" in child || "pageThumbnail" in child || "scene" in child)
-    return slideNodeXml(child, styles);
+    return slideNodeXml(child, styles, charts);
   if ("rawXml" in child) {
     if (child.rawXml === "") return "";
     const legacyShape = compatibilityLegacyShape(child.rawXml);
@@ -315,6 +319,39 @@ export function parseSlide(
   const typedSources = new Set<Element>();
   for (const child of normalizedPage.elements ?? []) {
     if (child.name === "draw:frame") {
+      const contentNames = (child.elements ?? [])
+        .filter((candidate): candidate is Element => candidate.type === "element")
+        .map((candidate) => candidate.name)
+        .filter((name): name is string => name !== undefined);
+      const frameFallback =
+        contentNames.includes("draw:object-ole") ||
+        (contentNames.includes("draw:object") &&
+          (childNamed(child, "svg:title") !== undefined ||
+            childNamed(child, "svg:desc") !== undefined)) ||
+        childNamed(child, "office:event-listeners") !== undefined ||
+        (contentNames.filter((name) =>
+          ["draw:object", "draw:image", "draw:plugin", "draw:text-box", "table:table"].includes(
+            name,
+          ),
+        ).length > 1 &&
+          !(
+            (contentNames.includes("draw:object") &&
+              contentNames.includes("draw:image") &&
+              contentNames.length === 2) ||
+            (contentNames.includes("draw:plugin") &&
+              contentNames.includes("draw:image") &&
+              contentNames.length === 2)
+          ));
+      if (frameFallback) {
+        typedSources.add(child);
+        const node = parseSlideNode(child);
+        const frameChart = parseChartFrame(child, chartPool);
+        if (frameChart && "frame" in node) {
+          node.frame.contents = [{ kind: "chart", chart: frameChart.chart }];
+        }
+        odpNodes.push({ position: visibleChildIndex(page, child), node });
+        continue;
+      }
       const chart = parseChartFrame(child, chartPool);
       if (chart) {
         children.push(chart);
@@ -337,7 +374,6 @@ export function parseSlide(
         children.push(media);
         continue;
       }
-      if (childNamed(child, "draw:object-ole")) continue;
       const picture = parsePictureFrame(child, binaries, usedBinaryPaths);
       if (picture) {
         children.push(picture);
@@ -348,7 +384,10 @@ export function parseSlide(
         continue;
       }
       typedSources.add(child);
-      odpNodes.push({ position: visibleChildIndex(page, child), node: parseSlideNode(child) });
+      odpNodes.push({
+        position: visibleChildIndex(page, child),
+        node: parseSlideNode(child, (frame) => parseChartFrame(frame, chartPool)),
+      });
       continue;
     }
     if (child.name === "draw:custom-shape") {

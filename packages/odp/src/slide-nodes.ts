@@ -14,9 +14,12 @@ import {
   xmlElement,
 } from "@office-open/odf";
 import type { XmlAttributes } from "@office-open/odf";
+import type { ChartOptions } from "@office-open/pptx";
 import type { SlideChild, TableOptions } from "@office-open/pptx";
 import type { Element } from "@office-open/xml";
 
+import type { OdpChart } from "./drawing";
+import { chartFrameXml } from "./drawing";
 import { OdpParseError } from "./error";
 import { parseSlideTable, slideTableXml } from "./slide";
 import { parseParagraph, textBodyXml } from "./text-run";
@@ -190,6 +193,25 @@ export interface OdpFloatingFrameOptions {
   data: OdpDataReferenceOptions;
 }
 
+export interface OdpImageReferenceOptions {
+  xmlId?: string;
+  data: OdpDataReferenceOptions;
+  filterName?: string;
+  mimeType?: string;
+}
+
+export interface OdpObjectReferenceOptions {
+  xmlId?: string;
+  data: OdpDataReferenceOptions;
+  notifyOnUpdateOfRanges?: string;
+}
+
+export interface OdpObjectOleOptions {
+  xmlId?: string;
+  classId?: string;
+  data: OdpDataReferenceOptions;
+}
+
 export interface OdpPluginOptions {
   xmlId?: string;
   mimeType?: string;
@@ -211,7 +233,11 @@ export interface OdpTextBoxOptions {
 
 export type OdpFrameContentOptions =
   | { kind: "applet"; applet: OdpAppletOptions }
+  | { kind: "chart"; chart: ChartOptions }
   | { kind: "floating-frame"; floatingFrame: OdpFloatingFrameOptions }
+  | { kind: "image"; image: OdpImageReferenceOptions }
+  | { kind: "object"; object: OdpObjectReferenceOptions }
+  | { kind: "object-ole"; objectOle: OdpObjectOleOptions }
   | { kind: "plugin"; plugin: OdpPluginOptions }
   | { kind: "table"; table: TableOptions }
   | { kind: "text-box"; textBox: OdpTextBoxOptions };
@@ -257,6 +283,8 @@ const APPLET_ATTRIBUTES = ["draw:archive", "draw:code", "draw:may-script", "draw
 const DATA_ATTRIBUTES = ["xlink:actuate", "xlink:href", "xlink:show", "xlink:type"];
 const FLOATING_FRAME_ATTRIBUTES = ["draw:frame-name", "xml:id"];
 const GLUE_POINT_ATTRIBUTES = ["draw:align", "draw:escape-direction", "draw:id", "svg:x", "svg:y"];
+const IMAGE_ATTRIBUTES = ["draw:filter-name", "draw:mime-type", "xml:id"];
+const OBJECT_ATTRIBUTES = ["draw:notify-on-update-of-ranges", "xml:id"];
 const PARAMETER_ATTRIBUTES = ["draw:name", "draw:value"];
 const PLUGIN_ATTRIBUTES = ["draw:mime-type", "xml:id"];
 const SCENE_OBJECT_ATTRIBUTES = [
@@ -269,8 +297,11 @@ const SCENE_OBJECT_ATTRIBUTES = [
   "xml:id",
 ];
 
-/** Parse the raw ODF nodes that have no PPTX canonical equivalent. */
-export function parseFrameNode(element: Element): { frame: OdpFrameOptions } {
+/** Parse an RNG-valid draw:frame, including typed frames beyond canonical projections. */
+export function parseFrameNode(
+  element: Element,
+  parseChartFrame?: (frame: Element) => { chart: ChartOptions } | undefined,
+): { frame: OdpFrameOptions } {
   const path = "/draw:frame";
   assertKnown(
     element,
@@ -283,6 +314,9 @@ export function parseFrameNode(element: Element): { frame: OdpFrameOptions } {
       "draw:applet",
       "draw:floating-frame",
       "draw:glue-point",
+      "draw:image",
+      "draw:object",
+      "draw:object-ole",
       "draw:plugin",
       "draw:text-box",
       "office:event-listeners",
@@ -315,6 +349,16 @@ export function parseFrameNode(element: Element): { frame: OdpFrameOptions } {
         .flatMap((child): OdpFrameContentOptions[] => {
           if (child.name === "draw:applet")
             return [{ kind: "applet" as const, applet: parseApplet(child) }];
+          if (child.name === "draw:object" && parseChartFrame) {
+            const chart = parseChartFrame(child);
+            if (chart) return [{ kind: "chart" as const, chart: chart.chart }];
+          }
+          if (child.name === "draw:object")
+            return [{ kind: "object" as const, object: parseObjectReference(child) }];
+          if (child.name === "draw:object-ole")
+            return [{ kind: "object-ole" as const, objectOle: parseObjectOle(child) }];
+          if (child.name === "draw:image")
+            return [{ kind: "image" as const, image: parseImageReference(child) }];
           if (child.name === "draw:floating-frame")
             return [{ kind: "floating-frame" as const, floatingFrame: parseFloatingFrame(child) }];
           if (child.name === "draw:plugin")
@@ -461,8 +505,12 @@ export function parseSceneNode(element: Element): { scene: OdpSceneOptions } {
 }
 
 /** Serialize one previously parsed ODP-only slide child. */
-export function slideNodeXml(child: OdpSlideNodePayload, styles: string[]): string {
-  if ("frame" in child) return frameXml(child.frame, styles);
+export function slideNodeXml(
+  child: OdpSlideNodePayload,
+  styles: string[],
+  charts: OdpChart[],
+): string {
+  if ("frame" in child) return frameXml(child.frame, styles, charts);
   if ("measure" in child) return measureXml(child.measure, styles);
   if ("pageThumbnail" in child) return pageThumbnailXml(child.pageThumbnail);
   if ("scene" in child) return sceneXml(child.scene);
@@ -470,8 +518,11 @@ export function slideNodeXml(child: OdpSlideNodePayload, styles: string[]): stri
 }
 
 /** Parse any ODF-only slide node into its typed payload. */
-export function parseSlideNode(element: Element): OdpSlideNodePayload {
-  if (element.name === "draw:frame") return parseFrameNode(element);
+export function parseSlideNode(
+  element: Element,
+  parseChartFrame?: (frame: Element) => { chart: ChartOptions } | undefined,
+): OdpSlideNodePayload {
+  if (element.name === "draw:frame") return parseFrameNode(element, parseChartFrame);
   if (element.name === "draw:measure") return parseMeasureNode(element);
   if (element.name === "draw:page-thumbnail") return parsePageThumbnailNode(element);
   if (element.name === "dr3d:scene") return parseSceneNode(element);
@@ -484,10 +535,14 @@ export function parseSlideNode(element: Element): OdpSlideNodePayload {
   );
 }
 
-function frameXml(options: OdpFrameOptions, styles: string[]): string {
+function frameXml(options: OdpFrameOptions, styles: string[], charts: OdpChart[]): string {
   const contents = options.contents.map((content) => {
     if (content.kind === "applet") return appletXml(content.applet);
+    if (content.kind === "chart") return chartFrameXml(content.chart, charts);
     if (content.kind === "floating-frame") return floatingFrameXml(content.floatingFrame);
+    if (content.kind === "image") return imageXml(content.image);
+    if (content.kind === "object") return objectXml(content.object);
+    if (content.kind === "object-ole") return objectOleXml(content.objectOle);
     if (content.kind === "plugin") return pluginXml(content.plugin);
     if (content.kind === "table") return slideTableXml(content.table, styles);
     return textBoxXml(content.textBox, styles);
@@ -514,6 +569,33 @@ function frameXml(options: OdpFrameOptions, styles: string[]): string {
         : [xmlElement("svg:desc", undefined, [options.description])]),
     ],
   );
+}
+
+function imageXml(options: OdpImageReferenceOptions): string {
+  return xmlElement("draw:image", {
+    "draw:filter-name": options.filterName,
+    "draw:mime-type": options.mimeType,
+    ...dataAttributes(options.data),
+    "xml:id": options.xmlId,
+  });
+}
+
+function objectXml(options: OdpObjectReferenceOptions): string {
+  return xmlElement("draw:object", {
+    ...(options.notifyOnUpdateOfRanges === undefined
+      ? {}
+      : { "draw:notify-on-update-of-ranges": options.notifyOnUpdateOfRanges }),
+    ...dataAttributes(options.data),
+    "xml:id": options.xmlId,
+  });
+}
+
+function objectOleXml(options: OdpObjectOleOptions): string {
+  return xmlElement("draw:object-ole", {
+    "draw:class-id": options.classId,
+    ...dataAttributes(options.data),
+    "xml:id": options.xmlId,
+  });
 }
 
 function measureXml(options: OdpMeasureOptions, styles: string[]): string {
@@ -1093,6 +1175,56 @@ function parseFloatingFrame(element: Element): OdpFloatingFrameOptions {
   };
 }
 
+function parseImageReference(element: Element): OdpImageReferenceOptions {
+  const path = "/draw:frame/draw:image";
+  assertKnown(element, [...IMAGE_ATTRIBUTES, ...DATA_ATTRIBUTES], path);
+  assertKnownChildren(element, [], path);
+  return {
+    ...(attributeString(element, "xml:id") === undefined
+      ? {}
+      : { xmlId: attributeString(element, "xml:id") }),
+    ...(attributeString(element, "draw:filter-name") === undefined
+      ? {}
+      : { filterName: attributeString(element, "draw:filter-name") }),
+    ...(attributeString(element, "draw:mime-type") === undefined
+      ? {}
+      : { mimeType: attributeString(element, "draw:mime-type") }),
+    ...parseRequiredData(element, path),
+  };
+}
+
+function parseObjectReference(element: Element): OdpObjectReferenceOptions {
+  const path = "/draw:frame/draw:object";
+  assertKnown(element, [...OBJECT_ATTRIBUTES, ...DATA_ATTRIBUTES], path);
+  assertKnownChildren(element, [], path);
+  return {
+    ...(attributeString(element, "xml:id") === undefined
+      ? {}
+      : { xmlId: attributeString(element, "xml:id") }),
+    ...(attributeString(element, "draw:notify-on-update-of-ranges") === undefined
+      ? {}
+      : {
+          notifyOnUpdateOfRanges: attributeString(element, "draw:notify-on-update-of-ranges"),
+        }),
+    ...parseRequiredData(element, path),
+  };
+}
+
+function parseObjectOle(element: Element): OdpObjectOleOptions {
+  const path = "/draw:frame/draw:object-ole";
+  assertKnown(element, ["draw:class-id", "xml:id", ...DATA_ATTRIBUTES], path);
+  assertKnownChildren(element, [], path);
+  return {
+    ...(attributeString(element, "xml:id") === undefined
+      ? {}
+      : { xmlId: attributeString(element, "xml:id") }),
+    ...(attributeString(element, "draw:class-id") === undefined
+      ? {}
+      : { classId: attributeString(element, "draw:class-id") }),
+    ...parseRequiredData(element, path),
+  };
+}
+
 function parsePlugin(element: Element): OdpPluginOptions {
   assertKnown(element, [...PLUGIN_ATTRIBUTES, ...DATA_ATTRIBUTES], "/draw:frame/draw:plugin");
   assertKnownChildren(element, ["draw:param"], "/draw:frame/draw:plugin");
@@ -1179,6 +1311,18 @@ function parseListeners(element: Element): FormEventListenerOptions[] {
   return (element.elements ?? [])
     .filter((child) => child.type === "element")
     .map((child) => {
+      assertKnown(
+        child,
+        [
+          "script:event-name",
+          "script:language",
+          "script:macro-name",
+          "xlink:type",
+          "xlink:href",
+          "xlink:actuate",
+        ],
+        "/office:event-listeners/script:event-listener",
+      );
       const eventName = attributeString(child, "script:event-name");
       const language = attributeString(child, "script:language");
       if (!eventName || !language) {
@@ -1191,8 +1335,37 @@ function parseListeners(element: Element): FormEventListenerOptions[] {
         );
       }
       const macroName = attributeString(child, "script:macro-name");
-      if (macroName !== undefined) return { target: "macro", eventName, language, macroName };
       const href = attributeString(child, "xlink:href");
+      const linkType = attributeString(child, "xlink:type");
+      const actuate = attributeString(child, "xlink:actuate");
+      if (linkType !== undefined && linkType !== "simple") {
+        throw new OdpParseError(
+          "Event listener link must be simple",
+          "content.xml",
+          "/office:event-listeners/script:event-listener",
+          "xlink:type",
+          "invalid-enum",
+        );
+      }
+      if (actuate !== undefined && actuate !== "onRequest") {
+        throw new OdpParseError(
+          "Event listener link must activate onRequest",
+          "content.xml",
+          "/office:event-listeners/script:event-listener",
+          "xlink:actuate",
+          "invalid-enum",
+        );
+      }
+      if (macroName !== undefined && href !== undefined) {
+        throw new OdpParseError(
+          "Event listener cannot combine macro and URL targets",
+          "content.xml",
+          "/office:event-listeners/script:event-listener",
+          "script:event-listener",
+          "ambiguous-event-target",
+        );
+      }
+      if (macroName !== undefined) return { target: "macro", eventName, language, macroName };
       if (!href) {
         throw new OdpParseError(
           "URL event listener requires href",
@@ -1207,16 +1380,7 @@ function parseListeners(element: Element): FormEventListenerOptions[] {
         eventName,
         language,
         href,
-        ...(attributeString(child, "xlink:actuate") === undefined
-          ? {}
-          : {
-              actuate: parseEnum(
-                child,
-                "xlink:actuate",
-                ["onRequest"],
-                "/office:event-listeners",
-              ) as "onRequest",
-            }),
+        ...(actuate === undefined ? {} : { actuate: actuate as "onRequest" }),
       };
     });
 }

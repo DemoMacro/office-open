@@ -689,4 +689,100 @@ describe("ODP codec", () => {
       reason: "element has no canonical PresentationOptions mapping",
     });
   });
+
+  it("types and regenerates a legacy object-ole frame", async () => {
+    const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:presentation><draw:page><draw:frame svg:x="1cm" svg:y="1cm" svg:width="1cm" svg:height="1cm"><draw:object-ole draw:class-id="Legacy.Object" xlink:href="./Object 1" xlink:type="simple"/></draw:frame></draw:page></office:presentation></office:body></office:document-content>`;
+    const parsed = await parsePresentation(
+      generateOcf("application/vnd.oasis.opendocument.presentation", {
+        "content.xml": content,
+        "Object 1": new Uint8Array([1]),
+      }),
+    );
+    expect(parsed.slides?.[0]?.odpNodes?.[0]?.node).toMatchObject({
+      frame: {
+        contents: [
+          {
+            kind: "object-ole",
+            objectOle: {
+              classId: "Legacy.Object",
+              data: { href: "./Object 1" },
+            },
+          },
+        ],
+      },
+    });
+    expect(
+      (await parsePresentation(await generatePresentation(parsed))).slides?.[0]?.odpNodes,
+    ).toEqual(parsed.slides?.[0]?.odpNodes);
+  });
+
+  it("requires an embedded replacement image", async () => {
+    const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:presentation><draw:page><draw:frame svg:x="1cm" svg:y="1cm" svg:width="1cm" svg:height="1cm"><draw:object xlink:href="./Object 1" xlink:type="simple"/><draw:image xlink:href="./ObjectReplacements/Object 1" xlink:type="simple"/></draw:frame></draw:page></office:presentation></office:body></office:document-content>`;
+    await expect(
+      parsePresentation(
+        generateOcf("application/vnd.oasis.opendocument.presentation", {
+          "content.xml": content,
+          "Object 1/content.xml": "<math/>",
+        }),
+      ),
+    ).rejects.toMatchObject({ reason: "embedded-replacement-image-missing" });
+  });
+
+  it("round-trips picture accessibility metadata and rejects unknown image types", async () => {
+    const parsed = await parsePresentation(
+      await generatePresentation({
+        slides: [
+          {
+            children: [
+              {
+                picture: {
+                  type: "png",
+                  data: new Uint8Array([1]),
+                  x: 0,
+                  y: 0,
+                  width: 360000,
+                  height: 360000,
+                  title: "Chart image",
+                  description: "Quarterly revenue",
+                },
+              },
+            ],
+          },
+        ],
+      }),
+    );
+    expect(parsed.slides?.[0]?.children?.[0]).toMatchObject({
+      picture: { title: "Chart image", description: "Quarterly revenue" },
+    });
+    expect(await parsePresentation(await generatePresentation(parsed))).toEqual(parsed);
+    const unsupported = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:presentation><draw:page><draw:frame svg:x="1cm" svg:y="1cm" svg:width="1cm" svg:height="1cm"><draw:image xlink:href="https://example.com/image.tiff"/></draw:frame></draw:page></office:presentation></office:body></office:document-content>`;
+    await expect(
+      parsePresentation(
+        generateOcf("application/vnd.oasis.opendocument.presentation", {
+          "content.xml": unsupported,
+        }),
+      ),
+    ).rejects.toMatchObject({ reason: "unsupported-image-extension" });
+  });
+
+  it("validates slide event listeners strictly", async () => {
+    const frame = (listener: string) =>
+      `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES} xmlns:script="urn:oasis:names:tc:opendocument:xmlns:script:1.0"><office:body><office:presentation><draw:page><draw:frame svg:x="1cm" svg:y="1cm" svg:width="1cm" svg:height="1cm"><draw:text-box/><office:event-listeners>${listener}</office:event-listeners></draw:frame></draw:page></office:presentation></office:body></office:document-content>`;
+    const ambiguous = `<script:event-listener script:event-name="click" script:language="Basic" script:macro-name="Main" xlink:href="https://example.com"/>`;
+    await expect(
+      parsePresentation(
+        generateOcf("application/vnd.oasis.opendocument.presentation", {
+          "content.xml": frame(ambiguous),
+        }),
+      ),
+    ).rejects.toMatchObject({ reason: "ambiguous-event-target" });
+    const unknown = `<script:event-listener script:event-name="click" script:language="Basic" xlink:href="https://example.com" xlink:extra="1"/>`;
+    await expect(
+      parsePresentation(
+        generateOcf("application/vnd.oasis.opendocument.presentation", {
+          "content.xml": frame(unknown),
+        }),
+      ),
+    ).rejects.toThrow(OdpParseError);
+  });
 });

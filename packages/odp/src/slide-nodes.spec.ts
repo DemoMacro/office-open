@@ -13,9 +13,9 @@ import {
 } from "./slide-nodes";
 
 function roundTrip(child: OdpSlideNodePayload): OdpSlideNodePayload {
-  const first = slideNodeXml(child, []);
+  const first = slideNodeXml(child, [], []);
   const parsed = parseNode(first);
-  expect(slideNodeXml(parsed, [])).toBe(first);
+  expect(slideNodeXml(parsed, [], [])).toBe(first);
   return parsed;
 }
 

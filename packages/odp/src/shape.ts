@@ -619,15 +619,49 @@ export function parseGroup(
     if (child.name === "draw:frame") {
       const chart = parseChartFrame(child, chartPool);
       if (chart) return [chart];
-      if (childNamed(child, "draw:object-ole")) return [];
+      const contentNames = (child.elements ?? [])
+        .filter((candidate): candidate is Element => candidate.type === "element")
+        .map((candidate) => candidate.name)
+        .filter((name): name is string => name !== undefined);
+      if (
+        contentNames.includes("draw:object-ole") ||
+        (contentNames.includes("draw:object") &&
+          (childNamed(child, "svg:title") !== undefined ||
+            childNamed(child, "svg:desc") !== undefined)) ||
+        childNamed(child, "office:event-listeners") !== undefined ||
+        (contentNames.filter((name) =>
+          ["draw:object", "draw:image", "draw:plugin", "draw:text-box", "table:table"].includes(
+            name,
+          ),
+        ).length > 1 &&
+          !(
+            (contentNames.includes("draw:object") &&
+              contentNames.includes("draw:image") &&
+              contentNames.length === 2) ||
+            (contentNames.includes("draw:plugin") &&
+              contentNames.includes("draw:image") &&
+              contentNames.length === 2)
+          ))
+      ) {
+        odpNodes.push({
+          position: visibleChildIndex(element, child),
+          node: parseSlideNode(child),
+        });
+        const node = odpNodes.at(-1)?.node;
+        const frameChart = parseChartFrame(child, chartPool);
+        if (node && "frame" in node && frameChart) {
+          node.frame.contents = [{ kind: "chart", chart: frameChart.chart }];
+        }
+        return [];
+      }
       const picture = parsePictureFrame(child, binaries, usedBinaryPaths);
       if (picture) return [picture];
       if (childNamed(child, "draw:text-box")) return [{ shape: parseShape(child, textStyles) }];
-      if (child.name === "draw:frame") {
-        odpNodes.push({ position: visibleChildIndex(element, child), node: parseSlideNode(child) });
-        return [];
-      }
-      throw unknownSlideChild(child, "/draw:g");
+      odpNodes.push({
+        position: visibleChildIndex(element, child),
+        node: parseSlideNode(child),
+      });
+      return [];
     }
     if (child.name === "draw:custom-shape")
       return [{ shape: parseCustomSlideShape(child, textStyles, graphicStyles) }];
@@ -649,7 +683,10 @@ export function parseGroup(
       );
     if (child.name === "table:table") return [parseSlideTable(child, textStyles, columnWidths)];
     if (child.name === "dr3d:scene") {
-      odpNodes.push({ position: visibleChildIndex(element, child), node: parseSlideNode(child) });
+      odpNodes.push({
+        position: visibleChildIndex(element, child),
+        node: parseSlideNode(child, (frame) => parseChartFrame(frame, chartPool)),
+      });
       return [];
     }
     throw unknownSlideChild(child, "/draw:g");
