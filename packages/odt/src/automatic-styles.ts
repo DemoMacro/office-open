@@ -6,7 +6,7 @@ import {
   childrenNamed,
   lengthToEmu,
   parseStyleProperty,
-  stylePropertyAttributes,
+  stylePropertyXml,
   xmlElement,
 } from "@office-open/odf";
 import type { Element } from "@office-open/xml";
@@ -135,9 +135,7 @@ export function parseStyles(container: Element | undefined): StyleMap {
       tabStops: tabStops.length > 0 ? tabStops : undefined,
       columnWidth,
       family,
-      ...(resourceProperties.some((property) => Object.keys(property.attributes).length > 0)
-        ? { properties: resourceProperties }
-        : {}),
+      ...(resourceProperties.some(hasStyleProjection) ? { properties: resourceProperties } : {}),
       character: {
         bold: attributeString(character, "fo:font-weight") === "bold",
         italic: attributeString(character, "fo:font-style") === "italic",
@@ -163,10 +161,8 @@ export function automaticStyleResourcesXml(
       "style:style",
       { "style:name": overlay.name, "style:family": overlay.family },
       overlay.properties
-        .filter((property) => Object.keys(property.attributes).length > 0)
-        .map((property) =>
-          xmlElement(property.name, stylePropertyAttributes(property, "hundredth-millimeter")),
-        ),
+        .filter(hasStyleProjection)
+        .map((property) => stylePropertyXml(property, "hundredth-millimeter")),
     ),
   );
 }
@@ -187,6 +183,10 @@ function parseFamily(value: string | undefined, style: Element): StyleFamily {
   ];
   if (value && families.includes(value as StyleFamily)) return value as StyleFamily;
   throw styleError(style, value ?? "style:family", "unknown style family");
+}
+
+function hasStyleProjection(property: StylePropertyOptions): boolean {
+  return Object.keys(property.attributes).length > 0 || (property.children?.length ?? 0) > 0;
 }
 
 function styleError(style: Element, name: string, reason: string): OdtParseError {

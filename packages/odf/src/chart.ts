@@ -41,6 +41,8 @@ import {
 import { hexColorValue } from "./drawing/graphic-style";
 import { OdfSchemaError } from "./errors";
 import { metaXml, ODF_NAMESPACES, parseMeta } from "./meta";
+import { chartPropertiesXml } from "./package-options";
+import type { ChartStylePropertiesOptions } from "./package-options";
 import { parseOdfNode, parseOdfNodes, type OdfXmlNode } from "./runtime/odf-node";
 import {
   attributeNumber,
@@ -159,14 +161,14 @@ function pushChartShapeStyle(
   shapeProperties: ChartShapePropertiesOptions | undefined,
   styles: string[],
   fallbackName: string,
-  chartProperties: Record<string, string> = {},
+  chartProperties?: ChartStylePropertiesOptions,
 ): string | undefined {
   return pushChartStyle(
     shapeProperties,
     activeChartStyleResources,
     styles,
     fallbackName,
-    chartProperties,
+    chartProperties ?? { name: "style:chart-properties", attributes: {} },
   );
 }
 
@@ -564,11 +566,15 @@ function axisXml(
 
 function pushAxisStyle(axis: AxisOptions, styles: string[]): string | undefined {
   const graphicName = pushChartShapeStyle(axis.shapeProperties, styles, "chart");
-  const chartAttributes = {
-    "chart:visible": axis.delete === true ? "false" : undefined,
-    "chart:display-label": axis.tickLabelPosition === "none" ? "false" : undefined,
+  const chartProperties: ChartStylePropertiesOptions = {
+    name: "style:chart-properties",
+    attributes: {
+      "chart:visible": axis.delete === true ? false : undefined,
+      "chart:display-label": axis.tickLabelPosition === "none" ? false : undefined,
+    },
   };
-  if (Object.values(chartAttributes).every((value) => value === undefined)) return graphicName;
+  if (Object.values(chartProperties.attributes).every((value) => value === undefined))
+    return graphicName;
   const name = `ch-axis-${styles.length + 1}`;
   const graphicXml = graphicName
     ? (styles
@@ -577,7 +583,7 @@ function pushAxisStyle(axis: AxisOptions, styles: string[]): string | undefined 
     : "";
   styles.push(
     xmlElement("style:style", { "style:name": name, "style:family": "chart" }, [
-      xmlElement("style:chart-properties", chartAttributes),
+      chartPropertiesXml(chartProperties, "emu"),
       ...(graphicXml ? [graphicXml] : []),
     ]),
   );
@@ -619,7 +625,12 @@ function seriesXml(
         series.shapeProperties,
         styles,
         "series",
-        chart.type === "column" ? { "chart:vertical": "true" } : {},
+        chart.type === "column"
+          ? {
+              name: "style:chart-properties",
+              attributes: { "chart:vertical": true },
+            }
+          : undefined,
       ),
     },
     [
@@ -855,7 +866,8 @@ function parseChart(
       `unsupported chart class ${classToken ?? "(missing)"}`,
     );
   for (const source of sources) {
-    source.vertical = styleMap.get(source.styleName ?? "")?.properties["chart:vertical"] === "true";
+    source.vertical =
+      styleMap.get(source.styleName ?? "")?.properties?.attributes?.["chart:vertical"] === true;
   }
   const series = sources.map((source, index) =>
     parseSeries(
@@ -1196,7 +1208,7 @@ function expandDataPoints(
 }
 
 function parseTrendlines(style: ChartStyle | undefined): TrendlineOptions[] | undefined {
-  const type = style?.properties["chart:regression-type"];
+  const type = style?.properties?.attributes?.["chart:regression-type"];
   if (!type || type === "none") return undefined;
   const trendline: TrendlineOptions = {
     type:
@@ -1204,10 +1216,12 @@ function parseTrendlines(style: ChartStyle | undefined): TrendlineOptions[] | un
         ? "movingAverage"
         : (type as Exclude<TrendlineType, "movingAverage">),
   };
-  const degree = style?.properties["chart:regression-max-degree"];
+  const degree = style?.properties?.attributes?.["chart:regression-max-degree"];
   if (type === "polynomial" && degree !== undefined) trendline.order = Number(degree);
-  if (style?.properties["chart:regression-force-intercept"] === "true") {
-    trendline.intercept = Number(style?.properties["chart:regression-intercept-value"] ?? 0);
+  if (style?.properties?.attributes?.["chart:regression-force-intercept"] === true) {
+    trendline.intercept = Number(
+      style?.properties?.attributes?.["chart:regression-intercept-value"] ?? 0,
+    );
   }
   return [trendline];
 }
@@ -1219,9 +1233,9 @@ function parseErrorBars(
   const indicators = childrenNamed(element, "chart:error-indicator");
   if (indicators.length === 0) return undefined;
   return indicators.map((indicator) => {
-    const category = style?.properties["chart:error-category"] ?? "none";
-    const upper = style?.properties["chart:error-upper-indicator"] !== "false";
-    const lower = style?.properties["chart:error-lower-indicator"] !== "false";
+    const category = style?.properties?.attributes?.["chart:error-category"] ?? "none";
+    const upper = style?.properties?.attributes?.["chart:error-upper-indicator"] !== false;
+    const lower = style?.properties?.attributes?.["chart:error-lower-indicator"] !== false;
     const result: ErrorBarOptions = {
       direction: attributeString(indicator, "chart:dimension") === "x" ? "x" : "y",
       barType: upper && lower ? "both" : upper ? "plus" : "minus",
@@ -1238,8 +1252,8 @@ function parseErrorBars(
     };
     if (result.valueType === "fixedValue") {
       result.value = Number(
-        style?.properties["chart:error-margin"] ??
-          style?.properties["chart:error-lower-limit"] ??
+        style?.properties?.attributes?.["chart:error-margin"] ??
+          style?.properties?.attributes?.["chart:error-lower-limit"] ??
           0,
       );
     }
@@ -1271,8 +1285,9 @@ function parseAxis(
           ? "date"
           : "category",
     title,
-    delete: style?.properties["chart:visible"] === "false",
-    tickLabelPosition: style?.properties["chart:display-label"] === "false" ? "none" : undefined,
+    delete: style?.properties?.attributes?.["chart:visible"] === false,
+    tickLabelPosition:
+      style?.properties?.attributes?.["chart:display-label"] === false ? "none" : undefined,
     majorGridlines: childrenNamed(element, "chart:grid").some(
       (grid) => attributeString(grid, "chart:class") !== "minor",
     ),

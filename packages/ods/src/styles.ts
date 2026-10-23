@@ -6,7 +6,7 @@ import {
   lengthToEmu,
   parseStyleProperty,
   removeStylePropertyAttributes,
-  stylePropertyAttributes,
+  stylePropertyXml,
   xmlElement,
   type XmlAttributes,
 } from "@office-open/odf";
@@ -100,9 +100,7 @@ export function styleResourcesXml(overlays: StyleResourceOptions[] | undefined):
     xmlElement(
       "style:style",
       { "style:name": overlay.name, "style:family": overlay.family },
-      overlay.properties.map((property) =>
-        xmlElement(property.name, stylePropertyAttributes(property, "spreadsheet")),
-      ),
+      overlay.properties.map((property) => stylePropertyXml(property, "spreadsheet")),
     ),
   );
 }
@@ -473,7 +471,7 @@ export function parseStyleResources(container: Element | undefined): StyleResour
           ([attribute]) => !isMappedDimensionAttribute(property.name ?? "", attribute),
         ),
       );
-      if (Object.keys(sourceAttributes).length === 0) continue;
+      if (Object.keys(sourceAttributes).length === 0 && !hasChildElements(property)) continue;
       const parsed = parseStyleProperty(
         { ...property, attributes: sourceAttributes },
         { family, scale: "spreadsheet" },
@@ -491,7 +489,7 @@ export function parseStyleResources(container: Element | undefined): StyleResour
       const value = removeStylePropertyAttributes(parsed.value, (attribute) =>
         isMappedDimensionAttribute(property.name ?? "", attribute),
       );
-      if (Object.keys(value.attributes).length > 0) properties.push(value);
+      if (hasStyleProjection(value)) properties.push(value);
     }
     if (properties.length > 0) result.push({ name, family, properties });
   }
@@ -518,6 +516,14 @@ function isMappedDimensionAttribute(element: string, attribute: string): boolean
       ].includes(attribute)) ||
     (element === "style:table-cell-properties" && attribute.startsWith("gnm:"))
   );
+}
+
+function hasChildElements(element: Element): boolean {
+  return (element.elements ?? []).some((child) => child.type === "element");
+}
+
+function hasStyleProjection(property: StyleResourceOptions["properties"][number]): boolean {
+  return Object.keys(property.attributes).length > 0 || (property.children?.length ?? 0) > 0;
 }
 
 /** ODF #RRGGBB → xlsx RRGGBB hex. */

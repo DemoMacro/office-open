@@ -515,15 +515,11 @@ function parseOdtPackage(data: Uint8Array): OdtDocumentOptions {
   if (embeddedObjects.size > 0) result.embeddedObjects = [...embeddedObjects.values()];
   if (packageMembers.length > 0) result.packageMembers = packageMembers;
   const styleResources: OdtAutomaticStyleResource[] = [...styleMap]
-    .filter(([, style]) =>
-      (style.properties ?? []).some((property) => Object.keys(property.attributes).length > 0),
-    )
+    .filter(([, style]) => (style.properties ?? []).some(hasStyleProjection))
     .map(([name, style]) => ({
       name,
       family: style.family,
-      properties: (style.properties ?? []).filter(
-        (property) => Object.keys(property.attributes).length > 0,
-      ),
+      properties: (style.properties ?? []).filter(hasStyleProjection),
     }));
   if (styleResources.length > 0) result.styleResources = styleResources;
   if (hasOcfManifestOptions(manifest)) result.packageManifest = manifest;
@@ -571,6 +567,13 @@ function parseOdtPackage(data: Uint8Array): OdtDocumentOptions {
     if (masterHeaderFooter.footers) section.footers = masterHeaderFooter.footers;
   }
   return result;
+}
+
+function hasStyleProjection(property: {
+  attributes: Record<string, unknown>;
+  children?: unknown[];
+}) {
+  return Object.keys(property.attributes).length > 0 || (property.children?.length ?? 0) > 0;
 }
 
 function validateEmbeddedObjectBodies(

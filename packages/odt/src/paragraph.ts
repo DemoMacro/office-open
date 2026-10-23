@@ -1352,7 +1352,7 @@ export function parseParagraph(element: Element, context: ParseContext): Paragra
   const runs = parseRuns(element, context);
   const result: ParagraphOptions = {};
   if (style?.alignment) result.alignment = style.alignment as ParagraphOptions["alignment"];
-  if (style?.properties?.some((property) => Object.keys(property.attributes).length > 0))
+  if (style?.properties?.some(hasStyleProjection))
     result.style = attributeString(element, "text:style-name");
   if (style?.pageBreakBefore) result.pageBreakBefore = true;
   if (style?.tabStops) result.tabStops = style.tabStops;
@@ -1949,9 +1949,7 @@ export function parseRuns(
         return [
           {
             text: textOf(child),
-            ...(styleEntry?.properties?.some(
-              (property) => Object.keys(property.attributes).length > 0,
-            )
+            ...(styleEntry?.properties?.some(hasStyleProjection)
               ? { style: attributeString(child, "text:style-name") }
               : {}),
             ...properties,
@@ -1984,6 +1982,13 @@ export function parseRuns(
     else merged.push(run);
     return merged;
   }, []);
+}
+
+function hasStyleProjection(property: {
+  attributes: Record<string, unknown>;
+  children?: unknown[];
+}) {
+  return Object.keys(property.attributes).length > 0 || (property.children?.length ?? 0) > 0;
 }
 
 function runStyleName(children: CanonicalRuby["base"]["children"]): string | undefined {

@@ -104,7 +104,7 @@ describe("ODT canonical projection", () => {
 
   it("preserves arbitrary ODF numbering formats as canonical custom formats", async () => {
     const styles =
-      '<text:list-style style:name="Custom"><text:list-level-style-number text:level="1" style:num-format="か"><style:list-level-properties style:list-level-position-and-space-mode="label-alignment"><style:list-level-label-alignment text:label-followed-by="listtab"/></style:list-level-properties></text:list-level-style-number></text:list-style>';
+      '<text:list-style style:name="Custom"><text:list-level-style-number text:level="1" style:num-format="か"><style:list-level-properties text:list-level-position-and-space-mode="label-alignment"><style:list-level-label-alignment text:label-followed-by="listtab"/></style:list-level-properties></text:list-level-style-number></text:list-style>';
     const source = odtStyledPackage(
       styles,
       '<text:list text:style-name="Custom"><text:list-item><text:p>Item</text:p></text:list-item></text:list>',
@@ -122,7 +122,7 @@ describe("ODT canonical projection", () => {
 
   it("rejects unknown numbering label suffixes structurally", async () => {
     const styles =
-      '<text:list-style style:name="Custom"><text:list-level-style-number text:level="1" style:num-format="1"><style:list-level-properties style:list-level-position-and-space-mode="label-alignment"><style:list-level-label-alignment text:label-followed-by="unknown"/></style:list-level-properties></text:list-level-style-number></text:list-style>';
+      '<text:list-style style:name="Custom"><text:list-level-style-number text:level="1" style:num-format="1"><style:list-level-properties text:list-level-position-and-space-mode="label-alignment"><style:list-level-label-alignment text:label-followed-by="unknown"/></style:list-level-properties></text:list-level-style-number></text:list-style>';
     await expect(
       parseDocument(odtStyledPackage(styles, "<text:p>Item</text:p>")),
     ).rejects.toMatchObject({ reason: "unknown-label-followed-by" });
@@ -130,7 +130,7 @@ describe("ODT canonical projection", () => {
 
   it("treats inherited object names as unknown ODF numbering tokens", async () => {
     const styles =
-      '<text:list-style style:name="Custom"><text:list-level-style-number text:level="1" style:num-format="constructor"><style:list-level-properties style:list-level-position-and-space-mode="label-alignment"><style:list-level-label-alignment text:label-followed-by="constructor"/></style:list-level-properties></text:list-level-style-number></text:list-style>';
+      '<text:list-style style:name="Custom"><text:list-level-style-number text:level="1" style:num-format="constructor"><style:list-level-properties text:list-level-position-and-space-mode="label-alignment"><style:list-level-label-alignment text:label-followed-by="constructor"/></style:list-level-properties></text:list-level-style-number></text:list-style>';
     await expect(
       parseDocument(odtStyledPackage(styles, "<text:p>Item</text:p>")),
     ).rejects.toMatchObject({ reason: "unknown-label-followed-by" });

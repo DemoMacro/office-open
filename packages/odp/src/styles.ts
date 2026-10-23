@@ -5,7 +5,7 @@ import {
   emuToLength,
   parseStyleProperty,
   removeStylePropertyAttributes,
-  stylePropertyAttributes,
+  stylePropertyXml,
   xmlElement,
 } from "@office-open/odf";
 import type { StyleFamily, StyleResourceOptions } from "@office-open/odf";
@@ -35,9 +35,7 @@ export function styleResourcesXml(overlays: StyleResourceOptions[] | undefined):
     xmlElement(
       "style:style",
       { "style:name": overlay.name, "style:family": overlay.family },
-      overlay.properties.map((property) =>
-        xmlElement(property.name, stylePropertyAttributes(property, "emu")),
-      ),
+      overlay.properties.map((property) => stylePropertyXml(property, "emu")),
     ),
   );
 }
@@ -140,7 +138,7 @@ export function parseStyleResources(container: Element | undefined): StyleResour
       const value = removeStylePropertyAttributes(parsed.value, (attribute) =>
         isMappedTextAttribute(property.name ?? "", attribute),
       );
-      if (Object.keys(value.attributes).length > 0) properties.push(value);
+      if (hasStyleProjection(value)) properties.push(value);
     }
     if (properties.length > 0) result.push({ name, family, properties });
   }
@@ -154,4 +152,8 @@ function isMappedTextAttribute(element: string, attribute: string): boolean {
       attribute,
     )
   );
+}
+
+function hasStyleProjection(property: StyleResourceOptions["properties"][number]): boolean {
+  return Object.keys(property.attributes).length > 0 || (property.children?.length ?? 0) > 0;
 }

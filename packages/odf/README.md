@@ -11,6 +11,7 @@
 - 📦 **OCF Packages** — Read and generate ZIP containers, `mimetype`, and manifests
 - 🧩 **Typed Runtime** — Parse ODF XML into a generic runtime model with structured errors
 - 📊 **Shared Codecs** — Chart, database, form, drawing, metadata, and manifest models
+- 🎨 **Style Codecs** — Map style families, nested style children, chart properties, and list-level properties
 - 🔍 **Semantic Digests** — Compare OCF entries, manifest data, and binary content
 
 `@office-open/odf` is the implementation runtime for `@office-open/odt`, `@office-open/ods`, and `@office-open/odp`. Use those packages for canonical document models.
@@ -45,6 +46,7 @@ const archive = await readOcf(file, "application/vnd.oasis.opendocument.text");
 - `generateOcf(mimeType, files, mediaTypes?, packageManifest?)` — generate an OCF package
 - `parseManifestOptions(xml)` / `manifestOptionsXml(options)` — map manifest XML
 - `parseMeta(xml)` / `metaXml(options)` — map ODF metadata to core properties
+- `parseStyleProperty(xml, context)` / `stylePropertyXml(options, scale)` — map ODF style property elements and nested children
 - `OcfError` and `OdfSchemaError` — structured container and schema failures
 
 ## Documentation

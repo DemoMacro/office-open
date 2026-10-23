@@ -1,8 +1,15 @@
 import type { DataType } from "@office-open/core";
+import { encodeBase64, toUint8Array } from "@office-open/core";
 import type { Element } from "@office-open/xml";
 
 import type { OcfManifestOptions } from "./container/manifest";
-import { emuToLength, lengthToEmu, type XmlAttributes } from "./runtime/xml";
+import {
+  emuToLength,
+  escapeText,
+  lengthToEmu,
+  xmlElement,
+  type XmlAttributes,
+} from "./runtime/xml";
 
 /** Style family allowed by ODF automatic/common style containers. */
 export type StyleFamily =
@@ -650,53 +657,505 @@ type HeaderFooterStyleAttributeName = (typeof HEADER_FOOTER_STYLE_ATTRIBUTES)[nu
 type DrawingPageStyleAttributeName = (typeof DRAWING_PAGE_STYLE_ATTRIBUTES)[number];
 type RubyStyleAttributeName = (typeof RUBY_STYLE_ATTRIBUTES)[number];
 
+export type ListLevelPropertiesParseResult =
+  | { ok: true; value: ListLevelStylePropertiesOptions }
+  | {
+      ok: false;
+      attributeName?: string;
+      elementName: string;
+      reason: string;
+    };
+
+export type ChartPropertiesParseResult =
+  | { ok: true; value: ChartStylePropertiesOptions }
+  | {
+      ok: false;
+      attributeName?: string;
+      elementName: string;
+      reason: string;
+    };
+
+export interface ChartStylePropertiesOptions {
+  name: "style:chart-properties";
+  attributes: Partial<Record<(typeof CHART_PROPERTIES_ATTRIBUTES)[number], StylePropertyValue>>;
+  symbolImage?: ChartSymbolImageOptions;
+}
+
+export interface ChartSymbolImageOptions {
+  attributes: Partial<Record<(typeof SYMBOL_IMAGE_ATTRIBUTES)[number], string>>;
+}
+
+export interface ListLevelStylePropertiesOptions {
+  name: "style:list-level-properties";
+  attributes: Partial<Record<(typeof LIST_LEVEL_ATTRIBUTES)[number], StylePropertyValue>>;
+  labelAlignment?: ListLevelLabelAlignmentOptions;
+}
+
+export interface ListLevelLabelAlignmentOptions {
+  attributes: Partial<Record<(typeof LABEL_ALIGNMENT_ATTRIBUTES)[number], StylePropertyValue>>;
+}
+
+export interface StyleBackgroundImageOptions {
+  name: "style:background-image";
+  attributes: Partial<Record<(typeof BACKGROUND_IMAGE_ATTRIBUTES)[number], StylePropertyValue>>;
+  data?: DataType;
+}
+
+export interface StyleTabStopOptions {
+  attributes: Partial<Record<(typeof TAB_STOP_ATTRIBUTES)[number], StylePropertyValue>>;
+}
+
+export interface StyleTabStopsOptions {
+  name: "style:tab-stops";
+  stops: StyleTabStopOptions[];
+}
+
+export interface StyleDropCapOptions {
+  name: "style:drop-cap";
+  attributes: Partial<Record<(typeof DROP_CAP_ATTRIBUTES)[number], StylePropertyValue>>;
+}
+
+export interface StyleColumnOptions {
+  attributes: Partial<Record<(typeof COLUMN_ATTRIBUTES)[number], StylePropertyValue>>;
+}
+
+export interface StyleColumnSeparatorOptions {
+  attributes: Partial<Record<(typeof COLUMN_SEPARATOR_ATTRIBUTES)[number], StylePropertyValue>>;
+}
+
+export interface StyleColumnsOptions {
+  name: "style:columns";
+  attributes: Partial<Record<"fo:column-count" | "fo:column-gap", StylePropertyValue>>;
+  columns: StyleColumnOptions[];
+  separator?: StyleColumnSeparatorOptions;
+}
+
+export interface StyleListLevelOptions {
+  name:
+    | "text:list-level-style-number"
+    | "text:list-level-style-bullet"
+    | "text:list-level-style-image";
+  attributes: Partial<
+    Record<
+      | (typeof NUMBER_LEVEL_ATTRIBUTES)[number]
+      | (typeof BULLET_LEVEL_ATTRIBUTES)[number]
+      | (typeof IMAGE_LEVEL_ATTRIBUTES)[number],
+      StylePropertyValue
+    >
+  >;
+  listProperties?: ListLevelStylePropertiesOptions;
+  textProperties?: TextStylePropertiesOptions;
+}
+
+export interface StyleListStyleOptions {
+  name: "text:list-style";
+  attributes: Partial<Record<(typeof LIST_STYLE_ATTRIBUTES)[number], StylePropertyValue>>;
+  levels: StyleListLevelOptions[];
+}
+
+export interface StyleFootnoteSeparatorOptions {
+  name: "style:footnote-sep";
+  attributes: Partial<Record<(typeof FOOTNOTE_SEPARATOR_ATTRIBUTES)[number], StylePropertyValue>>;
+}
+
+export interface StyleSoundOptions {
+  name: "presentation:sound";
+  attributes: Partial<Record<(typeof SOUND_ATTRIBUTES)[number], StylePropertyValue>>;
+}
+
+export interface StyleNotesConfigurationOptions {
+  name: "text:notes-configuration";
+  attributes: Partial<Record<(typeof NOTES_CONFIGURATION_ATTRIBUTES)[number], StylePropertyValue>>;
+  continuationForward?: string;
+  continuationBackward?: string;
+}
+
+export type StylePropertyChildOptions =
+  | StyleBackgroundImageOptions
+  | StyleColumnsOptions
+  | StyleDropCapOptions
+  | StyleFootnoteSeparatorOptions
+  | StyleListStyleOptions
+  | StyleNotesConfigurationOptions
+  | StyleSoundOptions
+  | StyleTabStopsOptions;
+
+const TAB_STOP_ATTRIBUTES = [
+  "style:char",
+  "style:leader-color",
+  "style:leader-style",
+  "style:leader-text",
+  "style:leader-text-style",
+  "style:leader-type",
+  "style:leader-width",
+  "style:position",
+  "style:type",
+] as const;
+
+const DROP_CAP_ATTRIBUTES = [
+  "style:distance",
+  "style:length",
+  "style:lines",
+  "style:style-name",
+] as const;
+
+const BACKGROUND_IMAGE_ATTRIBUTES = [
+  "draw:opacity",
+  "style:filter-name",
+  "style:position",
+  "style:repeat",
+  "xlink:actuate",
+  "xlink:href",
+  "xlink:show",
+  "xlink:type",
+] as const;
+
+const COLUMN_ATTRIBUTES = [
+  "fo:end-indent",
+  "fo:space-after",
+  "fo:space-before",
+  "fo:start-indent",
+  "style:rel-width",
+] as const;
+
+const COLUMN_SEPARATOR_ATTRIBUTES = [
+  "style:color",
+  "style:height",
+  "style:style",
+  "style:vertical-align",
+  "style:width",
+] as const;
+
+const LIST_STYLE_ATTRIBUTES = [
+  "style:display-name",
+  "style:name",
+  "text:consecutive-numbering",
+] as const;
+
+const NUMBER_LEVEL_ATTRIBUTES = [
+  "style:num-format",
+  "style:num-letter-sync",
+  "style:num-prefix",
+  "style:num-suffix",
+  "text:display-levels",
+  "text:level",
+  "text:start-value",
+  "text:style-name",
+] as const;
+
+const BULLET_LEVEL_ATTRIBUTES = [
+  "style:num-prefix",
+  "style:num-suffix",
+  "text:bullet-char",
+  "text:bullet-relative-size",
+  "text:level",
+  "text:style-name",
+] as const;
+
+const IMAGE_LEVEL_ATTRIBUTES = [
+  "text:level",
+  "xlink:actuate",
+  "xlink:href",
+  "xlink:show",
+  "xlink:type",
+] as const;
+
+const NOTES_CONFIGURATION_ATTRIBUTES = [
+  "style:num-format",
+  "style:num-letter-sync",
+  "style:num-prefix",
+  "style:num-suffix",
+  "text:citation-body-style-name",
+  "text:citation-style-name",
+  "text:default-style-name",
+  "text:footnotes-position",
+  "text:master-page-name",
+  "text:note-class",
+  "text:start-numbering-at",
+  "text:start-value",
+] as const;
+
+const SYMBOL_IMAGE_ATTRIBUTES = ["xlink:href"] as const;
+
+const LABEL_ALIGNMENT_ATTRIBUTES = [
+  "fo:margin-left",
+  "fo:text-indent",
+  "text:label-followed-by",
+  "text:list-tab-stop-position",
+] as const;
+
+const LIST_LEVEL_ATTRIBUTES = [
+  "fo:height",
+  "fo:text-align",
+  "fo:width",
+  "style:font-name",
+  "style:vertical-pos",
+  "style:vertical-rel",
+  "svg:y",
+  "text:list-level-position-and-space-mode",
+  "text:min-label-distance",
+  "text:min-label-width",
+  "text:space-before",
+] as const;
+
+const SOUND_ATTRIBUTES = [
+  "presentation:play-full",
+  "xlink:actuate",
+  "xlink:href",
+  "xlink:show",
+  "xlink:type",
+  "xml:id",
+] as const;
+
+const FOOTNOTE_SEPARATOR_ATTRIBUTES = [
+  "style:adjustment",
+  "style:color",
+  "style:distance-after-sep",
+  "style:distance-before-sep",
+  "style:line-style",
+  "style:rel-width",
+  "style:width",
+] as const;
+
+const CHART_PROPERTIES_ATTRIBUTES = [
+  "chart:angle-offset",
+  "chart:auto-position",
+  "chart:auto-size",
+  "chart:axis-label-position",
+  "chart:axis-position",
+  "chart:connect-bars",
+  "chart:data-label-number",
+  "chart:data-label-series",
+  "chart:data-label-symbol",
+  "chart:data-label-text",
+  "chart:deep",
+  "chart:display-label",
+  "chart:error-category",
+  "chart:error-lower-indicator",
+  "chart:error-lower-limit",
+  "chart:error-lower-range",
+  "chart:error-margin",
+  "chart:error-percentage",
+  "chart:error-upper-indicator",
+  "chart:error-upper-limit",
+  "chart:error-upper-range",
+  "chart:gap-width",
+  "chart:group-bars-per-axis",
+  "chart:hole-size",
+  "chart:include-hidden-cells",
+  "chart:interpolation",
+  "chart:lines",
+  "chart:interval-major",
+  "chart:interval-minor-divisor",
+  "chart:japanese-candle-stick",
+  "chart:label-arrangement",
+  "chart:label-position",
+  "chart:label-position-negative",
+  "chart:link-data-style-to-source",
+  "chart:logarithmic",
+  "chart:maximum",
+  "chart:mean-value",
+  "chart:minimum",
+  "chart:origin",
+  "chart:overlap",
+  "chart:percentage",
+  "chart:pie-offset",
+  "chart:regression-force-intercept",
+  "chart:regression-intercept-value",
+  "chart:regression-max-degree",
+  "chart:regression-moving-type",
+  "chart:regression-name",
+  "chart:regression-period",
+  "chart:regression-type",
+  "chart:reverse-direction",
+  "chart:right-angled-axes",
+  "chart:scale-text",
+  "chart:series-source",
+  "chart:solid-type",
+  "chart:sort-by-x-values",
+  "chart:spline-order",
+  "chart:spline-resolution",
+  "chart:stacked",
+  "chart:symbol-height",
+  "chart:symbol-name",
+  "chart:symbol-type",
+  "chart:symbol-width",
+  "chart:text-overlap",
+  "chart:three-dimensional",
+  "chart:tick-mark-position",
+  "chart:tick-marks-major-inner",
+  "chart:tick-marks-major-outer",
+  "chart:tick-marks-minor-inner",
+  "chart:tick-marks-minor-outer",
+  "chart:treat-empty-cells",
+  "chart:vertical",
+  "chart:visible",
+  "style:direction",
+  "style:rotation-angle",
+  "text:line-break",
+] as const;
+
+const CHILD_LENGTH_ATTRIBUTES = new Set([
+  "fo:column-gap",
+  "fo:end-indent",
+  "fo:height",
+  "fo:margin-left",
+  "fo:space-after",
+  "fo:space-before",
+  "fo:start-indent",
+  "fo:text-indent",
+  "fo:width",
+  "style:distance",
+  "style:distance-after-sep",
+  "style:distance-before-sep",
+  "style:leader-width",
+  "style:position",
+  "style:width",
+  "chart:symbol-height",
+  "chart:symbol-width",
+  "svg:y",
+  "text:list-tab-stop-position",
+  "text:min-label-distance",
+  "text:min-label-width",
+  "text:space-before",
+]);
+
+const CHILD_PERCENT_ATTRIBUTES = new Set([
+  "chart:hole-size",
+  "draw:opacity",
+  "style:height",
+  "style:rel-width",
+  "text:bullet-relative-size",
+]);
+
+const CHILD_BOOLEAN_ATTRIBUTES = new Set([
+  "chart:auto-position",
+  "chart:auto-size",
+  "chart:connect-bars",
+  "chart:data-label-series",
+  "chart:data-label-symbol",
+  "chart:data-label-text",
+  "chart:deep",
+  "chart:display-label",
+  "chart:error-lower-indicator",
+  "chart:error-upper-indicator",
+  "chart:group-bars-per-axis",
+  "chart:include-hidden-cells",
+  "chart:lines",
+  "chart:japanese-candle-stick",
+  "chart:link-data-style-to-source",
+  "chart:logarithmic",
+  "chart:mean-value",
+  "chart:percentage",
+  "chart:regression-force-intercept",
+  "chart:reverse-direction",
+  "chart:right-angled-axes",
+  "chart:scale-text",
+  "chart:sort-by-x-values",
+  "chart:stacked",
+  "chart:text-overlap",
+  "chart:three-dimensional",
+  "chart:tick-marks-major-inner",
+  "chart:tick-marks-major-outer",
+  "chart:tick-marks-minor-inner",
+  "chart:tick-marks-minor-outer",
+  "chart:vertical",
+  "chart:visible",
+  "presentation:play-full",
+  "style:num-letter-sync",
+  "text:consecutive-numbering",
+  "text:line-break",
+]);
+
+const CHILD_INTEGER_ATTRIBUTES = new Set([
+  "chart:angle-offset",
+  "chart:gap-width",
+  "chart:interval-minor-divisor",
+  "chart:overlap",
+  "chart:pie-offset",
+  "chart:regression-max-degree",
+  "chart:regression-period",
+  "chart:spline-order",
+  "chart:spline-resolution",
+  "fo:column-count",
+  "style:lines",
+  "style:rotation-angle",
+  "text:display-levels",
+  "text:start-value",
+]);
+
+const CHILD_DOUBLE_ATTRIBUTES = new Set([
+  "chart:axis-position",
+  "chart:error-lower-limit",
+  "chart:error-margin",
+  "chart:error-percentage",
+  "chart:error-upper-limit",
+  "chart:interval-major",
+  "chart:maximum",
+  "chart:minimum",
+  "chart:origin",
+  "chart:regression-intercept-value",
+]);
+
 export interface ParagraphStylePropertiesOptions {
   name: "style:paragraph-properties";
   attributes: Partial<Record<ParagraphStyleAttributeName, StylePropertyValue>>;
+  children?: StylePropertyChildOptions[];
 }
 export interface TextStylePropertiesOptions {
   name: "style:text-properties";
   attributes: Partial<Record<TextStyleAttributeName, StylePropertyValue>>;
+  children?: StylePropertyChildOptions[];
 }
 export interface GraphicStylePropertiesOptions {
   name: "style:graphic-properties" | "loext:graphic-properties";
   attributes: Partial<Record<GraphicStyleAttributeName, StylePropertyValue>>;
+  children?: StylePropertyChildOptions[];
 }
 export interface TableStylePropertiesOptions {
   name: "style:table-properties";
   attributes: Partial<Record<TableStyleAttributeName, StylePropertyValue>>;
+  children?: StylePropertyChildOptions[];
 }
 export interface TableColumnStylePropertiesOptions {
   name: "style:table-column-properties";
   attributes: Partial<Record<TableColumnStyleAttributeName, StylePropertyValue>>;
+  children?: StylePropertyChildOptions[];
 }
 export interface TableRowStylePropertiesOptions {
   name: "style:table-row-properties";
   attributes: Partial<Record<TableRowStyleAttributeName, StylePropertyValue>>;
+  children?: StylePropertyChildOptions[];
 }
 export interface TableCellStylePropertiesOptions {
   name: "style:table-cell-properties";
   attributes: Partial<Record<TableCellStyleAttributeName, StylePropertyValue>>;
+  children?: StylePropertyChildOptions[];
 }
 export interface SectionStylePropertiesOptions {
   name: "style:section-properties";
   attributes: Partial<Record<SectionStyleAttributeName, StylePropertyValue>>;
+  children?: StylePropertyChildOptions[];
 }
 export interface PageLayoutStylePropertiesOptions {
   name: "style:page-layout-properties";
   attributes: Partial<Record<PageLayoutStyleAttributeName, StylePropertyValue>>;
+  children?: StylePropertyChildOptions[];
 }
 export interface HeaderFooterStylePropertiesOptions {
   name: "style:header-footer-properties";
   attributes: Partial<Record<HeaderFooterStyleAttributeName, StylePropertyValue>>;
+  children?: StylePropertyChildOptions[];
 }
 export interface DrawingPageStylePropertiesOptions {
   name: "style:drawing-page-properties";
   attributes: Partial<Record<DrawingPageStyleAttributeName, StylePropertyValue>>;
+  children?: StylePropertyChildOptions[];
 }
 export interface RubyStylePropertiesOptions {
   name: "style:ruby-properties";
   attributes: Partial<Record<RubyStyleAttributeName, StylePropertyValue>>;
+  children?: StylePropertyChildOptions[];
 }
 
 export type StylePropertyOptions =
@@ -773,6 +1232,28 @@ const STYLE_FAMILY_PROPERTIES: Record<
   ruby: ["style:ruby-properties"],
 };
 
+const STYLE_PROPERTY_CHILDREN: Partial<
+  Record<keyof typeof STYLE_PROPERTY_ATTRIBUTES, readonly string[]>
+> = {
+  "style:paragraph-properties": ["style:background-image", "style:drop-cap", "style:tab-stops"],
+  "style:text-properties": [],
+  "style:graphic-properties": ["style:background-image", "style:columns", "text:list-style"],
+  "loext:graphic-properties": ["style:background-image", "style:columns", "text:list-style"],
+  "style:table-properties": ["style:background-image"],
+  "style:table-column-properties": [],
+  "style:table-row-properties": ["style:background-image"],
+  "style:table-cell-properties": ["style:background-image"],
+  "style:section-properties": [
+    "style:background-image",
+    "style:columns",
+    "text:notes-configuration",
+  ],
+  "style:page-layout-properties": ["style:background-image", "style:columns", "style:footnote-sep"],
+  "style:header-footer-properties": ["style:background-image"],
+  "style:drawing-page-properties": ["presentation:sound"],
+  "style:ruby-properties": [],
+};
+
 export interface StylePropertyParseContext {
   family: StyleFamily;
   scale: StylePropertyScale;
@@ -787,16 +1268,28 @@ export type StylePropertyParseResult =
       reason: string;
     };
 
+export type StylePropertyChildParseResult =
+  | { ok: true; value: StylePropertyChildOptions }
+  | {
+      ok: false;
+      attributeName?: string;
+      elementName: string;
+      reason: string;
+    };
+
 export function parseStyleProperty(
   element: Element,
   context: StylePropertyParseContext,
 ): StylePropertyParseResult {
   const elementName = element.name ?? "";
   const allowedElements = STYLE_FAMILY_PROPERTIES[context.family];
-  if (!allowedElements.includes(elementName as keyof typeof STYLE_PROPERTY_ATTRIBUTES))
+  if (
+    !allowedElements.includes(elementName as keyof typeof STYLE_PROPERTY_ATTRIBUTES) ||
+    !isStylePropertyElement(elementName)
+  )
     return { ok: false, elementName, reason: "unknown style property element" };
-  const allowedAttributes =
-    STYLE_PROPERTY_ATTRIBUTES[elementName as keyof typeof STYLE_PROPERTY_ATTRIBUTES];
+  const allowedAttributes = STYLE_PROPERTY_ATTRIBUTES[elementName];
+  const allowedChildren = STYLE_PROPERTY_CHILDREN[elementName] ?? [];
   const attributes: Record<string, StylePropertyValue> = {};
   for (const [attributeName, source] of Object.entries(element.attributes ?? {})) {
     if (!allowedAttributes.includes(attributeName as never))
@@ -806,10 +1299,506 @@ export function parseStyleProperty(
       return { ok: false, attributeName, elementName, reason: "invalid style property value" };
     attributes[attributeName] = value;
   }
+  const children: StylePropertyChildOptions[] = [];
+  for (const child of element.elements ?? []) {
+    if (child.type !== "element") continue;
+    const childName = child.name ?? "";
+    if (!allowedChildren.includes(childName as never))
+      return { ok: false, elementName: childName, reason: "child has no ODF RNG mapping" };
+    const parsedChild = parseStyleChild(child, context);
+    if (!parsedChild.ok) return parsedChild;
+    children.push(parsedChild.value);
+  }
   return {
     ok: true,
-    value: { name: elementName, attributes } as StylePropertyOptions,
+    value: {
+      name: elementName,
+      attributes,
+      ...(children.length ? { children } : {}),
+    } as StylePropertyOptions,
   };
+}
+
+function isStylePropertyElement(name: string): name is keyof typeof STYLE_PROPERTY_ATTRIBUTES {
+  return Object.hasOwn(STYLE_PROPERTY_ATTRIBUTES, name);
+}
+
+export function parseListLevelProperties(
+  element: Element,
+  scale: StylePropertyScale,
+): ListLevelPropertiesParseResult {
+  const parsed = parseAttributes(element, LIST_LEVEL_ATTRIBUTES, scale);
+  if (!parsed.ok) return parsed;
+  let labelAlignment: ListLevelLabelAlignmentOptions | undefined;
+  for (const child of element.elements ?? []) {
+    if (child.type !== "element") continue;
+    if (child.name !== "style:list-level-label-alignment")
+      return {
+        ok: false,
+        elementName: child.name ?? "",
+        reason: "child has no ODF RNG mapping",
+      };
+    if (labelAlignment)
+      return {
+        ok: false,
+        elementName: child.name ?? "",
+        reason: "duplicate style property child",
+      };
+    const parsedAlignment = parseAttributes(child, LABEL_ALIGNMENT_ATTRIBUTES, scale);
+    if (!parsedAlignment.ok) return parsedAlignment;
+    if (parsedAlignment.value["text:label-followed-by"] === undefined)
+      return {
+        ok: false,
+        attributeName: "text:label-followed-by",
+        elementName: child.name ?? "",
+        reason: "required style property attribute is missing",
+      };
+    labelAlignment = {
+      attributes: parsedAlignment.value as ListLevelLabelAlignmentOptions["attributes"],
+    };
+  }
+  return {
+    ok: true,
+    value: {
+      name: "style:list-level-properties",
+      attributes: parsed.value as ListLevelStylePropertiesOptions["attributes"],
+      ...(labelAlignment ? { labelAlignment } : {}),
+    },
+  };
+}
+
+export function parseChartStyleProperties(
+  element: Element | undefined,
+  scale: StylePropertyScale,
+): ChartPropertiesParseResult {
+  if (!element) return { ok: true, value: { name: "style:chart-properties", attributes: {} } };
+  const parsed = parseAttributes(element, CHART_PROPERTIES_ATTRIBUTES, scale);
+  if (!parsed.ok) return parsed;
+  let symbolImage: ChartSymbolImageOptions | undefined;
+  for (const child of element.elements ?? []) {
+    if (child.type !== "element") continue;
+    if (child.name !== "chart:symbol-image")
+      return { ok: false, elementName: child.name ?? "", reason: "child has no ODF RNG mapping" };
+    if (symbolImage)
+      return {
+        ok: false,
+        elementName: child.name ?? "",
+        reason: "duplicate style property child",
+      };
+    const parsedImage = parseAttributes(child, SYMBOL_IMAGE_ATTRIBUTES, scale);
+    if (!parsedImage.ok) return parsedImage;
+    symbolImage = { attributes: parsedImage.value as ChartSymbolImageOptions["attributes"] };
+  }
+  return {
+    ok: true,
+    value: {
+      name: "style:chart-properties",
+      attributes: parsed.value as ChartStylePropertiesOptions["attributes"],
+      ...(symbolImage ? { symbolImage } : {}),
+    },
+  };
+}
+
+export function listLevelPropertiesXml(
+  properties: ListLevelStylePropertiesOptions,
+  scale: StylePropertyScale,
+): string {
+  return xmlElement(
+    properties.name,
+    childAttributesXml(properties.attributes, scale),
+    properties.labelAlignment
+      ? [
+          xmlElement(
+            "style:list-level-label-alignment",
+            childAttributesXml(properties.labelAlignment.attributes, scale),
+          ),
+        ]
+      : [],
+  );
+}
+
+export function chartPropertiesXml(
+  properties: ChartStylePropertiesOptions,
+  scale: StylePropertyScale,
+): string {
+  return xmlElement(
+    properties.name,
+    childAttributesXml(properties.attributes, scale),
+    properties.symbolImage
+      ? [
+          xmlElement(
+            "chart:symbol-image",
+            childAttributesXml(properties.symbolImage.attributes, scale),
+          ),
+        ]
+      : [],
+  );
+}
+
+export function stylePropertyXml(
+  property: StylePropertyOptions,
+  scale: StylePropertyScale,
+): string {
+  return xmlElement(
+    property.name,
+    stylePropertyAttributes(property, scale),
+    (property.children ?? []).map((child) => stylePropertyChildXml(child, scale)),
+  );
+}
+
+type AttributeParseResult<T extends readonly string[]> =
+  | { ok: true; value: Partial<Record<T[number], StylePropertyValue>> }
+  | {
+      ok: false;
+      attributeName?: string;
+      elementName: string;
+      reason: string;
+    };
+
+function parseAttributes<const T extends readonly string[]>(
+  element: Element,
+  allowed: T,
+  scale: StylePropertyScale,
+): AttributeParseResult<T> {
+  const value: Partial<Record<T[number], StylePropertyValue>> = {};
+  for (const [name, source] of Object.entries(element.attributes ?? {})) {
+    const attributeName = allowed.find((candidate): candidate is T[number] => candidate === name);
+    if (!attributeName)
+      return {
+        ok: false,
+        attributeName: name,
+        elementName: element.name ?? "",
+        reason: "attribute has no ODF RNG mapping",
+      };
+    const parsed = parseStyleChildValue(name, String(source), scale);
+    if (parsed === undefined)
+      return {
+        ok: false,
+        attributeName: name,
+        elementName: element.name ?? "",
+        reason: "invalid style property value",
+      };
+    value[attributeName] = parsed;
+  }
+  return { ok: true, value };
+}
+
+function parseStyleChild(
+  element: Element,
+  context: StylePropertyParseContext,
+): StylePropertyChildParseResult {
+  const name = element.name ?? "";
+  const scale = context.scale;
+  if (name === "style:background-image") {
+    const parsed = parseAttributes(element, BACKGROUND_IMAGE_ATTRIBUTES, scale);
+    if (!parsed.ok) return parsed;
+    const binary = element.elements?.find(
+      (child) => child.type === "element" && child.name === "office:binary-data",
+    );
+    if (
+      element.elements?.some(
+        (child) => child.type === "element" && child.name !== "office:binary-data",
+      )
+    )
+      return { ok: false, elementName: name, reason: "child has no ODF RNG mapping" };
+    const encoded = binary?.elements
+      ?.filter((child) => child.type === "text")
+      .map((child) => String(child.text ?? ""))
+      .join("");
+    return {
+      ok: true,
+      value: {
+        name,
+        attributes: parsed.value as StyleBackgroundImageOptions["attributes"],
+        ...(encoded === undefined ? {} : { data: toUint8Array(encoded, { encoding: "base64" }) }),
+      },
+    };
+  }
+  if (name === "style:tab-stops") {
+    const stops: StyleTabStopOptions[] = [];
+    for (const stopElement of element.elements ?? []) {
+      if (stopElement.type !== "element" || stopElement.name !== "style:tab-stop")
+        return {
+          ok: false,
+          elementName: stopElement.name ?? "",
+          reason: "child has no ODF RNG mapping",
+        };
+      const parsed = parseAttributes(stopElement, TAB_STOP_ATTRIBUTES, scale);
+      if (!parsed.ok) return parsed;
+      stops.push({ attributes: parsed.value as StyleTabStopOptions["attributes"] });
+    }
+    return { ok: true, value: { name, stops } };
+  }
+  if (name === "style:drop-cap") {
+    const parsed = parseAttributes(element, DROP_CAP_ATTRIBUTES, scale);
+    return parsed.ok
+      ? { ok: true, value: { name, attributes: parsed.value as StyleDropCapOptions["attributes"] } }
+      : parsed;
+  }
+  if (name === "style:columns") {
+    const parsed = parseAttributes(element, ["fo:column-count", "fo:column-gap"], scale);
+    if (!parsed.ok) return parsed;
+    const columns: StyleColumnOptions[] = [];
+    let separator: StyleColumnSeparatorOptions | undefined;
+    for (const child of element.elements ?? []) {
+      if (child.type !== "element") continue;
+      if (child.name === "style:column") {
+        const parsedColumn = parseAttributes(child, COLUMN_ATTRIBUTES, scale);
+        if (!parsedColumn.ok) return parsedColumn;
+        columns.push({ attributes: parsedColumn.value as StyleColumnOptions["attributes"] });
+        continue;
+      }
+      if (child.name === "style:column-sep") {
+        const parsedSeparator = parseAttributes(child, COLUMN_SEPARATOR_ATTRIBUTES, scale);
+        if (!parsedSeparator.ok) return parsedSeparator;
+        separator = {
+          attributes: parsedSeparator.value as StyleColumnSeparatorOptions["attributes"],
+        };
+        continue;
+      }
+      return { ok: false, elementName: child.name ?? "", reason: "child has no ODF RNG mapping" };
+    }
+    return {
+      ok: true,
+      value: {
+        name,
+        attributes: parsed.value as StyleColumnsOptions["attributes"],
+        columns,
+        ...(separator ? { separator } : {}),
+      },
+    };
+  }
+  if (name === "text:list-style") {
+    const parsed = parseAttributes(element, LIST_STYLE_ATTRIBUTES, scale);
+    if (!parsed.ok) return parsed;
+    const levels: StyleListLevelOptions[] = [];
+    for (const levelElement of element.elements ?? []) {
+      if (levelElement.type !== "element") continue;
+      const levelName = levelElement.name ?? "";
+      const levelAttributes = listLevelAttributes(levelName);
+      if (!levelAttributes)
+        return { ok: false, elementName: levelName, reason: "child has no ODF RNG mapping" };
+      const parsedLevel = parseAttributes(levelElement, levelAttributes, scale);
+      if (!parsedLevel.ok) return parsedLevel;
+      let listProperties: ListLevelStylePropertiesOptions | undefined;
+      let textProperties: TextStylePropertiesOptions | undefined;
+      for (const child of levelElement.elements ?? []) {
+        if (child.type !== "element") continue;
+        if (child.name === "style:list-level-properties") {
+          const parsedProperties = parseListLevelProperties(child, scale);
+          if (!parsedProperties.ok) return parsedProperties;
+          listProperties = parsedProperties.value;
+        } else if (child.name === "style:text-properties") {
+          const parsedText = parseStyleProperty(child, { ...context, family: "text" });
+          if (!parsedText.ok) return parsedText;
+          textProperties = parsedText.value as TextStylePropertiesOptions;
+        } else {
+          return {
+            ok: false,
+            elementName: child.name ?? "",
+            reason: "child has no ODF RNG mapping",
+          };
+        }
+      }
+      levels.push({
+        name: levelName as StyleListLevelOptions["name"],
+        attributes: parsedLevel.value as StyleListLevelOptions["attributes"],
+        ...(listProperties ? { listProperties } : {}),
+        ...(textProperties ? { textProperties } : {}),
+      });
+    }
+    return {
+      ok: true,
+      value: {
+        name,
+        attributes: parsed.value as StyleListStyleOptions["attributes"],
+        levels,
+      },
+    };
+  }
+  if (name === "style:footnote-sep") {
+    const parsed = parseAttributes(element, FOOTNOTE_SEPARATOR_ATTRIBUTES, scale);
+    return parsed.ok
+      ? {
+          ok: true,
+          value: {
+            name,
+            attributes: parsed.value as StyleFootnoteSeparatorOptions["attributes"],
+          },
+        }
+      : parsed;
+  }
+  if (name === "presentation:sound") {
+    const parsed = parseAttributes(element, SOUND_ATTRIBUTES, scale);
+    return parsed.ok
+      ? { ok: true, value: { name, attributes: parsed.value as StyleSoundOptions["attributes"] } }
+      : parsed;
+  }
+  if (name === "text:notes-configuration") {
+    const parsed = parseAttributes(element, NOTES_CONFIGURATION_ATTRIBUTES, scale);
+    if (!parsed.ok) return parsed;
+    const continuation: Partial<Record<"forward" | "backward", string>> = {};
+    for (const child of element.elements ?? []) {
+      if (child.type !== "element") continue;
+      const text = (child.elements ?? [])
+        .filter((item) => item.type === "text")
+        .map((item) => String(item.text ?? ""))
+        .join("");
+      if (child.name === "text:note-continuation-notice-forward") continuation.forward = text;
+      else if (child.name === "text:note-continuation-notice-backward")
+        continuation.backward = text;
+      else
+        return { ok: false, elementName: child.name ?? "", reason: "child has no ODF RNG mapping" };
+    }
+    return {
+      ok: true,
+      value: {
+        name,
+        attributes: parsed.value as StyleNotesConfigurationOptions["attributes"],
+        ...(continuation.forward !== undefined
+          ? { continuationForward: continuation.forward }
+          : {}),
+        ...(continuation.backward !== undefined
+          ? { continuationBackward: continuation.backward }
+          : {}),
+      },
+    };
+  }
+  return { ok: false, elementName: name, reason: "child has no ODF RNG mapping" };
+}
+
+function listLevelAttributes(name: string) {
+  if (name === "text:list-level-style-number") return NUMBER_LEVEL_ATTRIBUTES;
+  if (name === "text:list-level-style-bullet") return BULLET_LEVEL_ATTRIBUTES;
+  if (name === "text:list-level-style-image") return IMAGE_LEVEL_ATTRIBUTES;
+  return undefined;
+}
+
+function stylePropertyChildXml(
+  child: StylePropertyChildOptions,
+  scale: StylePropertyScale,
+): string {
+  if (child.name === "style:background-image") {
+    return xmlElement(
+      child.name,
+      childAttributesXml(child.attributes, scale),
+      child.data === undefined
+        ? []
+        : [xmlElement("office:binary-data", undefined, [encodeBase64(toUint8Array(child.data))])],
+    );
+  }
+  if (child.name === "style:tab-stops")
+    return xmlElement(
+      child.name,
+      undefined,
+      child.stops.map((stop) =>
+        xmlElement("style:tab-stop", childAttributesXml(stop.attributes, scale)),
+      ),
+    );
+  if (child.name === "style:columns")
+    return xmlElement(child.name, childAttributesXml(child.attributes, scale), [
+      ...(child.separator
+        ? [xmlElement("style:column-sep", childAttributesXml(child.separator.attributes, scale))]
+        : []),
+      ...child.columns.map((column) =>
+        xmlElement("style:column", childAttributesXml(column.attributes, scale)),
+      ),
+    ]);
+  if (child.name === "text:list-style")
+    return xmlElement(
+      child.name,
+      childAttributesXml(child.attributes, scale),
+      child.levels.map((level) =>
+        xmlElement(level.name, childAttributesXml(level.attributes, scale), [
+          ...(level.listProperties ? [listLevelPropertiesXml(level.listProperties, scale)] : []),
+          ...(level.textProperties ? [stylePropertyXml(level.textProperties, scale)] : []),
+        ]),
+      ),
+    );
+  if (child.name === "text:notes-configuration")
+    return xmlElement(child.name, childAttributesXml(child.attributes, scale), [
+      ...(child.continuationForward === undefined
+        ? []
+        : [
+            xmlElement("text:note-continuation-notice-forward", undefined, [
+              escapeText(child.continuationForward),
+            ]),
+          ]),
+      ...(child.continuationBackward === undefined
+        ? []
+        : [
+            xmlElement("text:note-continuation-notice-backward", undefined, [
+              escapeText(child.continuationBackward),
+            ]),
+          ]),
+    ]);
+  return xmlElement(child.name, childAttributesXml(child.attributes, scale));
+}
+
+function parseStyleChildValue(
+  name: string,
+  source: string,
+  scale: StylePropertyScale,
+): StylePropertyValue | undefined {
+  if (CHILD_BOOLEAN_ATTRIBUTES.has(name)) {
+    if (source !== "true" && source !== "false") return undefined;
+    return source === "true";
+  }
+  if (name === "chart:axis-position") {
+    const value = Number(source);
+    return Number.isFinite(value) ? value : source;
+  }
+  if (CHILD_DOUBLE_ATTRIBUTES.has(name)) {
+    const value = Number(source);
+    return Number.isFinite(value) ? value : undefined;
+  }
+  if (CHILD_PERCENT_ATTRIBUTES.has(name)) {
+    if (!source.endsWith("%")) return source;
+    const value = Number.parseFloat(source);
+    return Number.isFinite(value) ? value : undefined;
+  }
+  if (CHILD_INTEGER_ATTRIBUTES.has(name)) {
+    const value = Number(source);
+    return Number.isInteger(value) ? value : undefined;
+  }
+  if (CHILD_LENGTH_ATTRIBUTES.has(name)) {
+    const emu = lengthToEmu(source);
+    return emu === undefined ? source : childLengthValue(emu, scale);
+  }
+  return source;
+}
+
+function childAttributesXml(
+  attributes: Record<string, StylePropertyValue>,
+  scale: StylePropertyScale,
+): XmlAttributes {
+  return Object.fromEntries(
+    Object.entries(attributes).map(([name, value]) => [
+      name,
+      childAttributeXml(name, value, scale),
+    ]),
+  );
+}
+
+function childAttributeXml(
+  name: string,
+  value: StylePropertyValue,
+  scale: StylePropertyScale,
+): StylePropertyValue {
+  if (typeof value !== "number") return value;
+  if (CHILD_LENGTH_ATTRIBUTES.has(name)) return childLengthXml(value, scale);
+  if (CHILD_PERCENT_ATTRIBUTES.has(name)) return `${value}%`;
+  return value;
+}
+
+function childLengthValue(emu: number, scale: StylePropertyScale): StylePropertyValue {
+  if (scale === "emu") return emu;
+  return scale === "spreadsheet" ? Math.round(emu / 9525) : Math.round(emu / 635);
+}
+
+function childLengthXml(value: number, scale: StylePropertyScale): string {
+  const emu = scale === "emu" ? value : scale === "spreadsheet" ? value * 9525 : value * 635;
+  return emuToLength(emu);
 }
 
 export function stylePropertyAttributes(

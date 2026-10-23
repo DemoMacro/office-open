@@ -4,6 +4,9 @@ import {
   attributeString,
   childNamed,
   childrenNamed,
+  emuToLength,
+  listLevelPropertiesXml,
+  parseListLevelProperties,
   readXml,
   xmlElement,
   type OdfFiles,
@@ -137,16 +140,19 @@ export function listLevelXml(level: NumberingLevel): string {
     marginLeft !== undefined || hanging !== undefined || level.suffix !== undefined;
   const properties = hasLabelAlignment
     ? [
-        xmlElement(
-          "style:list-level-properties",
-          { "style:list-level-position-and-space-mode": "label-alignment" },
-          [
-            xmlElement("style:list-level-label-alignment", {
-              "text:label-followed-by": level.suffix ? SUFFIX_ODF[level.suffix] : undefined,
-              "fo:margin-left": marginLeft !== undefined ? twipsToLength(marginLeft) : undefined,
-              "fo:text-indent": hanging !== undefined ? twipsToLength(-hanging) : undefined,
-            }),
-          ],
+        listLevelPropertiesXml(
+          {
+            name: "style:list-level-properties",
+            attributes: { "text:list-level-position-and-space-mode": "label-alignment" },
+            labelAlignment: {
+              attributes: {
+                "text:label-followed-by": level.suffix ? SUFFIX_ODF[level.suffix] : undefined,
+                "fo:margin-left": marginLeft !== undefined ? twipsToLength(marginLeft) : undefined,
+                "fo:text-indent": hanging !== undefined ? twipsToLength(-hanging) : undefined,
+              },
+            },
+          },
+          "hundredth-millimeter",
         ),
       ]
     : [];
@@ -227,14 +233,22 @@ export function addListStyle(
     xmlElement("text:list-style", { "style:name": name }, [
       info.ordered
         ? xmlElement("text:list-level-style-number", { "text:level": 1, "style:num-format": "1" }, [
-            xmlElement("style:list-level-properties", {
-              "style:list-level-position-and-space-mode": "label-alignment",
-            }),
+            listLevelPropertiesXml(
+              {
+                name: "style:list-level-properties",
+                attributes: { "text:list-level-position-and-space-mode": "label-alignment" },
+              },
+              "hundredth-millimeter",
+            ),
           ])
         : xmlElement("text:list-level-style-bullet", { "text:level": 1, "text:bullet-char": "•" }, [
-            xmlElement("style:list-level-properties", {
-              "style:list-level-position-and-space-mode": "label-alignment",
-            }),
+            listLevelPropertiesXml(
+              {
+                name: "style:list-level-properties",
+                attributes: { "text:list-level-position-and-space-mode": "label-alignment" },
+              },
+              "hundredth-millimeter",
+            ),
             xmlElement("style:text-properties", { "fo:font-family": "OpenSymbol" }),
           ]),
     ]),
@@ -279,15 +293,27 @@ export function parseListLevel(element: Element): NumberingLevel {
   ).join(".");
   const rawFormat = attributeString(element, "style:num-format");
   const start = attributeNumber(element, "text:start-value");
-  const labelAlignment = childNamed(
-    childNamed(element, "style:list-level-properties"),
-    "style:list-level-label-alignment",
-  );
-  const marginLeft = lengthToTwips(attributeString(labelAlignment, "fo:margin-left"));
-  const textIndent = lengthToTwips(attributeString(labelAlignment, "fo:text-indent"));
-  const followedBy = attributeString(labelAlignment, "text:label-followed-by");
+  const propertiesElement = childNamed(element, "style:list-level-properties");
+  const parsedProperties = propertiesElement
+    ? parseListLevelProperties(propertiesElement, "hundredth-millimeter")
+    : undefined;
+  if (parsedProperties && !parsedProperties.ok) {
+    throw new OdtParseError(
+      `styles.xml: office:styles/text:list-style: ${parsedProperties.attributeName ?? parsedProperties.elementName}: ${parsedProperties.reason}`,
+      "styles.xml",
+      "office:styles/text:list-style",
+      parsedProperties.attributeName ?? parsedProperties.elementName,
+      parsedProperties.reason,
+    );
+  }
+  const labelAlignment = parsedProperties?.value.labelAlignment?.attributes;
+  const marginLeft = lengthToTwips(childLength(labelAlignment?.["fo:margin-left"]));
+  const textIndent = lengthToTwips(childLength(labelAlignment?.["fo:text-indent"]));
+  const followedBy = labelAlignment?.["text:label-followed-by"];
   const mappedSuffix =
-    followedBy && Object.hasOwn(SUFFIX_DOCX, followedBy) ? SUFFIX_DOCX[followedBy] : undefined;
+    typeof followedBy === "string" && Object.hasOwn(SUFFIX_DOCX, followedBy)
+      ? SUFFIX_DOCX[followedBy]
+      : undefined;
   if (followedBy && !mappedSuffix) {
     throw new OdtParseError(
       "Unknown OpenDocument numbering label suffix",
@@ -311,4 +337,9 @@ export function parseListLevel(element: Element): NumberingLevel {
     ...(Object.keys(indent).length > 0 ? { paragraph: { indent } } : {}),
   };
   return parsedLevel;
+}
+
+function childLength(value: string | number | boolean | undefined): string | undefined {
+  if (value === undefined || typeof value === "boolean") return undefined;
+  return typeof value === "number" ? emuToLength(value) : value;
 }

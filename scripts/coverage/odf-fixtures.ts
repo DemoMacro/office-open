@@ -1,16 +1,20 @@
 import type { OfficeFormsOptions } from "@office-open/core";
 import {
+  chartPropertiesXml,
   drawingVocabularyXml,
   generateChartDocument,
   generateDatabaseDocument,
   generateOcf,
+  listLevelPropertiesXml,
   officeFormsXml,
   manifestOptionsXml,
   readOcf,
   parseChartBody,
   parseChartDocument,
+  parseChartStyleProperties,
   parseDatabaseDocument,
   parseDrawingVocabulary,
+  parseListLevelProperties,
   parseOfficeForms,
   parseManifestOptions,
 } from "@office-open/odf";
@@ -44,6 +48,17 @@ async function assertThrows(
   assert(error.message.includes(expected), `expected ${expected}, received ${error.message}`);
 }
 
+function assertFailed(result: unknown, expected: string): void {
+  assert(
+    typeof result === "object" && result !== null && (result as { ok?: unknown }).ok === false,
+    `expected a structured parse failure containing ${expected}`,
+  );
+  assert(
+    String((result as { reason?: unknown }).reason).includes(expected),
+    `expected ${expected}, received ${String((result as { reason?: unknown }).reason)}`,
+  );
+}
+
 function element(xml: string): Element {
   const result = parse(xml, { ignoreDeclaration: true }).elements?.find(
     (candidate): candidate is Element => candidate.type === "element",
@@ -62,6 +77,57 @@ export interface OdfCoverageFixtureResult {
 }
 
 export const ODF_COVERAGE_FIXTURES = {
+  async "odf-style-property-codecs"(): Promise<OdfCoverageFixtureResult> {
+    const chart = {
+      name: "style:chart-properties",
+      attributes: {
+        "chart:axis-position": 0,
+        "chart:hole-size": 20,
+        "chart:interval-major": 2.5,
+        "chart:lines": true,
+        "chart:regression-force-intercept": true,
+        "chart:symbol-height": 360000,
+        "chart:symbol-type": "image",
+        "chart:symbol-width": 360000,
+      },
+      symbolImage: { attributes: { "xlink:href": "media/symbol.png" } },
+    } as const;
+    const parsedChart = parseChartStyleProperties(element(chartPropertiesXml(chart, "emu")), "emu");
+    assert(parsedChart.ok, "chart properties failed to parse");
+    assertEqual(parsedChart.value, chart, "ODF chart style properties");
+
+    const listLevel = {
+      name: "style:list-level-properties",
+      attributes: {
+        "fo:height": 1134,
+        "fo:text-align": "start",
+        "fo:width": 1134,
+        "style:font-name": "OpenSymbol",
+        "style:vertical-pos": "top",
+        "style:vertical-rel": "baseline",
+        "svg:y": 0,
+        "text:list-level-position-and-space-mode": "label-alignment",
+        "text:min-label-distance": 227,
+        "text:min-label-width": 907,
+        "text:space-before": 113,
+      },
+      labelAlignment: {
+        attributes: {
+          "fo:margin-left": 1134,
+          "fo:text-indent": -567,
+          "text:label-followed-by": "listtab",
+          "text:list-tab-stop-position": 1361,
+        },
+      },
+    } as const;
+    const parsedList = parseListLevelProperties(
+      element(listLevelPropertiesXml(listLevel, "hundredth-millimeter")),
+      "hundredth-millimeter",
+    );
+    assert(parsedList.ok, "list level properties failed to parse");
+    assertEqual(parsedList.value, listLevel, "ODF list level style properties");
+    return { semanticRoundTrip: true };
+  },
   async "manifest-package-entry"(): Promise<OdfCoverageFixtureResult> {
     const source = {
       version: "1.3",
@@ -473,9 +539,124 @@ export const ODF_COVERAGE_FIXTURES = {
       semanticRoundTrip: true,
     };
   },
+  async "odt-nested-style-properties"(): Promise<OdfCoverageFixtureResult> {
+    const source = {
+      sections: [{ children: [{ paragraph: { text: "Nested styles" } }] }],
+      styleResources: [
+        {
+          name: "Nested",
+          family: "paragraph",
+          properties: [
+            {
+              name: "style:paragraph-properties",
+              attributes: { "fo:text-align": "center" },
+              children: [
+                {
+                  name: "style:background-image",
+                  attributes: {
+                    "xlink:href": "https://example.com/background.png",
+                    "xlink:type": "simple",
+                    "xlink:show": "embed",
+                    "xlink:actuate": "onLoad",
+                    "style:repeat": "repeat",
+                    "style:position": "left top",
+                    "style:filter-name": "",
+                    "draw:opacity": 80,
+                  },
+                },
+                {
+                  name: "style:tab-stops",
+                  stops: [
+                    {
+                      attributes: {
+                        "style:position": 1134,
+                        "style:type": "char",
+                        "style:char": ",",
+                        "style:leader-type": "solid",
+                        "style:leader-style": "dotted",
+                        "style:leader-width": 28,
+                        "style:leader-color": "#ff0000",
+                        "style:leader-text": "-",
+                        "style:leader-text-style": "Leader",
+                      },
+                    },
+                  ],
+                },
+                {
+                  name: "style:drop-cap",
+                  attributes: {
+                    "style:length": "word",
+                    "style:lines": 3,
+                    "style:distance": 113,
+                    "style:style-name": "DropCap",
+                  },
+                },
+              ],
+            },
+            {
+              name: "loext:graphic-properties",
+              attributes: {},
+              children: [
+                {
+                  name: "style:columns",
+                  attributes: { "fo:column-count": 2, "fo:column-gap": 284 },
+                  columns: [
+                    {
+                      attributes: {
+                        "fo:start-indent": 57,
+                        "fo:end-indent": 113,
+                        "fo:space-before": 170,
+                        "fo:space-after": 227,
+                        "style:rel-width": "1*",
+                      },
+                    },
+                  ],
+                  separator: {
+                    attributes: {
+                      "style:style": "dashed",
+                      "style:width": 28,
+                      "style:height": 80,
+                      "style:vertical-align": "top",
+                      "style:color": "#123456",
+                    },
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    } as const;
+    const generated = await generateDocument(source);
+    const parsed = await parseDocument(generated);
+    assertEqual(parsed.styleResources, source.styleResources, "ODT nested style resources");
+    return { semanticRoundTrip: true };
+  },
 } as const;
 
 export const ODF_NEGATIVE_FIXTURES = {
+  "ODF chart rejects duplicate symbol image"() {
+    assertFailed(
+      parseChartStyleProperties(
+        element(
+          '<style:chart-properties><chart:symbol-image xlink:href="a"/><chart:symbol-image xlink:href="b"/></style:chart-properties>',
+        ),
+        "emu",
+      ),
+      "duplicate style property child",
+    );
+  },
+  "ODF list rejects missing label follow"() {
+    assertFailed(
+      parseListLevelProperties(
+        element(
+          '<style:list-level-properties><style:list-level-label-alignment fo:margin-left="1cm"/></style:list-level-properties>',
+        ),
+        "hundredth-millimeter",
+      ),
+      "required style property attribute is missing",
+    );
+  },
   "manifest rejects foreign element"() {
     assertThrows(
       () =>

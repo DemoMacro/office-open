@@ -15,6 +15,8 @@ import type { Element } from "@office-open/xml";
 import type { OdfPackageFiles } from "./container/package";
 import { hexColorValue, pushShapeStyle } from "./drawing/graphic-style";
 import { OdfSchemaError } from "./errors";
+import type { ChartStylePropertiesOptions } from "./package-options";
+import { chartPropertiesXml, parseChartStyleProperties } from "./package-options";
 import {
   attributeString,
   childNamed,
@@ -27,7 +29,7 @@ import {
 export interface ChartStyle {
   styleName?: string;
   graphic?: Record<string, string>;
-  properties: Record<string, string>;
+  properties?: ChartStylePropertiesOptions;
   part: string;
   containerPath: string;
 }
@@ -151,10 +153,20 @@ export function parseChartStyleContext(
         resources.styles.push(resource);
         const graphic = childNamed(style, "style:graphic-properties");
         const chart = childNamed(style, "style:chart-properties");
+        const parsedChartProperties = parseChartStyleProperties(chart, "emu");
+        if (!parsedChartProperties.ok)
+          throw styleError(
+            part,
+            `/office:document-${part === "styles.xml" ? "styles" : "content"}/${containerName}/style:style[@style:name="${name}"]`,
+            parsedChartProperties.attributeName ?? parsedChartProperties.elementName,
+            parsedChartProperties.reason,
+          );
         styles.set(name, {
           styleName: name,
           graphic: elementAttributes(graphic),
-          properties: elementAttributes(chart),
+          ...(Object.keys(parsedChartProperties.value.attributes).length > 0
+            ? { properties: parsedChartProperties.value }
+            : {}),
           part,
           containerPath: `/office:document-${part === "styles.xml" ? "styles" : "content"}/${containerName}/style:style[@style:name="${name}"]`,
         });
@@ -202,8 +214,15 @@ export function pushChartStyle(
   resources: ChartStyleResources,
   styles: string[],
   fallbackName: string,
-  chartProperties: Record<string, string> = {},
+  chartProperties?: ChartStylePropertiesOptions,
 ): string | undefined {
+  const properties =
+    chartProperties === undefined
+      ? { name: "style:chart-properties" as const, attributes: {} }
+      : {
+          ...chartProperties,
+          attributes: chartProperties.attributes ?? {},
+        };
   if (shapeProperties?.styleName) {
     const style = resources.styles.find((item) => item.name === shapeProperties.styleName);
     if (!style)
@@ -219,7 +238,11 @@ export function pushChartStyle(
   const graphicName =
     resource?.name ??
     pushShapeStyle(shapeProperties?.fill, shapeProperties?.outline, styles, fallbackName);
-  if (resource && Object.values(chartProperties).every((value) => value === undefined)) {
+  if (
+    resource &&
+    Object.values(properties.attributes).every((value) => value === undefined) &&
+    properties.symbolImage === undefined
+  ) {
     const cache = chartNameCache(resources);
     const cacheKey = `chart-fill:${resource.name}`;
     const cachedName = cache.get(cacheKey);
@@ -233,7 +256,11 @@ export function pushChartStyle(
     cache.set(cacheKey, name);
     return name;
   }
-  if (Object.values(chartProperties).every((value) => value === undefined)) return graphicName;
+  if (
+    Object.values(properties.attributes).every((value) => value === undefined) &&
+    properties.symbolImage === undefined
+  )
+    return graphicName;
   const name = uniqueStyleName(`ch-${fallbackName}`, resources, styles);
   const graphicXml = graphicName
     ? (styles
@@ -242,7 +269,7 @@ export function pushChartStyle(
     : "";
   styles.push(
     xmlElement("style:style", { "style:name": name, "style:family": "chart" }, [
-      xmlElement("style:chart-properties", chartProperties),
+      chartPropertiesXml(properties, "emu"),
       ...(graphicXml ? [graphicXml] : []),
     ]),
   );
