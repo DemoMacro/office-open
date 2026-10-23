@@ -632,12 +632,14 @@ function replaceSelectedText(
     "placeholder" in selection
       ? `${delimiters.start}${selection.placeholder}${delimiters.end}`
       : selection.literal;
+  const replaceAll = selection.all === true;
   let replaced = false;
 
+  const hasReplaced = (): boolean => replaced;
   const markReplaced = (): void => {
     replaced = true;
   };
-  walkText(target, needle, replacement, markReplaced);
+  walkText(target, needle, replacement, markReplaced, hasReplaced, replaceAll);
 
   if (!replaced) {
     throw patchError(
@@ -655,25 +657,34 @@ function walkText(
   needle: string,
   replacement: string,
   markReplaced: () => void,
+  hasReplaced: () => boolean,
+  replaceAll: boolean,
 ): void {
+  if (!replaceAll && hasReplaced()) return;
   if (Array.isArray(value)) {
-    replaceAcrossItems(value, needle, replacement, markReplaced);
+    replaceAcrossItems(value, needle, replacement, markReplaced, hasReplaced, replaceAll);
     for (const [index, item] of value.entries()) {
+      if (!replaceAll && hasReplaced()) return;
       if (typeof item === "string")
-        value[index] = replaceSingleText(item, needle, replacement, markReplaced);
-      else walkText(item, needle, replacement, markReplaced);
+        value[index] = replaceSingleText(item, needle, replacement, markReplaced, replaceAll);
+      else walkText(item, needle, replacement, markReplaced, hasReplaced, replaceAll);
     }
     return;
   }
   if (typeof value === "string") {
-    replaceSingleText(value, needle, replacement, markReplaced);
+    replaceSingleText(value, needle, replacement, markReplaced, replaceAll);
     return;
   }
   if (!isRecord(value)) return;
   for (const [property, item] of Object.entries(value)) {
+    if (!replaceAll && hasReplaced()) return;
     if (typeof item === "string")
-      Reflect.set(value, property, replaceSingleText(item, needle, replacement, markReplaced));
-    else walkText(item, needle, replacement, markReplaced);
+      Reflect.set(
+        value,
+        property,
+        replaceSingleText(item, needle, replacement, markReplaced, replaceAll),
+      );
+    else walkText(item, needle, replacement, markReplaced, hasReplaced, replaceAll);
   }
 }
 
@@ -682,6 +693,8 @@ function replaceAcrossItems(
   needle: string,
   replacement: string,
   markReplaced: () => void,
+  hasReplaced: () => boolean,
+  replaceAll: boolean,
 ): void {
   const leaves: PatchTextLeaf[] = [];
   for (const item of items) collectTextLeaves(item, items, leaves);
@@ -693,7 +706,7 @@ function replaceAcrossItems(
     offset += leaf.value.length;
   }
   let cursor = 0;
-  while (cursor <= offset - needle.length) {
+  while (cursor <= offset - needle.length && (replaceAll || !hasReplaced())) {
     const start = joined.indexOf(needle, cursor);
     if (start < 0) return;
     const end = start + needle.length;
@@ -716,7 +729,8 @@ function replaceAcrossItems(
     for (let index = firstIndex + 1; index <= lastIndex; index += 1)
       writeTextLeaf(leaves[index]!, "");
     markReplaced();
-    return;
+    if (!replaceAll) return;
+    cursor = end;
   }
 }
 
@@ -725,10 +739,11 @@ function replaceSingleText(
   needle: string,
   replacement: string,
   markReplaced: () => void,
+  replaceAll: boolean,
 ): string {
   if (!input.includes(needle)) return input;
   markReplaced();
-  return input.replaceAll(needle, replacement);
+  return replaceAll ? input.replaceAll(needle, replacement) : input.replace(needle, replacement);
 }
 
 interface PatchTextLeaf {
