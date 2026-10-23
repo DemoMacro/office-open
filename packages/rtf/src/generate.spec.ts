@@ -365,6 +365,18 @@ describe("generateDocument RTF projections", () => {
     expect(roundTrip(source)).toEqual(parsed);
   });
 
+  it("encodes astral-plane text as complete Unicode code points", () => {
+    const generated = decoder.decode(
+      generateDocument({
+        sections: [{ children: [{ paragraph: { children: [{ text: "𝄞" }] } }] }],
+      }),
+    );
+    expect(generated).toContain("\\u-10188?\\u-8930?");
+    expect(parseDocument(generated).sections?.[0]?.children?.[0]).toEqual({
+      paragraph: { children: [{ text: "𝄞" }] },
+    });
+  });
+
   it("rejects unsupported document fields with structured context", () => {
     const options: DocumentOptions = {
       sections: [{ children: [{ paragraph: { children: [{ text: "Body" }] } }] }],
