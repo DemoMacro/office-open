@@ -118,7 +118,6 @@ export function nativeTypeValue(value: string): string | number | boolean {
 interface XmlNamespaceLayer {
   prefixes: Map<string, string> | undefined;
   defaultCanonical: string | undefined;
-  canonicalNamespaces: Map<string, string> | undefined;
 }
 
 function canonicalXmlName(
@@ -208,6 +207,41 @@ function markupEnd(source: string, from: number, terminator: string): number {
   return end === -1 ? -1 : end + terminator.length;
 }
 
+/** Index of the `>` closing a DOCTYPE, including a quoted internal subset. */
+function doctypeEnd(source: string, from: number): number {
+  const bracket = source.indexOf("[", from);
+  const simple = source.indexOf(">", from);
+  if (bracket === -1 || (simple !== -1 && simple < bracket)) return simple;
+
+  let cursor = bracket + 1;
+  while (cursor < source.length) {
+    if (source.startsWith("<!--", cursor)) {
+      const end = source.indexOf("-->", cursor + 4);
+      if (end === -1) return -1;
+      cursor = end + 3;
+      continue;
+    }
+    if (source.startsWith("<?", cursor)) {
+      const end = source.indexOf("?>", cursor + 2);
+      if (end === -1) return -1;
+      cursor = end + 2;
+      continue;
+    }
+    const quote = source.charCodeAt(cursor);
+    if (quote === 0x22 || quote === 0x27) {
+      const close = source.indexOf(quote === 0x22 ? '"' : "'", cursor + 1);
+      if (close === -1) return -1;
+      cursor = close + 1;
+      continue;
+    }
+    if (source.charCodeAt(cursor) === 0x5d /* ] */) {
+      return source.charCodeAt(cursor + 1) === 0x3e ? cursor + 1 : -1;
+    }
+    cursor++;
+  }
+  return -1;
+}
+
 function findDeferredClose(source: string, tagName: string, from: number): DeferredClose {
   let depth = 1;
   let cursor = from;
@@ -231,8 +265,9 @@ function findDeferredClose(source: string, tagName: string, from: number): Defer
       continue;
     }
     if (source.startsWith("<!DOCTYPE", openIndex)) {
-      cursor = markupEnd(source, openIndex + 9, ">");
-      if (cursor === -1) throw new Error("Malformed XML: unclosed DOCTYPE declaration.");
+      const end = doctypeEnd(source, openIndex + 9);
+      if (end === -1) throw new Error("Malformed XML: unclosed DOCTYPE declaration.");
+      cursor = end + 1;
       continue;
     }
 
@@ -290,11 +325,7 @@ export function parse(xmlString: string, options?: ParseOptions): Element {
     options?.normalizeNamespaces !== undefined
       ? new Map(Object.entries(options.normalizeNamespaces))
       : undefined;
-  const nsRootLayer: XmlNamespaceLayer = {
-    prefixes: undefined,
-    defaultCanonical: undefined,
-    canonicalNamespaces: undefined,
-  };
+  const nsRootLayer: XmlNamespaceLayer = { prefixes: undefined, defaultCanonical: undefined };
   const nsStack: XmlNamespaceLayer[] = [nsRootLayer];
 
   const result: Element = {};
@@ -402,7 +433,7 @@ export function parse(xmlString: string, options?: ParseOptions): Element {
 
     // <!DOCTYPE
     if (xmlString.charCodeAt(i) === 0x21 && xmlString.slice(i, i + 8) === "!DOCTYPE") {
-      const end = xmlString.indexOf(">", i + 9);
+      const end = doctypeEnd(xmlString, i + 9);
       if (end === -1) throw new Error("Malformed XML: unclosed DOCTYPE declaration.");
       const doctype = xmlString.slice(i + 9, end).trim();
       i = end + 1;
@@ -444,7 +475,7 @@ export function parse(xmlString: string, options?: ParseOptions): Element {
     const nsParent = nsTable !== undefined ? nsStack[nsStack.length - 1]! : undefined;
     let nsPrefixes = nsParent?.prefixes;
     let nsDefault = nsParent?.defaultCanonical;
-    let canonicalNamespaces = nsParent?.canonicalNamespaces;
+    let canonicalNamespaces: Map<string, string> | undefined;
     let nsDeclared = false;
 
     // Attribute scan, inlined from parseAttributesFromXml: called once per
@@ -485,7 +516,7 @@ export function parse(xmlString: string, options?: ParseOptions): Element {
         const canonical = nsTable.get(value);
         const prefix = name === "xmlns" ? "" : name.slice(6);
         const canonicalPrefix = canonical ?? prefix;
-        canonicalNamespaces ??= new Map(nsParent?.canonicalNamespaces ?? []);
+        canonicalNamespaces ??= new Map();
         claimCanonicalNamespace(canonicalNamespaces, canonicalPrefix, value);
         if (!nsDeclared) {
           nsPrefixes = new Map(nsPrefixes ?? []);
@@ -590,7 +621,6 @@ export function parse(xmlString: string, options?: ParseOptions): Element {
             ? {
                 prefixes: nsPrefixes,
                 defaultCanonical: nsDefault,
-                canonicalNamespaces,
               }
             : nsParent!,
         );

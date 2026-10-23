@@ -188,6 +188,20 @@ describe("parse", () => {
     ).toThrowError("Malformed XML: normalized prefix w has conflicting namespaces.");
   });
 
+  it("allows a child to redeclare a normalized prefix", () => {
+    const result = parse(
+      '<root xmlns:w="http://example/known"><child xmlns:w="http://example/other"><w:e/></child><w:e/></root>',
+      { normalizeNamespaces: { "http://example/known": "w" } },
+    );
+    const child = result.elements?.[0]?.elements?.[0];
+    expect(result.elements?.[0]?.attributes).toEqual({
+      "xmlns:w": "http://example/known",
+    });
+    expect(child?.attributes).toEqual({ "xmlns:w": "http://example/other" });
+    expect(child?.elements?.[0]?.name).toBe("w:e");
+    expect(result.elements?.[0]?.elements?.[1]?.name).toBe("w:e");
+  });
+
   it("rejects unsupported and invalid character references", () => {
     expect(() => parse("<root>&nbsp;</root>")).toThrowError(
       "Malformed XML: unsupported or malformed entity.",
@@ -205,6 +219,16 @@ describe("parse", () => {
     expect(() => parse("<root>\u0000</root>")).toThrowError(
       "Malformed XML: invalid character U+0000.",
     );
+  });
+
+  it("captures a DOCTYPE internal subset as one declaration", () => {
+    const source = `<!DOCTYPE r [ <!ENTITY greeting "hello"> ]><root/>`;
+    const result = parse(source);
+    expect(result.elements?.[0]).toMatchObject({
+      type: "doctype",
+      doctype: `r [ <!ENTITY greeting "hello"> ]`,
+    });
+    expect(stringify(result)).toBe(source);
   });
 
   it("parses empty element", () => {
