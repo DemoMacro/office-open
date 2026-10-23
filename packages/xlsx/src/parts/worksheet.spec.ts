@@ -7,6 +7,7 @@ import { SharedStrings } from "./shared-strings";
 import { buildWorksheetXml } from "./worksheet";
 import { worksheetDesc } from "./worksheet";
 import type { AutoFilterOptions, WorksheetOptions } from "./worksheet";
+import { parseSheetDataRows } from "./worksheet/sheet-data";
 
 describe("Worksheet", () => {
   it("keeps escaped text literal inside CDATA cell values", () => {
@@ -22,6 +23,27 @@ describe("Worksheet", () => {
   });
 
   describe("cell formula", () => {
+    it("finds real close tags behind CDATA literals", () => {
+      const rows = parseSheetDataRows(
+        `<row r="1"><c r="A1"><v><![CDATA[</c>]]></v><f>A1</f></c></row>`,
+        [],
+      );
+      expect(rows[0]?.cells?.[0]).toMatchObject({
+        reference: "A1",
+        value: "</c>",
+        valueRaw: "</c>",
+        formula: { formula: "A1" },
+      });
+    });
+
+    it("keeps inline CDATA text that contains its close tag", () => {
+      const rows = parseSheetDataRows(
+        `<row r="1"><c r="A1" t="inlineStr">` + `<is><t><![CDATA[</t>literal]]></t></is></c></row>`,
+        [],
+      );
+      expect(rows[0]?.cells?.[0]?.value).toBe("</t>literal");
+    });
+
     it("accepts a bare string as shorthand for { formula }", () => {
       const shorthand = buildWorksheetXml(
         { rows: [{ cells: [{ formula: "SUM(A1:A2)", reference: "B1" }] }] },

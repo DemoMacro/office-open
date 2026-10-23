@@ -63,8 +63,105 @@ function findTagEnd(src: string, from: number): number {
       i = close + 1;
       continue;
     }
+    if (c === 0x27) {
+      const close = src.indexOf("'", i + 1);
+      if (close === -1) return -1;
+      i = close + 1;
+      continue;
+    }
     if (c === 0x3e) return i;
     i++;
+  }
+  return -1;
+}
+
+/**
+ * Does raw XML contain constructs whose text can look like a tag? One scan
+ * result is reused for an entire sheetData slice so the common OOXML case can
+ * retain the direct close-tag search.
+ */
+function hasEscapedMarkup(src: string): boolean {
+  return src.includes("<![CDATA[") || src.includes("<!--") || src.includes("<?");
+}
+
+/**
+ * Fast path for schema-valid sheetData. These container/leaf names never nest
+ * in SML, so the original direct search remains exact. Inputs containing
+ * CDATA, comments, or processing instructions use the markup-aware scanner.
+ */
+function indexOfSimpleCloseTag(src: string, name: string, from: number, limit: number): number {
+  const closeTag = `</${name}>`;
+  const closeIndex = src.indexOf(closeTag, from);
+  return closeIndex === -1 || closeIndex >= limit ? -1 : closeIndex;
+}
+
+/** Find a matching close tag without treating markup-internal text as XML. */
+function indexOfCloseTag(
+  src: string,
+  name: string,
+  from: number,
+  limit = src.length,
+  markupAware = true,
+): number {
+  if (!markupAware) return indexOfSimpleCloseTag(src, name, from, limit);
+
+  const close = `</${name}`;
+  let cursor = from;
+  let depth = 1;
+
+  while (cursor < limit) {
+    const tagOpen = src.indexOf("<", cursor);
+    if (tagOpen === -1 || tagOpen >= limit) return -1;
+
+    if (src.startsWith("<![CDATA[", tagOpen)) {
+      const end = src.indexOf("]]>", tagOpen + 9);
+      if (end === -1 || end >= limit) return -1;
+      cursor = end + 3;
+      continue;
+    }
+    if (src.startsWith("<!--", tagOpen)) {
+      const end = src.indexOf("-->", tagOpen + 4);
+      if (end === -1 || end >= limit) return -1;
+      cursor = end + 3;
+      continue;
+    }
+    if (src.startsWith("<?", tagOpen)) {
+      const end = src.indexOf("?>", tagOpen + 2);
+      if (end === -1 || end >= limit) return -1;
+      cursor = end + 2;
+      continue;
+    }
+
+    const isClosing = src.startsWith(close, tagOpen);
+    const nameStart = tagOpen + (isClosing ? 2 : 1);
+    let nameEnd = nameStart;
+    while (
+      nameEnd < limit &&
+      src.charCodeAt(nameEnd) !== 0x20 &&
+      src.charCodeAt(nameEnd) !== 0x09 &&
+      src.charCodeAt(nameEnd) !== 0x0a &&
+      src.charCodeAt(nameEnd) !== 0x0d &&
+      src.charCodeAt(nameEnd) !== 0x2f &&
+      src.charCodeAt(nameEnd) !== 0x3e
+    ) {
+      nameEnd++;
+    }
+    if (src.slice(nameStart, nameEnd) !== name) {
+      const end = findTagEnd(src, nameStart);
+      if (end === -1 || end >= limit) return -1;
+      cursor = end + 1;
+      continue;
+    }
+
+    const end = findTagEnd(src, nameEnd);
+    if (end === -1 || end >= limit) return -1;
+    if (isClosing) {
+      depth--;
+      if (depth === 0) return tagOpen;
+    } else if (src.charCodeAt(end - 1) !== 0x2f) {
+      depth++;
+    }
+    cursor = end + 1;
   }
   return -1;
 }
@@ -148,6 +245,7 @@ function inlineStringText(
   src: string,
   from: number,
   to: number,
+  markupAware: boolean,
 ):
   | {
       text?: string;
@@ -188,7 +286,7 @@ function inlineStringText(
         q = tEnd + 1;
         continue;
       }
-      const close = src.indexOf("</t>", tEnd + 1);
+      const close = indexOfCloseTag(src, "t", tEnd + 1, to, markupAware);
       text = close === -1 ? "" : textContent(src, tEnd + 1, close);
       if (close === -1) break;
       q = close + 4;
@@ -197,7 +295,7 @@ function inlineStringText(
     if (name === "r") {
       // Rich-text run: its <t> is nested, not a direct child — tree-parse the
       // run slice (rare: only cells with formatted inline text pay this cost).
-      const close = src.indexOf("</r>", tEnd + 1);
+      const close = indexOfCloseTag(src, "r", tEnd + 1, to, markupAware);
       if (close === -1) break;
       // parse() wraps the slice in a synthetic document node; the <r> root is
       // its first child.
@@ -245,6 +343,7 @@ export function parseSheetDataRows(
   const rows: RowOptions[] = [];
   const len = raw.length;
   let pos = 0;
+  const markupAware = hasEscapedMarkup(raw);
 
   for (;;) {
     const rowOpen = indexOfTag(raw, "row", pos, len);
@@ -329,7 +428,7 @@ export function parseSheetDataRows(
     else row.customFormatDeclared = false;
     const cells: CellOptions[] = [];
     if (!selfClosing) {
-      rowClose = raw.indexOf("</row>", tagEnd + 1);
+      rowClose = indexOfCloseTag(raw, "row", tagEnd + 1, len, markupAware);
       if (rowClose === -1) break;
       let cp = tagEnd + 1;
       for (;;) {
@@ -404,7 +503,7 @@ export function parseSheetDataRows(
 
         let cellEnd = cellTagEnd + 1;
         if (!cellSelfClosing) {
-          const cellClose = raw.indexOf("</c>", cellTagEnd + 1);
+          const cellClose = indexOfCloseTag(raw, "c", cellTagEnd + 1, rowClose, markupAware);
           if (cellClose === -1) break;
           cellEnd = cellClose + 4;
           let vText: string | undefined;
@@ -448,7 +547,7 @@ export function parseSheetDataRows(
               if (vSelfClosing) {
                 if (vText === undefined) vText = "";
               } else {
-                const close = raw.indexOf("</v>", tEnd + 1);
+                const close = indexOfCloseTag(raw, "v", tEnd + 1, cellClose, markupAware);
                 if (close === -1) break;
                 if (vText === undefined && vNum === undefined) {
                   // Fast path: pure-digit <v> content (about half the cells in
@@ -483,9 +582,11 @@ export function parseSheetDataRows(
               }
             } else if (nameLen === 2 && first === 0x69 /* is */) {
               hasInline = true;
-              const close = raw.indexOf("</is>", tEnd + 1);
+              const close = indexOfCloseTag(raw, "is", tEnd + 1, cellClose, markupAware);
               const isEnd = close === -1 ? cellClose : close;
-              if (inline === undefined) inline = inlineStringText(raw, tEnd + 1, isEnd);
+              if (inline === undefined) {
+                inline = inlineStringText(raw, tEnd + 1, isEnd, markupAware);
+              }
               if (close === -1) break;
               p = close + 5;
               continue;
@@ -551,7 +652,7 @@ export function parseSheetDataRows(
               if (fSelfClosing) {
                 p = tEnd + 1;
               } else {
-                const close = raw.indexOf("</f>", tEnd + 1);
+                const close = indexOfCloseTag(raw, "f", tEnd + 1, cellClose, markupAware);
                 if (close === -1) break;
                 f.formula = textContent(raw, tEnd + 1, close);
                 p = close + 4;
