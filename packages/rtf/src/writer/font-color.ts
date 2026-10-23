@@ -1,10 +1,37 @@
 import type { RtfGenerateContext } from "./context";
-import { control, rtfText } from "./escape";
+import { reject } from "./context";
+import { rtfText } from "./escape";
+
+const FAMILY_CONTROLS = {
+  roman: "\\froman",
+  swiss: "\\fswiss",
+  modern: "\\fmodern",
+  decor: "\\fdecor",
+  script: "\\fscript",
+  tech: "\\ftech",
+  bidi: "\\fbidi",
+} as const;
+
+type FontFamily = keyof typeof FAMILY_CONTROLS;
 
 export function writeFontTable(context: RtfGenerateContext): string {
   if (context.fonts.length === 0) return "";
   const entries = context.fonts
-    .map((font, index) => `\\f${index}\\fswiss ${rtfText(font)};`)
+    .map((font, index) => {
+      const familyControl =
+        font.family === undefined ? undefined : FAMILY_CONTROLS[font.family as FontFamily];
+      if (font.family !== undefined && familyControl === undefined) {
+        reject("font-table", `fonts[${index}]`, "family", "RTF font family is unknown");
+      }
+      const family = familyControl ?? "";
+      const charset =
+        font.characterSet === undefined ? undefined : Number.parseInt(font.characterSet, 16);
+      if (charset !== undefined && (!Number.isInteger(charset) || charset < 0 || charset > 255)) {
+        reject("font-table", `fonts[${index}]`, "characterSet", "RTF charset requires 0-255");
+      }
+      const controls = `${family}${charset === undefined ? "" : `\\fcharset${charset}`}`;
+      return `{\\f${index}${controls} ${rtfText(font.name ?? "")};}`;
+    })
     .join("");
   return `{\\fonttbl${entries}}`;
 }
@@ -21,5 +48,3 @@ export function writeColorTable(context: RtfGenerateContext): string {
     .join("");
   return `{\\colortbl;${entries}}`;
 }
-
-export { control };

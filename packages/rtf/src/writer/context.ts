@@ -9,7 +9,7 @@ import { RtfGenerateError } from "../errors";
 
 export interface RtfGenerateContext {
   colors: string[];
-  fonts: string[];
+  fonts: NonNullable<DocumentOptions["fonts"]>;
   footnotes?: FootnoteOptions[];
   endnotes?: EndnoteOptions[];
   styleCodes: Map<string, number>;
@@ -41,8 +41,11 @@ export function assertAllowed(
   }
 }
 
-export function registerFont(context: RtfGenerateContext, font: string): number {
-  const existing = context.fonts.indexOf(font);
+export function registerFont(
+  context: RtfGenerateContext,
+  font: NonNullable<DocumentOptions["fonts"]>[number],
+): number {
+  const existing = context.fonts.findIndex((entry) => entry.name === font.name);
   if (existing >= 0) return existing;
   context.fonts.push(font);
   return context.fonts.length - 1;
@@ -57,7 +60,7 @@ export function fontIndex(
   if (typeof run.font !== "string") {
     reject("run", `${path}.font`, "font", "RTF writer supports concrete font names only");
   }
-  return registerFont(context, run.font);
+  return registerFont(context, { name: run.font });
 }
 
 export function colorIndex(

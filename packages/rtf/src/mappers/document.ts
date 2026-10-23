@@ -142,7 +142,7 @@ function rtfDate(start: number, end: number, tokens: readonly RtfToken[]): strin
 }
 
 export function parseRtfTokens(tokens: readonly RtfToken[], source: string): DocumentOptions {
-  const fonts = new Map<number, string>();
+  const fonts = new Map<number, NonNullable<DocumentOptions["fonts"]>[number]>();
   const colors: (string | null)[] = [];
   const tables: TableDraft[] = [];
   const groupFrames: GroupFrame[] = [];
@@ -174,6 +174,7 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
 
   let format: RunFormat = {};
   let alignment: ParagraphOptions["alignment"];
+  let fontFamily: string | undefined;
   let paragraph: ParagraphDraft | undefined;
   let unicodeByteCount = 1;
   let unicodeSkip = 0;
@@ -559,6 +560,7 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
       fontId = parameter;
       fontName = "";
       fontCharset = 0;
+      fontFamily = undefined;
       return true;
     }
     if (word === "fcharset") {
@@ -574,6 +576,7 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
       word === "ftech" ||
       word === "fbidi"
     ) {
+      fontFamily = word.slice(1);
       return true;
     }
     return false;
@@ -984,7 +987,7 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
         ensureParagraph().options.bidirectional = true;
         return;
       case "f":
-        format.font = token.param !== undefined ? fonts.get(token.param) : undefined;
+        format.font = token.param !== undefined ? fonts.get(token.param)?.name : undefined;
         return;
       case "cf": {
         const mapped = token.param !== undefined ? colors[token.param] : undefined;
@@ -1475,7 +1478,12 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
         );
         if (fontName.includes(";")) {
           const name = fontName.replace(/;.*$/u, "").trim();
-          if (name) fonts.set(fontId, name);
+          if (name)
+            fonts.set(fontId, {
+              name,
+              ...(fontFamily ? { family: fontFamily } : {}),
+              characterSet: fontCharset.toString(16).padStart(2, "0"),
+            });
           fontName = "";
         }
         continue;
@@ -1489,7 +1497,12 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
         fontName += token.value;
         if (token.value.includes(";")) {
           const name = fontName.replace(/;.*$/u, "").trim();
-          if (fontId !== undefined && name) fonts.set(fontId, name);
+          if (fontId !== undefined && name)
+            fonts.set(fontId, {
+              name,
+              ...(fontFamily ? { family: fontFamily } : {}),
+              characterSet: fontCharset.toString(16).padStart(2, "0"),
+            });
           fontName = "";
         }
       } else if (destination === "color-table" && token.value.includes(";")) {
@@ -1549,6 +1562,7 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
         }
       : {}),
     ...(styles ? { styles } : {}),
+    ...(fonts.size > 0 ? { fonts: [...fonts.values()] } : {}),
     ...(Object.keys(appProperties).length === 0
       ? {}
       : {

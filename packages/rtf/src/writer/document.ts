@@ -8,7 +8,7 @@ import type {
 } from "@office-open/docx";
 
 import { tagToLcid } from "../langs";
-import { assertAllowed, createContext, reject, supportedMetadata } from "./context";
+import { assertAllowed, createContext, registerFont, reject, supportedMetadata } from "./context";
 import { control, rtfText } from "./escape";
 import { writeColorTable, writeFontTable } from "./font-color";
 import { writeNumberingTable, type NumberingReferences } from "./numbering";
@@ -356,6 +356,7 @@ export function writeRtf(options: DocumentOptions): string {
       "conformance",
       "dialect",
       "application",
+      "fonts",
     ],
     "document",
     "options",
@@ -375,6 +376,13 @@ export function writeRtf(options: DocumentOptions): string {
   const context = createContext();
   context.footnotes = options.footnotes;
   context.endnotes = options.endnotes;
+  for (const [index, font] of (options.fonts ?? []).entries()) {
+    assertAllowed(font, ["name", "family", "characterSet"], "document", `fonts[${index}]`);
+    if (typeof font.name !== "string" || font.name === "") {
+      reject("document", `fonts[${index}]`, "name", "RTF requires a concrete font name");
+    }
+    registerFont(context, font);
+  }
   const first = options.sections[0] ?? { children: [] };
   const body = [
     writeSettings(options.settings, "settings"),

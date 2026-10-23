@@ -292,6 +292,24 @@ describe("generateDocument RTF projections", () => {
     expect(roundTrip(source)).toEqual(parseDocument(source));
   });
 
+  it("round-trips font family and character-set metadata", () => {
+    const source = String.raw`{\rtf1{\fonttbl{\f0\fswiss\fcharset0 Arial;}}\f0 Text\par}`;
+    const parsed = parseDocument(source);
+    expect(parsed.fonts).toEqual([{ name: "Arial", family: "swiss", characterSet: "00" }]);
+    const generated = decoder.decode(generateDocument(parsed));
+    expect(generated).toContain(String.raw`{\fonttbl{\f0\fswiss\fcharset0 Arial;}}`);
+    expect(parseDocument(generated)).toEqual(parsed);
+  });
+
+  it("rejects unknown RTF font families structurally", () => {
+    expect(() =>
+      generateDocument({
+        fonts: [{ name: "Custom", family: "unknown" }],
+        sections: [],
+      }),
+    ).toThrow(RtfGenerateError);
+  });
+
   it("projects run language controls", () => {
     const source = String.raw`{\rtf1{\lang1033 Word}{\lang1036 Autre}\par}`;
     expect(roundTrip(source)).toEqual(parseDocument(source));

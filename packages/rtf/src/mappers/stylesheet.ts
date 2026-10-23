@@ -1,4 +1,5 @@
 import type {
+  DocumentOptions,
   ParagraphStylePropertiesOptions,
   RunStylePropertiesOptions,
   StylesOptions,
@@ -73,7 +74,7 @@ const applyRun = (
   word: string,
   parameter: number | undefined,
   colors: readonly (string | null)[],
-  fonts: ReadonlyMap<number, string>,
+  fonts: ReadonlyMap<number, NonNullable<DocumentOptions["fonts"]>[number]>,
 ): boolean => {
   if (word === "b") run.bold = parameter !== 0;
   else if (word === "i") run.italic = parameter !== 0;
@@ -97,7 +98,7 @@ const applyRun = (
   else if (word === "charscalex" && parameter !== undefined) run.scale = parameter;
   else if (word === "fs" && parameter !== undefined && parameter > 0) run.size = parameter / 2;
   else if (word === "cf" && parameter !== undefined) run.color = colors[parameter] ?? undefined;
-  else if (word === "f" && parameter !== undefined) run.font = fonts.get(parameter);
+  else if (word === "f" && parameter !== undefined) run.font = fonts.get(parameter)?.name;
   else return false;
   return true;
 };
@@ -107,7 +108,7 @@ export function parseStylesheet(
   start: number,
   end: number,
   colors: readonly (string | null)[],
-  fonts: ReadonlyMap<number, string>,
+  fonts: ReadonlyMap<number, NonNullable<DocumentOptions["fonts"]>[number]>,
 ): StyleDraft[] {
   const styles: StyleDraft[] = [];
   let current: StyleDraft | undefined;
