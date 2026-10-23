@@ -167,7 +167,9 @@ export function readOcfSync(
   let entries: Record<string, Uint8Array>;
   try {
     const archive = new ParsedArchive(data);
-    entries = Object.fromEntries(archive.keys().map((path) => [path, archive.getRaw(path)!]));
+    entries = Object.fromEntries(
+      archive.keys().map((path) => [path, new Uint8Array(archive.getRaw(path)!)]),
+    );
   } catch (cause) {
     throw new OcfError("Invalid ODF ZIP package", { cause });
   }
@@ -238,21 +240,49 @@ function validateManifestPaths(
   actualPaths: string[],
   retainedPaths: string[] = actualPaths,
 ): void {
-  const declared = new Set(manifest.entries.map((entry) => entry.fullPath));
-  for (const path of actualPaths) {
-    if (!declared.has(path)) {
-      manifest.entries.push({ fullPath: path, mediaType: mediaType(path) });
+  const declared = new Set<string>();
+  for (const entry of manifest.entries) {
+    const path = entry.fullPath;
+    if (!path || path.includes("\\") || path.split("/").includes("..")) {
+      throw new OcfManifestError(`Invalid ODF manifest path: ${path}`, { fullPath: path });
     }
+    if (declared.has(path)) {
+      throw new OcfManifestError(`Duplicate ODF manifest path: ${path}`, { fullPath: path });
+    }
+    declared.add(path);
   }
   const actualSet = new Set(actualPaths);
-  manifest.entries = manifest.entries.filter((entry) => {
-    if (entry.fullPath === "/" || entry.fullPath === "mimetype") return true;
+  for (const path of actualPaths) {
+    if (!declared.has(path)) {
+      throw new OcfManifestError(`ODF manifest does not declare package member: ${path}`, {
+        fullPath: path,
+      });
+    }
+  }
+  for (const entry of manifest.entries) {
+    if (
+      entry.fullPath === "/" ||
+      entry.fullPath === "mimetype" ||
+      entry.fullPath === "META-INF/manifest.xml"
+    )
+      continue;
     const directoryPath = entry.fullPath.endsWith("/") ? entry.fullPath : `${entry.fullPath}/`;
-    return entry.fullPath.endsWith("/")
-      ? actualSet.has(entry.fullPath) ||
-          retainedPaths.some((path) => path.startsWith(directoryPath))
-      : actualSet.has(entry.fullPath);
-  });
+    if (entry.fullPath.endsWith("/")) {
+      if (
+        !actualSet.has(entry.fullPath) &&
+        !retainedPaths.some((path) => path.startsWith(directoryPath))
+      ) {
+        throw new OcfManifestError(`ODF manifest declares missing directory: ${entry.fullPath}`, {
+          fullPath: entry.fullPath,
+        });
+      }
+    } else if (!actualSet.has(entry.fullPath)) {
+      throw new OcfManifestError(
+        `ODF manifest declares missing package member: ${entry.fullPath}`,
+        { fullPath: entry.fullPath },
+      );
+    }
+  }
 }
 
 export function readXml(files: OdfFiles, path: string): Element {

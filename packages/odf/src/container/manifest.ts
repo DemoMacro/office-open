@@ -40,6 +40,27 @@ export const MANIFEST_ATTRIBUTES = [
 
 export type ManifestAttributeName = (typeof MANIFEST_ATTRIBUTES)[number];
 
+const MANIFEST_ELEMENT_ATTRIBUTES: Record<string, readonly string[]> = {
+  "manifest:manifest": ["manifest:version"],
+  "manifest:file-entry": [
+    "manifest:full-path",
+    "manifest:version",
+    "manifest:media-type",
+    "manifest:preferred-view-mode",
+    "manifest:size",
+  ],
+  "manifest:encryption-data": ["manifest:checksum-type", "manifest:checksum"],
+  "manifest:algorithm": ["manifest:algorithm-name", "manifest:initialisation-vector"],
+  "manifest:key-derivation": [
+    "manifest:key-derivation-name",
+    "manifest:salt",
+    "manifest:iteration-count",
+    "manifest:key-size",
+  ],
+  "manifest:start-key-generation": ["manifest:start-key-generation-name", "manifest:key-size"],
+  "manifest:encryption-method": ["manifest:PGPAlgorithm"],
+};
+
 export interface OcfEncryptedKeyOptions {
   algorithm?: string;
   keyId?: string;
@@ -109,7 +130,21 @@ export function parseManifestOptions(xml: string): OcfManifestOptions {
     },
   }).elements?.find((element) => element.type === "element");
   if (root?.name !== "manifest:manifest") throw new OcfManifestError("Invalid ODF manifest");
+  rejectUnknownManifestAttributes(root);
   return parseManifestModel(root);
+}
+
+function rejectUnknownManifestAttributes(element: Element): void {
+  const name = element.name ?? "";
+  const allowed = MANIFEST_ELEMENT_ATTRIBUTES[name] ?? [];
+  for (const attribute of Object.keys(element.attributes ?? {})) {
+    if (attribute.startsWith("manifest:") && !allowed.includes(attribute)) {
+      throw new OcfManifestError(`Unknown manifest attribute @${attribute}: ${name}`);
+    }
+  }
+  for (const child of element.elements ?? []) {
+    if (child.type === "element") rejectUnknownManifestAttributes(child);
+  }
 }
 
 function parseManifestModel(root: Element): OcfManifestOptions {

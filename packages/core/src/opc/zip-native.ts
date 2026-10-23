@@ -490,6 +490,13 @@ export function inflateZipEntry(buf: Uint8Array, entry: ZipEntryMeta): Uint8Arra
 }
 
 function verifyCrc32(data: Uint8Array, entry: ZipEntryMeta): Uint8Array {
+  if (data.byteLength !== entry.uncompSize) {
+    throw new OpcPackageError(
+      `ZIP uncompressed size mismatch: ${entry.name}`,
+      entry.name,
+      "size-mismatch",
+    );
+  }
   // >>> 0 normalizes the signed CRC_TABLE accumulation against zlib's unsigned crc32.
   if ((_nativeCrc32 ?? computeCrc32)(data) >>> 0 !== entry.crc) {
     throw new OpcPackageError(`ZIP CRC-32 mismatch: ${entry.name}`, entry.name, "crc-mismatch");

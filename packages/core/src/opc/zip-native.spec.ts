@@ -29,9 +29,16 @@ describe("ZIP CRC validation", () => {
     const parsed = new ParsedArchive(archive, [{ ...entry, crc: entry.crc ^ 1 }]);
     expectCorruptEntry(parsed, "a.xml");
   });
+
+  it("rejects an uncompressed size that disagrees with decoded output", () => {
+    const archive = zipSync({ "a.xml": strToU8("<root/>") }, { level: 6 });
+    const entry = readCentralDirectory(archive)[0]!;
+    const parsed = new ParsedArchive(archive, [{ ...entry, uncompSize: entry.uncompSize + 1 }]);
+    expectCorruptEntry(parsed, "a.xml", "size-mismatch");
+  });
 });
 
-function expectCorruptEntry(parsed: ParsedArchive, name: string): void {
+function expectCorruptEntry(parsed: ParsedArchive, name: string, reason = "crc-mismatch"): void {
   let cause: unknown;
   try {
     parsed.get(name);
@@ -40,8 +47,9 @@ function expectCorruptEntry(parsed: ParsedArchive, name: string): void {
   }
   expect(cause).toBeInstanceOf(OpcPackageError);
   expect((cause as OpcPackageError).reason).toBe("invalid-entry");
-  expect((cause as OpcPackageError).cause).toMatchObject({
-    message: `ZIP CRC-32 mismatch: ${name}`,
-    reason: "crc-mismatch",
-  });
+  expect((cause as OpcPackageError).cause).toMatchObject(
+    reason === "crc-mismatch"
+      ? { message: `ZIP CRC-32 mismatch: ${name}`, reason }
+      : { message: `ZIP uncompressed size mismatch: ${name}`, reason },
+  );
 }

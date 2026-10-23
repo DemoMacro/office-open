@@ -123,7 +123,7 @@ describe("OCF runtime", () => {
     ).toContain("Configurations2/");
   });
 
-  it("ignores stale manifest declarations for absent package paths", async () => {
+  it("rejects stale manifest declarations for absent package paths", async () => {
     const archive = zipSync({
       mimetype: strToU8("application/vnd.oasis.opendocument.text"),
       "content.xml": strToU8(
@@ -133,13 +133,12 @@ describe("OCF runtime", () => {
         '<?xml version="1.0"?><manifest:manifest xmlns:manifest="urn:oasis:names:tc:opendocument:xmlns:manifest:1.0"><manifest:file-entry manifest:full-path="/" manifest:media-type="application/vnd.oasis.opendocument.text"/><manifest:file-entry manifest:full-path="content.xml" manifest:media-type="text/xml"/><manifest:file-entry manifest:full-path="META-INF/manifest.xml" manifest:media-type="text/xml"/><manifest:file-entry manifest:full-path="Thumbnails/thumbnail.png" manifest:media-type="image/png"/></manifest:manifest>',
       ),
     });
-    const parsed = await readOcf(archive, "application/vnd.oasis.opendocument.text");
-    expect(parsed.manifest.entries.map((entry) => entry.fullPath)).not.toContain(
-      "Thumbnails/thumbnail.png",
+    await expect(readOcf(archive, "application/vnd.oasis.opendocument.text")).rejects.toThrow(
+      "ODF manifest declares missing package member: Thumbnails/thumbnail.png",
     );
   });
 
-  it("retains undeclared auxiliary package members", async () => {
+  it("rejects undeclared auxiliary package members", async () => {
     const archive = zipSync({
       mimetype: strToU8("application/vnd.oasis.opendocument.text"),
       "content.xml": strToU8(
@@ -150,23 +149,39 @@ describe("OCF runtime", () => {
         '<?xml version="1.0"?><manifest:manifest xmlns:manifest="urn:oasis-names:tc:opendocument:xmlns:manifest:1.0"><manifest:file-entry manifest:full-path="/" manifest:media-type="application/vnd.oasis.opendocument.text"/><manifest:file-entry manifest:full-path="content.xml" manifest:media-type="text/xml"/></manifest:manifest>',
       ),
     });
-    const parsed = await readOcf(archive, "application/vnd.oasis.opendocument.text");
-    expect(parsed.manifest.entries).toContainEqual({
-      fullPath: "ObjectReplacements/Object 1",
-      mediaType: "application/binary",
-    });
-    expect(
-      Object.keys(
-        unzipSync(
-          generateOcf(
-            "application/vnd.oasis.opendocument.text",
-            { ...parsed.files, ...parsed.binaries },
-            {},
-            parsed.manifest,
-          ),
-        ),
+    await expect(readOcf(archive, "application/vnd.oasis.opendocument.text")).rejects.toThrow(
+      "ODF manifest does not declare package member: ObjectReplacements/Object 1",
+    );
+  });
+
+  it("rejects duplicate and invalid manifest paths", async () => {
+    const manifest = (path: string, duplicate = false) =>
+      `<?xml version="1.0"?><manifest:manifest xmlns:manifest="urn:oasis:names:tc:opendocument:xmlns:manifest:1.0"><manifest:file-entry manifest:full-path="/" manifest:media-type="application/vnd.oasis.opendocument.text"/><manifest:file-entry manifest:full-path="${path}" manifest:media-type="text/xml"/>${duplicate ? `<manifest:file-entry manifest:full-path="${path}" manifest:media-type="text/xml"/>` : ""}</manifest:manifest>`;
+    const create = (path: string, duplicate = false) =>
+      zipSync({
+        mimetype: strToU8("application/vnd.oasis.opendocument.text"),
+        "content.xml": strToU8("<office:document-content/>"),
+        "META-INF/manifest.xml": strToU8(manifest(path, duplicate)),
+      });
+    await expect(
+      readOcf(create("content.xml", true), "application/vnd.oasis.opendocument.text"),
+    ).rejects.toThrow("Duplicate ODF manifest path: content.xml");
+    await expect(
+      readOcf(create("../content.xml"), "application/vnd.oasis.opendocument.text"),
+    ).rejects.toThrow("Invalid ODF manifest path: ../content.xml");
+  });
+
+  it("rejects unknown manifest-namespaced attributes", async () => {
+    const archive = zipSync({
+      mimetype: strToU8("application/vnd.oasis.opendocument.text"),
+      "content.xml": strToU8("<office:document-content/>"),
+      "META-INF/manifest.xml": strToU8(
+        '<?xml version="1.0"?><manifest:manifest xmlns:manifest="urn:oasis:names:tc:opendocument:xmlns:manifest:1.0"><manifest:file-entry manifest:full-path="/" manifest:media-type="application/vnd.oasis.opendocument.text" manifest:unknown="1"/><manifest:file-entry manifest:full-path="content.xml" manifest:media-type="text/xml"/></manifest:manifest>',
       ),
-    ).toContain("ObjectReplacements/Object 1");
+    });
+    await expect(readOcf(archive, "application/vnd.oasis.opendocument.text")).rejects.toThrow(
+      "Unknown manifest attribute @manifest:unknown: manifest:file-entry",
+    );
   });
 
   it("reads a typed manifest and preserves encryption metadata", () => {

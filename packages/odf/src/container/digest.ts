@@ -1,4 +1,4 @@
-import { strFromU8, unzipSync } from "@office-open/core";
+import { ParsedArchive, strFromU8 } from "@office-open/core";
 import { parse, type Element } from "@office-open/xml";
 
 import { OcfManifestError } from "../errors";
@@ -22,7 +22,10 @@ export interface OcfSemanticDigest {
 export function ocfSemanticDigest(data: Uint8Array): OcfSemanticDigest {
   let archive: Record<string, Uint8Array>;
   try {
-    archive = unzipSync(data);
+    const parsed = new ParsedArchive(data);
+    archive = Object.fromEntries(
+      parsed.keys().map((path) => [path, new Uint8Array(parsed.getRaw(path)!)]),
+    );
   } catch (cause) {
     throw new OcfManifestError("Invalid OCF ZIP package", { cause });
   }
