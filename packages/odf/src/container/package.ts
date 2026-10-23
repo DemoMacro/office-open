@@ -1,5 +1,5 @@
 import type { DataType } from "@office-open/core";
-import { strFromU8, strToU8, toUint8ArrayAsync, unzipSync, zipSync } from "@office-open/core";
+import { ParsedArchive, strFromU8, strToU8, toUint8ArrayAsync, zipSync } from "@office-open/core";
 import { parse } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 
@@ -166,7 +166,8 @@ export function readOcfSync(
   const expectedMimeTypes = Array.isArray(expectedMimeType) ? expectedMimeType : [expectedMimeType];
   let entries: Record<string, Uint8Array>;
   try {
-    entries = unzipSync(data);
+    const archive = new ParsedArchive(data);
+    entries = Object.fromEntries(archive.keys().map((path) => [path, archive.getRaw(path)!]));
   } catch (cause) {
     throw new OcfError("Invalid ODF ZIP package", { cause });
   }

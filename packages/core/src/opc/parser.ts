@@ -1,6 +1,6 @@
 import { parse, stringify } from "@office-open/xml";
 import type { Element, ParseOptions } from "@office-open/xml";
-import { unzipSync, zipSync, strToU8, inflateSync, type ZipOptions, type Zippable } from "fflate";
+import { unzipSync, zipSync, strToU8, type ZipOptions, type Zippable } from "fflate";
 
 import { toUint8ArrayAsync } from "../util/data-type";
 import { decodeXmlBytes } from "../util/xml-decode";
@@ -147,21 +147,10 @@ export class ParsedArchive {
     // Deleting the just-consumed entry while iterating a Map is defined
     // behavior — the iterator only visits what the map still holds.
     for (const entry of this.index.values()) {
-      const data = await inflateEntryFrom(source, entry).catch(async () => {
-        // inflateEntryFrom verifies CRC-32 on the native path; tolerate a
-        // mismatch the way the fflate fallback always has — retry check-free.
-        try {
-          const raw = await source.read(entry.dataStart, entry.compSize);
-          const data = entry.method === 0 ? raw.slice() : inflateSync(raw);
-          return entry.name.endsWith(".xml") ? stripOversizedGfxdata(data) : data;
-        } catch (cause) {
-          throw new OpcPackageError(
-            `invalid ZIP entry: ${entry.name}`,
-            entry.name,
-            "invalid-entry",
-            { cause },
-          );
-        }
+      const data = await inflateEntryFrom(source, entry).catch((cause) => {
+        throw new OpcPackageError(`invalid ZIP entry: ${entry.name}`, entry.name, "invalid-entry", {
+          cause,
+        });
       });
       this.index.delete(entry.name);
       this.parts.set(entry.name, data);

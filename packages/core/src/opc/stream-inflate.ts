@@ -13,7 +13,7 @@
  */
 import type { ByteSource } from "./byte-source";
 import { gfxdataStripStream, stripOversizedGfxdata } from "./gfxdata";
-import { inflateRawWindow, type ZipEntryMeta } from "./zip-native";
+import { inflateRawWindow, verifyZipCrc32, type ZipEntryMeta } from "./zip-native";
 
 /**
  * XML parts whose uncompressed size exceeds this inflate through the
@@ -38,7 +38,10 @@ export async function inflateEntryFrom(
 ): Promise<Uint8Array> {
   const xml = entry.name.endsWith(".xml");
   const raw = await source.read(entry.dataStart, entry.compSize);
-  if (entry.method === 0) return xml ? stripOversizedGfxdata(raw) : raw;
+  if (entry.method === 0) {
+    const data = verifyZipCrc32(raw, entry);
+    return xml ? stripOversizedGfxdata(data) : data;
+  }
   const streaming =
     xml && entry.uncompSize > STREAMING_XML_THRESHOLD && typeof DecompressionStream !== "undefined";
   if (streaming) return inflateRawStreaming(source, entry);
@@ -68,5 +71,5 @@ async function inflateRawStreaming(source: ByteSource, entry: ZipEntryMeta): Pro
     out.set(chunk, offset);
     offset += chunk.length;
   }
-  return out;
+  return verifyZipCrc32(out, entry);
 }

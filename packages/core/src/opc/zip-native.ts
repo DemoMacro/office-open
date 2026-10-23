@@ -471,12 +471,9 @@ export function readCentralDirectory(buf: Uint8Array): ZipEntryMeta[] {
 export function inflateRawWindow(raw: Uint8Array, entry: ZipEntryMeta): Uint8Array {
   if (_nativeInflate) {
     const dec = _nativeInflate(raw);
-    // >>> 0 normalizes the signed CRC_TABLE accumulation against zlib's unsigned crc32.
-    if ((_nativeCrc32 ?? computeCrc32)(dec) >>> 0 !== entry.crc)
-      throw new OpcPackageError(`ZIP CRC-32 mismatch: ${entry.name}`, entry.name, "crc-mismatch");
-    return dec;
+    return verifyCrc32(dec, entry);
   }
-  return inflateSync(raw);
+  return verifyCrc32(inflateSync(raw), entry);
 }
 
 /**
@@ -488,8 +485,20 @@ export function inflateRawWindow(raw: Uint8Array, entry: ZipEntryMeta): Uint8Arr
  */
 export function inflateZipEntry(buf: Uint8Array, entry: ZipEntryMeta): Uint8Array {
   const raw = buf.subarray(entry.dataStart, entry.dataStart + entry.compSize);
-  if (entry.method === 0) return raw.slice();
-  return inflateRawWindow(raw, entry);
+  const data = entry.method === 0 ? raw.slice() : inflateRawWindow(raw, entry);
+  return entry.method === 0 ? verifyCrc32(data, entry) : data;
+}
+
+function verifyCrc32(data: Uint8Array, entry: ZipEntryMeta): Uint8Array {
+  // >>> 0 normalizes the signed CRC_TABLE accumulation against zlib's unsigned crc32.
+  if ((_nativeCrc32 ?? computeCrc32)(data) >>> 0 !== entry.crc) {
+    throw new OpcPackageError(`ZIP CRC-32 mismatch: ${entry.name}`, entry.name, "crc-mismatch");
+  }
+  return data;
+}
+
+export function verifyZipCrc32(data: Uint8Array, entry: ZipEntryMeta): Uint8Array {
+  return verifyCrc32(data, entry);
 }
 
 // ── Source-backed reads (Blob/File input — random access via ByteSource) ──
