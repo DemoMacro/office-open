@@ -9,10 +9,19 @@ import { patchWorkbook } from "./patch";
 
 const workbook = (): WorkbookOptions => ({
   title: "Original",
+  sharedStringsCount: 2,
+  sharedStringsUniqueCount: 2,
   worksheets: [
     {
       name: "Data",
-      rows: [{ cells: [{ reference: "A1", value: "Hello {{name}}" }] }],
+      rows: [
+        {
+          cells: [
+            { reference: "A1", value: "Hello {{name}}" },
+            { reference: "B1", value: "Shared" },
+          ],
+        },
+      ],
     },
   ],
 });
@@ -100,7 +109,120 @@ describe("patchWorkbook commands", () => {
       }),
     );
 
+    const patchedArchive = unzipSync(
+      (await patchWorkbook({
+        data: await source(),
+        commands: [
+          {
+            type: "replace",
+            at: {
+              field: "worksheets",
+              route: [{ name: "Data" }],
+              text: { placeholder: "name" },
+            },
+            value: "Alice",
+          },
+        ],
+      })) as Uint8Array,
+    );
+    const sharedStrings = new TextDecoder().decode(patchedArchive["xl/sharedStrings.xml"]!);
+    expect(sharedStrings).toContain('count="2"');
+    expect(sharedStrings).toContain('uniqueCount="2"');
     expect(parsed.worksheets?.[0]?.rows?.[0]?.cells?.[0]?.value).toBe("Hello Alice");
+    expect(parsed.worksheets?.[0]?.rows?.[0]?.cells?.[0]?.sharedIndex).toBe(0);
+    expect(parsed.worksheets?.[0]?.rows?.[0]?.cells?.[1]).toMatchObject({
+      sharedIndex: 1,
+      value: "Shared",
+    });
+  });
+
+  it("deduplicates shared strings after multiple replacements", async () => {
+    const cellRoute = (index: number) => [
+      { name: "Data" },
+      { collection: "rows" },
+      { index: 0 },
+      { collection: "cells" },
+      { index },
+    ];
+    const sameValue = async (): Promise<Uint8Array> =>
+      (await generateWorkbook({
+        sharedStringsCount: 2,
+        sharedStringsUniqueCount: 1,
+        worksheets: [
+          {
+            name: "Data",
+            rows: [
+              {
+                cells: [
+                  { reference: "A1", value: "Old" },
+                  { reference: "B1", value: "Old" },
+                ],
+              },
+            ],
+          },
+        ],
+      })) as Uint8Array;
+    const split = parseWorkbookSync(
+      await patchWorkbook({
+        data: await sameValue(),
+        commands: [
+          {
+            type: "replace",
+            at: {
+              field: "worksheets",
+              route: cellRoute(0),
+            },
+            value: { reference: "A1", value: "First" },
+          },
+          {
+            type: "replace",
+            at: {
+              field: "worksheets",
+              route: cellRoute(1),
+            },
+            value: { reference: "B1", value: "Second" },
+          },
+        ],
+      }),
+    );
+    const splitCells = split.worksheets?.[0]?.rows?.[0]?.cells ?? [];
+    expect(splitCells.map((cell) => cell.value)).toEqual(["First", "Second"]);
+    expect(new Set(splitCells.map((cell) => cell.sharedIndex))).toHaveLength(2);
+    const merged = parseWorkbookSync(
+      (await patchWorkbook({
+        data: await sameValue(),
+        commands: [
+          {
+            type: "replace",
+            at: {
+              field: "worksheets",
+              route: cellRoute(0),
+            },
+            value: { reference: "A1", value: "New" },
+          },
+          {
+            type: "replace",
+            at: {
+              field: "worksheets",
+              route: cellRoute(1),
+            },
+            value: { reference: "B1", value: "New" },
+          },
+        ],
+      })) as Uint8Array,
+    );
+    const mergedCells = merged.worksheets?.[0]?.rows?.[0]?.cells ?? [];
+    expect(mergedCells.map((cell) => cell.value)).toEqual(["New", "New"]);
+    expect(new Set(mergedCells.map((cell) => cell.sharedIndex))).toHaveLength(1);
+    expect(merged.sharedStrings).toEqual(["New"]);
+    expect(merged.sharedStringsUniqueCount).toBe(1);
+    expect(
+      new TextDecoder().decode(
+        unzipSync((await patchWorkbook({ data: await sameValue(), commands: [] })) as Uint8Array)[
+          "xl/sharedStrings.xml"
+        ]!,
+      ),
+    ).toContain('uniqueCount="1"');
   });
 
   it("updates a worksheet and root metadata", async () => {

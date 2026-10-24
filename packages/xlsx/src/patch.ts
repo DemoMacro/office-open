@@ -5,7 +5,7 @@ import { generateWorkbook } from "./generate";
 import { parseWorkbook } from "./parse";
 import type { WorkbookOptions } from "./parts/file";
 import type { SheetDefinition } from "./parts/workbook";
-import type { WorksheetOptions } from "./parts/worksheet";
+import type { CellOptions, WorksheetOptions } from "./parts/worksheet";
 import type { WorkbookPatchOptions } from "./patch-commands";
 
 /**
@@ -41,15 +41,73 @@ export const patchWorkbook = async <T extends OutputType = "uint8array">({
 /** Keep shared-string payloads synchronized when a worksheet text command changes a shared cell. */
 function reconcileSharedStrings(options: WorkbookOptions): void {
   if (!options.sharedStrings) return;
+  const sharedStrings = options.sharedStrings;
+  const cells: Array<{ cell: CellOptions; entry: SharedStringEntry }> = [];
+  let referenceCount = 0;
+  let changed = false;
   for (const worksheet of options.worksheets ?? []) {
     for (const row of worksheet.rows ?? []) {
       for (const cell of row.cells ?? []) {
-        if (typeof cell.sharedIndex === "number" && typeof cell.value === "string") {
-          options.sharedStrings[cell.sharedIndex] = cell.value;
+        if (usesSharedStrings(cell)) {
+          referenceCount += 1;
+          const entry = sharedStringEntry(cell);
+          if (entry === undefined) continue;
+          const index = cell.sharedIndex;
+          const current =
+            typeof index === "number" && index < sharedStrings.length
+              ? sharedStrings[index]
+              : undefined;
+          if (sharedStringKey(current) !== sharedStringKey(entry)) changed = true;
+          cells.push({ cell, entry });
         }
       }
     }
   }
+
+  if (changed) {
+    const indices = new Map<string, number>();
+    const reconciled: SharedStringEntry[] = [];
+    for (const { cell, entry } of cells) {
+      const key = sharedStringKey(entry)!;
+      let index = indices.get(key);
+      if (index === undefined) {
+        index = reconciled.length;
+        indices.set(key, index);
+        reconciled.push(entry);
+      }
+      cell.sharedIndex = index;
+    }
+    options.sharedStrings = reconciled;
+  }
+  if (options.sharedStringsCount !== undefined) options.sharedStringsCount = referenceCount;
+  if (options.sharedStringsUniqueCount !== undefined)
+    options.sharedStringsUniqueCount = options.sharedStrings.length;
+}
+
+type SharedStringEntry = NonNullable<WorkbookOptions["sharedStrings"]>[number];
+
+function sharedStringEntry(cell: CellOptions): SharedStringEntry | undefined {
+  if (typeof cell.value === "string") return cell.value;
+  if (cell.value === null || typeof cell.value !== "object" || cell.value instanceof Date)
+    return undefined;
+  return cell.value;
+}
+
+function sharedStringKey(entry: SharedStringEntry | undefined): string {
+  return JSON.stringify(entry);
+}
+
+function usesSharedStrings(cell: CellOptions): boolean {
+  if (cell.inline || cell.error !== undefined) return false;
+  if (typeof cell.value === "string") {
+    return cell.typeRaw !== "n" && cell.typeRaw !== "str" && cell.typeRaw !== "d";
+  }
+  return (
+    cell.value !== null &&
+    cell.value !== undefined &&
+    typeof cell.value === "object" &&
+    !(cell.value instanceof Date)
+  );
 }
 
 /** Drop content-type declarations for worksheets removed by a patch command. */
