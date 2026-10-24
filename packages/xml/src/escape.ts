@@ -20,6 +20,17 @@ export function escapeXml(str: string): string {
     .replace(/>/g, "&gt;");
 }
 
+/** Removes XML-illegal control characters while preserving tab, LF, and CR. */
+export function sanitizeXmlText(value: string): string {
+  let result = "";
+  for (const character of value) {
+    const code = character.codePointAt(0)!;
+    if (code === 0x0b) result += "\n";
+    else if (code >= 0x20) result += character;
+  }
+  return result;
+}
+
 /**
  * Build an XML attribute string fragment from a record.
  * `undefined` values are automatically skipped.
