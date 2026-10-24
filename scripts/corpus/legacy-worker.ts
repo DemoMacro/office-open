@@ -42,6 +42,7 @@ function classify(error: unknown): Exclude<Outcome, "pass"> {
   const reason = diagnostic.context?.reason ?? diagnostic.reason;
   const message = String((error as Error)?.message ?? error);
   if (/encrypted/i.test(message)) return "encrypted";
+  if (/Malformed XML: invalid character/u.test(message)) return "invalid";
   if (
     reason === "out-of-range" ||
     reason === "invalid-repeat-count" ||
@@ -53,7 +54,8 @@ function classify(error: unknown): Exclude<Outcome, "pass"> {
   if (
     /(?:bad signature|truncated|must begin with|invalid CFB|invalid ODF|invalid zip|invalid URL|not a supported Compound|signature is not|malformed formula|unsupported formula token 0x00|unsupported formula token 0x58|unsupported RTF destination|objdata requires binary|Manifest does not declare|Manifest declares missing package path|embedded object subdocument is missing)/i.test(
       message,
-    )
+    ) ||
+    /ODF package is missing or cannot read content\.xml/u.test(message)
   ) {
     return "invalid";
   }
@@ -63,9 +65,14 @@ function classify(error: unknown): Exclude<Outcome, "pass"> {
 function failureCategory(error: unknown): string {
   const diagnostic = error as { context?: Record<string, unknown> };
   const details = diagnostic.context
-    ? ` [${JSON.stringify(diagnostic.context)}]`
+    ? ` [${safeJson(diagnostic.context)}]`
     : diagnostic.part || diagnostic.path || diagnostic.reason
-      ? ` [${JSON.stringify({ part: diagnostic.part, path: diagnostic.path, name: diagnostic.name, reason: diagnostic.reason })}]`
+      ? ` [${safeJson({
+          part: diagnostic.part,
+          path: diagnostic.path,
+          name: diagnostic.name,
+          reason: diagnostic.reason,
+        })}]`
       : "";
   return (String((error as Error)?.message ?? error) + details)
     .replace(/\s+/g, " ")
@@ -74,6 +81,14 @@ function failureCategory(error: unknown): string {
     .replace(/\b\d+(?:\.\d+)?\b/g, "N")
     .trim()
     .slice(0, 160);
+}
+
+function safeJson(value: unknown): string {
+  try {
+    return JSON.stringify(value) ?? "{}";
+  } catch {
+    return '{"serialization":"unavailable"}';
+  }
 }
 
 let input = "";
@@ -99,9 +114,20 @@ for (const line of input.split("\n")) {
     await verify(item.format, new Uint8Array(fs.readFileSync(item.file)));
     formatResult.pass++;
   } catch (error) {
-    const outcome = classify(error);
+    let outcome: Exclude<Outcome, "pass">;
+    try {
+      outcome = classify(error);
+    } catch {
+      outcome = "unexpected";
+    }
     formatResult[outcome]++;
-    const reason = `${outcome}: ${failureCategory(error)}`;
+    let category: string;
+    try {
+      category = failureCategory(error);
+    } catch {
+      category = "diagnostic serialization failed";
+    }
+    const reason = `${outcome}: ${category}`;
     formatResult.reasons[reason] = (formatResult.reasons[reason] ?? 0) + 1;
   } finally {
     console.log = originalConsole.log;

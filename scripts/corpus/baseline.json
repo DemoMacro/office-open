@@ -166,11 +166,11 @@
     },
     "xlsx": {
       "total": 387,
-      "clean": 361,
+      "clean": 360,
       "diff": 0,
       "parseFail": 0,
       "genFail": 0,
-      "malformed": 26
+      "malformed": 27
     },
     "pptx": {
       "total": 110,
@@ -183,28 +183,28 @@
   },
   "libreoffice-core": {
     "docx": {
-      "total": 2313,
-      "clean": 2281,
+      "total": 2212,
+      "clean": 2178,
       "diff": 0,
       "parseFail": 0,
       "genFail": 0,
-      "malformed": 32
+      "malformed": 34
     },
     "xlsx": {
-      "total": 571,
-      "clean": 565,
+      "total": 410,
+      "clean": 401,
       "diff": 0,
       "parseFail": 0,
       "genFail": 0,
-      "malformed": 6
+      "malformed": 9
     },
     "pptx": {
-      "total": 587,
-      "clean": 584,
+      "total": 516,
+      "clean": 514,
       "diff": 0,
       "parseFail": 0,
       "genFail": 0,
-      "malformed": 3
+      "malformed": 2
     }
   }
 }

@@ -1,8 +1,9 @@
-import { unzipSync } from "@office-open/core/opc";
+import { parseArchive, unzipSync } from "@office-open/core/opc";
 
 import { generateDocument, parseDocument } from "../../../packages/docx/dist/index.mjs";
 import { generatePresentation, parsePresentation } from "../../../packages/pptx/dist/index.mjs";
 import { generateWorkbook, parseWorkbook } from "../../../packages/xlsx/dist/index.mjs";
+import { validatePrimaryPackagePart } from "../semantics";
 import {
   ENCODER,
   assert,
@@ -50,6 +51,40 @@ export async function docxPrinterSettings(): Promise<void> {
     part,
     "printer settings relationship projection",
   );
+}
+
+export async function xlsxEmptyChartValueSlot(): Promise<void> {
+  const source = syntheticZip({
+    "[Content_Types].xml": ENCODER.encode(
+      '<?xml version="1.0"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+        '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>' +
+        "</Types>",
+    ),
+    "_rels/.rels": ENCODER.encode(
+      '<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>' +
+        "</Relationships>",
+    ),
+    "xl/workbook.xml": ENCODER.encode(
+      '<?xml version="1.0"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"/>',
+    ),
+    "xl/charts/chart1.xml": ENCODER.encode(
+      '<?xml version="1.0"?><chartSpace xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart"><c:chart><c:plotArea><c:barChart><c:ser><c:val/></c:ser></c:barChart></c:plotArea></c:chart></chartSpace>',
+    ),
+  });
+  const archive = parseArchive(source);
+  try {
+    validatePrimaryPackagePart(archive, "xlsx", "xl/workbook.xml");
+  } catch (error) {
+    assertEqual(
+      error instanceof Error ? error.message : String(error),
+      "xl/charts/chart1.xml has an empty chart value slot",
+      "xl/charts/chart1.xml",
+      "malformed chart classifier",
+    );
+    return;
+  }
+  assert(false, "xl/charts/chart1.xml", "empty chart value slot was accepted");
 }
 
 export async function docxRevisionIdentity(): Promise<void> {

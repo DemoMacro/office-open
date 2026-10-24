@@ -3,6 +3,7 @@ import {
   docxPrinterSettings,
   docxRevisionIdentity,
   pptxIndefiniteTiming,
+  xlsxEmptyChartValueSlot,
   xlsxPivotCalculatedItems,
 } from "./ooxml";
 import { pptNoTextShape } from "./ppt";
@@ -54,6 +55,12 @@ const CASES: readonly SyntheticCase[] = [
     owner: "xlsx",
     part: "xl/pivotCache/pivotCacheDefinition1.xml",
     verify: xlsxPivotCalculatedItems,
+  },
+  {
+    id: "xlsx-empty-chart-value-slot",
+    owner: "xlsx",
+    part: "xl/charts/chart1.xml",
+    verify: xlsxEmptyChartValueSlot,
   },
   { id: "rtf-binary-token", owner: "rtf", part: "RTF objdata", verify: rtfBinaryToken },
   { id: "rtf-stylesheet", owner: "rtf", part: "RTF stylesheet", verify: rtfStylesheet },

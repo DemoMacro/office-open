@@ -308,9 +308,9 @@ export const LEGACY_CAPABILITY_PROBES: readonly LegacyCapabilityFormat[] = [
         },
         { name: "Palette", assertion: "PALETTE colors project", testId: "parses PALETTE colors" },
         {
-          name: "Malformed auxiliary formatting tolerance",
-          assertion: "malformed formatting records do not lose workbook cells",
-          testId: "skips malformed auxiliary formatting records",
+          name: "Malformed auxiliary formatting rejection",
+          assertion: "malformed formatting records fail structurally",
+          testId: "rejects malformed auxiliary formatting records",
         },
       ],
     ),

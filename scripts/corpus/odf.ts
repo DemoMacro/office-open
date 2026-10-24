@@ -58,7 +58,12 @@ function emptyCounts(): Counts {
   };
 }
 
-const MALFORMED_PARSE_REASONS = new Set(["invalid-element-placement", "invalid-repeat-count"]);
+const MALFORMED_PARSE_REASONS = new Set([
+  "invalid-element-placement",
+  "invalid-length",
+  "invalid-repeat-count",
+  "invalid-variable-value-type",
+]);
 const PACKAGE_PARSE_REASONS = new Set(["missing-package-part"]);
 
 async function collectFiles(directory: string, files: string[] = []): Promise<string[]> {

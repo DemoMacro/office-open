@@ -28,6 +28,53 @@ function zip(files: Record<string, string | Uint8Array>): Uint8Array {
 }
 
 describe("corpus semantic comparison", () => {
+  it("ignores source content-type overrides for parts absent from both packages", () => {
+    const primary = new TextEncoder().encode('<root xmlns="urn:example"><child/></root>');
+    const contentTypes = (includeOverride: boolean): Uint8Array =>
+      new TextEncoder().encode(
+        '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+          '<Default Extension="xml" ContentType="application/xml"/>' +
+          (includeOverride
+            ? '<Override PartName="/word/orphan.xml" ContentType="application/vnd.example.orphan"/>'
+            : "") +
+          "</Types>",
+      );
+    const source = zip({
+      "[Content_Types].xml": contentTypes(true),
+      "word/document.xml": primary,
+    });
+    const output = zip({
+      "[Content_Types].xml": contentTypes(false),
+      "word/document.xml": primary,
+    });
+
+    expect(archiveSemanticDiffDetails(source, output)).toEqual([]);
+  });
+
+  it("allows content-type overrides for synthesized writer default parts", () => {
+    const primary = new TextEncoder().encode('<root xmlns="urn:example"><child/></root>');
+    const contentTypes = (includeOverride: boolean): Uint8Array =>
+      new TextEncoder().encode(
+        '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+          '<Default Extension="xml" ContentType="application/xml"/>' +
+          (includeOverride
+            ? '<Override PartName="/xl/sharedStrings.xml" ContentType="application/vnd.example.shared-strings"/>'
+            : "") +
+          "</Types>",
+      );
+    const source = zip({
+      "[Content_Types].xml": contentTypes(false),
+      "word/document.xml": primary,
+    });
+    const output = zip({
+      "[Content_Types].xml": contentTypes(true),
+      "word/document.xml": primary,
+      "xl/sharedStrings.xml": new TextEncoder().encode('<root xmlns="urn:example"/>'),
+    });
+
+    expect(archiveSemanticDiffDetails(source, output)).toEqual([]);
+  });
+
   it("normalizes omitted CT_OnOff values to semantic true", () => {
     const xml = (value?: string): string =>
       `<w:rPr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">` +
@@ -333,13 +380,13 @@ describe("corpus semantic comparison", () => {
     const source = new TextEncoder().encode(
       '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
         '<fonts><font><color type="theme" val="1"/><color type="rgb" val="FF112233"/>' +
-        '<color type="icv" val="9"/></font>' +
+        '<color type="icv" val="9"/></font></fonts>' +
         '<fills><fill><pattern patternType="solid"><fgColor type="theme" val="3" tint="0.5"/>' +
-        '<bgColor type="icv" val="65"/></pattern></fill></fills>',
+        '<bgColor type="icv" val="65"/></pattern></fill></fills></styleSheet>',
     );
     const output = new TextEncoder().encode(
       '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
-        '<fonts><font><color theme="1"/><color rgb="FF112233"/><color indexed="9"/></font>' +
+        '<fonts><font><color theme="1"/><color rgb="FF112233"/><color indexed="9"/></font></fonts>' +
         '<fills><fill><pattern patternType="solid"><fgColor theme="3" tint="0.5"/>' +
         '<bgColor indexed="65"/></pattern></fill></fills></styleSheet>',
     );
@@ -909,6 +956,23 @@ describe("corpus semantic comparison", () => {
     expect(() =>
       validatePrimaryPackagePart(parseArchive(source), "docx", "word/document.xml"),
     ).toThrow("relationship is missing Target");
+  });
+
+  it("rejects relationship declarations without required ids", () => {
+    const source = zip({
+      "_rels/.rels":
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>' +
+        "</Relationships>",
+      "word/document.xml": '<w:document xmlns:w="urn:w"/>',
+      "word/_rels/document.xml.rels":
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        '<Relationship Type="urn:image" Target="image.png"/>' +
+        "</Relationships>",
+    });
+    expect(() =>
+      validatePrimaryPackagePart(parseArchive(source), "docx", "word/document.xml"),
+    ).toThrow("relationship is missing Id");
   });
 
   it("rejects duplicate singleton section properties", () => {

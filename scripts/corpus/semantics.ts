@@ -855,7 +855,11 @@ function sortUnorderedChildren(
   // representation only: canonical parsers flatten them and writers rebuild
   // the valid sequence. Sort these comparison-only containers so damaged or
   // lenient producer order does not mask real content differences.
-  if (["ppr", "numpr", "compat", "num", "lvl", "footnotes", "endnotes"].includes(localName)) {
+  if (
+    ["ppr", "numpr", "compat", "num", "lvl", "docpartpr", "footnotes", "endnotes"].includes(
+      localName,
+    )
+  ) {
     if (localName === "footnotes" || localName === "endnotes") {
       const noteId = (child: CanonicalNode): number => {
         const value = Number(child.attributes["w:id"] ?? child.attributes.id ?? Number.NaN);
@@ -1464,6 +1468,7 @@ function compareNodes(
   source: CanonicalNode | undefined,
   output: CanonicalNode | undefined,
   ignorablePrefixes?: ReadonlySet<string>,
+  packageParts?: { source: ReadonlySet<string>; output: ReadonlySet<string> },
 ): SemanticPartDiff["detail"][] {
   if (!source && !output) return [];
   const location = path || "/";
@@ -1643,6 +1648,15 @@ function compareNodes(
     outputChildren = outputChildren.filter(({ child }) => {
       if (child.name !== "Override") return true;
       const partName = String(child.attributes?.PartName ?? "");
+      const packagePath = partName.replace(/^\//, "");
+      // Both packages omit the part: the source declaration was orphaned and
+      // the round-tripped declaration carries no payload.
+      if (
+        packageParts !== undefined &&
+        !packageParts.source.has(packagePath) &&
+        !packageParts.output.has(packagePath)
+      )
+        return false;
       const sourceOverride = sourceChildren.some(({ child: sourceChild }) => {
         return (
           sourceChild.name === "Override" &&
@@ -1650,7 +1664,22 @@ function compareNodes(
           sourceChild.attributes?.ContentType !== undefined
         );
       });
-      return sourceOverride;
+      // A writer may synthesize a standard part absent from a minimal source;
+      // its required Override is a semantic superset, not drift.
+      if (sourceOverride) return true;
+      return (
+        packageParts !== undefined &&
+        !packageParts.source.has(packagePath) &&
+        packageParts.output.has(packagePath)
+      );
+    });
+    // Drop an Override for a part that neither package carries. The source
+    // declaration was orphaned before parsing and has no semantic payload to
+    // preserve; filtering it out must not count as content-type drift.
+    sourceChildren = sourceChildren.filter(({ child }) => {
+      if (child.name !== "Override" || packageParts === undefined) return true;
+      const partName = String(child.attributes?.PartName ?? "").replace(/^\//, "");
+      return packageParts.source.has(partName) || packageParts.output.has(partName);
     });
     // Writer-emitted opaque binaries (printerSettings) need a package-level
     // Default; a minimal source that shipped the binary without declaring it
@@ -1846,6 +1875,7 @@ export function explainSemanticPartDiff(
     source?: Map<string, string> | undefined;
     output?: Map<string, string> | undefined;
   },
+  packageParts?: { source: ReadonlySet<string>; output: ReadonlySet<string> },
 ): SemanticPartDiff[] {
   const kind = semanticPartKind(partPath);
   if (!output)
@@ -1867,7 +1897,7 @@ export function explainSemanticPartDiff(
   );
   const sourceNode = canonicalXmlNodes(sourceXml, partPath, references?.source);
   const outputNode = canonicalXmlNodes(outputXml, partPath, references?.output);
-  const details = compareNodes(partPath, sourceNode, outputNode, ignorablePrefixes);
+  const details = compareNodes(partPath, sourceNode, outputNode, ignorablePrefixes, packageParts);
   return details.map((detail) => ({ path: partPath, kind, ...detail }));
 }
 
@@ -2010,6 +2040,10 @@ export function archiveSemanticDiffDetails(
   const sourceArchive = normalizeArchive(source);
   const outputArchive = normalizeArchive(output);
   const paths = new Set([...Object.keys(sourceArchive), ...Object.keys(outputArchive)]);
+  const packageParts = {
+    source: new Set(Object.keys(sourceArchive)),
+    output: new Set(Object.keys(outputArchive)),
+  };
   const diffs: SemanticPartDiff[] = [];
   for (const path of [...paths].sort()) {
     if (path.endsWith("/")) continue;
@@ -2032,6 +2066,7 @@ export function archiveSemanticDiffDetails(
         sourceArchive[path] ?? new Uint8Array(),
         outputArchive[path],
         references,
+        packageParts,
       ),
     );
   }
