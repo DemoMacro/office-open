@@ -53,10 +53,12 @@ export function projectChildren(
     for (let index = 0; index < sortedBoundaries.length - 1; index++) {
       const start = sortedBoundaries[index]!;
       const end = sortedBoundaries[index + 1]!;
-      const text = paragraph
-        .slice(start, end)
-        .map((character) => character.value)
-        .join("");
+      const text = sanitizeLegacyText(
+        paragraph
+          .slice(start, end)
+          .map((character) => character.value)
+          .join(""),
+      );
       const revisionChildren: ParagraphChild[] = [];
       if (start + 1 === end) {
         const character = paragraph[start]!;
@@ -86,7 +88,11 @@ export function projectChildren(
       if (text.length === 0) continue;
       const cp = paragraph[start]!.cp;
       if (paragraph[start]!.complexField) {
-        runs.push({ complexField: { instruction: paragraph[start]!.complexField } });
+        runs.push({
+          complexField: {
+            instruction: sanitizeLegacyText(paragraph[start]!.complexField, false),
+          },
+        });
         continue;
       }
       const range = ranges.find((candidate) => candidate.cpStart <= cp && cp < candidate.cpEnd);
@@ -117,10 +123,12 @@ export function projectChildren(
         runs.push(...revisionChildren);
       }
     }
-    const plainText = paragraph
-      .filter((character) => !character.complexField)
-      .map((character) => character.value)
-      .join("");
+    const plainText = sanitizeLegacyText(
+      paragraph
+        .filter((character) => !character.complexField)
+        .map((character) => character.value)
+        .join(""),
+    );
     const hasProperties = runs.some((run) =>
       Object.keys(run).some((key) => key !== "text" && key !== "break"),
     );
@@ -141,6 +149,17 @@ export function projectChildren(
   if (paragraph.length > 0) flushParagraph();
   if (children.length === 0) children.push({ paragraph: "" });
   return children;
+}
+
+function sanitizeLegacyText(value: string, preserveSoftBreaks = true): string {
+  let result = "";
+  for (const character of value) {
+    const code = character.charCodeAt(0);
+    if (code === 0x0b && preserveSoftBreaks) result += "\n";
+    else if (code < 0x20 && code !== 0x0a) continue;
+    else result += character;
+  }
+  return result;
 }
 
 export function projectStory(
