@@ -29,19 +29,16 @@ const FORMATS = [
   "rtf",
 ] as OfficeGenerateCommandFormat[];
 
-const SCHEMA_TYPES = {
+const OOXML_SCHEMA_TYPES = {
   wordprocessing: "docx",
   spreadsheet: "xlsx",
   presentation: "pptx",
-  odt: "docx",
-  ods: "xlsx",
-  odp: "pptx",
   rtf: "docx",
 } as const;
 
-function schemaTypeOf(format: OfficeGenerateCommandFormat): DocumentType {
+function schemaTypeOf(format: OfficeGenerateCommandFormat): DocumentType | undefined {
   if (format === "docx" || format === "pptx" || format === "xlsx") return format;
-  return SCHEMA_TYPES[format as keyof typeof SCHEMA_TYPES];
+  return OOXML_SCHEMA_TYPES[format as keyof typeof OOXML_SCHEMA_TYPES];
 }
 
 /** Parse and validate a generate-format positional (citty positionals cannot be enums). */
@@ -58,7 +55,9 @@ function parseGenerateFormat(raw: string | undefined): OfficeGenerateCommandForm
 function parseSchemaFormat(raw: string | undefined): DocumentType {
   if (raw === "docx" || raw === "pptx" || raw === "xlsx") return raw;
   const format = parseGenerateFormat(raw);
-  return schemaTypeOf(format);
+  const schemaType = schemaTypeOf(format);
+  if (schemaType === undefined) throw new Error("invalid schema format");
+  return schemaType;
 }
 
 async function readJsonInput(input: string): Promise<Record<string, unknown>> {
@@ -122,7 +121,9 @@ function createConvertCommand(type: string, defaultExt: string) {
 
       try {
         const docOptions = await readJsonInput(jsonInput);
-        const validated = validateDocumentInput(docType, docOptions);
+        const schemaType = docType;
+        const validated =
+          schemaType === undefined ? docOptions : validateDocumentInput(schemaType, docOptions);
         await generateOfficePath(outputPath, generateType, validated);
         console.log(`Generated: ${outputPath}`);
       } catch (error) {
