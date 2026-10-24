@@ -54,6 +54,7 @@ import {
   type OdtAutomaticStyleResource,
   type StyleMap,
 } from "./automatic-styles";
+import { parseCalculationSettings } from "./calculation-settings";
 import {
   documentStylesXml,
   fontFaceDecls,
@@ -156,9 +157,10 @@ export interface ParseContext {
   pendingInsertions: Set<string>;
   declaredSequences: SequenceDeclarationOptions[];
   declaredVariables: VariableDeclarationOptions[];
+  odtDeclaredVariables: import("./paragraph").OdtVariableDeclarationOptions[];
   documentVariables: NonNullable<NonNullable<DocumentOptions["settings"]>["docVars"]>;
   pendingSequences: Set<string>;
-  pendingVariables: Map<string, "float" | "string">;
+  pendingVariables: Map<string, import("./paragraph").OdtVariableValueType>;
   nextEmbeddedShapeId: number;
   trackRevisions?: boolean;
 }
@@ -222,14 +224,15 @@ function generateOdtPackage(options: OdtDocumentOptions): Uint8Array {
       if (member.mediaType !== undefined) mediaTypes[member.path] = member.mediaType;
     }
   }
-  return generateOcf(MIME, files, mediaTypes, packageManifest);
+  return generateOcf(options.packageMediaType ?? MIME, files, mediaTypes, packageManifest);
 }
 
 export function generateDocumentSync<T extends OutputType = "uint8array">(
   options: OdtDocumentOptions,
   output?: T,
 ): OutputByType[T] {
-  return convertOutput(generateOdtPackage(options), (output ?? "uint8array") as T, MIME);
+  const mediaType = options.packageMediaType ?? MIME;
+  return convertOutput(generateOdtPackage(options), (output ?? "uint8array") as T, mediaType);
 }
 
 export async function generateDocument<T extends OutputType = "uint8array">(
@@ -491,12 +494,19 @@ function parseOdtPackage(data: Uint8Array): OdtDocumentOptions {
     pendingInsertions: new Set(),
     declaredSequences: [],
     declaredVariables: [],
+    odtDeclaredVariables: [],
     documentVariables: [],
     pendingSequences: new Set(),
     pendingVariables: new Map(),
     nextEmbeddedShapeId: 1,
   };
-  const children = parseBlocks(body?.elements ?? [], context);
+  const calculationSettings = body?.elements?.find(
+    (child) => child.name === "table:calculation-settings",
+  );
+  const children = parseBlocks(
+    (body?.elements ?? []).filter((child) => child !== calculationSettings),
+    context,
+  );
   const meta = Object.fromEntries(
     Object.entries(parseMeta(files)).filter(([, value]) => value !== undefined),
   );
@@ -504,6 +514,8 @@ function parseOdtPackage(data: Uint8Array): OdtDocumentOptions {
     ...meta,
     sections: [{ properties: parsePageLayout(files), children }],
   };
+  if (calculationSettings)
+    result.calculationSettings = parseCalculationSettings(calculationSettings);
   const packageMembers = sourcePackageMembers(
     manifest,
     files,
@@ -533,6 +545,8 @@ function parseOdtPackage(data: Uint8Array): OdtDocumentOptions {
   if (context.comments.length > 0) result.comments = context.comments;
   if (context.declaredSequences.length > 0) result.sequenceDeclarations = context.declaredSequences;
   if (context.declaredVariables.length > 0) result.variableDeclarations = context.declaredVariables;
+  if (context.odtDeclaredVariables.length > 0)
+    result.odtVariableDeclarations = context.odtDeclaredVariables;
   if (context.documentVariables.length > 0)
     result.settings = { ...result.settings, docVars: context.documentVariables };
   if (context.notes.footnotes.length > 0) result.footnotes = context.notes.footnotes;
@@ -865,6 +879,13 @@ export function parseBlocks(
   };
   for (const [elementIndex, element] of hoistedElements.entries()) {
     if (elementIndex <= resumeAfter) continue;
+    if (element.name === "text:change-end") {
+      const id = attributeString(element, "text:change-id") ?? "";
+      context.pendingFormatChanges.delete(id);
+      context.pendingInsertions.delete(id);
+      continue;
+    }
+    if (element.name === "text:variable-set") throw invalidOdtElement(element);
     if (element.name === "text:alphabetical-index-auto-mark-file") {
       assertElementNames(element, ["xlink:type", "xlink:href"]);
       const href = attributeString(element, "xlink:href");
@@ -998,7 +1019,6 @@ export function parseBlocks(
       [
         "field:fieldmark-start",
         "office:event-listeners",
-        "table:calculation-settings",
         "text:alphabetical-index-auto-mark-file",
         "text:alphabetical-index-mark",
         "text:bookmark-end",

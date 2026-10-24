@@ -71,7 +71,8 @@ function isOdpPackageOptions(options: PresentationOptions): options is OdpPresen
     "packageManifest" in options ||
     "packageMembers" in options ||
     "styleResources" in options ||
-    "embeddedObjects" in options
+    "embeddedObjects" in options ||
+    "packageMediaType" in options
   );
 }
 
@@ -79,8 +80,8 @@ function packageOptions(options: PresentationOptions): Partial<OdpPresentationOp
   return isOdpPackageOptions(options) ? options : {};
 }
 
-function generateOdpPackage(options: PresentationOptions): Uint8Array {
-  const { packageManifest, packageMembers, styleResources, embeddedObjects } =
+function generateOdpPackage(options: OdpPresentationOptions): Uint8Array {
+  const { packageManifest, packageMembers, styleResources, embeddedObjects, packageMediaType } =
     packageOptions(options);
   validateEmbeddedObjects(options, embeddedObjects);
   const styles: string[] = styleResourcesXml(styleResources);
@@ -123,7 +124,7 @@ function generateOdpPackage(options: PresentationOptions): Uint8Array {
   for (const media of mediaFiles) files[media.path] = media.data;
   for (const chart of charts)
     Object.assign(files, chartSubdocumentFiles(`${chart.path}/`, chart.chart));
-  return generateOcf(MIME, files, mediaTypes, packageManifest);
+  return generateOcf(packageMediaType ?? MIME, files, mediaTypes, packageManifest);
 }
 
 function validateEmbeddedObjects(
@@ -180,10 +181,11 @@ function addPackageFile(files: OdfPackageFiles, member: PackageMemberOptions): v
 }
 
 export function generatePresentationSync<T extends OutputType = "uint8array">(
-  options: PresentationOptions,
+  options: OdpPresentationOptions,
   output?: T,
 ): OutputByType[T] {
-  return convertOutput(generateOdpPackage(options), (output ?? "uint8array") as T, MIME);
+  const mediaType = options.packageMediaType ?? MIME;
+  return convertOutput(generateOdpPackage(options), (output ?? "uint8array") as T, mediaType);
 }
 
 export async function generatePresentation<T extends OutputType = "uint8array">(
@@ -194,7 +196,7 @@ export async function generatePresentation<T extends OutputType = "uint8array">(
 }
 
 export function generatePresentationStream(
-  options: PresentationOptions,
+  options: OdpPresentationOptions,
 ): ReadableStream<Uint8Array> {
   return streamUint8Array(generateOdpPackage(options));
 }

@@ -7,9 +7,10 @@ import {
   graphicFill,
   graphicOutline,
   lengthToEmu,
-  PRESET_GEOMETRY_DOCX,
   presetGeometryOdf,
   pushShapeStyle,
+  resolveOdfDrawGeometry,
+  resolveOdfDrawGeometryOverlay,
   xmlElement,
   type GraphicStyle,
 } from "@office-open/odf";
@@ -212,7 +213,9 @@ export function customShapeXml(shape: ShapeOptions, styles: string[]): string {
     [
       xmlElement(
         "draw:enhanced-geometry",
-        { "draw:type": preset ? presetGeometryOdf(preset) : undefined },
+        {
+          "draw:type": shape.odfGeometryType ?? (preset ? presetGeometryOdf(preset) : undefined),
+        },
         [],
       ),
       ...(shape.textBody ? textBodyXml(shape.textBody, styles) : []),
@@ -488,19 +491,13 @@ export function parseCustomSlideShape(
   const graphic = graphicStyles.get(attributeString(element, "draw:style-name") ?? "");
   const enhanced = childNamed(element, "draw:enhanced-geometry");
   const presetType = attributeString(enhanced, "draw:type");
-  const preset =
-    presetType && Object.hasOwn(PRESET_GEOMETRY_DOCX, presetType)
-      ? PRESET_GEOMETRY_DOCX[presetType]
+  const resolvedGeometry = presetType ? resolveOdfDrawGeometry(presetType) : undefined;
+  const preset = resolvedGeometry?.kind === "shape" ? resolvedGeometry.preset : undefined;
+  const textWarp = resolvedGeometry?.kind === "text-warp" ? resolvedGeometry.preset : undefined;
+  const geometryOverlay =
+    presetType && resolvedGeometry
+      ? resolveOdfDrawGeometryOverlay(presetType, resolvedGeometry)
       : undefined;
-  if (presetType && !preset) {
-    throw new OdpParseError(
-      `Unknown OpenDocument drawing preset geometry: ${presetType}`,
-      "content.xml",
-      "/draw:custom-shape/draw:enhanced-geometry",
-      "draw:type",
-      "unknown-drawing-preset",
-    );
-  }
   const paragraphs = childrenNamed(element, "text:p");
   const fill = graphicFill(graphic);
   const outline = graphicOutline(graphic);
@@ -524,6 +521,17 @@ export function parseCustomSlideShape(
             ...(preset ? { geometry: preset } : {}),
             ...(fill ? { fill } : {}),
             ...(outline ? { outline } : {}),
+          },
+        }
+      : {}),
+    ...(geometryOverlay ? { odfGeometryType: geometryOverlay } : {}),
+    ...(textWarp
+      ? {
+          textBody: {
+            bodyProperties: { prstTxWarp: { preset: textWarp } },
+            ...(paragraphs.length > 0
+              ? { paragraphs: paragraphs.map((paragraph) => parseParagraph(paragraph, textStyles)) }
+              : {}),
           },
         }
       : {}),

@@ -1,8 +1,4 @@
-import type {
-  FormControlOptions,
-  SequenceDeclarationOptions,
-  VariableDeclarationOptions,
-} from "@office-open/core";
+import type { FormControlOptions, SequenceDeclarationOptions } from "@office-open/core";
 import type {
   ChartOptions,
   BlockContentChild,
@@ -35,6 +31,7 @@ import {
   unknownOdtElement,
   type ParseContext,
 } from "./body";
+import { calculationSettingsXml } from "./calculation-settings";
 import {
   chartFrameXml,
   isShapeElement,
@@ -866,6 +863,11 @@ export function simpleFieldXml(field: CanonicalSimpleField, notes: NotesContext)
         outlineLevel: Number(match.groups?.level),
       });
   }
+  if (instruction.startsWith("ODF VARIABLESET ")) {
+    const value = JSON.parse(instruction.slice("ODF VARIABLESET ".length)) as OdtVariableSetOptions;
+    notes.variableTypes.set(value.name, value.valueType);
+    return variableSetXml(value);
+  }
   if (instruction.startsWith("VARIABLE ")) {
     if (remainder && !remainder.startsWith("=")) throw unsupportedField(instruction);
     if (remainder) formula = remainder.slice(1).trim();
@@ -875,7 +877,8 @@ export function simpleFieldXml(field: CanonicalSimpleField, notes: NotesContext)
       name: argument.value,
       valueType,
       value: field.cachedValue,
-      display: field.cachedValue,
+      display: field.cachedValue === undefined ? undefined : "value",
+      displayValue: field.cachedValue,
       formula,
     });
   }
@@ -1085,20 +1088,27 @@ export function declarationsXml(options: OdtDocumentOptions, notes: NotesContext
       : "";
   const implicitVariableDeclarations = [...notes.variableTypes]
     .filter(
-      ([name]) => !options.variableDeclarations?.some((declaration) => declaration.name === name),
+      ([name]) =>
+        !options.variableDeclarations?.some((declaration) => declaration.name === name) &&
+        !options.odtVariableDeclarations?.some((declaration) => declaration.name === name),
     )
-    .map(([name, valueType]): VariableDeclarationOptions => ({ name, valueType }));
+    .map(([name, valueType]): OdtVariableDeclarationOptions => ({ name, valueType }));
   const variableDecls =
-    options.variableDeclarations?.length || implicitVariableDeclarations.length
+    options.variableDeclarations?.length ||
+    options.odtVariableDeclarations?.length ||
+    implicitVariableDeclarations.length
       ? xmlElement(
           "text:variable-decls",
           undefined,
-          [...(options.variableDeclarations ?? []), ...implicitVariableDeclarations].map(
-            (declaration) =>
-              xmlElement("text:variable-decl", {
-                "text:name": declaration.name,
-                "office:value-type": declaration.valueType,
-              }),
+          [
+            ...(options.variableDeclarations ?? []),
+            ...(options.odtVariableDeclarations ?? []),
+            ...implicitVariableDeclarations,
+          ].map((declaration) =>
+            xmlElement("text:variable-decl", {
+              "text:name": declaration.name,
+              "office:value-type": declaration.valueType,
+            }),
           ),
         )
       : "";
@@ -1176,6 +1186,7 @@ export function declarationsXml(options: OdtDocumentOptions, notes: NotesContext
   const formsXml = officeFormsXml(notes.forms);
   return (
     indexAutoMarkXml +
+    (options.calculationSettings ? calculationSettingsXml(options.calculationSettings) : "") +
     formsXml +
     sequenceDecls +
     variableDecls +
@@ -1187,21 +1198,36 @@ export function declarationsXml(options: OdtDocumentOptions, notes: NotesContext
 
 export function variableSetXml(value: {
   name: string;
-  valueType: "float" | "string";
+  valueType: OdtVariableValueType;
   value?: string;
-  display?: string;
+  currency?: string;
+  display?: "value" | "none";
+  displayValue?: string;
   formula?: string;
+  dataStyleName?: string;
 }): string {
   return xmlElement(
     "text:variable-set",
     {
       "text:name": value.name,
       "office:value-type": value.valueType,
-      "office:value": value.value,
-      "text:display": value.display,
+      "office:value":
+        value.valueType === "float" ||
+        value.valueType === "percentage" ||
+        value.valueType === "currency"
+          ? value.value
+          : undefined,
+      "office:currency": value.currency,
+      "office:date-value": value.valueType === "date" ? value.value : undefined,
+      "office:time-value": value.valueType === "time" ? value.value : undefined,
+      "office:boolean-value": value.valueType === "boolean" ? value.value : undefined,
+      "office:string-value": value.valueType === "string" ? value.value : undefined,
+      "text:display":
+        value.display === "none" ? "none" : value.value === undefined ? undefined : "value",
       "text:formula": value.formula,
+      "style:data-style-name": value.dataStyleName,
     },
-    value.display === undefined ? [] : [escapeText(value.display)],
+    value.display === "none" ? [] : [escapeText(value.displayValue ?? value.value ?? "")],
   );
 }
 
@@ -1724,7 +1750,14 @@ export function parseRuns(
       if (child.name === "text:variable-set") {
         const value = parseVariableSet(child);
         const expected = context.pendingVariables.get(value.name);
-        if (expected !== undefined && expected !== value.valueType) throw unknownOdtElement(child);
+        if (expected !== undefined && expected !== value.valueType)
+          throw new OdtParseError(
+            `content.xml: variable ${value.name}: declared ${expected}, set ${value.valueType}`,
+            "content.xml",
+            `/office:document-content/office:body/office:text/text:variable-set`,
+            value.name,
+            "invalid-variable-value-type",
+          );
         context.pendingVariables.delete(value.name);
         return [variableField(value)];
       }
@@ -2254,11 +2287,22 @@ export function encodeFieldArgument(value: string): string {
 export function variableField(value: ReturnType<typeof parseVariableSet>): {
   simpleField: CanonicalSimpleField;
 } {
+  const exactValue =
+    value.display === "none" ||
+    (value.valueType !== "float" && value.valueType !== "string") ||
+    (value.value !== undefined && value.value !== (value.displayValue ?? value.value));
+  if (exactValue)
+    return {
+      simpleField: {
+        instruction: `ODF VARIABLESET ${JSON.stringify(value)}`,
+        cachedValue: value.display === "none" ? undefined : (value.displayValue ?? value.value),
+      },
+    };
   const formula = value.formula ? ` = ${value.formula}` : "";
   return {
     simpleField: {
       instruction: `VARIABLE ${encodeFieldArgument(value.name)}${formula}`,
-      cachedValue: value.display ?? value.value,
+      cachedValue: value.displayValue ?? value.value,
     },
   };
 }
@@ -2335,21 +2379,82 @@ export function conditionalTextField(value: {
   };
 }
 
-export function parseVariableSet(element: Element): {
+export type OdtVariableValueType =
+  | "float"
+  | "percentage"
+  | "currency"
+  | "date"
+  | "time"
+  | "boolean"
+  | "string";
+
+/** ODF-specific variable declaration for value types outside DOCX variables. */
+export interface OdtVariableDeclarationOptions {
   name: string;
-  valueType: "float" | "string";
+  valueType: OdtVariableValueType;
+}
+
+/** Full ODF common value-and-type projection for `text:variable-set`. */
+export interface OdtVariableSetOptions {
+  name: string;
+  valueType: OdtVariableValueType;
   value?: string;
-  display?: string;
+  currency?: string;
+  display?: "value" | "none";
+  displayValue?: string;
   formula?: string;
-} {
+  dataStyleName?: string;
+}
+
+export function parseVariableSet(element: Element): OdtVariableSetOptions {
+  assertElementNames(element, [
+    "text:name",
+    "office:value-type",
+    "office:value",
+    "office:currency",
+    "office:date-value",
+    "office:time-value",
+    "office:boolean-value",
+    "office:string-value",
+    "text:display",
+    "text:formula",
+    "style:data-style-name",
+  ]);
   const rawType = attributeString(element, "office:value-type") ?? "string";
-  if (rawType !== "float" && rawType !== "string") throw unknownOdtElement(element);
+  if (
+    rawType !== "float" &&
+    rawType !== "percentage" &&
+    rawType !== "currency" &&
+    rawType !== "date" &&
+    rawType !== "time" &&
+    rawType !== "boolean" &&
+    rawType !== "string"
+  )
+    throw unknownOdtElement(element);
+  const valueAttribute =
+    rawType === "date"
+      ? "office:date-value"
+      : rawType === "time"
+        ? "office:time-value"
+        : rawType === "boolean"
+          ? "office:boolean-value"
+          : "office:value";
+  const rawValue =
+    rawType === "string"
+      ? attributeString(element, "office:string-value")
+      : attributeString(element, valueAttribute);
+  const display = attributeString(element, "text:display");
+  if (display !== undefined && display !== "value" && display !== "none")
+    throw unknownOdtElement(element);
   return {
     name: attributeString(element, "text:name") ?? "",
     valueType: rawType,
-    value: attributeString(element, "office:value"),
-    display: textOf(element) || attributeString(element, "text:display"),
+    ...(rawValue === undefined ? {} : { value: rawValue }),
+    ...(rawType === "currency" ? { currency: attributeString(element, "office:currency") } : {}),
+    ...(display === undefined ? {} : { display }),
+    ...(display === "none" ? {} : { displayValue: textOf(element) || undefined }),
     formula: attributeString(element, "text:formula"),
+    dataStyleName: attributeString(element, "style:data-style-name"),
   };
 }
 
@@ -2434,10 +2539,21 @@ export function parseVariableDeclarations(element: Element, context: ParseContex
     assertElementNames(declaration, ["text:name", "office:value-type"]);
     const name = attributeString(declaration, "text:name");
     const valueType = attributeString(declaration, "office:value-type") ?? "string";
-    if (!name || (valueType !== "float" && valueType !== "string")) {
+    if (
+      !name ||
+      (valueType !== "float" &&
+        valueType !== "percentage" &&
+        valueType !== "currency" &&
+        valueType !== "date" &&
+        valueType !== "time" &&
+        valueType !== "boolean" &&
+        valueType !== "string")
+    ) {
       throw unknownOdtElement(declaration);
     }
-    context.declaredVariables.push({ name, valueType });
+    if (valueType === "float" || valueType === "string")
+      context.declaredVariables.push({ name, valueType });
+    else context.odtDeclaredVariables.push({ name, valueType });
     context.pendingVariables.set(name, valueType);
   }
 }

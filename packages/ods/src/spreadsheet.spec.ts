@@ -130,6 +130,22 @@ describe("ODS spreadsheet semantics", () => {
     ]);
   });
 
+  it("preserves unsupported data pilot summary functions as typed overlays", async () => {
+    const source = packageWith(
+      '<table:table table:name="Data"><table:table-row><table:table-cell office:value-type="float" office:value="1"/></table:table-row></table:table><table:data-pilot-tables><table:data-pilot-table table:name="Pivot" table:target-range-address="Data.B1:B4"><table:source-cell-range table:cell-range-address="Data.A1:A10"/><table:data-pilot-field table:source-field-name="Sales" table:orientation="data" table:function="median"/></table:data-pilot-table></table:data-pilot-tables>',
+    );
+    const parsed = await parseWorkbook(source);
+    expect(parsed.dataPilotFunctions).toEqual([
+      { tableName: "Pivot", field: "Sales", summaryFunction: "median" },
+    ]);
+    expect(parsed.worksheets?.[0]?.pivotTables?.[0]).toMatchObject({
+      mode: "source",
+      data: [{ field: "Sales", summarize: undefined }],
+    });
+    const regenerated = await parseWorkbook(await generateWorkbook(parsed));
+    expect(regenerated.dataPilotFunctions).toEqual(parsed.dataPilotFunctions);
+  });
+
   it("round-trips sheet protection and consolidation", async () => {
     const { parsed, regenerated } = await roundTrip(
       packageWith(
@@ -153,6 +169,49 @@ describe("ODS spreadsheet semantics", () => {
     });
     expect(regenerated.worksheets?.[0]?.protection).toMatchObject({ sheet: true });
     expect(regenerated.worksheets?.[0]?.dataConsolidate).toMatchObject({ function: "sum" });
+  });
+
+  it("parses LibreOffice number fill characters and default cell alignment", async () => {
+    const automaticStyles =
+      '<number:number-style style:name="N1">' +
+      "<number:text> </number:text><loext:fill-character>0</loext:fill-character>" +
+      '<number:number number:decimal-places="0" number:min-integer-digits="1"/>' +
+      "</number:number-style>" +
+      '<style:style style:name="ce1" style:family="table-cell" style:data-style-name="N1">' +
+      '<style:table-cell-properties style:vertical-align="automatic"/>' +
+      "</style:style>";
+    const parsed = await parseWorkbook(
+      packageWith(
+        '<table:table table:name="Sheet1"><table:table-row><table:table-cell table:style-name="ce1" office:value-type="float" office:value="7"/></table:table-row></table:table>',
+        automaticStyles,
+      ),
+    );
+    expect(parsed.worksheets?.[0]?.rows?.[0]?.cells?.[0]?.style).toMatchObject({
+      numFmt: expect.stringContaining("*0"),
+    });
+  });
+
+  it("parses independent number styles that share one mapped target", async () => {
+    const automaticStyles =
+      '<number:number-style style:name="N0"><number:text>A</number:text></number:number-style>' +
+      '<number:number-style style:name="N1"><style:map style:condition="value()&gt;0" style:apply-style-name="N0"/></number:number-style>' +
+      '<number:number-style style:name="N2"><style:map style:condition="value()&lt;0" style:apply-style-name="N0"/></number:number-style>' +
+      '<style:style style:name="ce1" style:family="table-cell" style:data-style-name="N1"/>' +
+      '<style:style style:name="ce2" style:family="table-cell" style:data-style-name="N2"/>';
+    const parsed = await parseWorkbook(
+      packageWith(
+        '<table:table table:name="Sheet1"><table:table-row>' +
+          '<table:table-cell table:style-name="ce1" office:value-type="float" office:value="1"/>' +
+          '<table:table-cell table:style-name="ce2" office:value-type="float" office:value="-1"/>' +
+          "</table:table-row></table:table>",
+        automaticStyles,
+      ),
+    );
+    expect(
+      parsed.worksheets?.[0]?.rows?.[0]?.cells?.map((cell) =>
+        typeof cell.style === "object" ? cell.style.numFmt : undefined,
+      ),
+    ).toEqual(["A", "A"]);
   });
 
   it("round-trips a cell-anchored styled shape", async () => {

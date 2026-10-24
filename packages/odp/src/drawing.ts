@@ -221,13 +221,19 @@ export function parsePictureFrame(
   if (!image) return undefined;
   const path = attributeString(image, "xlink:href")?.replace(/^\//, "");
   const data = path ? binaries[path] : undefined;
+  const type = path
+    ? data
+      ? embeddedPictureType(path)
+      : pictureTypeFromUrl(attributeString(image, "xlink:href") ?? "")
+    : undefined;
+  if (type === undefined) return undefined;
   if (data && path) usedBinaryPaths.add(path);
   if (!data || !path) {
     const href = attributeString(image, "xlink:href");
     if (!href) return undefined;
     return {
       picture: {
-        type: pictureTypeFromUrl(href),
+        type,
         sourceUrl: href,
         x: lengthToEmu(attributeString(frame, "svg:x")),
         y: lengthToEmu(attributeString(frame, "svg:y")),
@@ -239,7 +245,7 @@ export function parsePictureFrame(
   }
   return {
     picture: {
-      type: embeddedPictureType(path),
+      type,
       data,
       x: lengthToEmu(attributeString(frame, "svg:x")),
       y: lengthToEmu(attributeString(frame, "svg:y")),
@@ -250,8 +256,9 @@ export function parsePictureFrame(
   };
 }
 
-function pictureTypeFromUrl(value: string): PictureOptions["type"] {
+function pictureTypeFromUrl(value: string): PictureOptions["type"] | undefined {
   const extension = value.split(/[?#]/, 1)[0]?.split("/").pop()?.split(".").pop()?.toLowerCase();
+  if (extension === "svg") return undefined;
   const type =
     extension === "jpeg"
       ? "jpg"
@@ -269,8 +276,9 @@ function pictureTypeFromUrl(value: string): PictureOptions["type"] {
   return type;
 }
 
-function embeddedPictureType(path: string): PictureOptions["type"] {
+function embeddedPictureType(path: string): PictureOptions["type"] | undefined {
   const extension = path.split(/[?#]/, 1)[0]?.split("/").pop()?.split(".").pop()?.toLowerCase();
+  if (extension === "svg") return undefined;
   const type =
     extension === "jpeg"
       ? "jpg"

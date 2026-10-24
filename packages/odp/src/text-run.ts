@@ -18,6 +18,9 @@ export interface TextProperties {
   size?: number;
 }
 
+/** Semantic segment of a measurement text run inside draw:measure. */
+export type OdpMeasureTextSegmentKind = "gap" | "unit" | "value";
+
 export function textBodyXml(body: TextBodyOptions | undefined, styles: string[]): string[] {
   const paragraphs = body?.paragraphs ?? (body?.text !== undefined ? [body.text] : [""]);
   return paragraphs.map((paragraph) => {
@@ -213,7 +216,10 @@ export function parseParagraph(
       const count = Number(attributeString(child, "text:c") ?? "1");
       children.push(" ".repeat(Number.isInteger(count) && count > 0 ? count : 1));
     } else if (child.name === "text:tab") children.push({ text: "\t" });
-    else if (child.name === "text:span") {
+    else if (child.name === "text:measure") {
+      const kind = attributeString(child, "text:kind");
+      if (kind === "value") children.push(textOf(child));
+    } else if (child.name === "text:span") {
       children.push({
         text: textOf(child),
         ...textStyles.get(attributeString(child, "text:style-name") ?? ""),

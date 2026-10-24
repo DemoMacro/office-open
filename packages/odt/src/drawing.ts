@@ -18,10 +18,11 @@ import {
   graphicOutline,
   isExternalOdfUrl,
   lengthToEmu,
-  PRESET_GEOMETRY_DOCX,
   presetGeometryOdf,
   pushShapeStyle,
   resolveEmbeddedChart,
+  resolveOdfDrawGeometry,
+  resolveOdfDrawGeometryOverlay,
   textOf,
   xmlElement,
 } from "@office-open/odf";
@@ -153,7 +154,11 @@ export function wpsShapeFrameXml(
     [
       xmlElement(
         "draw:enhanced-geometry",
-        { "draw:type": geometry?.preset ? presetGeometryOdf(geometry.preset) : undefined },
+        {
+          "draw:type":
+            shape.odfGeometryType ??
+            (geometry?.preset ? presetGeometryOdf(geometry.preset) : undefined),
+        },
         [],
       ),
     ],
@@ -259,19 +264,13 @@ export function parseShapeElement(
     : (lengthToEmu(attributeString(element, "svg:height")) ?? 0);
   const enhanced = childNamed(element, "draw:enhanced-geometry");
   const presetType = attributeString(enhanced, "draw:type");
-  const preset =
-    presetType && Object.hasOwn(PRESET_GEOMETRY_DOCX, presetType)
-      ? PRESET_GEOMETRY_DOCX[presetType]
+  const resolvedGeometry = presetType ? resolveOdfDrawGeometry(presetType) : undefined;
+  const preset = resolvedGeometry?.kind === "shape" ? resolvedGeometry.preset : undefined;
+  const textWarp = resolvedGeometry?.kind === "text-warp" ? resolvedGeometry.preset : undefined;
+  const geometryOverlay =
+    presetType && resolvedGeometry
+      ? resolveOdfDrawGeometryOverlay(presetType, resolvedGeometry)
       : undefined;
-  if (presetType && !preset) {
-    throw new OdtParseError(
-      `Unknown OpenDocument drawing preset geometry: ${presetType}`,
-      "content.xml",
-      "/draw:custom-shape/draw:enhanced-geometry",
-      "draw:type",
-      "unknown-drawing-preset",
-    );
-  }
   const geometry = shapeGeometry(element.name, preset);
   const fill = graphic ? graphicFill(graphic) : undefined;
   const outline = graphic ? graphicOutline(graphic) : undefined;
@@ -280,6 +279,7 @@ export function parseShapeElement(
     children: [],
     ...(controlId === undefined ? {} : { controlId }),
     ...(geometry ? { geometry } : {}),
+    ...(geometryOverlay ? { odfGeometryType: geometryOverlay } : {}),
     ...(name ? { altText: { name } } : {}),
     transformation: {
       ...(x || y ? { offset: { ...(x ? { x } : {}), ...(y ? { y } : {}) } } : {}),
@@ -288,6 +288,7 @@ export function parseShapeElement(
     },
     ...(fill ? { fill } : {}),
     ...(outline ? { outline } : {}),
+    ...(textWarp ? { bodyProperties: { prstTxWarp: { preset: textWarp } } } : {}),
   };
 }
 
@@ -506,19 +507,13 @@ export function parseCustomShape(
   const graphic = styleName ? context.graphicStyles.get(styleName) : undefined;
   const enhanced = childNamed(element, "draw:enhanced-geometry");
   const presetType = attributeString(enhanced, "draw:type");
-  const preset =
-    presetType && Object.hasOwn(PRESET_GEOMETRY_DOCX, presetType)
-      ? PRESET_GEOMETRY_DOCX[presetType]
+  const resolvedGeometry = presetType ? resolveOdfDrawGeometry(presetType) : undefined;
+  const preset = resolvedGeometry?.kind === "shape" ? resolvedGeometry.preset : undefined;
+  const textWarp = resolvedGeometry?.kind === "text-warp" ? resolvedGeometry.preset : undefined;
+  const geometryOverlay =
+    presetType && resolvedGeometry
+      ? resolveOdfDrawGeometryOverlay(presetType, resolvedGeometry)
       : undefined;
-  if (presetType && !preset) {
-    throw new OdtParseError(
-      `Unknown OpenDocument drawing preset geometry: ${presetType}`,
-      "content.xml",
-      "/draw:custom-shape/draw:enhanced-geometry",
-      "draw:type",
-      "unknown-drawing-preset",
-    );
-  }
   const x = lengthToEmu(attributeString(element, "svg:x")) ?? 0;
   const y = lengthToEmu(attributeString(element, "svg:y")) ?? 0;
   const width = lengthToEmu(attributeString(element, "svg:width")) ?? 0;
@@ -536,8 +531,10 @@ export function parseCustomShape(
       },
       ...(name ? { altText: { name } } : {}),
       ...(preset ? { geometry: preset } : {}),
+      ...(geometryOverlay ? { odfGeometryType: geometryOverlay } : {}),
       ...(fill ? { fill } : {}),
       ...(outline ? { outline } : {}),
+      ...(textWarp ? { bodyProperties: { prstTxWarp: { preset: textWarp } } } : {}),
     },
   };
 }

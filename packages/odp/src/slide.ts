@@ -24,7 +24,12 @@ import type {
 } from "@office-open/pptx";
 import type { Element } from "@office-open/xml";
 
-import { animationsXml, isAnimationElement, parseAnimation } from "./animation";
+import {
+  animationsXml,
+  isAnimationElement,
+  parseAnimation,
+  type OdpAnimationEntry,
+} from "./animation";
 import {
   chartFrameXml,
   parseChartFrame,
@@ -455,7 +460,9 @@ export function parseSlide(
         "/office:document-content/office:body/office:presentation/draw:page",
       );
   }
-  const animations = animationRoots.map((entry) => resolveAnimationTargets(entry, shapeReferences));
+  const animations: OdpAnimationEntry[] = animationRoots.map((entry) =>
+    resolveAnimationTargets(entry, shapeReferences),
+  );
   let childIndex = 0;
   for (const source of normalizedPage.elements ?? []) {
     if (source.type !== "element") continue;
@@ -589,15 +596,7 @@ function parseTransition(entries: readonly AnimationEntry[]): TransitionOptions 
   const filter = entries.map(findTransitionFilter).find(Boolean);
   if (filter === undefined) return undefined;
   const type = TRANSITION_TYPES[(filter.transitionType as keyof typeof TRANSITION_TYPES) ?? ""];
-  if (type === undefined) {
-    throw new OdpParseError(
-      `unsupported slide transition type: ${filter.transitionType}`,
-      "content.xml",
-      "/office:document-content/office:body/office:presentation/draw:page/anim:transitionFilter",
-      "anim:transitionFilter",
-      "unsupported-smil-transition-type",
-    );
-  }
+  if (type === undefined) return undefined;
   const subtype = filter.transitionSubType;
   return {
     type,
@@ -728,29 +727,78 @@ export function slideTableXml(table: TableOptions, styles: string[]): string {
   const columns = (table.columnWidths ?? []).map((width) =>
     xmlElement("table:table-column", { "table:style-name": addColumnStyle(width, styles) }),
   );
-  const rows = table.rows.map((row) =>
+  const covered = tableCoveredCells(table);
+  const rows = table.rows.map((row, rowIndex) =>
     xmlElement(
       "table:table-row",
       undefined,
-      row.cells.map((cell) => {
-        const content = textBodyXml(
-          cell.children ? { paragraphs: cell.children } : { text: cell.text ?? "" },
-          styles,
-        );
-        const span = cell.columnSpan;
-        const xml = xmlElement(
-          "table:table-cell",
-          { "office:value-type": "string", "table:number-columns-spanned": span },
-          content,
-        );
-        const covered = Array.from({ length: Math.max(0, (span ?? 1) - 1) }, () =>
-          xmlElement("table:covered-table-cell"),
-        );
-        return xml + covered.join("");
-      }),
+      tableRowXml(row, covered[rowIndex] ?? new Map(), styles),
     ),
   );
   return xmlElement("table:table", { "table:name": table.name }, [...columns, ...rows]);
+}
+
+function tableCoveredCells(table: TableOptions): Map<number, number>[] {
+  const columnCount = Math.max(
+    table.columnWidths?.length ?? 0,
+    ...table.rows.map((row) =>
+      row.cells.reduce((total, cell) => total + (cell.columnSpan ?? 1), 0),
+    ),
+    1,
+  );
+  const covered = table.rows.map(() => new Map<number, number>());
+  table.rows.forEach((row, rowIndex) => {
+    let column = 0;
+    for (const cell of row.cells) {
+      while (column < columnCount && covered[rowIndex]!.has(column)) column += 1;
+      const columnSpan = cell.columnSpan ?? 1;
+      const rowSpan = cell.rowSpan ?? 1;
+      for (let rowOffset = 1; rowOffset < rowSpan; rowOffset += 1)
+        for (let columnOffset = 0; columnOffset < columnSpan; columnOffset += 1)
+          covered[rowIndex + rowOffset]?.set(column + columnOffset, 1);
+      column += columnSpan;
+    }
+  });
+  return covered;
+}
+
+function tableRowXml(
+  row: TableOptions["rows"][number],
+  coveredColumns: Map<number, number>,
+  styles: string[],
+): string[] {
+  const columnCount = Math.max(
+    coveredColumns.size === 0 ? 0 : Math.max(...coveredColumns.keys()) + 1,
+    coveredColumns.size + row.cells.reduce((total, cell) => total + (cell.columnSpan ?? 1), 0),
+    row.cells.reduce((total, cell) => total + (cell.columnSpan ?? 1), 0),
+    1,
+  );
+  const coveredCell = (): string => xmlElement("table:covered-table-cell");
+  let cellIndex = 0;
+  let xml = "";
+  for (let column = 0; column < columnCount; column += 1) {
+    if (coveredColumns.has(column)) {
+      xml += coveredCell();
+      continue;
+    }
+    const cell = row.cells[cellIndex++];
+    if (!cell) continue;
+    const content = textBodyXml(
+      cell.children ? { paragraphs: cell.children } : { text: cell.text ?? "" },
+      styles,
+    );
+    xml += xmlElement(
+      "table:table-cell",
+      {
+        "office:value-type": "string",
+        "table:number-columns-spanned": cell.columnSpan,
+        "table:number-rows-spanned": cell.rowSpan,
+      },
+      content,
+    );
+    xml += Array.from({ length: Math.max(0, (cell.columnSpan ?? 1) - 1) }, coveredCell).join("");
+  }
+  return [xml];
 }
 
 /** Parses a slide table:table back to a pptx table child. */
@@ -785,10 +833,14 @@ function parseTableRowCells(
   const cells: TableOptions["rows"][number]["cells"] = [];
   for (let index = 0; index < children.length; index += 1) {
     const cell = children[index]!;
+    if (cell.name === "table:covered-table-cell") {
+      continue;
+    }
     if (cell.name !== "table:table-cell") throw unknownSlideChild(cell, "/draw:page/table:table");
     const span = attributeNumber(cell, "table:number-columns-spanned") ?? 1;
     cells.push({
       columnSpan: attributeNumber(cell, "table:number-columns-spanned"),
+      rowSpan: attributeNumber(cell, "table:number-rows-spanned"),
       children: childrenNamed(cell, "text:p").map((paragraph) =>
         parseParagraph(paragraph, textStyles),
       ),

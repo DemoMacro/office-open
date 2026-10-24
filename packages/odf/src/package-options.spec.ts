@@ -25,7 +25,7 @@ function property(xml: string): StylePropertyOptions {
 
 function propertyIn(
   xml: string,
-  family: "graphic" | "page-layout" | "drawing-page" | "paragraph" | "section",
+  family: "graphic" | "page-layout" | "drawing-page" | "paragraph" | "section" | "table-cell",
 ) {
   const parsed = parseStyleProperty(element(xml), { family, scale: "emu" });
   if (!parsed.ok)
@@ -36,6 +36,47 @@ function propertyIn(
 }
 
 describe("ODF style property codecs", () => {
+  it("round-trips graphic and text glow extensions", () => {
+    const graphic: StylePropertyOptions = {
+      name: "style:graphic-properties",
+      attributes: {
+        "loext:glow-radius": 3810000,
+        "loext:glow-color": "#e97132",
+        "loext:glow-transparency": 5,
+      },
+    };
+    expect(
+      parseStyleProperty(element(stylePropertyXml(graphic, "emu")), {
+        family: "graphic",
+        scale: "emu",
+      }),
+    ).toEqual({ ok: true, value: graphic });
+    const text: StylePropertyOptions = {
+      name: "style:text-properties",
+      attributes: {
+        "loext:glow-text-radius": 2540000,
+        "loext:glow-text-color": "#4ea72e",
+        "loext:glow-text-transparency": 5,
+      },
+    };
+    expect(
+      parseStyleProperty(element(stylePropertyXml(text, "emu")), {
+        family: "text",
+        scale: "emu",
+      }),
+    ).toEqual({ ok: true, value: text });
+    const cell: StylePropertyOptions = {
+      name: "style:table-cell-properties",
+      attributes: { "fo:text-align": "center", "style:width": 914400 },
+    };
+    expect(
+      parseStyleProperty(element(stylePropertyXml(cell, "emu")), {
+        family: "table-cell",
+        scale: "emu",
+      }),
+    ).toEqual({ ok: true, value: cell });
+  });
+
   it("round-trips chart properties and symbol images", () => {
     const options: ChartStylePropertiesOptions = {
       name: "style:chart-properties",

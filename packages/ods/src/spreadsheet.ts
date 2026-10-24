@@ -35,6 +35,7 @@ import type {
 import type { Element } from "@office-open/xml";
 
 import { parseNumberStyles } from "./numbering";
+import type { OdsDataPilotFunctionOptions } from "./options";
 import { assertElementNames, unknownOdsElement } from "./workbook";
 
 const CONTENT_PATH = "/office:document-content/office:body/office:spreadsheet";
@@ -750,7 +751,13 @@ export function databaseRangesXml(worksheets: WorksheetOptions[]): string {
   );
 }
 
-export function dataPilotTablesXml(worksheets: WorksheetOptions[]): string {
+export function dataPilotTablesXml(
+  worksheets: WorksheetOptions[],
+  functions: OdsDataPilotFunctionOptions[] = [],
+): string {
+  const overrides = new Map(
+    functions.map((item) => [`${item.tableName ?? ""}\0${item.field}`, item.summaryFunction]),
+  );
   const tables = worksheets.flatMap((worksheet) =>
     (worksheet.pivotTables ?? [])
       .filter((pivot) => pivot.mode === "source")
@@ -798,7 +805,8 @@ export function dataPilotTablesXml(worksheets: WorksheetOptions[]): string {
             xmlElement("table:data-pilot-field", {
               "table:source-field-name": field.field,
               "table:orientation": "data",
-              "table:function": field.summarize ?? "auto",
+              "table:function":
+                overrides.get(`${pivot.name ?? ""}\0${field.field}`) ?? field.summarize ?? "auto",
             }),
           ),
         ],
@@ -1179,9 +1187,10 @@ function iconSetRule(element: Element): ConditionalFormatRule {
 export function parseDataPilotTables(
   body: Element | undefined,
   worksheets: WorksheetOptions[],
-): void {
+): OdsDataPilotFunctionOptions[] {
   const container = childNamed(body, "table:data-pilot-tables");
-  if (!container) return;
+  if (!container) return [];
+  const functions: OdsDataPilotFunctionOptions[] = [];
   for (const table of childrenNamed(container, "table:data-pilot-table")) {
     assertElementNames(
       table,
@@ -1232,13 +1241,14 @@ export function parseDataPilotTables(
           functionValue === undefined || functionValue === "auto"
             ? undefined
             : ODF_PIVOT_FUNCTIONS[functionValue as keyof typeof ODF_PIVOT_FUNCTIONS];
-        if (functionValue !== undefined && functionValue !== "auto" && !summarize)
-          throw unknownOdsElement(
-            field,
-            `${CONTENT_PATH}/table:data-pilot-table/table:data-pilot-field`,
-            "table:function",
-            "unsupported pivot summary function",
-          );
+        if (functionValue !== undefined && functionValue !== "auto" && !summarize) {
+          const tableName = attributeString(table, "table:name");
+          functions.push({
+            field: name,
+            summaryFunction: functionValue,
+            ...(tableName ? { tableName } : {}),
+          });
+        }
         data.push({
           field: name,
           summarize,
@@ -1259,4 +1269,5 @@ export function parseDataPilotTables(
       },
     ];
   }
+  return functions;
 }

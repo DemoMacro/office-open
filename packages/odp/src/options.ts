@@ -12,6 +12,7 @@ export interface OdpPresentationOptions extends PresentationOptions, PackageOpti
 
 /** PPTX slide model plus fully typed ODF-only nodes in source order. */
 export interface OdpSlideOptions extends SlideOptions {
+  animations?: SlideOptions["animations"];
   odpNodes?: OdpSlideNodeOptions[];
 }
 

@@ -5,6 +5,7 @@ import {
   attributeString,
   childNamed,
   childrenNamed,
+  escapeText,
   emuToLength,
   lengthToEmu,
   odfLengthToEmu,
@@ -22,7 +23,7 @@ import type { OdpChart } from "./drawing";
 import { chartFrameXml } from "./drawing";
 import { OdpParseError } from "./error";
 import { parseSlideTable, slideTableXml } from "./slide";
-import { parseParagraph, textBodyXml } from "./text-run";
+import { parseParagraph, textBodyXml, type OdpMeasureTextSegmentKind } from "./text-run";
 
 type Length = number | `${number}${"mm" | "cm" | "in" | "pt" | "pc" | "pi" | "px"}`;
 type Distance = Length | `${number}%`;
@@ -148,11 +149,18 @@ export interface OdpMeasureOptions extends OdpSlideNodeBaseOptions {
   y2: Length;
   title?: string;
   description?: string;
-  listeners?: FormEventListenerOptions[];
+  listeners?: OdpEventListenerOptions[];
   gluePoints?: OdpGluePointOptions[];
   measureAlign?: "left" | "right" | "automatic";
   measureVerticalAlign?: "automatic" | "above" | "below";
   text?: TextBodyOptions;
+  sourceText?: OdpMeasureTextParagraphOptions[];
+}
+
+/** Source-preserving segment list for a measurement paragraph. */
+export interface OdpMeasureTextParagraphOptions {
+  segments: { kind: OdpMeasureTextSegmentKind; text?: string }[];
+  styleName?: string;
 }
 
 /** Complete draw:page-thumbnail projection. */
@@ -167,10 +175,23 @@ export interface OdpPageThumbnailOptions extends OdpSlideNodeBaseOptions {
 }
 
 export interface OdpDataReferenceOptions {
-  href: string;
+  href?: string;
   show?: "embed";
   actuate?: "onLoad";
 }
+
+/** presentation:event-listener action attached to an ODP frame or scene. */
+export interface OdpPresentationEventListenerOptions {
+  eventName: string;
+  action: "none" | "previous-page" | "next-page" | "first-page" | "last-page" | "show" | "execute";
+  href?: string;
+  show?: "embed" | "replace" | "new";
+  actuate?: "onLoad" | "onRequest";
+}
+
+export type OdpEventListenerOptions =
+  | FormEventListenerOptions
+  | OdpPresentationEventListenerOptions;
 
 export interface OdpParameterOptions {
   name?: string;
@@ -195,21 +216,29 @@ export interface OdpFloatingFrameOptions {
 
 export interface OdpImageReferenceOptions {
   xmlId?: string;
-  data: OdpDataReferenceOptions;
+  data?: OdpDataReferenceOptions;
   filterName?: string;
   mimeType?: string;
+  /** Producer extension MIME attribute preserved separately from draw:mime-type. */
+  loextMimeType?: string;
+  /** draw:image text fallback; usually empty in producer output. */
+  fallbackText?: string;
 }
 
 export interface OdpObjectReferenceOptions {
   xmlId?: string;
   data: OdpDataReferenceOptions;
   notifyOnUpdateOfRanges?: string;
+  fallbackText?: string;
+  fallbackExtension?: boolean;
 }
 
 export interface OdpObjectOleOptions {
   xmlId?: string;
   classId?: string;
   data: OdpDataReferenceOptions;
+  fallbackText?: string;
+  fallbackExtension?: boolean;
 }
 
 export interface OdpPluginOptions {
@@ -253,9 +282,17 @@ export interface OdpFrameOptions extends OdpSlideNodeBaseOptions {
   copyOf?: string;
   title?: string;
   description?: string;
-  listeners?: FormEventListenerOptions[];
+  listeners?: OdpEventListenerOptions[];
+  /** Producer fallback paragraphs carried directly under a draw:frame. */
+  fallbackParagraphs?: readonly OdpFrameFallbackParagraphOptions[];
   gluePoints?: OdpGluePointOptions[];
   contents: OdpFrameContentOptions[];
+}
+
+export interface OdpFrameFallbackParagraphOptions {
+  extension?: boolean;
+  styleName?: string;
+  text?: string;
 }
 
 export type OdpSlideChild =
@@ -283,7 +320,12 @@ const APPLET_ATTRIBUTES = ["draw:archive", "draw:code", "draw:may-script", "draw
 const DATA_ATTRIBUTES = ["xlink:actuate", "xlink:href", "xlink:show", "xlink:type"];
 const FLOATING_FRAME_ATTRIBUTES = ["draw:frame-name", "xml:id"];
 const GLUE_POINT_ATTRIBUTES = ["draw:align", "draw:escape-direction", "draw:id", "svg:x", "svg:y"];
-const IMAGE_ATTRIBUTES = ["draw:filter-name", "draw:mime-type", "xml:id"];
+const PRESENTATION_IMAGE_ATTRIBUTES = [
+  "draw:filter-name",
+  "draw:mime-type",
+  "loext:mime-type",
+  "xml:id",
+];
 const OBJECT_ATTRIBUTES = ["draw:notify-on-update-of-ranges", "xml:id"];
 const PARAMETER_ATTRIBUTES = ["draw:name", "draw:value"];
 const PLUGIN_ATTRIBUTES = ["draw:mime-type", "xml:id"];
@@ -319,10 +361,12 @@ export function parseFrameNode(
       "draw:object-ole",
       "draw:plugin",
       "draw:text-box",
+      "loext:p",
       "office:event-listeners",
       "svg:desc",
       "svg:title",
       "table:table",
+      "text:p",
     ],
     path,
   );
@@ -340,6 +384,7 @@ export function parseFrameNode(
         ? {}
         : { copyOf: attributeString(element, "draw:copy-of") }),
       ...parseTitleDescription(element),
+      ...parseFrameFallbackParagraphs(element),
       ...(childNamed(element, "office:event-listeners") === undefined
         ? {}
         : { listeners: parseListeners(childNamed(element, "office:event-listeners")!) }),
@@ -371,6 +416,20 @@ export function parseFrameNode(
         }),
     },
   };
+}
+
+function parseFrameFallbackParagraphs(
+  element: Element,
+): Pick<OdpFrameOptions, "fallbackParagraphs"> {
+  const paragraphs = (element.elements ?? [])
+    .filter((child): child is Element => child.type === "element")
+    .filter((child) => child.name === "text:p" || child.name === "loext:p")
+    .map((child) => ({
+      extension: child.name === "loext:p" || undefined,
+      styleName: attributeString(child, "text:style-name"),
+      text: textOf(child),
+    }));
+  return paragraphs.length === 0 ? {} : { fallbackParagraphs: paragraphs };
 }
 
 export function parseMeasureNode(element: Element): { measure: OdpMeasureOptions } {
@@ -406,8 +465,29 @@ export function parseMeasureNode(element: Element): { measure: OdpMeasureOptions
               ),
             },
           }),
+      ...measureSourceText(element),
     },
   };
+}
+
+function measureSourceText(element: Element): Pick<OdpMeasureOptions, "sourceText"> | undefined {
+  const paragraphs = childrenNamed(element, "text:p")
+    .filter((paragraph) =>
+      (paragraph.elements ?? []).some((child) => child.name === "text:measure"),
+    )
+    .map((paragraph) => ({
+      styleName: attributeString(paragraph, "text:style-name"),
+      segments: (paragraph.elements ?? [])
+        .filter(
+          (child): child is Element => child.type === "element" && child.name === "text:measure",
+        )
+        .map((segment) => ({
+          kind: attributeString(segment, "text:kind") as OdpMeasureTextSegmentKind,
+          ...(attributeString(segment, "text:kind") === "value" ? { text: textOf(segment) } : {}),
+        })),
+    }));
+  if (paragraphs.length === 0) return undefined;
+  return { sourceText: paragraphs };
 }
 
 export function parsePageThumbnailNode(element: Element): {
@@ -560,6 +640,7 @@ function frameXml(options: OdpFrameOptions, styles: string[], charts: OdpChart[]
       "draw:copy-of": options.copyOf,
     },
     [
+      ...(options.fallbackParagraphs ?? []).map(fallbackParagraphXml),
       ...contents,
       ...(options.listeners === undefined ? [] : [listenersXml(options.listeners)]),
       ...(options.gluePoints ?? []).map(gluePointXml),
@@ -572,30 +653,55 @@ function frameXml(options: OdpFrameOptions, styles: string[], charts: OdpChart[]
 }
 
 function imageXml(options: OdpImageReferenceOptions): string {
-  return xmlElement("draw:image", {
-    "draw:filter-name": options.filterName,
-    "draw:mime-type": options.mimeType,
-    ...dataAttributes(options.data),
-    "xml:id": options.xmlId,
-  });
+  return xmlElement(
+    "draw:image",
+    {
+      "draw:filter-name": options.filterName,
+      "draw:mime-type": options.mimeType,
+      "loext:mime-type": options.loextMimeType,
+      ...dataAttributes(options.data),
+      "xml:id": options.xmlId,
+    },
+    options.fallbackText === undefined
+      ? []
+      : [xmlElement("text:p", undefined, [escapeText(options.fallbackText)])],
+  );
 }
 
 function objectXml(options: OdpObjectReferenceOptions): string {
-  return xmlElement("draw:object", {
-    ...(options.notifyOnUpdateOfRanges === undefined
-      ? {}
-      : { "draw:notify-on-update-of-ranges": options.notifyOnUpdateOfRanges }),
-    ...dataAttributes(options.data),
-    "xml:id": options.xmlId,
-  });
+  return xmlElement(
+    "draw:object",
+    {
+      ...(options.notifyOnUpdateOfRanges === undefined
+        ? {}
+        : { "draw:notify-on-update-of-ranges": options.notifyOnUpdateOfRanges }),
+      ...dataAttributes(options.data),
+      "xml:id": options.xmlId,
+    },
+    fallbackParagraphChildren(options.fallbackText, options.fallbackExtension),
+  );
 }
 
 function objectOleXml(options: OdpObjectOleOptions): string {
-  return xmlElement("draw:object-ole", {
-    "draw:class-id": options.classId,
-    ...dataAttributes(options.data),
-    "xml:id": options.xmlId,
-  });
+  return xmlElement(
+    "draw:object-ole",
+    {
+      "draw:class-id": options.classId,
+      ...dataAttributes(options.data),
+      "xml:id": options.xmlId,
+    },
+    fallbackParagraphChildren(options.fallbackText, options.fallbackExtension),
+  );
+}
+
+function fallbackParagraphChildren(
+  text: string | undefined,
+  extension: boolean | undefined,
+): string[] {
+  if (text === undefined) return [];
+  return [
+    xmlElement(extension ? "loext:p" : "text:p", undefined, text === "" ? [] : [escapeText(text)]),
+  ];
 }
 
 function measureXml(options: OdpMeasureOptions, styles: string[]): string {
@@ -615,8 +721,26 @@ function measureXml(options: OdpMeasureOptions, styles: string[]): string {
       ...(options.description === undefined
         ? []
         : [xmlElement("svg:desc", undefined, [options.description])]),
-      ...textBodyXml(options.text, styles),
+      ...(options.sourceText
+        ? measureSourceTextXml(options.sourceText)
+        : textBodyXml(options.text, styles)),
     ],
+  );
+}
+
+function measureSourceTextXml(paragraphs: OdpMeasureTextParagraphOptions[]): string[] {
+  return paragraphs.map((paragraph) =>
+    xmlElement(
+      "text:p",
+      { "text:style-name": paragraph.styleName },
+      paragraph.segments.map((segment) =>
+        xmlElement(
+          "text:measure",
+          { "text:kind": segment.kind },
+          segment.text === undefined ? [] : [escapeText(segment.text)],
+        ),
+      ),
+    ),
   );
 }
 
@@ -839,6 +963,14 @@ function parameterXml(options: OdpParameterOptions): string {
   });
 }
 
+function fallbackParagraphXml(paragraph: OdpFrameFallbackParagraphOptions): string {
+  return xmlElement(
+    paragraph.extension ? "loext:p" : "text:p",
+    { "text:style-name": paragraph.styleName },
+    paragraph.text === undefined || paragraph.text === "" ? [] : [escapeText(paragraph.text)],
+  );
+}
+
 function gluePointXml(options: OdpGluePointOptions): string {
   return xmlElement("draw:glue-point", {
     "draw:id": options.id,
@@ -849,24 +981,33 @@ function gluePointXml(options: OdpGluePointOptions): string {
   });
 }
 
-function listenersXml(events: FormEventListenerOptions[]): string {
+function listenersXml(events: OdpEventListenerOptions[]): string {
   return xmlElement(
     "office:event-listeners",
     undefined,
     events.map((event) =>
-      event.target === "macro"
-        ? xmlElement("script:event-listener", {
+      "action" in event
+        ? xmlElement("presentation:event-listener", {
             "script:event-name": event.eventName,
-            "script:language": event.language,
-            "script:macro-name": event.macroName,
-          })
-        : xmlElement("script:event-listener", {
-            "script:event-name": event.eventName,
-            "script:language": event.language,
-            "xlink:type": "simple",
+            "presentation:action": event.action,
+            "xlink:type": event.href === undefined ? undefined : "simple",
             "xlink:href": event.href,
-            "xlink:actuate": event.actuate ?? "onRequest",
-          }),
+            "xlink:show": event.show,
+            "xlink:actuate": event.actuate,
+          })
+        : event.target === "macro"
+          ? xmlElement("script:event-listener", {
+              "script:event-name": event.eventName,
+              "script:language": event.language,
+              "script:macro-name": event.macroName,
+            })
+          : xmlElement("script:event-listener", {
+              "script:event-name": event.eventName,
+              "script:language": event.language,
+              "xlink:type": "simple",
+              "xlink:href": event.href,
+              "xlink:actuate": event.actuate ?? "onRequest",
+            }),
     ),
   );
 }
@@ -1177,8 +1318,9 @@ function parseFloatingFrame(element: Element): OdpFloatingFrameOptions {
 
 function parseImageReference(element: Element): OdpImageReferenceOptions {
   const path = "/draw:frame/draw:image";
-  assertKnown(element, [...IMAGE_ATTRIBUTES, ...DATA_ATTRIBUTES], path);
-  assertKnownChildren(element, [], path);
+  assertKnown(element, [...PRESENTATION_IMAGE_ATTRIBUTES, ...DATA_ATTRIBUTES], path);
+  assertKnownChildren(element, ["text:p"], path);
+  const fallback = childNamed(element, "text:p");
   return {
     ...(attributeString(element, "xml:id") === undefined
       ? {}
@@ -1189,14 +1331,20 @@ function parseImageReference(element: Element): OdpImageReferenceOptions {
     ...(attributeString(element, "draw:mime-type") === undefined
       ? {}
       : { mimeType: attributeString(element, "draw:mime-type") }),
-    ...parseRequiredData(element, path),
+    ...(attributeString(element, "loext:mime-type") === undefined
+      ? {}
+      : { loextMimeType: attributeString(element, "loext:mime-type") }),
+    ...(fallback === undefined ? {} : { fallbackText: textOf(fallback) }),
+    ...(fallback?.name === "loext:p" ? { fallbackExtension: true } : {}),
+    ...parseOptionalData(element, path),
   };
 }
 
 function parseObjectReference(element: Element): OdpObjectReferenceOptions {
   const path = "/draw:frame/draw:object";
   assertKnown(element, [...OBJECT_ATTRIBUTES, ...DATA_ATTRIBUTES], path);
-  assertKnownChildren(element, [], path);
+  assertKnownChildren(element, ["loext:p", "text:p"], path);
+  const fallback = childNamed(element, "loext:p") ?? childNamed(element, "text:p");
   return {
     ...(attributeString(element, "xml:id") === undefined
       ? {}
@@ -1206,6 +1354,8 @@ function parseObjectReference(element: Element): OdpObjectReferenceOptions {
       : {
           notifyOnUpdateOfRanges: attributeString(element, "draw:notify-on-update-of-ranges"),
         }),
+    ...(fallback === undefined ? {} : { fallbackText: textOf(fallback) }),
+    ...(fallback?.name === "loext:p" ? { fallbackExtension: true } : {}),
     ...parseRequiredData(element, path),
   };
 }
@@ -1213,7 +1363,8 @@ function parseObjectReference(element: Element): OdpObjectReferenceOptions {
 function parseObjectOle(element: Element): OdpObjectOleOptions {
   const path = "/draw:frame/draw:object-ole";
   assertKnown(element, ["draw:class-id", "xml:id", ...DATA_ATTRIBUTES], path);
-  assertKnownChildren(element, [], path);
+  assertKnownChildren(element, ["loext:p", "text:p"], path);
+  const fallback = childNamed(element, "loext:p") ?? childNamed(element, "text:p");
   return {
     ...(attributeString(element, "xml:id") === undefined
       ? {}
@@ -1221,6 +1372,7 @@ function parseObjectOle(element: Element): OdpObjectOleOptions {
     ...(attributeString(element, "draw:class-id") === undefined
       ? {}
       : { classId: attributeString(element, "draw:class-id") }),
+    ...(fallback === undefined ? {} : { fallbackText: textOf(fallback) }),
     ...parseRequiredData(element, path),
   };
 }
@@ -1306,11 +1458,16 @@ function parseParameter(element: Element): OdpParameterOptions {
   };
 }
 
-function parseListeners(element: Element): FormEventListenerOptions[] {
-  assertKnownChildren(element, ["script:event-listener"], "/office:event-listeners");
+function parseListeners(element: Element): OdpEventListenerOptions[] {
+  assertKnownChildren(
+    element,
+    ["script:event-listener", "presentation:event-listener"],
+    "/office:event-listeners",
+  );
   return (element.elements ?? [])
     .filter((child) => child.type === "element")
     .map((child) => {
+      if (child.name === "presentation:event-listener") return parsePresentationListener(child);
       assertKnown(
         child,
         [
@@ -1573,6 +1730,40 @@ function requiredAttributeError(path: string, name: string): OdpParseError {
     name,
     "missing-required-attribute",
   );
+}
+
+function parsePresentationListener(element: Element): OdpPresentationEventListenerOptions {
+  const path = "/office:event-listeners/presentation:event-listener";
+  assertKnown(
+    element,
+    [
+      "script:event-name",
+      "presentation:action",
+      "xlink:type",
+      "xlink:href",
+      "xlink:show",
+      "xlink:actuate",
+    ],
+    path,
+  );
+  const eventName = attributeString(element, "script:event-name");
+  const actionValue = attributeString(element, "presentation:action");
+  if (!eventName || !actionValue) throw requiredAttributeError(path, "event action");
+  const href = attributeString(element, "xlink:href");
+  const show = attributeString(element, "xlink:show");
+  const actuate = attributeString(element, "xlink:actuate");
+  return {
+    eventName,
+    action: parseEnum(
+      element,
+      "presentation:action",
+      ["none", "previous-page", "next-page", "first-page", "last-page", "show", "execute"],
+      path,
+    ) as OdpPresentationEventListenerOptions["action"],
+    ...(href === undefined ? {} : { href }),
+    ...(show === undefined ? {} : { show: show as "embed" | "replace" | "new" }),
+    ...(actuate === undefined ? {} : { actuate: actuate as "onLoad" | "onRequest" }),
+  };
 }
 
 const GLUE_ALIGNMENTS = [

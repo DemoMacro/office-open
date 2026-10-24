@@ -3,8 +3,10 @@ import { encodeBase64, toUint8Array } from "@office-open/core";
 import type { Element } from "@office-open/xml";
 
 import type { OcfManifestOptions } from "./container/manifest";
+import { OdfSchemaError } from "./errors";
 import {
   attributeString,
+  childrenNamed,
   emuToLength,
   escapeText,
   lengthToEmu,
@@ -44,6 +46,7 @@ const PARAGRAPH_STYLE_ATTRIBUTES = [
   "fo:border-left",
   "fo:border-right",
   "fo:border-top",
+  "fo:border-top",
   "fo:break-after",
   "fo:break-before",
   "fo:hyphenation-keep",
@@ -65,7 +68,15 @@ const PARAGRAPH_STYLE_ATTRIBUTES = [
   "fo:text-align",
   "fo:text-align-last",
   "fo:text-indent",
+  "loext:hyphenation-keep-type",
+  "loext:writing-mode",
   "fo:widows",
+  "css3t:text-justify",
+  "gnm:GnmHAlign",
+  "loext:contextual-spacing",
+  "loext:paragraph-composer",
+  "loext:tab-stop-distance",
+  "loext:compound-based",
   "style:auto-text-indent",
   "style:background-transparency",
   "style:border-line-width",
@@ -90,6 +101,9 @@ const PARAGRAPH_STYLE_ATTRIBUTES = [
   "style:vertical-align",
   "style:writing-mode",
   "style:writing-mode-automatic",
+  "officeooo:paragraph-rsid",
+  "officeooo:rsid",
+  "text:enable-numbering",
   "text:line-number",
   "text:number-lines",
 ] as const;
@@ -111,6 +125,37 @@ const TEXT_STYLE_ATTRIBUTES = [
   "fo:script",
   "fo:text-shadow",
   "fo:text-transform",
+  "fo:padding-left",
+  "fo:padding",
+  "fo:padding-right",
+  "fo:border-bottom",
+  "fo:border-left",
+  "fo:border-right",
+  "fo:border",
+  "fo:border-top",
+  "fo:padding-bottom",
+  "fo:padding-top",
+  "loext:shadow",
+  "loext:padding-left",
+  "loext:writing-mode",
+  "loext:border",
+  "loext:border-bottom",
+  "loext:border-left",
+  "loext:border-right",
+  "loext:border-top",
+  "loext:padding-bottom",
+  "loext:padding-top",
+  "loext:color-lum-mod",
+  "loext:hyphenation-no-caps",
+  "loext:hyphenation-no-last-word",
+  "loext:hyphenation-word-char-count",
+  "loext:hyphenation-zone",
+  "loext:opacity",
+  "loext:color-lum-off",
+  "loext:padding",
+  "loext:padding-right",
+  "loext:std-weight",
+  "paragraph-rsid",
   "style:country-asian",
   "style:country-complex",
   "style:font-charset",
@@ -176,12 +221,26 @@ const TEXT_STYLE_ATTRIBUTES = [
   "style:text-underline-style",
   "style:text-underline-type",
   "style:text-underline-width",
+  "style:shadow",
+  "style:border-line-width",
+  "style:border-line-width-bottom",
+  "style:border-line-width-left",
+  "style:border-line-width-right",
+  "style:border-line-width-top",
   "style:use-window-font-color",
+  "loext:char-shading-value",
+  "loext:glow-text-color",
+  "loext:glow-text-radius",
+  "loext:glow-text-transparency",
+  "officeooo:rsid",
+  "officeooo:paragraph-rsid",
+  "rsid",
   "text:condition",
   "text:display",
 ] as const;
 
 const GRAPHIC_STYLE_ATTRIBUTES = [
+  "layoutStatus",
   "dr3d:ambient-color",
   "dr3d:back-scale",
   "dr3d:backface-culling",
@@ -243,6 +302,16 @@ const GRAPHIC_STYLE_ATTRIBUTES = [
   "draw:frame-margin-horizontal",
   "draw:frame-margin-vertical",
   "draw:gamma",
+  "loext:decorative",
+  "loext:allow-overlap",
+  "loext:fill-use-slide-background",
+  "loext:rel-width-rel",
+  "loext:rel-height-rel",
+  "loext:shadow",
+  "loext:writing-mode",
+  "loext:shadow-blur",
+  "loext:vertical-rel",
+  "loext:writing-mode",
   "draw:gradient-step-count",
   "draw:green",
   "draw:guide-distance",
@@ -304,6 +373,7 @@ const GRAPHIC_STYLE_ATTRIBUTES = [
   "fo:max-width",
   "fo:min-height",
   "fo:min-width",
+  "fo:text-align",
   "fo:padding",
   "fo:padding-bottom",
   "fo:padding-left",
@@ -315,6 +385,7 @@ const GRAPHIC_STYLE_ATTRIBUTES = [
   "style:border-line-width-bottom",
   "style:border-line-width-left",
   "style:border-line-width-right",
+  "style:border-line-width-top",
   "style:border-line-width-top",
   "style:editable",
   "style:flow-with-text",
@@ -338,6 +409,10 @@ const GRAPHIC_STYLE_ATTRIBUTES = [
   "style:wrap-contour-mode",
   "style:wrap-dynamic-threshold",
   "style:writing-mode",
+  "loext:glow-radius",
+  "loext:glow-color",
+  "loext:glow-transparency",
+  "loext:glow-text-radius",
   "svg:fill-rule",
   "svg:height",
   "svg:stroke-color",
@@ -360,6 +435,7 @@ const GRAPHIC_STYLE_ATTRIBUTES = [
 
 const TABLE_STYLE_ATTRIBUTES = [
   "fo:background-color",
+  "fo:text-align",
   "fo:break-after",
   "fo:break-before",
   "fo:keep-with-next",
@@ -372,8 +448,10 @@ const TABLE_STYLE_ATTRIBUTES = [
   "style:page-number",
   "style:rel-width",
   "style:shadow",
+  "style:vertical-align",
   "style:width",
   "style:writing-mode",
+  "tableooo:tab-color",
   "table:align",
   "table:border-model",
   "table:display",
@@ -391,6 +469,7 @@ const TABLE_ROW_STYLE_ATTRIBUTES = [
   "fo:break-after",
   "fo:break-before",
   "fo:keep-together",
+  "style:keep-together",
   "style:min-row-height",
   "style:row-height",
   "style:use-optimal-row-height",
@@ -408,6 +487,8 @@ const TABLE_CELL_STYLE_ATTRIBUTES = [
   "fo:padding-right",
   "fo:padding-top",
   "fo:wrap-option",
+  "loext:vertical-justify",
+  "proName",
   "style:border-line-width",
   "style:border-line-width-bottom",
   "style:border-line-width-left",
@@ -428,6 +509,10 @@ const TABLE_CELL_STYLE_ATTRIBUTES = [
   "style:shadow",
   "style:shrink-to-fit",
   "style:text-align-source",
+  "fo:text-align",
+  "style:width",
+  "loext:writing-mode",
+  "style:vertical-justify",
   "style:vertical-align",
   "style:writing-mode",
 ] as const;
@@ -557,7 +642,11 @@ const DRAWING_PAGE_STYLE_ATTRIBUTES = [
   "style:repeat",
   "svg:fill-rule",
 ] as const;
-const RUBY_STYLE_ATTRIBUTES = ["style:ruby-align", "style:ruby-position"] as const;
+const RUBY_STYLE_ATTRIBUTES = [
+  "loext:ruby-position",
+  "style:ruby-align",
+  "style:ruby-position",
+] as const;
 
 const BOOLEAN_STYLE_ATTRIBUTES = [
   "dr3d:close-back",
@@ -578,6 +667,15 @@ const BOOLEAN_STYLE_ATTRIBUTES = [
   "draw:parallel",
   "draw:show-unit",
   "fo:hyphenate",
+  "loext:decorative",
+  "loext:allow-overlap",
+  "loext:contextual-spacing",
+  "loext:fill-use-slide-background",
+  "loext:hyphenation-no-caps",
+  "loext:paragraph-composer",
+  "loext:show-horizontal-border",
+  "loext:show-vertical-border",
+  "loext:try-staggering-first",
   "presentation:background-objects-visible",
   "presentation:background-visible",
   "presentation:display-date-time",
@@ -602,7 +700,7 @@ const BOOLEAN_STYLE_ATTRIBUTES = [
   "style:may-break-between-rows",
   "style:num-letter-sync",
   "style:print-content",
-  "style:protect",
+  "style:keep-together",
   "style:register-true",
   "style:repeat-content",
   "style:shrink-to-fit",
@@ -615,12 +713,29 @@ const BOOLEAN_STYLE_ATTRIBUTES = [
   "style:wrap-contour",
   "style:writing-mode-automatic",
   "table:display",
+  "text:enable-numbering",
   "text:animation-start-inside",
   "text:animation-stop-inside",
   "text:dont-balance-text-columns",
   "text:line-break",
   "text:number-lines",
 ] as const;
+
+const COMPLEX_COLOR_ELEMENT_NAMES = [
+  "loext:background-complex-color",
+  "loext:char-complex-color",
+  "loext:fill-complex-color",
+  "loext:stroke-complex-color",
+] as const;
+
+const COMPLEX_COLOR_ATTRIBUTES = [
+  "loext:color-type",
+  "loext:rgb-color",
+  "loext:system-color",
+  "loext:theme-type",
+] as const;
+
+const HYPERLINK_ATTRIBUTES = ["xlink:actuate", "xlink:href", "xlink:show", "xlink:type"] as const;
 
 const INTEGER_STYLE_ATTRIBUTES = [
   "draw:decimal-places",
@@ -629,6 +744,8 @@ const INTEGER_STYLE_ATTRIBUTES = [
   "dr3d:horizontal-segments",
   "dr3d:vertical-segments",
   "fo:hyphenation-ladder-count",
+  "loext:hyphenation-word-char-count",
+  "loext:hyphenation-zone",
   "fo:hyphenation-push-char-count",
   "fo:hyphenation-remain-char-count",
   "fo:orphans",
@@ -637,6 +754,8 @@ const INTEGER_STYLE_ATTRIBUTES = [
   "style:first-page-number",
   "style:layout-grid-lines",
   "style:number-wrapped-paragraphs",
+  "officeooo:paragraph-rsid",
+  "officeooo:rsid",
   "style:page-number",
   "style:scale-to-X",
   "style:scale-to-Y",
@@ -680,7 +799,21 @@ export type ChartPropertiesParseResult =
 export interface ChartStylePropertiesOptions {
   name: "style:chart-properties";
   attributes: Partial<Record<(typeof CHART_PROPERTIES_ATTRIBUTES)[number], StylePropertyValue>>;
+  labelSeparator?: ChartLabelSeparatorOptions;
   symbolImage?: ChartSymbolImageOptions;
+}
+
+export interface ChartLabelSeparatorPartOptions {
+  kind: "text" | "line-break";
+  text?: string;
+}
+
+export interface ChartLabelSeparatorParagraphOptions {
+  parts: readonly ChartLabelSeparatorPartOptions[];
+}
+
+export interface ChartLabelSeparatorOptions {
+  paragraphs: readonly ChartLabelSeparatorParagraphOptions[];
 }
 
 export interface ChartSymbolImageOptions {
@@ -779,7 +912,40 @@ export interface StyleNotesConfigurationOptions {
   continuationBackward?: string;
 }
 
+/** LibreOffice complex color projection for ODF style properties. */
+export interface StyleComplexColorTransformationOptions {
+  type: string;
+  value: number;
+}
+
+export interface StyleComplexColorOptions {
+  name:
+    | "loext:background-complex-color"
+    | "loext:char-complex-color"
+    | "loext:fill-complex-color"
+    | "loext:stroke-complex-color";
+  colorType?: string;
+  themeType?: string;
+  rgbColor?: string;
+  systemColor?: string;
+  transformations?: readonly StyleComplexColorTransformationOptions[];
+}
+
+export interface StyleHyperlinkOptions {
+  name: "style:hyperlink";
+  attributes: Partial<Record<"xlink:actuate" | "xlink:href" | "xlink:show" | "xlink:type", string>>;
+}
+
+/** LibreOffice theme-color reference attached to text properties. */
+export interface StyleColorThemeReferenceOptions {
+  name: "loext:char-color-theme-reference";
+  type: string;
+}
+
 export type StylePropertyChildOptions =
+  | StyleColorThemeReferenceOptions
+  | StyleComplexColorOptions
+  | StyleHyperlinkOptions
   | StyleBackgroundImageOptions
   | StyleColumnsOptions
   | StyleDropCapOptions
@@ -977,6 +1143,21 @@ const CHART_PROPERTIES_ATTRIBUTES = [
   "chart:regression-period",
   "chart:regression-type",
   "chart:reverse-direction",
+  "loext:external-data",
+  "loext:regression-intercept-value",
+  "loext:show-keys",
+  "loext:regression-force-intercept",
+  "loext:show-outline",
+  "loext:major-origin",
+  "loext:regression-extrapolate-backward",
+  "loext:regression-name",
+  "loext:regression-period",
+  "loext:regression-extrapolate-forward",
+  "loext:regression-max-degree",
+  "loext:show-horizontal-border",
+  "loext:show-vertical-border",
+  "loext:std-weight",
+  "loext:try-staggering-first",
   "chart:right-angled-axes",
   "chart:scale-text",
   "chart:series-source",
@@ -1284,13 +1465,35 @@ const STYLE_PROPERTY_CHILDREN: Partial<
   Record<keyof typeof STYLE_PROPERTY_ATTRIBUTES, readonly string[]>
 > = {
   "style:paragraph-properties": ["style:background-image", "style:drop-cap", "style:tab-stops"],
-  "style:text-properties": [],
-  "style:graphic-properties": ["style:background-image", "style:columns", "text:list-style"],
-  "loext:graphic-properties": ["style:background-image", "style:columns", "text:list-style"],
+  "style:text-properties": [
+    "loext:char-color-theme-reference",
+    "loext:char-complex-color",
+    "style:hyperlink",
+  ],
+  "style:graphic-properties": [
+    "loext:fill-complex-color",
+    "loext:stroke-complex-color",
+    "style:background-image",
+    "style:columns",
+    "style:hyperlink",
+    "text:list-style",
+  ],
+  "loext:graphic-properties": [
+    "loext:fill-complex-color",
+    "loext:stroke-complex-color",
+    "style:background-image",
+    "style:columns",
+    "style:hyperlink",
+    "text:list-style",
+  ],
   "style:table-properties": ["style:background-image"],
   "style:table-column-properties": [],
   "style:table-row-properties": ["style:background-image"],
-  "style:table-cell-properties": ["style:background-image"],
+  "style:table-cell-properties": [
+    "loext:background-complex-color",
+    "style:background-image",
+    "style:hyperlink",
+  ],
   "style:section-properties": [
     "style:background-image",
     "style:columns",
@@ -1422,9 +1625,14 @@ export function parseChartStyleProperties(
   if (!element) return { ok: true, value: { name: "style:chart-properties", attributes: {} } };
   const parsed = parseAttributes(element, CHART_PROPERTIES_ATTRIBUTES, scale);
   if (!parsed.ok) return parsed;
+  let labelSeparator: ChartLabelSeparatorOptions | undefined;
   let symbolImage: ChartSymbolImageOptions | undefined;
   for (const child of element.elements ?? []) {
     if (child.type !== "element") continue;
+    if (child.name === "chart:label-separator") {
+      labelSeparator = parseChartLabelSeparator(child);
+      continue;
+    }
     if (child.name !== "chart:symbol-image")
       return { ok: false, elementName: child.name ?? "", reason: "child has no ODF RNG mapping" };
     if (symbolImage)
@@ -1442,9 +1650,39 @@ export function parseChartStyleProperties(
     value: {
       name: "style:chart-properties",
       attributes: parsed.value as ChartStylePropertiesOptions["attributes"],
+      ...(labelSeparator ? { labelSeparator } : {}),
       ...(symbolImage ? { symbolImage } : {}),
     },
   };
+}
+
+function parseChartLabelSeparator(element: Element): ChartLabelSeparatorOptions {
+  const paragraphs = (element.elements ?? [])
+    .filter((child): child is Element => child.type === "element" && child.name === "text:p")
+    .map((paragraph) => ({ parts: parseLabelSeparatorParts(paragraph) }));
+  if (
+    paragraphs.length !==
+    (element.elements ?? []).filter((child) => child.type === "element").length
+  )
+    throw new Error("chart:label-separator contains an unsupported child");
+  return { paragraphs };
+}
+
+function parseLabelSeparatorParts(element: Element): ChartLabelSeparatorPartOptions[] {
+  const parts: ChartLabelSeparatorPartOptions[] = [];
+  for (const child of element.elements ?? []) {
+    if (child.type === "text") {
+      const text = String(child.text ?? "");
+      if (text) parts.push({ kind: "text", text });
+      continue;
+    }
+    if (child.name === "text:line-break") {
+      parts.push({ kind: "line-break" });
+      continue;
+    }
+    parts.push(...parseLabelSeparatorParts(child));
+  }
+  return parts;
 }
 
 export function listLevelPropertiesXml(
@@ -1469,18 +1707,31 @@ export function chartPropertiesXml(
   properties: ChartStylePropertiesOptions,
   scale: StylePropertyScale,
 ): string {
-  return xmlElement(
-    properties.name,
-    childAttributesXml(properties.attributes, scale),
-    properties.symbolImage
+  return xmlElement(properties.name, childAttributesXml(properties.attributes, scale), [
+    ...(properties.labelSeparator ? [chartLabelSeparatorXml(properties.labelSeparator)] : []),
+    ...(properties.symbolImage
       ? [
           xmlElement(
             "chart:symbol-image",
             childAttributesXml(properties.symbolImage.attributes, scale),
           ),
         ]
-      : [],
+      : []),
+  ]);
+}
+
+function chartLabelSeparatorXml(separator: ChartLabelSeparatorOptions): string {
+  return xmlElement(
+    "chart:label-separator",
+    undefined,
+    separator.paragraphs.map((paragraph) =>
+      xmlElement("text:p", undefined, paragraph.parts.map(labelSeparatorPartXml)),
+    ),
   );
+}
+
+function labelSeparatorPartXml(part: ChartLabelSeparatorPartOptions): string {
+  return part.kind === "line-break" ? "<text:line-break/>" : escapeText(part.text ?? "");
 }
 
 export function stylePropertyXml(
@@ -1537,6 +1788,64 @@ function parseStyleChild(
 ): StylePropertyChildParseResult {
   const name = element.name ?? "";
   const scale = context.scale;
+  if (COMPLEX_COLOR_ELEMENT_NAMES.includes(name as never)) {
+    const parsed = parseAttributes(element, COMPLEX_COLOR_ATTRIBUTES, scale);
+    if (!parsed.ok) return parsed;
+    const transformations = childrenNamed(element, "loext:transformation").map((child) => ({
+      type: attributeString(child, "loext:type") ?? "",
+      value: Number(attributeString(child, "loext:value") ?? ""),
+    }));
+    if (element.elements?.some((child) => child.name !== "loext:transformation"))
+      return { ok: false, elementName: name, reason: "child has no ODF RNG mapping" };
+    if (transformations.some((item) => item.type === "" || !Number.isFinite(item.value)))
+      return { ok: false, elementName: name, reason: "invalid style property value" };
+    return {
+      ok: true,
+      value: {
+        name: name as StyleComplexColorOptions["name"],
+        ...(attributeString(element, "loext:color-type") === undefined
+          ? {}
+          : { colorType: attributeString(element, "loext:color-type") }),
+        ...(attributeString(element, "loext:theme-type") === undefined
+          ? {}
+          : { themeType: attributeString(element, "loext:theme-type") }),
+        ...(attributeString(element, "loext:rgb-color") === undefined
+          ? {}
+          : { rgbColor: attributeString(element, "loext:rgb-color") }),
+        ...(attributeString(element, "loext:system-color") === undefined
+          ? {}
+          : { systemColor: attributeString(element, "loext:system-color") }),
+        ...(transformations.length ? { transformations } : {}),
+      },
+    };
+  }
+  if (name === "style:hyperlink") {
+    const parsed = parseAttributes(element, HYPERLINK_ATTRIBUTES, scale);
+    if (!parsed.ok) return parsed;
+    return {
+      ok: true,
+      value: {
+        name,
+        attributes: parsed.value as StyleHyperlinkOptions["attributes"],
+      },
+    };
+  }
+  if (name === "loext:char-color-theme-reference") {
+    const allowed = ["loext:type"];
+    const unknown = Object.keys(element.attributes ?? {}).filter(
+      (attribute) => !allowed.includes(attribute),
+    );
+    if (unknown.length > 0)
+      return {
+        ok: false,
+        attributeName: unknown[0],
+        elementName: name,
+        reason: "attribute has no ODF RNG mapping",
+      };
+    const type = attributeString(element, "loext:type");
+    if (!type) return { ok: false, elementName: name, reason: "invalid style property value" };
+    return { ok: true, value: { name, type } };
+  }
   if (name === "style:background-image") {
     const parsed = parseAttributes(element, BACKGROUND_IMAGE_ATTRIBUTES, scale);
     if (!parsed.ok) return parsed;
@@ -1726,6 +2035,26 @@ function stylePropertyChildXml(
   child: StylePropertyChildOptions,
   scale: StylePropertyScale,
 ): string {
+  if (COMPLEX_COLOR_ELEMENT_NAMES.includes(child.name as never)) {
+    const color = child as StyleComplexColorOptions;
+    return xmlElement(
+      color.name,
+      {
+        "loext:color-type": color.colorType,
+        "loext:rgb-color": color.rgbColor,
+        "loext:system-color": color.systemColor,
+        "loext:theme-type": color.themeType,
+      },
+      (color.transformations ?? []).map((item) =>
+        xmlElement("loext:transformation", {
+          "loext:type": item.type,
+          "loext:value": item.value,
+        }),
+      ),
+    );
+  }
+  if (child.name === "loext:char-color-theme-reference")
+    return xmlElement(child.name, { "loext:type": child.type });
   if (child.name === "style:background-image") {
     return xmlElement(
       child.name,
@@ -1780,7 +2109,15 @@ function stylePropertyChildXml(
             ]),
           ]),
     ]);
-  return xmlElement(child.name, childAttributesXml(child.attributes, scale));
+  if ("attributes" in child)
+    return xmlElement(child.name, childAttributesXml(child.attributes, scale));
+  throw new OdfSchemaError(
+    `ODF style child cannot be represented: ${child.name}`,
+    "style-properties",
+    `/style-properties/${child.name}`,
+    child.name,
+    "unrepresentable-style-child",
+  );
 }
 
 function parseStyleChildValue(
@@ -1876,6 +2213,7 @@ function parseStyleAttributeValue(
   source: string,
   scale: StylePropertyScale,
 ): StylePropertyValue | undefined {
+  if (/^officeooo:(?:paragraph-)?rsid$/u.test(name)) return source;
   if (isBooleanStyleAttribute(name)) {
     if (source !== "true" && source !== "false") return undefined;
     return source === "true";
@@ -1897,6 +2235,15 @@ function parseStyleAttributeValue(
     return Number.isFinite(value) ? value : undefined;
   }
   if ((INTEGER_STYLE_ATTRIBUTES as readonly string[]).includes(name)) {
+    if (name === "style:page-number" && source === "auto") return source;
+    if (
+      (name === "fo:hyphenation-ladder-count" ||
+        name === "loext:hyphenation-word-char-count" ||
+        name === "loext:hyphenation-zone" ||
+        name === "style:number-wrapped-paragraphs") &&
+      source === "no-limit"
+    )
+      return source;
     const value = Number(source);
     return Number.isInteger(value) ? value : undefined;
   }

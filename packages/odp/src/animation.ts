@@ -22,6 +22,14 @@ const BEHAVIOR_BY_ELEMENT = new Map<string, AnimationBehavior>([
 ]);
 const BEHAVIOR_NAMES = new Set(BEHAVIOR_BY_ELEMENT.keys());
 
+/** ODP animation entry with typed compatibility for presentation-only tokens. */
+export interface OdpAnimationEntry extends AnimationEntry {
+  /** Preserves ODF `presentation:additive="base"` emitted by legacy producers. */
+  presentationAdditiveToken?: "base";
+  /** Preserves ODF transition directions outside the PPTX spatial-direction model. */
+  smilDirectionToken?: "forward" | "reverse";
+}
+
 const CONTAINER_ATTRIBUTES = [
   "presentation:group-id",
   "presentation:node-type",
@@ -171,7 +179,9 @@ function assignTiming(target: AnimationEntry, element: Element, allowed: readonl
         target.presetTextOnly = value === "true";
         break;
       case "presentation:additive":
-        target.presetAdditive = parseLiteral(element, name, value, ["replace", "add"] as const);
+        if (value === "base") (target as OdpAnimationEntry).presentationAdditiveToken = value;
+        else
+          target.presetAdditive = parseLiteral(element, name, value, ["replace", "add"] as const);
         break;
       case "presentation:master-element":
         target.masterElement = value;
@@ -390,12 +400,12 @@ function parseBehavior(element: Element): AnimationEntry {
     options.fadeColor = attributeString(element, "smil:fadeColor");
     const direction = attributeString(element, "smil:direction");
     if (direction)
-      options.direction = parseLiteral(element, "animation transition direction", direction, [
-        "left",
-        "right",
-        "up",
-        "down",
-      ] as const);
+      (options as OdpAnimationEntry).smilDirectionToken = parseLiteral(
+        element,
+        "animation transition direction",
+        direction,
+        ["forward", "reverse"] as const,
+      );
   }
   if (behavior === "audio") {
     options.mediaType = "playAudio";
@@ -465,13 +475,15 @@ export function isAnimationElement(name: string): boolean {
   return CONTAINER_NAMES.has(name) || BEHAVIOR_NAMES.has(name);
 }
 
-function animationAttributes(options: AnimationEntry): Record<string, string | number | undefined> {
+function animationAttributes(
+  options: OdpAnimationEntry,
+): Record<string, string | number | undefined> {
   const attributes: Record<string, string | number | undefined> = {
     "presentation:preset-class": options.presetClass,
     "presentation:preset-property": options.presetProperty,
     "presentation:text-only":
       options.presetTextOnly === undefined ? undefined : String(options.presetTextOnly),
-    "presentation:additive": options.presetAdditive,
+    "presentation:additive": options.presentationAdditiveToken ?? options.presetAdditive,
     "presentation:master-element": options.masterElement,
     "anim:id": options.animationId,
     "presentation:group-id": options.groupId,
@@ -514,7 +526,7 @@ function animationAttributes(options: AnimationEntry): Record<string, string | n
       attributes["smil:rotate"] = options.motionRotation;
       break;
     case "transitionFilter":
-      attributes["smil:direction"] = options.transitionDirection;
+      attributes["smil:direction"] = options.smilDirectionToken ?? options.transitionDirection;
       attributes["smil:fadeColor"] = options.fadeColor;
       attributes["smil:mode"] = options.transitionMode;
       attributes["smil:subtype"] = options.transitionSubType;

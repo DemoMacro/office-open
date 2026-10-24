@@ -130,15 +130,15 @@ describe("OCF runtime", () => {
         '<office:document-content xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"/>',
       ),
       "META-INF/manifest.xml": strToU8(
-        '<?xml version="1.0"?><manifest:manifest xmlns:manifest="urn:oasis:names:tc:opendocument:xmlns:manifest:1.0"><manifest:file-entry manifest:full-path="/" manifest:media-type="application/vnd.oasis.opendocument.text"/><manifest:file-entry manifest:full-path="content.xml" manifest:media-type="text/xml"/><manifest:file-entry manifest:full-path="META-INF/manifest.xml" manifest:media-type="text/xml"/><manifest:file-entry manifest:full-path="Thumbnails/thumbnail.png" manifest:media-type="image/png"/></manifest:manifest>',
+        '<?xml version="1.0"?><manifest:manifest xmlns:manifest="urn:oasis:names:tc:opendocument:xmlns:manifest:1.0"><manifest:file-entry manifest:full-path="/" manifest:media-type="application/vnd.oasis.opendocument.text"/><manifest:file-entry manifest:full-path="content.xml" manifest:media-type="text/xml"/><manifest:file-entry manifest:full-path="META-INF/manifest.xml" manifest:media-type="text/xml"/><manifest:file-entry manifest:full-path="required-package-member.bin" manifest:media-type="application/binary"/></manifest:manifest>',
       ),
     });
     await expect(readOcf(archive, "application/vnd.oasis.opendocument.text")).rejects.toThrow(
-      "ODF manifest declares missing package member: Thumbnails/thumbnail.png",
+      "ODF manifest declares missing package member: required-package-member.bin",
     );
   });
 
-  it("rejects undeclared auxiliary package members", async () => {
+  it("accepts and retains auxiliary package members omitted by legacy manifests", async () => {
     const archive = zipSync({
       mimetype: strToU8("application/vnd.oasis.opendocument.text"),
       "content.xml": strToU8(
@@ -149,9 +149,13 @@ describe("OCF runtime", () => {
         '<?xml version="1.0"?><manifest:manifest xmlns:manifest="urn:oasis-names:tc:opendocument:xmlns:manifest:1.0"><manifest:file-entry manifest:full-path="/" manifest:media-type="application/vnd.oasis.opendocument.text"/><manifest:file-entry manifest:full-path="content.xml" manifest:media-type="text/xml"/></manifest:manifest>',
       ),
     });
-    await expect(readOcf(archive, "application/vnd.oasis.opendocument.text")).rejects.toThrow(
-      "ODF manifest does not declare package member: ObjectReplacements/Object 1",
-    );
+    const parsed = await readOcf(archive, "application/vnd.oasis.opendocument.text");
+    expect(parsed.binaries["ObjectReplacements/Object 1"]).toEqual(new Uint8Array([1, 2, 3]));
+    expect(parsed.manifest.entries).toMatchObject([
+      { fullPath: "/" },
+      { fullPath: "content.xml" },
+      { fullPath: "ObjectReplacements/Object 1", mediaType: "application/binary" },
+    ]);
   });
 
   it("rejects duplicate and invalid manifest paths", async () => {

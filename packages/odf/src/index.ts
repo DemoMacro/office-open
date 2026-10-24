@@ -122,7 +122,13 @@ export {
   pushShapeStyle,
   type GraphicStyle,
 } from "./drawing/graphic-style";
-export { PRESET_GEOMETRY_DOCX, presetGeometryOdf } from "./drawing/preset-geometry";
+export {
+  PRESET_GEOMETRY_DOCX,
+  presetGeometryOdf,
+  resolveOdfDrawGeometry,
+  resolveOdfDrawGeometryOverlay,
+  type OdfDrawGeometry,
+} from "./drawing/preset-geometry";
 
 export {
   chartPropertiesXml,

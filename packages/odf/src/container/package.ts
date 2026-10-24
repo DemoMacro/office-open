@@ -195,6 +195,24 @@ export function readOcfSync(
     if (cause instanceof OcfManifestError) throw cause;
     throw new OcfManifestError("Invalid ODF manifest", { cause });
   }
+  manifest = {
+    ...manifest,
+    entries: [
+      ...manifest.entries,
+      ...Object.keys(entries)
+        .filter(
+          (path) =>
+            !path.endsWith("/") &&
+            path !== "mimetype" &&
+            path !== "META-INF/manifest.xml" &&
+            !manifest.entries.some((entry) => entry.fullPath === path),
+        )
+        .map((path) => ({
+          fullPath: path,
+          mediaType: packageMediaType(manifest.entries, path) ?? mediaType(path),
+        })),
+    ],
+  };
   const rootEntry = manifest.entries.find((entry) => entry.fullPath === "/");
   const mimeType = entries.mimetype ? strFromU8(entries.mimetype) : rootEntry?.mediaType;
   if (mimeType && !expectedMimeTypes.includes(mimeType))
@@ -272,10 +290,10 @@ function validateManifestPaths(
         !actualSet.has(entry.fullPath) &&
         !retainedPaths.some((path) => path.startsWith(directoryPath))
       ) {
-        throw new OcfManifestError(`ODF manifest declares missing directory: ${entry.fullPath}`, {
-          fullPath: entry.fullPath,
-        });
+        continue;
       }
+    } else if (isOptionalMissingManifestPath(entry.fullPath)) {
+      continue;
     } else if (!actualSet.has(entry.fullPath)) {
       throw new OcfManifestError(
         `ODF manifest declares missing package member: ${entry.fullPath}`,
@@ -283,6 +301,18 @@ function validateManifestPaths(
       );
     }
   }
+}
+
+function isOptionalMissingManifestPath(path: string): boolean {
+  return (
+    path === "Thumbnails/thumbnail.png" ||
+    path === "styles.xml" ||
+    path === "meta.xml" ||
+    path === "settings.xml" ||
+    path === "layout-cache" ||
+    path.startsWith("Pictures/") ||
+    path.startsWith("Oleobject")
+  );
 }
 
 export function readXml(files: OdfFiles, path: string): Element {

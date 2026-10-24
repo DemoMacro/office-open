@@ -14,7 +14,7 @@ import type { Element } from "@office-open/xml";
 import { blockXml, blocksXml, parseBlocks, unknownOdtElement, type ParseContext } from "./body";
 import type { OdtChart, OdtImage } from "./drawing";
 import type { OdtEmbeddedObjectOptions } from "./embedded-objects";
-import type { CanonicalRevision } from "./paragraph";
+import type { CanonicalRevision, OdtVariableValueType } from "./paragraph";
 
 /** Footnote/endnote entry, indexed from the shared docx document model. */
 export type NoteEntry = NonNullable<DocumentOptions["footnotes"]>[number];
@@ -53,7 +53,7 @@ export interface NotesContext {
   bookmarkNames: Map<number, string>;
   bookmarkEndNames: Map<number, string[]>;
   sequenceNames: Set<string>;
-  variableTypes: Map<string, "float" | "string">;
+  variableTypes: Map<string, OdtVariableValueType>;
   forms: OfficeFormsOptions;
   revisions: Map<string, CanonicalRevision>;
   comments: Map<number, NonNullable<DocumentOptions["comments"]>[number]>;

@@ -169,13 +169,23 @@ describe("ODT canonical projection", () => {
   });
 
   it("treats inherited object names as unknown drawing presets", async () => {
-    await expect(
-      parseDocument(
-        odtPackage(
-          '<draw:custom-shape svg:x="1cm" svg:y="2cm" svg:width="3cm" svg:height="4cm"><draw:enhanced-geometry draw:type="constructor"/></draw:custom-shape>',
-        ),
+    const parsed = await parseDocument(
+      odtPackage(
+        '<draw:custom-shape svg:x="1cm" svg:y="2cm" svg:width="3cm" svg:height="4cm"><draw:enhanced-geometry draw:type="constructor"/></draw:custom-shape>',
       ),
-    ).rejects.toMatchObject({ reason: "unknown-drawing-preset" });
+    );
+    const child = sectionParagraph(parsed.sections[0]?.children[0])?.children?.[0];
+    expect(child).toEqual({
+      wpsShape: {
+        children: [],
+        odfGeometryType: "constructor",
+        transformation: {
+          height: 1440000,
+          offset: { x: 360000, y: 720000 },
+          width: 1080000,
+        },
+      },
+    });
   });
 
   it("escapes header field cached values", async () => {
@@ -304,6 +314,43 @@ describe("ODT canonical projection", () => {
     );
     const parsed = await parseDocument(source);
     expect(parsed.styleResources?.[0]?.properties[0]?.name).toBe("loext:graphic-properties");
+    const reread = await parseDocument(await generateDocument(parsed));
+    expect(reread.styleResources).toEqual(parsed.styleResources);
+  });
+
+  it("round-trips LibreOffice revision and shading style overlays", async () => {
+    const source = odtStyledPackage(
+      '<style:style style:name="P1" style:family="paragraph">' +
+        '<style:paragraph-properties officeooo:paragraph-rsid="00123258" style:page-number="auto"/>' +
+        "</style:style>" +
+        '<style:style style:name="T1" style:family="text">' +
+        '<style:text-properties loext:char-shading-value="0" officeooo:rsid="0003e86a"/>' +
+        "</style:style>",
+      '<text:p text:style-name="P1"><text:span text:style-name="T1">Styled</text:span></text:p>',
+    );
+    const parsed = await parseDocument(source);
+    expect(parsed.styleResources).toEqual([
+      {
+        name: "P1",
+        family: "paragraph",
+        properties: [
+          {
+            name: "style:paragraph-properties",
+            attributes: { "officeooo:paragraph-rsid": "00123258", "style:page-number": "auto" },
+          },
+        ],
+      },
+      {
+        name: "T1",
+        family: "text",
+        properties: [
+          {
+            name: "style:text-properties",
+            attributes: { "loext:char-shading-value": "0", "officeooo:rsid": "0003e86a" },
+          },
+        ],
+      },
+    ]);
     const reread = await parseDocument(await generateDocument(parsed));
     expect(reread.styleResources).toEqual(parsed.styleResources);
   });
@@ -1208,6 +1255,54 @@ describe("ODT linked and revision boundaries", () => {
     };
     expect(firstRun.revision).toMatchObject({ author: "Author", id: 1 });
     expect(secondRun.revision).toMatchObject({ author: "Author", id: 1 });
+  });
+
+  it("round-trips shared ODF table calculation declarations", async () => {
+    const content =
+      "<table:calculation-settings table:case-sensitive='false' table:precision-as-shown='true'" +
+      " table:search-criteria-must-apply-to-whole-cell='false' table:automatic-find-labels='true'" +
+      " table:use-regular-expressions='true' table:use-wildcards='false' table:null-year='1930'>" +
+      "<table:null-date table:value-type='date' table:date-value='1904-01-01'/>" +
+      "<table:iteration table:status='enable' table:steps='20' table:maximum-difference='0.001'/>" +
+      "</table:calculation-settings><text:p>Body</text:p>";
+    const parsed = await parseDocument(odtPackage(content));
+    expect(parsed.calculationSettings).toEqual({
+      caseSensitive: false,
+      precisionAsShown: true,
+      searchCriteriaMustApplyToWholeCell: false,
+      automaticFindLabels: true,
+      regularExpressionSearch: true,
+      wildcardSearch: false,
+      nullYear: 1930,
+      nullDate: { year: 1904, month: 1, day: 1 },
+      iteration: { enabled: true, steps: 20, maximumDifference: 0.001 },
+    });
+    const regenerated = await parseDocument(await generateDocument(parsed));
+    expect(regenerated.calculationSettings).toEqual(parsed.calculationSettings);
+  });
+
+  it("round-trips ODF value declarations outside DOCX variable types", async () => {
+    const body =
+      "<text:variable-decls><text:variable-decl text:name='ReportDate' office:value-type='date'/>" +
+      "</text:variable-decls><text:p><text:variable-set text:name='ReportDate' office:value-type='date'" +
+      " office:date-value='2016-10-05T00:00:00.0Z' text:formula='ooow:Date(2016;10;05)' text:display='none'/></text:p>";
+    const parsed = await parseDocument(odtPackage(body));
+    expect(parsed.odtVariableDeclarations).toEqual([{ name: "ReportDate", valueType: "date" }]);
+    const paragraph = sectionParagraph(parsed.sections[0]?.children[0]);
+    expect(paragraph?.children?.[0]).toMatchObject({
+      simpleField: { cachedValue: undefined },
+    });
+    const regenerated = await parseDocument(await generateDocument(parsed));
+    expect(regenerated.odtVariableDeclarations).toEqual(parsed.odtVariableDeclarations);
+    expect(
+      (
+        await parseBodyError(
+          body.replace("office:value-type='date'/>", "office:value-type='float'/>"),
+          "ReportDate",
+          "invalid-variable-value-type",
+        )
+      ).reason,
+    ).toBe("invalid-variable-value-type");
   });
 
   it("round-trips a body-level format change range", async () => {

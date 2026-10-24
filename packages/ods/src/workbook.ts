@@ -198,7 +198,8 @@ export function generateWorkbookSync<T extends OutputType = "uint8array">(
   options: OdsWorkbookOptions,
   output?: T,
 ): OutputByType[T] {
-  return convertOutput(generateOdsPackage(options), (output ?? "uint8array") as T, MIME);
+  const mediaType = options.packageMediaType ?? MIME;
+  return convertOutput(generateOdsPackage(options), (output ?? "uint8array") as T, mediaType);
 }
 
 export async function generateWorkbook<T extends OutputType = "uint8array">(
@@ -294,7 +295,7 @@ function parseOdsPackage(data: Uint8Array): OdsWorkbookOptions {
     };
   });
   parseDatabaseRanges(body, worksheets);
-  parseDataPilotTables(body, worksheets);
+  const dataPilotFunctions = parseDataPilotTables(body, worksheets);
   parseConsolidation(body, worksheets);
   definedNames.push(...localDefinedNames);
   for (const worksheet of worksheets) {
@@ -348,6 +349,7 @@ function parseOdsPackage(data: Uint8Array): OdsWorkbookOptions {
   return {
     ...result,
     ...(dataMappings.length ? { dataMappings } : {}),
+    ...(dataPilotFunctions.length ? { dataPilotFunctions } : {}),
     ...(mimeType && mimeType !== MIME ? { packageMediaType: mimeType } : {}),
     ...(hasOcfManifestOptions(manifest) ? { packageManifest: manifest } : {}),
     ...(packageMembers.length > 0 ? { packageMembers } : {}),
@@ -419,7 +421,9 @@ export function contentXml(
     options.dataMappings ?? [],
   )}${databaseRangesXml(
     options.worksheets ?? [],
-  )}${dataPilotTablesXml(options.worksheets ?? [])}${consolidationXml(options.worksheets ?? [])}`;
+  )}${dataPilotTablesXml(options.worksheets ?? [], options.dataPilotFunctions)}${consolidationXml(
+    options.worksheets ?? [],
+  )}`;
   const encoder = new TextEncoder();
   const chunks: Uint8Array[] = [];
   const write = (value: string): void => {

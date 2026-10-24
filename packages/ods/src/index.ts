@@ -7,5 +7,5 @@ export {
 } from "./workbook";
 export { patchWorkbook, type OdsPatchCommand, type OdsPatchOptions } from "./patch";
 export { OdsParseError } from "./error";
-export type { OdsWorkbookOptions } from "./options";
+export type { OdsDataPilotFunctionOptions, OdsWorkbookOptions } from "./options";
 export type { WorkbookOptions, WorksheetOptions } from "@office-open/xlsx";

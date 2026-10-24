@@ -104,6 +104,11 @@ export function odfDateValue(date: Date): string {
 export function parseNumberStyles(container: Element | undefined): Map<string, StyleOptions> {
   const dataStyles = new Map<string, string>();
   const cellStyles = new Map<string, StyleOptions>();
+  const stylesByName = new Map(
+    (container?.elements ?? [])
+      .filter((element) => element.name?.startsWith("number:"))
+      .map((element) => [attributeString(element, "style:name") ?? "", element]),
+  );
   for (const element of container?.elements ?? []) {
     if (
       element.name === "number:number-style" ||
@@ -112,7 +117,10 @@ export function parseNumberStyles(container: Element | undefined): Map<string, S
       element.name === "number:date-style" ||
       element.name === "number:time-style"
     ) {
-      const format = dataStyleNumFmt(element);
+      const format = dataStyleNumFmt(element, {
+        stylesByName,
+        visiting: new Set(),
+      });
       if (format) dataStyles.set(attributeString(element, "style:name") ?? "", format);
     }
   }
@@ -153,7 +161,9 @@ export function parseNumberStyles(container: Element | undefined): Map<string, S
       border.diagonalUp = diagonalUp !== undefined || undefined;
     }
     if (Object.values(border).some((side) => side !== undefined)) options.border = border;
-    const vertical = attributeString(cellProps, "style:vertical-align");
+    const verticalValue = attributeString(cellProps, "style:vertical-align");
+    const vertical =
+      verticalValue === "automatic" || verticalValue === "auto" ? undefined : verticalValue;
     const wrapText = attributeString(cellProps, "fo:wrap-option") === "wrap";
     const horizontal = attributeString(
       childNamed(style, "style:paragraph-properties"),
@@ -199,7 +209,24 @@ export function parseNumberStyles(container: Element | undefined): Map<string, S
 }
 
 /** Reconstructs an Excel numFmt code from ODF number:* style children. */
-export function dataStyleNumFmt(element: Element): string | undefined {
+export function dataStyleNumFmt(
+  element: Element,
+  styleMap: {
+    stylesByName: Map<string, Element>;
+    visiting: Set<string>;
+  } = { stylesByName: new Map(), visiting: new Set() },
+): string | undefined {
+  const styleName = attributeString(element, "style:name");
+  if (styleName && styleMap.visiting.has(styleName)) {
+    throw new OdsParseError(
+      "content.xml: cyclic number style reference",
+      "content.xml",
+      "/office:automatic-styles",
+      styleName,
+      "cyclic-style-reference",
+    );
+  }
+  if (styleName) styleMap.visiting.add(styleName);
   const parts: string[] = [];
   for (const child of element.elements ?? []) {
     if (child.type === "text") {
@@ -241,6 +268,53 @@ export function dataStyleNumFmt(element: Element): string | undefined {
       case "number:text":
         parts.push(textOf(child));
         break;
+      case "loext:fill-character":
+      case "number:fill-character":
+        parts.push(`*${textOf(child)}`);
+        break;
+      case "loext:text":
+        parts.push(textOf(child));
+        break;
+      case "number:text-content":
+        parts.push("@");
+        break;
+      case "number:fraction": {
+        const numerator =
+          attributeNumber(child, "loext:max-numerator-digits") ??
+          attributeNumber(child, "number:min-numerator-digits") ??
+          1;
+        const denominatorValue =
+          attributeNumber(child, "loext:max-denominator-value") ??
+          attributeNumber(child, "number:max-denominator-value");
+        const denominator = denominatorValue
+          ? String(denominatorValue).length
+          : (attributeNumber(child, "number:min-denominator-digits") ?? 1);
+        parts.push(`# ${"?".repeat(numerator)}/${"?".repeat(denominator)}`);
+        break;
+      }
+      case "style:text-properties": {
+        const color = attributeString(child, "fo:color");
+        const colorName = numberFormatColor(color);
+        if (colorName) parts.push(colorName);
+        break;
+      }
+      case "style:map": {
+        const target = styleMap.stylesByName.get(
+          attributeString(child, "style:apply-style-name") ?? "",
+        );
+        if (!target) {
+          throw new OdsParseError(
+            `content.xml: missing number style "${attributeString(child, "style:apply-style-name") ?? ""}"`,
+            "content.xml",
+            "/office:automatic-styles",
+            child.name,
+            "missing-number-style",
+          );
+        }
+        const mapped = dataStyleNumFmt(target, styleMap);
+        if (mapped) parts.push(mapped);
+        break;
+      }
       case "number:scientific-number": {
         const mantissa = attributeNumber(child, "number:mantissa-places") ?? 1;
         const exponent = attributeNumber(child, "number:min-exponent-digits") ?? 2;
@@ -275,7 +349,23 @@ export function dataStyleNumFmt(element: Element): string | undefined {
         );
     }
   }
+  if (styleName) styleMap.visiting.delete(styleName);
   let format = parts.join("");
   if (element.name === "number:percentage-style" && !format.endsWith("%")) format += "%";
   return format;
+}
+
+const NUMBER_FORMAT_COLORS: Record<string, string> = {
+  "#000000": "[Black]",
+  "#0000ff": "[Blue]",
+  "#00ffff": "[Cyan]",
+  "#00ff00": "[Green]",
+  "#ff00ff": "[Magenta]",
+  "#ff0000": "[Red]",
+  "#ffffff": "[White]",
+  "#ffff00": "[Yellow]",
+};
+
+function numberFormatColor(color: string | undefined): string | undefined {
+  return color === undefined ? undefined : NUMBER_FORMAT_COLORS[color.toLowerCase()];
 }

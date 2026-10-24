@@ -14,6 +14,8 @@ export type {
   SlideOptions,
 } from "./options";
 export type { OdpEmbeddedObjectOptions, OdpEmbeddedObjectFrameOptions } from "./embedded-objects";
+export type { OdpAnimationEntry } from "./animation";
+export type { OdpMeasureTextSegmentKind } from "./text-run";
 export type {
   OdpAppletOptions,
   OdpCubeOptions,
