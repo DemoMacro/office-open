@@ -49,6 +49,11 @@ describe("toXlsxShape (pptx → xlsx)", () => {
     const x = toXlsxShape(RECT_PPTX);
     expect(x.textBody).toEqual({ text: "Hello" });
   });
+
+  it("carries vertical flip onto spPr", () => {
+    const x = toXlsxShape({ ...RECT_PPTX, flipVertical: true });
+    expect(x.properties.flipVertical).toBe(true);
+  });
 });
 
 describe("toPptxShape (xlsx → pptx)", () => {
@@ -154,5 +159,12 @@ describe("round-trip pptx → docx → pptx", () => {
     expect(back.textBody?.paragraphs?.[0]).toBe("Hello");
     // geometry string → docx preset → pptx preset object (lossless value, different shape)
     expect(back.properties?.geometry).toEqual({ preset: "rect" });
+  });
+
+  it("preserves rotation and flips", () => {
+    const back = toPptxShape(
+      toDocxShape({ ...RECT_PPTX, rotation: 45, flipHorizontal: true, flipVertical: true }),
+    );
+    expect(back).toMatchObject({ rotation: 45, flipHorizontal: true, flipVertical: true });
   });
 });

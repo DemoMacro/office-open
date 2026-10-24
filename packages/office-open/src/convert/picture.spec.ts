@@ -34,6 +34,28 @@ describe("toDocxPicture (pptx → docx)", () => {
     };
     expect((toDocxPicture(pptx).transformation as MediaTransformation).offset).toBeUndefined();
   });
+
+  it("maps pptx transform orientation to docx", () => {
+    const docx = toDocxPicture({
+      type: "png",
+      data: new Uint8Array(),
+      x: 100,
+      y: 200,
+      width: 300,
+      height: 400,
+      rotation: 45,
+      flipHorizontal: true,
+      flipVertical: true,
+    });
+    expect(docx.transformation).toMatchObject({
+      offset: { x: 100, y: 200 },
+      width: 300,
+      height: 400,
+      rotation: 45,
+      flipHorizontal: true,
+      flipVertical: true,
+    });
+  });
 });
 
 describe("toXlsxPicture (pptx → xlsx)", () => {
@@ -79,6 +101,25 @@ describe("round-trip pptx → docx → pptx", () => {
     expect(back.type).toBe("png");
     expect(back.x).toBe(50);
     expect(back.y).toBe(60);
+  });
+
+  it("preserves rotation and flips", () => {
+    const pptx: PptxPictureOptions = {
+      type: "png",
+      data: new Uint8Array(),
+      x: 50,
+      y: 60,
+      width: 700,
+      height: 800,
+      rotation: 45,
+      flipHorizontal: true,
+      flipVertical: true,
+    };
+    expect(toPptxPicture(toDocxPicture(pptx))).toMatchObject({
+      rotation: 45,
+      flipHorizontal: true,
+      flipVertical: true,
+    });
   });
 });
 

@@ -55,6 +55,12 @@ describe("toXlsxGroup (pptx → xlsx)", () => {
     expect(spy).toHaveBeenCalled();
     spy.mockRestore();
   });
+
+  it("carries container rotation and vertical flip onto grpSpPr", () => {
+    const x = toXlsxGroup({ ...PPTX_GROUP, rotation: 45, flipVertical: true });
+    expect(x.properties.rotation).toBe(45);
+    expect(x.properties.flipVertical).toBe(true);
+  });
 });
 
 describe("toDocxGroup (pptx → docx)", () => {
@@ -106,6 +112,20 @@ describe("round-trip pptx → xlsx → pptx", () => {
     expect(back.childOffsetY).toBe(0);
     expect(back.childExtentWidth).toBe(1219200);
     expect(back.childExtentHeight).toBe(381000);
+  });
+
+  it("preserves container rotation and flips", () => {
+    const source: PptxGroupOptions = {
+      ...PPTX_GROUP,
+      rotation: 45,
+      flipHorizontal: true,
+      flipVertical: true,
+    };
+    expect(toPptxGroup(toXlsxGroup(source))).toMatchObject({
+      rotation: 45,
+      flipHorizontal: true,
+      flipVertical: true,
+    });
   });
 });
 

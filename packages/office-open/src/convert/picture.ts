@@ -29,6 +29,7 @@ import type { PictureOptions as XlsxPictureOptions } from "@office-open/xlsx";
 
 import {
   boxFromDocx,
+  boxToPptx,
   boxToDocxTransformation,
   DEFAULT_COL_EMU,
   DEFAULT_ROW_EMU,
@@ -141,6 +142,9 @@ export function toDocxPicture(source: PptxPictureOptions | XlsxPictureOptions): 
         y: toEmu(p.y),
         width: toEmu(p.width),
         height: toEmu(p.height),
+        ...(p.rotation !== undefined ? { rotation: p.rotation } : {}),
+        ...(p.flipHorizontal ? { flipHorizontal: true } : {}),
+        ...(p.flipVertical ? { flipVertical: true } : {}),
       }),
       ...altTextFromBase(base),
     };
@@ -178,10 +182,7 @@ export function toPptxPicture(source: DocxPictureOptions | XlsxPictureOptions): 
       type: pptxType(base.type),
       data: base.data,
       ...(base.sourceUrl !== undefined ? { sourceUrl: base.sourceUrl } : {}),
-      width: box.width,
-      height: box.height,
-      x: box.x,
-      y: box.y,
+      ...boxToPptx(box),
       ...pickNonVisualDrawingProperties(base),
     };
   }

@@ -248,6 +248,7 @@ export function toDocxGroup(source: PptxGroupOptions | XlsxGroupOptions): DocxGr
       source.height,
       source.rotation,
       source.flipHorizontal,
+      source.flipVertical,
     );
     children = pptxGroupChildrenToDocx(source.children);
   }
@@ -391,6 +392,7 @@ export function toXlsxGroup(source: DocxGroupOptions | PptxGroupOptions): XlsxGr
       source.height,
       source.rotation,
       source.flipHorizontal,
+      source.flipVertical,
     );
     const r = pptxGroupChildrenToXlsx(source.children);
     shapes = r.shapes;

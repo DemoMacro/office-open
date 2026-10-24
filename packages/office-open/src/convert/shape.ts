@@ -208,6 +208,7 @@ export function toDocxShapeParts(source: PptxShapeOptions | XlsxShapeOptions): D
     source.height,
     source.rotation,
     source.flipHorizontal,
+    source.flipVertical,
   );
   const preset = toPresetGeometry(spPr.geometry ?? undefined);
   return {
@@ -323,6 +324,7 @@ export function toXlsxShape(source: DocxShapeOptions | PptxShapeOptions): XlsxSh
     source.height,
     source.rotation,
     source.flipHorizontal,
+    source.flipVertical,
   );
   const pos = boxToXlsx(box);
   const spPr: ShapePropertiesOptions = {
@@ -335,6 +337,7 @@ export function toXlsxShape(source: DocxShapeOptions | PptxShapeOptions): XlsxSh
     ...(paint.customGeometry !== undefined ? { customGeometry: paint.customGeometry } : {}),
     ...(box.rotation !== undefined ? { rotation: box.rotation } : {}),
     ...(box.flipHorizontal ? { flipHorizontal: true } : {}),
+    ...(box.flipVertical ? { flipVertical: true } : {}),
   };
   return {
     ...pos.anchor,

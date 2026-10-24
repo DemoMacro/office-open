@@ -53,6 +53,7 @@ export function boxFromPptx(
   height: number | UniversalMeasure | undefined,
   rotation?: number,
   flipHorizontal?: boolean,
+  flipVertical?: boolean,
 ): AbsoluteBox {
   return {
     x: toEmu(x),
@@ -61,6 +62,7 @@ export function boxFromPptx(
     height: toEmu(height),
     ...(rotation !== undefined ? { rotation } : {}),
     ...(flipHorizontal ? { flipHorizontal: true } : {}),
+    ...(flipVertical ? { flipVertical: true } : {}),
   };
 }
 
@@ -156,6 +158,7 @@ export interface PptxPosition {
   height: number;
   rotation?: number;
   flipHorizontal?: boolean;
+  flipVertical?: boolean;
 }
 
 /** Emit pptx top-level position fields from a box. */
@@ -167,6 +170,7 @@ export function boxToPptx(box: AbsoluteBox): PptxPosition {
     height: box.height,
     ...(box.rotation !== undefined ? { rotation: box.rotation } : {}),
     ...(box.flipHorizontal ? { flipHorizontal: true } : {}),
+    ...(box.flipVertical ? { flipVertical: true } : {}),
   };
 }
 
