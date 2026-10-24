@@ -9,6 +9,7 @@ import {
 } from "@office-open/core";
 import type { ThemeColor } from "@office-open/core";
 import {
+  assertUniqueRelationshipIds,
   collectPassthroughParts,
   isEncryptedContainer,
   opaquePassthroughPolicy,
@@ -105,6 +106,12 @@ export interface DocxPartRefs {
   diagramDrawing: Map<string, string>;
   /** word/media/* keyed by rId (from document.xml.rels) */
   media: Map<string, string>;
+  /**
+   * Per-part relationship targets keyed by source rId. Internal targets are
+   * package paths; external targets remain their raw URL. This is the strict
+   * resolver for non-primary parts, whose rIds are independent.
+   */
+  partRelationships: Map<string, Map<string, string>>;
   /**
    * Per-part binary-part relationships (image/media/OLE embedding). Each part
    * (document, headers, footers, footnotes, …) has its own .rels with
@@ -261,6 +268,7 @@ function parseDocPartRefs(doc: ParsedArchive, documentPath = "word/document.xml"
     diagramColors: new Map(),
     diagramDrawing: new Map(),
     media: new Map(),
+    partRelationships: new Map(),
     partMedia: new Map(),
     partEmbeddingTypes: new Map(),
     partExternalImages: new Map(),
@@ -273,6 +281,7 @@ function parseDocPartRefs(doc: ParsedArchive, documentPath = "word/document.xml"
 
   const relsEl = doc.get(partPathToRelsPath(documentPath));
   if (!relsEl) return refs;
+  assertUniqueRelationshipIds(relsEl, partPathToRelsPath(documentPath));
 
   for (const child of relsEl.elements ?? []) {
     if (child.name !== "Relationship") continue;
@@ -345,6 +354,7 @@ function parseDocPartRefs(doc: ParsedArchive, documentPath = "word/document.xml"
     if (relsMarker < 0) continue;
     const relsEl = doc.get(relsPath);
     if (!relsEl) continue;
+    assertUniqueRelationshipIds(relsEl, relsPath);
     const partPath = `${relsPath.slice(0, relsMarker)}/${relsPath.slice(relsMarker + 7, -5)}`;
     for (const rel of relsEl.elements ?? []) {
       if (rel.name !== "Relationship") continue;
@@ -352,6 +362,11 @@ function parseDocPartRefs(doc: ParsedArchive, documentPath = "word/document.xml"
       const id = attr(rel, "Id") ?? "";
       const target = attr(rel, "Target") ?? "";
       if (!id || !target) continue;
+      const isExternal = attr(rel, "TargetMode") === "External";
+      ensureNestedMap(refs.partRelationships, partPath).set(
+        id,
+        isExternal ? target : resolveRelationshipTarget(partPath, target),
+      );
       const isBinaryPart =
         type.includes("/image") ||
         type.includes("/media") ||

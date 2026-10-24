@@ -87,4 +87,34 @@ describe("mail merge recipients part", () => {
     expect(rels).toContain('Id="rId3"');
     expect(rels).toContain('Target="recipientData.xml"');
   });
+
+  it("allocates new recipient ids around a preserved attached template", () => {
+    const source = zipSync({
+      "word/document.xml": new TextEncoder().encode(
+        '<?xml version="1.0"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body/></w:document>',
+      ),
+      "word/settings.xml": new TextEncoder().encode(
+        '<?xml version="1.0"?><w:settings xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" ' +
+          'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
+          '<w:attachedTemplate r:id="rId2"/></w:settings>',
+      ),
+      "word/_rels/settings.xml.rels": new TextEncoder().encode(
+        '<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+          '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/attachedTemplate" ' +
+          'Target="https://example.invalid/template.dotx" TargetMode="External"/></Relationships>',
+      ),
+    });
+
+    const parsed = parseDocumentSync(source);
+    parsed.mailMergeRecipients = [{ recipients: [{ active: true, column: 1, uniqueTag: "AA==" }] }];
+    const output = unzipSync(generateDocumentSync(parsed, { type: "uint8array" }));
+    const rels = new TextDecoder().decode(output["word/_rels/settings.xml.rels"]!);
+    expect(rels).toContain(
+      'Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/recipientData"',
+    );
+    expect(rels).toContain(
+      'Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/attachedTemplate"',
+    );
+    expect(parsed.settings?.attachedTemplate).toBe("https://example.invalid/template.dotx");
+  });
 });

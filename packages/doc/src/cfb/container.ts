@@ -14,6 +14,7 @@ export function readSummaryInformation(
     throw new DocParseError(
       `Invalid Word document summary information: ${(error as Error).message}`,
       { part: "stream", path, reason: "invalid-metadata" },
+      { cause: error },
     );
   }
 }

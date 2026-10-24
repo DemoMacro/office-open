@@ -31,8 +31,12 @@ export class DocParseError extends Error {
   /** Canonical location describing the rejected DOC construct. */
   public readonly context: DocParseContext;
 
-  public constructor(message: string, context?: Partial<Omit<DocParseContext, "format">>) {
-    super(message);
+  public constructor(
+    message: string,
+    context?: Partial<Omit<DocParseContext, "format">>,
+    options?: ErrorOptions,
+  ) {
+    super(message, options);
     this.name = "DocParseError";
     this.context = {
       format: "doc",

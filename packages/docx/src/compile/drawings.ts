@@ -76,21 +76,21 @@ export function compileChartParts(ctx: DocxWriteContext): {
         relationships.claimSourceRel(rel);
       }
       if (chartData.embedding) {
-        relationships.addRelationship(
-          chartData.embedding.relationshipId,
-          embeddingRelationshipType(chartData.embedding.relationshipType),
-          relativeTarget(chartPath, `word/embeddings/${chartData.embedding.fileName}`),
-        );
+        relationships.claimSourceRel({
+          relationshipType: embeddingRelationshipType(chartData.embedding.relationshipType),
+          target: relativeTarget(chartPath, `word/embeddings/${chartData.embedding.fileName}`),
+          rId: chartData.embedding.relationshipId,
+        });
       }
       if (chartData.userShapes) {
-        relationships.addRelationship(
-          chartData.userShapes.relationshipId,
-          CHART_USER_SHAPES_REL,
-          relativeTarget(
+        relationships.claimSourceRel({
+          relationshipType: CHART_USER_SHAPES_REL,
+          target: relativeTarget(
             chartPath,
             chartData.userShapes.path ?? `word/charts/userShapes${i + 1}.xml`,
           ),
-        );
+          rId: chartData.userShapes.relationshipId,
+        });
       }
       if (relationships.relationshipCount > 0) {
         parts.push({

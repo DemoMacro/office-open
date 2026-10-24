@@ -18,10 +18,12 @@ import {
   stringifyVmlShapeLayout,
 } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
+import { RELATIONSHIP_TYPES } from "@office-open/core/opc";
 import { attr, attrMeasure, escapeXml, findChild, textOf } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 
 import { DocxParseError } from "../../errors";
+import type { DocumentOptions } from "../core-properties";
 import {
   documentNamespaceAttributesInDialect,
   documentNamespaceDialect,
@@ -1040,10 +1042,43 @@ const SETTINGS_NAMESPACE_KEYS = [
 
 // ── Descriptor ──
 
-export const settingsDesc: CustomDescriptor<
-  SettingsOptions,
-  Parameters<typeof documentNamespaceDialect>[0]
-> = {
+type SettingsDescriptorContext = Parameters<typeof documentNamespaceDialect>[0] & {
+  _options?: Pick<DocumentOptions, "passthroughRelationships">;
+};
+
+/**
+ * Preserve a source attached-template relationship id; allocate a free settings
+ * relationship id when hand-authored options introduce a new template.
+ */
+export function attachedTemplateRelationshipId(
+  attachedTemplate: string,
+  relationships: readonly {
+    source: string;
+    rId: string;
+    relationshipType: string;
+    target: string;
+  }[] = [],
+  reservedIds: readonly string[] = [],
+): string {
+  const source = relationships.find(
+    (relationship) =>
+      relationship.source === "word/settings.xml" &&
+      relationship.relationshipType === RELATIONSHIP_TYPES.attachedTemplate &&
+      relationship.target === attachedTemplate,
+  );
+  if (source) return source.rId;
+  const usedIds = new Set([
+    ...relationships
+      .filter((relationship) => relationship.source === "word/settings.xml")
+      .map((relationship) => relationship.rId),
+    ...reservedIds,
+  ]);
+  let id = 1;
+  while (usedIds.has(`rId${id}`)) id += 1;
+  return `rId${id}`;
+}
+
+export const settingsDesc: CustomDescriptor<SettingsOptions, SettingsDescriptorContext> = {
   kind: "custom",
 
   stringify(opts, ctx) {
@@ -1099,9 +1134,15 @@ export const settingsDesc: CustomDescriptor<
     p.push(onOff("w:formsDesign", opts.formsDesign));
 
     if (opts.attachedTemplate !== undefined)
-      // rId1 is the settings part's own rels space — the compiler registers the
-      // external template relationship under that id.
-      p.push(attrEl("w:attachedTemplate", { "r:id": "rId1" }));
+      p.push(
+        attrEl("w:attachedTemplate", {
+          "r:id": attachedTemplateRelationshipId(
+            opts.attachedTemplate,
+            ctx._options?.passthroughRelationships ?? [],
+            opts.mailMerge?.odso?.recipientData,
+          ),
+        }),
+      );
     p.push(onOff("w:linkStyles", opts.linkStyles));
 
     // stylePaneFormatFilter

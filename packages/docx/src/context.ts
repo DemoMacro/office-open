@@ -961,6 +961,10 @@ export class DocxReadContext implements ReadContext {
   ) {}
 
   resolveRelationship(rId: string): string | undefined {
+    const partRelationships = this.docx.partRefs.partRelationships.get(this.currentPart);
+    const partTarget = partRelationships?.get(rId);
+    if (this.currentPart !== this.docx.primaryPartPath) return partTarget;
+    if (partTarget !== undefined) return partTarget;
     const partMedia = this.docx.partRefs.partMedia.get(this.currentPart);
     if (partMedia) {
       const media = partMedia.get(rId);

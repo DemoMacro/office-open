@@ -431,11 +431,7 @@ export interface RevisionViewOptions {
   inkAnnotations?: boolean;
 }
 
-/**
- * Options for document protection (restrict editing).
- *
- * Reference: ISO/IEC 29500-4, wml.xsd, CT_DocProtect
- */
+/** Options for document protection and editing restrictions. */
 export interface DocumentProtectionOptions {
   /** Type of editing restriction */
   edit?: "none" | "readOnly" | "comments" | "trackedChanges" | "forms";
@@ -485,11 +481,7 @@ export interface DocumentProtectionOptions {
   cryptoSpinCount?: number;
 }
 
-/**
- * Options for write protection (read-only recommendation, not enforcement).
- *
- * Reference: ISO/IEC 29500-4, wml.xsd, CT_WriteProtection
- */
+/** Options for write protection, such as a read-only recommendation. */
 export interface WriteProtectionOptions {
   /** Plaintext password — automatically hashed to hashValue/saltValue when provided */
   password?: string;

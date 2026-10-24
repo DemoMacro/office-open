@@ -112,6 +112,22 @@ function sectionFooters(
   };
 }
 
+function readRequiredDocStream(reader: CompoundFileReader, path: string): Uint8Array {
+  try {
+    return reader.read(path);
+  } catch (cause) {
+    throw new DocParseError(
+      `Invalid Word document: ${path} stream is unreadable`,
+      { part: "stream", path, reason: "invalid-stream" },
+      { cause },
+    );
+  }
+}
+
+function readOptionalDocStream(reader: CompoundFileReader, path: string): Uint8Array | undefined {
+  return reader.entry(path) ? readRequiredDocStream(reader, path) : undefined;
+}
+
 export function parseInternal(data: Uint8Array, password?: string): DocumentOptions {
   let reader: CompoundFileReader;
   try {
@@ -129,7 +145,7 @@ export function parseInternal(data: Uint8Array, password?: string): DocumentOpti
       reason: "missing-required-stream",
     });
   }
-  let word = reader.read("WordDocument");
+  let word = readRequiredDocStream(reader, "WordDocument");
   const legacy = readUint16(word, 0, "Invalid Word document: FIB is truncated") === 0xa5dc;
   if (legacy) {
     const fib = parseLegacyFib(word);
@@ -137,8 +153,8 @@ export function parseInternal(data: Uint8Array, password?: string): DocumentOpti
   }
   const flags = readUint16(word, 10, "Invalid Word document: FIB is truncated");
   let tablePath = (flags & FLAG_TABLE_ONE) !== 0 ? "1Table" : "0Table";
-  let table: Uint8Array | undefined = reader.entry(tablePath) ? reader.read(tablePath) : undefined;
-  let dataStream = reader.entry("Data") ? reader.read("Data") : undefined;
+  let table = readOptionalDocStream(reader, tablePath);
+  let dataStream = readOptionalDocStream(reader, "Data");
   if ((flags & FLAG_ENCRYPTED) !== 0) {
     if (!table) {
       throw new DocParseError("Encrypted Word documents are not supported", {

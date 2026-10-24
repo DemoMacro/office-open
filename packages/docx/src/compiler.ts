@@ -69,6 +69,7 @@ import {
   webSettingsDesc,
   bibliographyDesc,
   settingsDesc,
+  attachedTemplateRelationshipId,
   mailMergeRecipientsDesc,
   peopleDesc,
   commentsIdsDesc,
@@ -236,14 +237,28 @@ export function compileDocument(
     const settings = ctx._settingsOptions;
     const odso = settings.mailMerge?.odso;
     const recipientData = [...(odso?.recipientData ?? [])];
-    const hasAttachedTemplate = settings.attachedTemplate !== undefined;
+    const sourceRelationships = options.passthroughRelationships ?? [];
+    const attachedTemplateId =
+      settings.attachedTemplate === undefined
+        ? undefined
+        : attachedTemplateRelationshipId(
+            settings.attachedTemplate,
+            sourceRelationships,
+            recipientData,
+          );
+    const occupiedIds = new Set([
+      ...sourceRelationships
+        .filter((relationship) => relationship.source === "word/settings.xml")
+        .map((relationship) => relationship.rId),
+      ...(attachedTemplateId === undefined ? [] : [attachedTemplateId]),
+    ]);
     const mailMerge = (settings.mailMerge ?? {
       mainDocumentType: "letter",
       dataType: "database",
     }) as MailMergeOptions;
     for (let i = recipientData.length; i < options.mailMergeRecipients.length; i++) {
-      let id = hasAttachedTemplate ? 2 : 1;
-      while (recipientData.includes(`rId${id}`)) id++;
+      let id = 1;
+      while (occupiedIds.has(`rId${id}`) || recipientData.includes(`rId${id}`)) id++;
       recipientData.push(`rId${id}`);
     }
     if (recipientData.length > 0) {
@@ -746,6 +761,14 @@ function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
       ? {
           SettingsRelationships: {
             data: (() => {
+              const attachedTemplateId =
+                ctx._settingsOptions.attachedTemplate === undefined
+                  ? undefined
+                  : attachedTemplateRelationshipId(
+                      ctx._settingsOptions.attachedTemplate,
+                      ctx._options.passthroughRelationships ?? [],
+                      recipientData,
+                    );
               const rels = new Relationships();
               const settingsSourceRels = (ctx._options.passthroughRelationships ?? []).filter(
                 (rel) => rel.source === "word/settings.xml",
@@ -755,31 +778,37 @@ function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
                 const id = match[1];
                 if (id) settingsSourceRids.add(id);
               }
+              if (ctx._settingsOptions.attachedTemplate !== undefined) {
+                rels.claimSourceRel({
+                  relationshipType: RELATIONSHIP_TYPES.attachedTemplate,
+                  target: ctx._settingsOptions.attachedTemplate,
+                  rId: attachedTemplateId!,
+                  targetMode: TargetModeType.EXTERNAL,
+                });
+              }
               for (const rel of settingsSourceRels) {
                 const isRecipientSource =
                   recipientData.includes(rel.rId) &&
                   rel.relationshipType === RELATIONSHIP_TYPES.recipientData;
-                if (settingsSourceRids.has(rel.rId) && !isRecipientSource) {
+                const ownsAttachedTemplateId =
+                  attachedTemplateId !== undefined && rel.rId === attachedTemplateId;
+                if (
+                  settingsSourceRids.has(rel.rId) &&
+                  !isRecipientSource &&
+                  !ownsAttachedTemplateId
+                ) {
                   rels.claimSourceRel(rel, { force: true });
                 }
-              }
-              if (ctx._settingsOptions.attachedTemplate !== undefined) {
-                rels.addRelationship(
-                  1,
-                  RELATIONSHIP_TYPES.attachedTemplate,
-                  ctx._settingsOptions.attachedTemplate,
-                  TargetModeType.EXTERNAL,
-                );
               }
               const attachedTemplateTarget = ctx._settingsOptions.attachedTemplate;
               recipientData.forEach((rId, index) => {
                 const id = /^rId(\d+)$/.exec(rId)?.[1];
                 if (id) {
-                  rels.addRelationship(
-                    Number(id),
-                    RELATIONSHIP_TYPES.recipientData,
-                    mailMergeRecipients[index]?.partName ?? `recipients${index + 1}.xml`,
-                  );
+                  rels.claimSourceRel({
+                    relationshipType: RELATIONSHIP_TYPES.recipientData,
+                    target: mailMergeRecipients[index]?.partName ?? `recipients${index + 1}.xml`,
+                    rId,
+                  });
                 }
               });
               for (const rel of settingsSourceRels) {

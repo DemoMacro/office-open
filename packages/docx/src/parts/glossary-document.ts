@@ -239,14 +239,15 @@ function claimDocPartReferenceId(
   ctx: BodyContext,
   glossaryPartPath: string,
   type: string,
-  partName: string,
+  target: string,
   rels: Relationships,
 ): number {
   const source = (ctx.fileData._options.passthroughRelationships ?? []).find(
     (rel) =>
       rel.source === glossaryPartPath &&
       rel.relationshipType === type &&
-      (rel.target === partName || rel.target.endsWith(`/${partName}`)),
+      resolveRelationshipTarget(glossaryPartPath, rel.target) ===
+        resolveRelationshipTarget(glossaryPartPath, target),
   );
   const claimed = source ? /^rId(\d+)$/.exec(source.rId) : undefined;
   if (claimed && !rels.hasId(claimed[0]!)) return Number(claimed[1]!);
@@ -288,7 +289,7 @@ function buildDocPartHeaderFooterRefs(
     if (existingMatch) {
       referenceId = Number(existingMatch[1]!);
     } else {
-      referenceId = claimDocPartReferenceId(ctx, glossaryPartPath, type, partName, rels);
+      referenceId = claimDocPartReferenceId(ctx, glossaryPartPath, type, target, rels);
       rels.addRelationship(referenceId, type, target);
     }
     if (!entries.some((entry) => entry.partName === partName)) {

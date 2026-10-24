@@ -299,7 +299,7 @@ export function compileDocumentEntries(
             RELATIONSHIP_TYPES.image,
             target,
           );
-          ctx.document.relationships.addRelationship(
+          ctx.document.relationships.addIfAbsent(
             sourceRel?.rId ?? documentRelationshipCount + i,
             sourceRel?.relationshipType ?? RELATIONSHIP_TYPES.image,
             sourceRel?.target ?? target,
@@ -317,7 +317,7 @@ export function compileDocumentEntries(
             embeddingRelationship(ctx.embeddings, ref.fileName),
             target,
           );
-          ctx.document.relationships.addRelationship(
+          ctx.document.relationships.addIfAbsent(
             sourceRel?.rId ?? documentEmbeddingOffset + i,
             sourceRel?.relationshipType ?? embeddingRelationship(ctx.embeddings, ref.fileName),
             sourceRel?.target ?? target,
@@ -340,7 +340,7 @@ export function compileDocumentEntries(
             RELATIONSHIP_TYPES.chart,
             target,
           );
-          ctx.document.relationships.addRelationship(
+          ctx.document.relationships.addIfAbsent(
             sourceRel?.rId ?? chartOffset + i,
             sourceRel?.relationshipType ?? RELATIONSHIP_TYPES.chart,
             sourceRel?.target ?? target,
@@ -363,7 +363,7 @@ export function compileDocumentEntries(
             documentPath,
             target,
           );
-          ctx.document.relationships.addRelationship(
+          ctx.document.relationships.addIfAbsent(
             sourceRel?.rId ?? chartExOffset + i,
             sourceRel?.relationshipType ?? RELATIONSHIP_TYPES.chartEx,
             sourceRel?.target ?? target,
@@ -380,7 +380,7 @@ export function compileDocumentEntries(
               type,
               target,
             );
-            ctx.document.relationships.addRelationship(
+            ctx.document.relationships.addIfAbsent(
               sourceRel?.rId ?? id,
               sourceRel?.relationshipType ?? type,
               sourceRel?.target ?? target,
