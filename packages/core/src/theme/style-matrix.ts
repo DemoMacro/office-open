@@ -7,7 +7,7 @@
  *
  * @module
  */
-import { findChild } from "@office-open/xml";
+import { escapeXml, findChild } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 
 import type { ReadContext, WriteContext } from "../descriptor";
@@ -146,7 +146,7 @@ export function stringifyFormatScheme(opts: FormatSchemeOptions, ctx: WriteConte
   // Fresh authoring defaults to "Office"; a parsed source without @name keeps
   // the attribute omitted.
   const name = opts.name ?? (opts.namePresent === false ? undefined : "Office");
-  const nameAttr = name !== undefined ? ` name="${name}"` : "";
+  const nameAttr = name !== undefined ? ` name="${escapeXml(name)}"` : "";
   return `<a:fmtScheme${nameAttr}><a:fillStyleLst>${fillStyles}</a:fillStyleLst><a:lnStyleLst>${lineStyles}</a:lnStyleLst><a:effectStyleLst>${effectStyles}</a:effectStyleLst><a:bgFillStyleLst>${backgroundFillStyles}</a:bgFillStyleLst></a:fmtScheme>`;
 }
 

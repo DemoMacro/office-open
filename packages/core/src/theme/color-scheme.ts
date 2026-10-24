@@ -8,7 +8,7 @@
  *
  * @module
  */
-import { findChild } from "@office-open/xml";
+import { escapeXml, findChild } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 
 import type { ReadContext } from "../descriptor";
@@ -72,7 +72,7 @@ export function stringifyColorScheme(
 ): string {
   const name = opts?.name ?? fallbackName;
   const tags = COLOR_TAGS.map(({ tag, key }) => stringifyColorTag(tag, key, opts)).join("");
-  return `<a:clrScheme name="${name}">${tags}</a:clrScheme>`;
+  return `<a:clrScheme name="${escapeXml(name)}">${tags}</a:clrScheme>`;
 }
 
 /** Parse a:clrScheme into the subset of colors explicitly present. */

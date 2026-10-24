@@ -177,6 +177,13 @@ describe("themeDesc", () => {
     expect(result.colorScheme?.accent1).toBe("FF0000");
     expect(result.fontScheme?.majorFont?.latin?.typeface).toBe("Arial");
   });
+
+  it("escapes the font scheme name", () => {
+    const opts: ThemeOptions = { name: "W&S", fontScheme: { name: "W&S" } };
+    const xml = stringify(themeDesc, opts, {} as WriteContext)!;
+    expect(xml).toContain('name="W&amp;S"');
+    expect(roundTrip(opts).fontScheme?.name).toBe("W&S");
+  });
 });
 
 describe("custom colors", () => {

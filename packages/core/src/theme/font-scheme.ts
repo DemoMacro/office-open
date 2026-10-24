@@ -105,7 +105,7 @@ export function stringifyFontScheme(
     opts?.minorFont ? { ...DEFAULT_MINOR_FONT, ...opts.minorFont } : DEFAULT_MINOR_FONT,
   );
   const name = opts?.name ?? fallbackName;
-  return `<a:fontScheme name="${name}">${majorFont}${minorFont}</a:fontScheme>`;
+  return `<a:fontScheme name="${escapeXml(name)}">${majorFont}${minorFont}</a:fontScheme>`;
 }
 
 /** Parse a:fontScheme. Returns undefined only when neither major nor minor font is present. */

@@ -6,6 +6,7 @@
  *
  * @module
  */
+import { escapeXml } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 
 import type { ReadContext, WriteContext } from "../descriptor";
@@ -21,7 +22,7 @@ export function stringifyCustomColors(
   if (!opts || opts.length === 0) return "";
   const items = opts
     .map((c) => {
-      const name = c.name ? ` name="${c.name}"` : "";
+      const name = c.name ? ` name="${escapeXml(c.name)}"` : "";
       return `<a:custClr${name}>${stringifyColorChoice(c.color, ctx)}</a:custClr>`;
     })
     .join("");
