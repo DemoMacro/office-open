@@ -41,13 +41,14 @@ export function stripOversizedGfxdata(
   for (;;) {
     const hit = findNeedle(xml, cursor);
     if (hit === -1) break;
+    const attrStart = attributeStart(xml, hit);
     const valueStart = hit + NEEDLE.length;
     let close = valueStart;
     while (close < xml.length && xml[close] !== 0x22 /* " */) close++;
     if (close === xml.length) break;
     if (close - valueStart > threshold) {
-      drops.push([hit, close + 1]);
-      kept += hit - cursor;
+      drops.push([attrStart, close + 1]);
+      kept += attrStart - cursor;
     } else {
       kept += close + 1 - cursor;
     }
@@ -78,6 +79,20 @@ function findNeedle(xml: Uint8Array, from: number): number {
     if (m === NEEDLE.length) return i;
   }
   return -1;
+}
+
+function attributeStart(xml: Uint8Array, hit: number): number {
+  let start = hit;
+  while (
+    start > 0 &&
+    (xml[start - 1] === 0x20 ||
+      xml[start - 1] === 0x09 ||
+      xml[start - 1] === 0x0a ||
+      xml[start - 1] === 0x0d)
+  ) {
+    start--;
+  }
+  return start;
 }
 
 // ── Streaming variant ──
@@ -140,12 +155,23 @@ export function gfxdataStripStream(
           if (i >= buf.length) break;
           const hit = findNeedle(buf, i);
           if (hit === -1) {
-            const keepFrom = Math.max(i, buf.length - (NEEDLE_LEN - 1));
+            let whitespaceStart = buf.length;
+            while (
+              whitespaceStart > i &&
+              (buf[whitespaceStart - 1] === 0x20 ||
+                buf[whitespaceStart - 1] === 0x09 ||
+                buf[whitespaceStart - 1] === 0x0a ||
+                buf[whitespaceStart - 1] === 0x0d)
+            ) {
+              whitespaceStart--;
+            }
+            const keepFrom = Math.min(Math.max(i, buf.length - (NEEDLE_LEN - 1)), whitespaceStart);
             if (keepFrom > i) out.push(buf.subarray(i, keepFrom));
             carry = buf.slice(keepFrom);
             break;
           }
-          if (hit > i) out.push(buf.subarray(i, hit));
+          const attrStart = attributeStart(buf, hit);
+          if (attrStart > i) out.push(buf.subarray(i, attrStart));
           collected = Array.from(NEEDLE, (ch) => ch.charCodeAt(0));
           valueLen = 0;
           mode = "collecting";
@@ -166,7 +192,7 @@ export function gfxdataStripStream(
           if (q === buf.length) break;
           // Closing quote at q: a kept value rejoins the output (quote included).
           if (mode === "collecting") out.push(new Uint8Array(collected));
-          out.push(buf.subarray(q, q + 1));
+          if (mode === "collecting") out.push(buf.subarray(q, q + 1));
           collected = [];
           mode = "scan";
           i = q + 1;

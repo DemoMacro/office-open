@@ -508,6 +508,31 @@ export function verifyZipCrc32(data: Uint8Array, entry: ZipEntryMeta): Uint8Arra
   return verifyCrc32(data, entry);
 }
 
+/** Verify a ZIP entry incrementally while its original inflated bytes stream through. */
+export function verifyZipCrc32Stream(entry: ZipEntryMeta): TransformStream<Uint8Array, Uint8Array> {
+  let crc = -1;
+  let length = 0;
+  return new TransformStream<Uint8Array, Uint8Array>({
+    transform(chunk, controller) {
+      for (const byte of chunk) crc = CRC_TABLE[(crc ^ byte) & 0xff]! ^ (crc >>> 8);
+      length += chunk.byteLength;
+      controller.enqueue(chunk);
+    },
+    flush() {
+      if (length !== entry.uncompSize) {
+        throw new OpcPackageError(
+          `ZIP uncompressed size mismatch: ${entry.name}`,
+          entry.name,
+          "size-mismatch",
+        );
+      }
+      if (~crc >>> 0 !== entry.crc) {
+        throw new OpcPackageError(`ZIP CRC-32 mismatch: ${entry.name}`, entry.name, "crc-mismatch");
+      }
+    },
+  });
+}
+
 // ── Source-backed reads (Blob/File input — random access via ByteSource) ──
 
 const EOCD_WINDOW = 65557; // 22-byte EOCD + up to 65535-byte comment

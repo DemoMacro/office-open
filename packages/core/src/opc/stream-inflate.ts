@@ -13,7 +13,12 @@
  */
 import type { ByteSource } from "./byte-source";
 import { gfxdataStripStream, stripOversizedGfxdata } from "./gfxdata";
-import { inflateRawWindow, verifyZipCrc32, type ZipEntryMeta } from "./zip-native";
+import {
+  inflateRawWindow,
+  verifyZipCrc32,
+  verifyZipCrc32Stream,
+  type ZipEntryMeta,
+} from "./zip-native";
 
 /**
  * XML parts whose uncompressed size exceeds this inflate through the
@@ -26,11 +31,10 @@ export const STREAMING_XML_THRESHOLD = 32 * 1024 * 1024;
 /**
  * Inflate a compressed zip entry from `source`, streaming when the entry is
  * an oversized XML part (the gfxdata-stripping transform rides along) and
- * reading a plain window otherwise. STORE entries skip decompression. No
- * CRC-32 is verified on the streaming path — the JS table costs more than
- * the inflate itself at these sizes, and the fflate fallback parity is
- * check-free by contract. XML parts get oversized `o:gfxdata` values
- * stripped on both paths, matching the bytes-backed archive behavior.
+ * reading a plain window otherwise. STORE entries skip decompression. The
+ * streaming path verifies the original inflated stream incrementally before
+ * `o:gfxdata` stripping; XML parts get oversized values stripped on both paths,
+ * matching the bytes-backed archive behavior.
  */
 export async function inflateEntryFrom(
   source: ByteSource,
@@ -55,6 +59,7 @@ async function inflateRawStreaming(source: ByteSource, entry: ZipEntryMeta): Pro
   const decoded = source
     .stream(entry.dataStart, entry.compSize)
     .pipeThrough(new DecompressionStream("deflate-raw"))
+    .pipeThrough(verifyZipCrc32Stream(entry))
     .pipeThrough(gfxdataStripStream());
   const chunks: Uint8Array[] = [];
   let total = 0;
@@ -71,5 +76,5 @@ async function inflateRawStreaming(source: ByteSource, entry: ZipEntryMeta): Pro
     out.set(chunk, offset);
     offset += chunk.length;
   }
-  return verifyZipCrc32(out, entry);
+  return out;
 }

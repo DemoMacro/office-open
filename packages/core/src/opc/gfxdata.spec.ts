@@ -28,7 +28,7 @@ describe("stripOversizedGfxdata", () => {
     // Whitespace on either side of the dropped span stays — legal between
     // attributes and irrelevant to XML parse.
     expect(dec(out)).toBe(
-      '<w:p><v:group id="g1" o:spid="_x0000_s1026"  style="w:10"><v:shape/></v:group></w:p>',
+      '<w:p><v:group id="g1" o:spid="_x0000_s1026" style="w:10"><v:shape/></v:group></w:p>',
     );
   });
 
@@ -39,7 +39,7 @@ describe("stripOversizedGfxdata", () => {
     const xml = enc(
       `<r a="1" o:gfxdata="${big1}" o:gfxdata="${small}" o:gfxdata="${big2}" b="2"/>`,
     );
-    expect(dec(stripOversizedGfxdata(xml))).toBe(`<r a="1"  o:gfxdata="${small}"  b="2"/>`);
+    expect(dec(stripOversizedGfxdata(xml))).toBe(`<r a="1" o:gfxdata="${small}" b="2"/>`);
   });
 
   it("leaves an unterminated attribute value verbatim", () => {
@@ -50,7 +50,7 @@ describe("stripOversizedGfxdata", () => {
 
   it("honours a custom threshold", () => {
     const xml = enc(`<r o:gfxdata="${"G".repeat(16)}"/>`);
-    expect(dec(stripOversizedGfxdata(xml, 8))).toBe("<r />");
+    expect(dec(stripOversizedGfxdata(xml, 8))).toBe("<r/>");
   });
 });
 
