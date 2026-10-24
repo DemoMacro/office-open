@@ -16,19 +16,16 @@ export function parseFont(
   isBiff8: boolean,
   encoding: string,
 ): FontOptions | undefined {
-  if (body.byteLength < 15) return undefined;
+  if (body.byteLength < 15)
+    throw new XlsParseError("Invalid legacy XLS file: truncated FONT record");
   const view = new DataView(body.buffer, body.byteOffset, body.byteLength);
   // MS-XLS 2.5.146: Font.name is a shortXLUnicodeString — a 1-byte cch (not
   // the 2-byte XLUnicodeString count), preceded by 14 fixed bytes.
   let fontName = "";
-  try {
-    const characterCount = body[14]!;
-    fontName = isBiff8
-      ? decodeBiffString(body, view, 16, characterCount, body[15] ?? 0, encoding).value
-      : new TextDecoder(encoding).decode(body.subarray(15, 15 + characterCount));
-  } catch {
-    fontName = "";
-  }
+  const characterCount = body[14]!;
+  fontName = isBiff8
+    ? decodeBiffString(body, view, 16, characterCount, body[15] ?? 0, encoding).value
+    : new TextDecoder(encoding).decode(body.subarray(15, 15 + characterCount));
   const weight = view.getUint16(6, true);
   return {
     size: view.getUint16(0, true) / 20,
@@ -45,15 +42,11 @@ export function parseFormat(
   isBiff8: boolean,
   encoding: string,
 ): { id: number; code: string } | undefined {
-  if (body.byteLength < 4) return undefined;
+  if (body.byteLength < 4)
+    throw new XlsParseError("Invalid legacy XLS file: truncated FORMAT record");
   const id = new DataView(body.buffer, body.byteOffset, body.byteLength).getUint16(0, true);
   let code: string;
-  try {
-    code = (isBiff8 ? readBiff8String(body, 2, encoding) : readBiff5String(body, 2, encoding))
-      .value;
-  } catch {
-    return undefined;
-  }
+  code = (isBiff8 ? readBiff8String(body, 2, encoding) : readBiff5String(body, 2, encoding)).value;
   return {
     id,
     code,

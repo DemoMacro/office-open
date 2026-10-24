@@ -125,10 +125,10 @@ export function encodingForCodepage(codepage: number): string {
 
 export function codepageLabel(codepage: number): string {
   const labels: Record<number, string> = {
-    932: "windows-932",
-    936: "windows-936",
-    949: "windows-949",
-    950: "windows-950",
+    932: "shift_jis",
+    936: "gbk",
+    949: "euc-kr",
+    950: "big5",
     1250: "windows-1250",
     1251: "windows-1251",
     1252: "windows-1252",

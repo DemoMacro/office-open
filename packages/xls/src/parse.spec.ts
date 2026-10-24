@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import { buildSmallContainer } from "./cfb/test-container";
 import { XlsParseError, parseWorkbook } from "./index";
+import { parseHyperlink } from "./mappers/workbook-globals";
 
 const BIFF5_TOKEN = 0x0500;
 const BIFF8_TOKEN = 0x0600;
@@ -575,14 +576,14 @@ function condfmtRecord(): Uint8Array {
   return record(0x01b0, uint16Body([1, 0, 0, 0, 0, 1, 1, 1, 0, 1, 0]));
 }
 
-function conditionalFormatRecord(): Uint8Array {
-  const body = new Uint8Array(12 + integerToken(10).byteLength);
+function conditionalFormatRecord(tokens: Uint8Array = integerToken(10)): Uint8Array {
+  const body = new Uint8Array(12 + tokens.byteLength);
   const view = new DataView(body.buffer);
   body[0] = 2;
   body[1] = 6;
   view.setUint16(2, 3, true);
   view.setUint32(6, 0, true);
-  body.set(integerToken(10), 12);
+  body.set(tokens, 12);
   return record(0x01b1, body);
 }
 
@@ -597,8 +598,8 @@ function pageSetupRecords(): readonly Uint8Array[] {
   view.setFloat64(16, 0.5, true);
   view.setFloat64(24, 0.5, true);
   return [
-    record(0x0014, new TextEncoder().encode("H\0")),
-    record(0x0015, new TextEncoder().encode("F\0")),
+    record(0x0014, new Uint8Array([1, 0, 0x48])),
+    record(0x0015, new Uint8Array([1, 0, 0x46])),
     record(0x0026, float64Bytes(0.75)),
     record(0x0027, float64Bytes(0.75)),
     record(0x0028, float64Bytes(0.75)),
@@ -1070,6 +1071,23 @@ describe("parseWorkbook", () => {
     });
   });
 
+  it("rejects malformed style metadata records structurally", () => {
+    expect(() =>
+      parseWorkbook(
+        xls(
+          workbook(8, [{ name: "Sheet", cells: [] }], [], [], [record(0x0031, new Uint8Array(14))]),
+        ),
+      ),
+    ).toThrow(XlsParseError);
+    expect(() =>
+      parseWorkbook(
+        xls(
+          workbook(8, [{ name: "Sheet", cells: [] }], [], [], [record(0x041e, uint16Body([164]))]),
+        ),
+      ),
+    ).toThrow(XlsParseError);
+  });
+
   it("uses the implicit default font for built-in style formats", () => {
     const data = workbook(
       8,
@@ -1164,7 +1182,7 @@ describe("parseWorkbook", () => {
     expect(parseWorkbook(xls(data)).colors?.indexedColors?.[0]?.rgb).toBe("FF0000ff");
   });
 
-  it("skips malformed auxiliary formatting records", () => {
+  it("rejects malformed auxiliary formatting records", () => {
     const data = workbook(
       8,
       [{ name: "Sheet", cells: [numberCell(0, 0, 1)] }],
@@ -1176,11 +1194,7 @@ describe("parseWorkbook", () => {
         record(0x0092, new Uint8Array(1)),
       ],
     );
-    const parsed = parseWorkbook(xls(data));
-    expect(parsed.fonts).toBeUndefined();
-    expect(parsed.numFmts).toBeUndefined();
-    expect(parsed.colors).toBeUndefined();
-    expect(cell((parsed.worksheets ?? [])[0]!, "A1").value).toBe(1);
+    expect(() => parseWorkbook(xls(data))).toThrow(XlsParseError);
   });
 
   it("parses MERGEDCELLS and COLINFO", () => {
@@ -1375,6 +1389,22 @@ describe("parseWorkbook", () => {
     expect((parseWorkbook(xls(data)).worksheets ?? [])[0]!.hyperlinks?.[0]?.url).toBe(
       "https://example.com/",
     );
+  });
+
+  it("stops HLINK text at its unicode terminator", () => {
+    const url = "https://example.com/";
+    const encoded = new Uint8Array((url.length + 3) * 2);
+    const encodedView = new DataView(encoded.buffer);
+    Array.from(url).forEach((character, index) =>
+      encodedView.setUint16(index * 2, character.charCodeAt(0), true),
+    );
+    const length = new Uint8Array(4);
+    new DataView(length.buffer).setUint32(0, encoded.byteLength, true);
+    const moniker = new Uint8Array(16);
+    moniker.set([0xe0, 0xc9]);
+    const body = concat([new Uint8Array(32), moniker, length, encoded]);
+    new DataView(body.buffer).setInt32(28, 0x00000001, true);
+    expect(parseHyperlink(body).url).toBe(url);
   });
 
   it("parses OBJ/TXO/NOTE comments", () => {
@@ -1594,6 +1624,13 @@ describe("parseWorkbook", () => {
     ]);
   });
 
+  it("rejects malformed conditional format formulas structurally", () => {
+    const data = workbook(8, [
+      { name: "Sheet", cells: [condfmtRecord(), conditionalFormatRecord(new Uint8Array([0xff]))] },
+    ]);
+    expect(() => parseWorkbook(xls(data))).toThrow(XlsParseError);
+  });
+
   it("parses HEADER, FOOTER, margins and PAGESETUP", () => {
     const data = workbook(8, [{ name: "Sheet", cells: [...pageSetupRecords()] }]);
     const worksheet = (parseWorkbook(xls(data)).worksheets ?? [])[0]!;
@@ -1607,6 +1644,29 @@ describe("parseWorkbook", () => {
       footer: 0.5,
     });
     expect(worksheet.pageSetup).toMatchObject({ paperSize: 9, scale: 80, orientation: "portrait" });
+  });
+
+  it("rejects truncated HEADER and FOOTER strings", () => {
+    for (const code of [0x0014, 0x0015]) {
+      const data = workbook(8, [
+        { name: "Sheet", cells: [record(code, new Uint8Array([4, 0, 0x26]))] },
+      ]);
+      expect(() => parseWorkbook(xls(data))).toThrow(XlsParseError);
+    }
+  });
+
+  it("parses BIFF5 HEADER and FOOTER strings without BIFF8 flags", () => {
+    const data = workbook(5, [
+      {
+        name: "Sheet",
+        cells: [
+          record(0x0014, new Uint8Array([1, 0x48])),
+          record(0x0015, new Uint8Array([1, 0x46])),
+        ],
+      },
+    ]);
+    const worksheet = (parseWorkbook(xls(data)).worksheets ?? [])[0]!;
+    expect(worksheet.headerFooter).toEqual({ oddHeader: "H", oddFooter: "F" });
   });
 
   it("parses normal, shared and array formula tokens", () => {

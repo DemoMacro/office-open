@@ -9,11 +9,21 @@ import { XlsParseError } from "../errors";
 
 export function readSummaryInformation(data: Uint8Array): WorkbookOptions {
   if (!isCompoundFile(data)) return {};
-  const reader = new CompoundFileReader(data);
+  let reader: CompoundFileReader;
+  try {
+    reader = new CompoundFileReader(data);
+  } catch (cause) {
+    throw new XlsParseError("Invalid legacy XLS file: malformed CFB container", {
+      part: "container",
+      path: "/",
+      reason: "invalid-container",
+      cause,
+    });
+  }
   const path = `${String.fromCharCode(5)}SummaryInformation`;
   const documentPath = `${String.fromCharCode(5)}DocumentSummaryInformation`;
   const result = reader.entry(path)
-    ? readSummaryStream(path, reader.read(path), parseSummaryInformation)
+    ? readSummaryStream(path, readSummaryBytes(reader, path), parseSummaryInformation)
     : {};
   if (reader.entry(documentPath)) {
     const values = readSummaryStream(
@@ -24,6 +34,19 @@ export function readSummaryInformation(data: Uint8Array): WorkbookOptions {
     if (values.category !== undefined) result.category = values.category;
   }
   return result;
+}
+
+function readSummaryBytes(reader: CompoundFileReader, path: string): Uint8Array {
+  try {
+    return reader.read(path);
+  } catch (cause) {
+    throw new XlsParseError("Invalid legacy XLS file: summary information stream is unreadable", {
+      part: "stream",
+      path,
+      reason: "invalid-stream",
+      cause,
+    });
+  }
 }
 
 function isCompoundFile(data: Uint8Array): boolean {

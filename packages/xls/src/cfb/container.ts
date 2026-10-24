@@ -15,5 +15,14 @@ export function readRequiredStream(reader: CompoundFileReader, path: string): Ui
       reason: "missing-required-stream",
     });
   }
-  return reader.read(entry.path);
+  try {
+    return reader.read(entry.path);
+  } catch (cause) {
+    throw new XlsParseError(`Invalid legacy XLS file: unreadable ${path} stream`, {
+      part: "stream",
+      path,
+      reason: "invalid-stream",
+      cause,
+    });
+  }
 }

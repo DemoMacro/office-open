@@ -11,6 +11,7 @@ import {
   encodingForCodepage,
   readBiff2String,
   readBiff35String,
+  readBiff5String,
   readBiff8String,
   readShortBiff8String,
 } from "./biff";
@@ -33,7 +34,6 @@ import type {
   TxoText,
   WorkbookState,
 } from "./models";
-import { readCString } from "./workbook-globals";
 import { parseHyperlink } from "./workbook-globals";
 
 type ConditionalOperator = NonNullable<ConditionalFormatRule["operator"]>;
@@ -79,6 +79,15 @@ function parsePageSetup(record: BiffRecord): {
   };
 }
 
+function parseHeaderText(record: BiffRecord, state: WorkbookState): string {
+  const encoding = encodingForCodepage(state.codepage);
+  if (record.body.byteLength === 0) return "";
+  if (state.version === 2) return readBiff2String(record.body, 0, encoding).value;
+  if (state.version <= 4) return readBiff35String(record.body, 0, encoding).value;
+  if (state.version === 5) return readBiff5String(record.body, 0, encoding).value;
+  return readShortBiff8String(record.body, 0, encoding).value;
+}
+
 function parseConditionalFormatRange(record: BiffRecord): { reference: string; remaining: number } {
   if (record.body.byteLength < 14)
     throw new XlsParseError("Invalid legacy XLS file: truncated CONDFMT");
@@ -110,17 +119,21 @@ function parseConditionalRule(record: BiffRecord, priority: number): Conditional
   if ((flags & 0x20000000) !== 0) offset += 4;
   const decodeRuleFormula = (length: number): string | undefined => {
     if (length === 0) return undefined;
+    if (offset + length > record.body.byteLength)
+      throw new XlsParseError("Invalid legacy XLS file: truncated conditional formula", {
+        part: "stream",
+        recordType: record.code,
+        recordName: "CF",
+        offset: record.start,
+        reason: "malformed-formula",
+      });
     const bytes = record.body.subarray(offset, offset + length);
     offset += length;
-    try {
-      return decodeFormula(bytes, {
-        baseRow: 0,
-        baseColumn: 0,
-        arrayData: record.body.subarray(offset),
-      }).formula;
-    } catch {
-      return `#FORMULA_${length}`;
-    }
+    return decodeFormula(bytes, {
+      baseRow: 0,
+      baseColumn: 0,
+      arrayData: record.body.subarray(offset),
+    }).formula;
   };
   const formulas = [decodeRuleFormula(firstLength), decodeRuleFormula(secondLength)].filter(
     (formula): formula is string => formula !== undefined,
@@ -888,14 +901,14 @@ export function parseWorksheetStream(
       case RecordCode.Header: {
         worksheetExtras.headerFooter = {
           ...worksheetExtras.headerFooter,
-          oddHeader: readCString(record.body),
+          oddHeader: parseHeaderText(record, state),
         };
         break;
       }
       case RecordCode.Footer: {
         worksheetExtras.headerFooter = {
           ...worksheetExtras.headerFooter,
-          oddFooter: readCString(record.body),
+          oddFooter: parseHeaderText(record, state),
         };
         break;
       }

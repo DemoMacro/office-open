@@ -650,7 +650,7 @@ export function readNulTerminatedUnicode(
   offset += 4;
   if (offset + byteLength > body.byteLength)
     throw new XlsParseError("Invalid legacy XLS file: truncated unicode string");
-  const raw = body.subarray(offset, offset + byteLength - 2);
+  const raw = nulTerminatedRaw(body.subarray(offset, offset + byteLength - 2));
   return { value: new TextDecoder("utf-16le").decode(raw), offset: offset + byteLength };
 }
 
@@ -665,8 +665,15 @@ export function readByteCountUnicode(
   offset += 4;
   if (offset + byteLength > body.byteLength)
     throw new XlsParseError("Invalid legacy XLS file: truncated unicode string");
-  const raw = body.subarray(offset, offset + byteLength - 2);
+  const raw = nulTerminatedRaw(body.subarray(offset, offset + byteLength - 2));
   return { value: new TextDecoder("utf-16le").decode(raw), offset: offset + byteLength };
+}
+
+function nulTerminatedRaw(raw: Uint8Array): Uint8Array {
+  for (let offset = 0; offset + 1 < raw.byteLength; offset += 2) {
+    if (raw[offset] === 0 && raw[offset + 1] === 0) return raw.subarray(0, offset);
+  }
+  return raw;
 }
 
 export function parseHyperlink(body: Uint8Array): HyperlinkOptions {

@@ -27,8 +27,12 @@ export class XlsParseError extends Error {
   /** Canonical location describing the rejected XLS construct. */
   public readonly context: XlsParseContext;
 
-  public constructor(message: string, context?: Partial<Omit<XlsParseContext, "format">>) {
-    super(message);
+  public constructor(
+    message: string,
+    context?: Partial<Omit<XlsParseContext, "format">>,
+    options?: ErrorOptions,
+  ) {
+    super(message, options);
     this.name = "XlsParseError";
     this.context = {
       format: "xls",

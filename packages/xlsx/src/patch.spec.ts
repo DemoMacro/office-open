@@ -24,6 +24,52 @@ const twoSheetSource = async (): Promise<Uint8Array> =>
   (await generateWorkbook({ worksheets: [{ name: "A" }, { name: "B" }] })) as Uint8Array;
 
 describe("patchWorkbook commands", () => {
+  it("assigns unique paths and identities to worksheets inserted after removal", async () => {
+    const patched = (await patchWorkbook({
+      data: await twoSheetSource(),
+      commands: [
+        { type: "remove", at: { field: "worksheets", route: [{ name: "A" }] } },
+        {
+          type: "insert",
+          at: { field: "worksheets" },
+          position: "end",
+          value: [{ name: "C", rows: [] }],
+        },
+      ],
+    })) as Uint8Array;
+    const archive = unzipSync(patched);
+    const parsed = parseWorkbookSync(patched);
+
+    expect(parsed.worksheets?.map((worksheet) => worksheet.sourcePath)).toEqual([
+      "xl/worksheets/sheet2.xml",
+      "xl/worksheets/sheet3.xml",
+    ]);
+    expect(
+      new Set(Object.keys(archive).filter((path) => path.startsWith("xl/worksheets/"))),
+    ).toEqual(new Set(["xl/worksheets/sheet2.xml", "xl/worksheets/sheet3.xml"]));
+    expect(new Set(parsed.sheetDefinitions?.map((sheet) => sheet.sheetId))).toHaveLength(2);
+    expect(new Set(parsed.sheetDefinitions?.map((sheet) => sheet.rId))).toHaveLength(2);
+  });
+
+  it("preserves an inserted worksheet's explicit sheet id", async () => {
+    const parsed = parseWorkbookSync(
+      (await patchWorkbook({
+        data: await twoSheetSource(),
+        commands: [
+          {
+            type: "insert",
+            at: { field: "worksheets" },
+            position: "end",
+            value: [{ name: "C", rows: [], sheetId: 99 }],
+          },
+        ],
+      })) as Uint8Array,
+    );
+
+    expect(parsed.sheetDefinitions?.at(-1)).toMatchObject({ name: "C", sheetId: 99 });
+    expect(new Set(parsed.sheetDefinitions?.map((sheet) => sheet.sheetId))).toHaveLength(3);
+  });
+
   it("removes the content-type override for a deleted worksheet", async () => {
     const patched = (await patchWorkbook({
       data: await twoSheetSource(),
