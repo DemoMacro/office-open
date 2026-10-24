@@ -631,6 +631,29 @@ describe("numbering instance fidelity", () => {
     );
     expect(opts!.abstractNumberings[0]!.levels[0]!.text).toBe("");
   });
+
+  it("escapes special characters in lvlText", async ({ expect }) => {
+    const { Numbering } = await import("./numbering");
+    const value = ".%1\\@123^&~|%2";
+    const n = new Numbering({
+      abstractNumberings: [
+        {
+          reference: "list_1",
+          levels: [{ level: 0, format: "decimal", text: value, alignment: "left" }],
+        },
+      ],
+    });
+    n.createConcreteNumberingInstance("list_1", 0);
+    const xml = n.serialize(writeCtx as never);
+    expect(xml).toContain(`w:val="${value.replace("&", "&amp;")}"`);
+    const doc = parseXml(xml.replace(/^<\?xml[^>]*\?>/, ""));
+    const opts = parseNumberingDefinitions(
+      doc.elements![0]!,
+      parseParagraphProperties,
+      {} as unknown as DocxReadContext,
+    );
+    expect(opts!.abstractNumberings[0]!.levels[0]!.text).toBe(value);
+  });
 });
 
 describe("parseNumberingDefinitions empty definitions", () => {

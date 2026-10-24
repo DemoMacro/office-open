@@ -16,6 +16,7 @@ import {
   attrNum,
   children as xmlChildren,
   element,
+  escapeXml,
   findChild,
 } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
@@ -158,14 +159,15 @@ export interface FormFieldOptions extends FormFieldCommonOptions {
 }
 
 /** Build a w:val-style element with a single attribute. */
-const valElement = (name: string, val: string | number): string => `<${name} w:val="${val}"/>`;
+const valElement = (name: string, val: string | number): string =>
+  `<${name} w:val="${escapeXml(String(val))}"/>`;
 
 /**
  * Creates a help or status text element.
  */
 const createFormFieldText = (name: string, options: FormFieldTextOptions): string =>
   `<${name}${options.type !== undefined ? ` w:type="${options.type}"` : ""}${
-    options.value !== undefined ? ` w:val="${options.value}"` : ""
+    options.value !== undefined ? ` w:val="${escapeXml(options.value)}"` : ""
   }/>`;
 
 /**

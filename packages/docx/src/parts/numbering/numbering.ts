@@ -11,7 +11,7 @@ import { decimalNumber } from "@office-open/core";
  *
  * @module
  */
-import { attr, attrBool, attrNum, findChild } from "@office-open/xml";
+import { attr, attrBool, attrNum, attrs, findChild } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import {
   documentNamespaceAttributesInDialect,
@@ -587,10 +587,10 @@ function stringifyLevel(opts: LevelsOptions): string {
   if (opts.isLegalNumberingStyle) addFragment("isLegalNumberingStyle", "<w:isLgl/>");
   if (opts.suffix) addFragment("suffix", `<w:suff w:val="${opts.suffix}"/>`);
   if (opts.text !== undefined || opts.textNull) {
-    const attrs: string[] = [];
-    if (opts.text !== undefined) attrs.push(`w:val="${opts.text}"`);
-    if (opts.textNull) attrs.push('w:null="1"');
-    addFragment("text", `<w:lvlText ${attrs.join(" ")}/>`);
+    addFragment(
+      "text",
+      `<w:lvlText${attrs({ "w:val": opts.text, "w:null": opts.textNull ? 1 : undefined })}/>`,
+    );
   }
   if (opts.levelPictureBulletId !== undefined)
     addFragment(
