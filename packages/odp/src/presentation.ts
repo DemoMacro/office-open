@@ -42,9 +42,11 @@ import type { Element } from "@office-open/xml";
 import type { OdpChart, OdpImage } from "./drawing";
 import type { OdpEmbeddedObjectPool } from "./embedded-frames";
 import { OdpParseError } from "./error";
-import type { OdpPresentationOptions } from "./options";
+import type { OdpPresentationOptions, OdpSlideOptions } from "./options";
 import { parseColumnWidths, parseSlide, slideXml } from "./slide";
+import { reconcileTransitionStyleResources } from "./slide";
 import { parseStyleResources, parseTextStyles, styleResourcesXml } from "./styles";
+import { materializeOdpTransitionSound, type OdpTransitionOptions } from "./transition";
 
 export const MIME = "application/vnd.oasis.opendocument.presentation";
 export const TEMPLATE_MIME = "application/vnd.oasis.opendocument.presentation-template";
@@ -84,9 +86,24 @@ function generateOdpPackage(options: OdpPresentationOptions): Uint8Array {
   const { packageManifest, packageMembers, styleResources, embeddedObjects, packageMediaType } =
     packageOptions(options);
   validateEmbeddedObjects(options, embeddedObjects);
-  const styles: string[] = styleResourcesXml(styleResources);
   const images: OdpImage[] = [];
   const mediaFiles: OdpImage[] = [];
+  const usedStyleNames = new Set(styleResources?.map((resource) => resource.name));
+  const occupiedPaths = new Set([
+    ...(packageMembers ?? []).map((member) => member.path),
+    ...(embeddedObjects ?? []).flatMap((object) => object.members.map((member) => member.path)),
+  ]);
+  const transitionSounds = new Map<OdpSlideOptions, OdpTransitionOptions>();
+  for (const slide of options.slides ?? []) {
+    if (slide.transition === undefined || typeof slide.transition === "string") continue;
+    transitionSounds.set(
+      slide,
+      materializeOdpTransitionSound(slide.transition, mediaFiles, occupiedPaths),
+    );
+  }
+  const styles: string[] = styleResourcesXml(
+    reconcileTransitionStyleResources(options, transitionSounds),
+  );
   const charts: OdpChart[] = [];
   const embeddedObjectPool = new Map(
     (embeddedObjects ?? []).map((object) => [object.path ?? object.sourceUrl!, object] as const),
@@ -99,7 +116,18 @@ function generateOdpPackage(options: OdpPresentationOptions): Uint8Array {
     }),
   ]);
   const pages = (options.slides ?? []).map((slide, index) =>
-    slideXml(slide, index + 1, styles, images, mediaFiles, embeddedObjectPool, charts),
+    slideXml(
+      slide,
+      index + 1,
+      styles,
+      images,
+      mediaFiles,
+      embeddedObjectPool,
+      charts,
+      usedStyleNames,
+      transitionSounds,
+      occupiedPaths,
+    ),
   );
   const files: OdfPackageFiles = {
     "content.xml": contentXml(pages.join(""), styles),
@@ -189,7 +217,7 @@ export function generatePresentationSync<T extends OutputType = "uint8array">(
 }
 
 export async function generatePresentation<T extends OutputType = "uint8array">(
-  options: PresentationOptions,
+  options: OdpPresentationOptions,
   output?: T,
 ): Promise<OutputByType[T]> {
   return generatePresentationSync(options, output);
@@ -251,6 +279,7 @@ function parseOdpPackage(data: Uint8Array): OdpPresentationOptions {
   const usedBinaryPaths = new Set<string>();
   validateEmbeddedObjectBodies(body, binaries, chartPool, embeddedObjects);
   const nextEmbeddedShapeId = { value: 1 };
+  const styleResources = parseStyleResources(childNamed(content, "office:automatic-styles"));
   const result = {
     ...parseMeta(files),
     ...(width && height ? { size: { width, height } } : {}),
@@ -260,16 +289,17 @@ function parseOdpPackage(data: Uint8Array): OdpPresentationOptions {
         parseTextStyles(childNamed(content, "office:automatic-styles")),
         parseColumnWidths(childNamed(content, "office:automatic-styles")),
         binaries,
+        files,
         graphicStyles,
         chartPool,
         usedBinaryPaths,
         embeddedObjects,
         manifestMediaTypes,
         nextEmbeddedShapeId,
+        styleResources,
       ),
     ),
   };
-  const styleResources = parseStyleResources(childNamed(content, "office:automatic-styles"));
   const packageMembers = sourcePackageMembers(
     manifest,
     files,

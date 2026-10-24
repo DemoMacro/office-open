@@ -1,9 +1,11 @@
 import type { FormControlOptions, OfficeFormsOptions } from "@office-open/core";
 import { generateOcf, ODF_NAMESPACES, readOcf } from "@office-open/odf";
+import type { TransitionOptions } from "@office-open/pptx";
 import { describe, expect, it } from "vite-plus/test";
 
 import { generatePresentation, OdpParseError, parsePresentation } from "./index";
 import type { OdpPresentationOptions } from "./options";
+import type { OdpTransitionOptions } from "./transition";
 
 describe("ODP codec", () => {
   it("round-trips a presentation through canonical PresentationOptions", async () => {
@@ -25,6 +27,444 @@ describe("ODP codec", () => {
         master: "Master",
       },
     );
+  });
+
+  it("round-trips a typed slide transition", async () => {
+    const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:presentation><draw:page><anim:par><anim:transitionFilter smil:type="fade" smil:subtype="crossfade" smil:dur="1s"/></anim:par></draw:page></office:presentation></office:body></office:document-content>`;
+    const parsed = await parsePresentation(
+      generateOcf("application/vnd.oasis.opendocument.presentation", { "content.xml": content }),
+    );
+    expect(parsed.slides?.[0]?.transition).toEqual({ type: "fade", duration: 1000 });
+    const generated = await generatePresentation(parsed);
+    const regenerated = await parsePresentation(generated);
+    expect(regenerated.slides?.[0]?.transition).toEqual(parsed.slides?.[0]?.transition);
+  });
+
+  it("round-trips ODF-only transition attributes", async () => {
+    const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:presentation><draw:page><anim:par><anim:transitionFilter smil:type="fade" smil:subtype="crossfade" smil:dur="500ms" smil:mode="out" smil:fadeColor="#102030"/></anim:par></draw:page></office:presentation></office:body></office:document-content>`;
+    const parsed = await parsePresentation(
+      generateOcf("application/vnd.oasis.opendocument.presentation", { "content.xml": content }),
+    );
+    expect(parsed.slides?.[0]?.transition).toEqual({
+      type: "fade",
+      duration: 500,
+      mode: "out",
+      fadeColor: "#102030",
+    });
+    const indefiniteContent = content.replace('smil:dur="500ms"', 'smil:dur="indefinite"');
+    const indefinite = await parsePresentation(
+      generateOcf("application/vnd.oasis.opendocument.presentation", {
+        "content.xml": indefiniteContent,
+      }),
+    );
+    expect(indefinite.slides?.[0]?.transition).toEqual({
+      type: "fade",
+      filterDuration: "indefinite",
+      mode: "out",
+      fadeColor: "#102030",
+    });
+    const regenerated = await parsePresentation(await generatePresentation(parsed));
+    expect(regenerated.slides?.[0]?.transition).toEqual(parsed.slides?.[0]?.transition);
+  });
+
+  it("round-trips transition speed, advance timing, and sound through page styles", async () => {
+    const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:automatic-styles><style:style style:name="DP1" style:family="drawing-page"><style:drawing-page-properties presentation:transition-type="automatic" presentation:transition-speed="slow" presentation:duration="PT2S"><presentation:sound xlink:href="https://office-open.test/media/sound.wav" xlink:type="simple" presentation:play-full="true"/></style:drawing-page-properties></style:style></office:automatic-styles><office:body><office:presentation><draw:page draw:style-name="DP1"><anim:par><anim:transitionFilter smil:type="fade"/></anim:par></draw:page></office:presentation></office:body></office:document-content>`;
+    const parsed = await parsePresentation(
+      generateOcf("application/vnd.oasis.opendocument.presentation", { "content.xml": content }),
+    );
+    expect(parsed.slides?.[0]?.transition).toEqual({
+      type: "fade",
+      speed: "slow",
+      advanceOnClick: false,
+      advanceAfterTime: 2000,
+      soundHref: "https://office-open.test/media/sound.wav",
+      soundPlayFull: true,
+    });
+    const generated = await generatePresentation(parsed);
+    const styles = (await readOcf(generated, "application/vnd.oasis.opendocument.presentation"))
+      .files["content.xml"]!;
+    expect(styles).toContain('presentation:transition-type="automatic"');
+    expect(styles).toContain('presentation:transition-speed="slow"');
+    expect(styles).toContain('presentation:duration="PT2S"');
+    expect(styles).toContain('xlink:href="https://office-open.test/media/sound.wav"');
+    const regenerated = await parsePresentation(generated);
+    expect(regenerated.slides?.[0]?.transition).toEqual(parsed.slides?.[0]?.transition);
+  });
+
+  it("keeps transition filters when the same page also has animations", async () => {
+    const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:presentation><draw:page><anim:par><anim:transitionFilter smil:type="fade"/></anim:par><anim:par><anim:set smil:attributeName="visibility" smil:to="visible"/></anim:par></draw:page></office:presentation></office:body></office:document-content>`;
+    const parsed = await parsePresentation(
+      generateOcf("application/vnd.oasis.opendocument.presentation", { "content.xml": content }),
+    );
+    expect(parsed.slides?.[0]?.transition).toEqual({ type: "fade" });
+    expect(parsed.slides?.[0]?.animations).toHaveLength(2);
+    const regenerated = await parsePresentation(await generatePresentation(parsed));
+    expect(regenerated.slides?.[0]?.transition).toEqual(parsed.slides?.[0]?.transition);
+    expect(regenerated.slides?.[0]?.animations).toEqual(parsed.slides?.[0]?.animations);
+  });
+
+  it("reuses transition style names when source styles already occupy them", async () => {
+    const generated = await generatePresentation({
+      styleResources: [
+        {
+          name: "ODPTransition1",
+          family: "drawing-page",
+          properties: [{ name: "style:drawing-page-properties", attributes: {} }],
+        },
+      ],
+      slides: [{ transition: { type: "fade", advanceOnClick: false } }],
+    });
+    const content = (await readOcf(generated, "application/vnd.oasis.opendocument.presentation"))
+      .files["content.xml"]!;
+    expect(content.match(/style:name="ODPTransition1"/g)).toHaveLength(1);
+    expect(content).toContain('style:name="ODPTransition2"');
+  });
+
+  it("allocates unique transition style names across multiple generated slides", async () => {
+    const generated = await generatePresentation({
+      styleResources: [
+        {
+          name: "ODPTransition1",
+          family: "drawing-page",
+          properties: [{ name: "style:drawing-page-properties", attributes: {} }],
+        },
+      ],
+      slides: [
+        { transition: { type: "fade", advanceOnClick: false } },
+        { transition: { type: "wipe", advanceOnClick: false } },
+      ],
+    });
+    const content = (await readOcf(generated, "application/vnd.oasis.opendocument.presentation"))
+      .files["content.xml"]!;
+    expect(content.match(/style:name="ODPTransition2"/g)).toHaveLength(1);
+    expect(content).toContain('style:name="ODPTransition3"');
+  });
+
+  it("materializes an embedded transition sound exactly once", async () => {
+    const generated = await generatePresentation({
+      slides: [
+        {
+          transition: {
+            type: "fade",
+            startSound: { type: "wav", data: new Uint8Array([1, 2, 3]) },
+          },
+        },
+      ],
+    });
+    const archive = await readOcf(generated, "application/vnd.oasis.opendocument.presentation");
+    expect(archive.binaries["Media/transition1.wav"]).toEqual(new Uint8Array([1, 2, 3]));
+    const styles = archive.files["content.xml"]!;
+    expect(styles).toContain('xlink:href="Media/transition1.wav"');
+    const parsed = await parsePresentation(generated);
+    expect(parsed.slides?.[0]?.transition).toMatchObject({
+      type: "fade",
+      soundHref: "Media/transition1.wav",
+    });
+    expect(parsed.slides?.[0]?.transition).not.toHaveProperty("startSound");
+  });
+
+  it("rejects an embedded transition sound missing from the package", async () => {
+    const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:automatic-styles><style:style style:name="DP1" style:family="drawing-page"><style:drawing-page-properties><presentation:sound xlink:href="Media/missing.wav"/></style:drawing-page-properties></style:style></office:automatic-styles><office:body><office:presentation><draw:page draw:style-name="DP1"/></office:presentation></office:body></office:document-content>`;
+    await expect(
+      parsePresentation(
+        generateOcf("application/vnd.oasis.opendocument.presentation", { "content.xml": content }),
+      ),
+    ).rejects.toThrow(OdpParseError);
+  });
+
+  it("keeps generated transition sounds apart from package members", async () => {
+    const member = new Uint8Array([9, 9, 9]);
+    const generated = await generatePresentation({
+      packageMembers: [{ path: "Media/transition1.wav", mediaType: "audio/wav", data: member }],
+      slides: [
+        {
+          transition: {
+            type: "fade",
+            startSound: { type: "wav", data: new Uint8Array([1, 2, 3]) },
+          },
+        },
+      ],
+    });
+    const archive = await readOcf(generated, "application/vnd.oasis.opendocument.presentation");
+    expect(archive.binaries["Media/transition1.wav"]).toEqual(member);
+    expect(archive.binaries["Media/transition2.wav"]).toEqual(new Uint8Array([1, 2, 3]));
+    expect(archive.files["content.xml"]).toContain('xlink:href="Media/transition2.wav"');
+  });
+
+  it("allocates distinct transition sounds across slides", async () => {
+    const generated = await generatePresentation({
+      slides: [
+        {
+          transition: {
+            type: "fade",
+            startSound: { type: "wav", data: new Uint8Array([1, 2, 3]) },
+          },
+        },
+        {
+          transition: {
+            type: "wipe",
+            startSound: { type: "wav", data: new Uint8Array([4, 5, 6]) },
+          },
+        },
+      ],
+    });
+    const archive = await readOcf(generated, "application/vnd.oasis.opendocument.presentation");
+    expect(archive.binaries["Media/transition1.wav"]).toEqual(new Uint8Array([1, 2, 3]));
+    expect(archive.binaries["Media/transition2.wav"]).toEqual(new Uint8Array([4, 5, 6]));
+    expect(archive.files["content.xml"]).toContain('xlink:href="Media/transition1.wav"');
+    expect(archive.files["content.xml"]).toContain('xlink:href="Media/transition2.wav"');
+  });
+
+  it("reuses identical transition sounds", async () => {
+    const generated = await generatePresentation({
+      slides: [
+        {
+          transition: {
+            type: "fade",
+            startSound: { type: "wav", data: new Uint8Array([1, 2, 3]) },
+          },
+        },
+        {
+          transition: {
+            type: "wipe",
+            startSound: { type: "wav", data: new Uint8Array([1, 2, 3]) },
+          },
+        },
+      ],
+    });
+    const archive = await readOcf(generated, "application/vnd.oasis.opendocument.presentation");
+    expect(Object.keys(archive.binaries).filter((path) => path.endsWith(".wav"))).toHaveLength(1);
+    expect(
+      archive.files["content.xml"]!.match(/xlink:href="Media\/transition1\.wav"/g),
+    ).toHaveLength(2);
+  });
+
+  it("accepts XML package members as transition sounds", async () => {
+    const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:automatic-styles><style:style style:name="DP1" style:family="drawing-page"><style:drawing-page-properties><presentation:sound xlink:href="/Media/sound.xml"/></style:drawing-page-properties></style:style></office:automatic-styles><office:body><office:presentation><draw:page draw:style-name="DP1"/></office:presentation></office:body></office:document-content>`;
+    const parsed = await parsePresentation(
+      generateOcf("application/vnd.oasis.opendocument.presentation", {
+        "content.xml": content,
+        "Media/sound.xml": "<sound/>",
+      }),
+    );
+    const transition = parsed.slides?.[0]?.transition;
+    expect(typeof transition).toBe("object");
+    expect((transition as OdpTransitionOptions).soundHref).toBe("/Media/sound.xml");
+  });
+
+  it("treats protocol-relative transition sound URLs as external", async () => {
+    const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:automatic-styles><style:style style:name="DP1" style:family="drawing-page"><style:drawing-page-properties><presentation:sound xlink:href="//media.example.test/sound.wav"/></style:drawing-page-properties></style:style></office:automatic-styles><office:body><office:presentation><draw:page draw:style-name="DP1"/></office:presentation></office:body></office:document-content>`;
+    const parsed = await parsePresentation(
+      generateOcf("application/vnd.oasis.opendocument.presentation", {
+        "content.xml": content,
+        "media.example.test/sound.wav": new Uint8Array([1]),
+      }),
+    );
+    const transition = parsed.slides?.[0]?.transition;
+    expect(typeof transition).toBe("object");
+    expect((transition as OdpTransitionOptions).soundHref).toBe("//media.example.test/sound.wav");
+  });
+
+  it("rejects a missing package-relative transition sound", async () => {
+    const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:automatic-styles><style:style style:name="DP1" style:family="drawing-page"><style:drawing-page-properties><presentation:sound xlink:href="Sounds/missing.wav"/></style:drawing-page-properties></style:style></office:automatic-styles><office:body><office:presentation><draw:page draw:style-name="DP1"/></office:presentation></office:body></office:document-content>`;
+    await expect(
+      parsePresentation(
+        generateOcf("application/vnd.oasis.opendocument.presentation", { "content.xml": content }),
+      ),
+    ).rejects.toMatchObject({ reason: "missing-transition-sound" });
+  });
+
+  it("merges patched transitions into the referenced drawing-page style", async () => {
+    const generated = await generatePresentation({
+      styleResources: [
+        {
+          name: "DP1",
+          family: "drawing-page",
+          properties: [
+            {
+              name: "style:drawing-page-properties",
+              attributes: { "presentation:transition-type": "manual" },
+            },
+          ],
+        },
+      ],
+      slides: [
+        {
+          drawingPageStyleName: "DP1",
+          transition: {
+            type: "fade",
+            advanceOnClick: false,
+            advanceAfterTime: 1000,
+            speed: "fast",
+            soundHref: "https://office-open.test/media/sound.wav",
+            soundPlayFull: true,
+            soundXmlId: "sound",
+          },
+        },
+      ],
+    });
+    const styles = (await readOcf(generated, "application/vnd.oasis.opendocument.presentation"))
+      .files["content.xml"]!;
+    expect(styles.match(/style:name="DP1"/g)).toHaveLength(1);
+    expect(styles).toContain('presentation:transition-type="automatic"');
+    expect(styles).toContain('presentation:transition-speed="fast"');
+    expect(styles).toContain('presentation:duration="PT1S"');
+    expect(styles).toContain('xlink:href="https://office-open.test/media/sound.wav"');
+    expect(styles).toContain('presentation:play-full="true"');
+    expect(styles).toContain('xml:id="sound"');
+    const parsed = await parsePresentation(generated);
+    expect(parsed.slides?.[0]?.transition).toMatchObject({
+      advanceOnClick: false,
+      advanceAfterTime: 1000,
+      speed: "fast",
+      soundHref: "https://office-open.test/media/sound.wav",
+      soundPlayFull: true,
+      soundXmlId: "sound",
+    });
+  });
+
+  it("rejects conflicting transitions projected into one shared style", async () => {
+    await expect(
+      generatePresentation({
+        styleResources: [
+          {
+            name: "DP1",
+            family: "drawing-page",
+            properties: [{ name: "style:drawing-page-properties", attributes: {} }],
+          },
+        ],
+        slides: [
+          {
+            drawingPageStyleName: "DP1",
+            transition: { type: "fade", speed: "fast" },
+          },
+          {
+            drawingPageStyleName: "DP1",
+            transition: { type: "fade", speed: "slow" },
+          },
+        ],
+      }),
+    ).rejects.toThrow(/different transition styles/u);
+  });
+
+  it("rejects transitions ODF cannot represent without losing fields", async () => {
+    await expect(
+      generatePresentation({
+        slides: [
+          {
+            transition: {
+              type: "fade",
+              soundHref: "https://office-open.test/media/sound.wav",
+              startSound: { type: "wav", data: new Uint8Array([1]) },
+            },
+          },
+        ],
+      }),
+    ).rejects.toThrow(/both embedded and linked sound/u);
+    await expect(
+      generatePresentation({
+        slides: [{ transition: { type: "fade", stopPreviousSound: true } }],
+      }),
+    ).rejects.toThrow(/stopping the previous transition sound/u);
+    await expect(
+      generatePresentation({
+        slides: [{ transition: { type: "fade", soundPlayFull: true } }],
+      }),
+    ).rejects.toThrow(/sound metadata requires embedded or linked sound/u);
+  });
+
+  it("round-trips OOXML cut, pull, strips, and wheel transitions", async () => {
+    const transitions = [
+      '<anim:transitionFilter smil:type="fade" smil:subtype="default"/>',
+      '<anim:transitionFilter smil:type="slideWipe" smil:subtype="fromLeft" smil:direction="reverse"/>',
+      '<anim:transitionFilter smil:type="waterfallWipe" smil:subtype="horizontalRight"/>',
+      '<anim:transitionFilter smil:type="waterfallWipe" smil:subtype="horizontalRight" smil:direction="reverse"/>',
+      '<anim:transitionFilter smil:type="pinWheelWipe" smil:subtype="threeBlade"/>',
+    ];
+    const expected: Partial<TransitionOptions>[] = [
+      { type: "cut" },
+      { type: "pull", direction: "right" },
+      { type: "strips", direction: "leftDown" },
+      { type: "strips", direction: "rightUp" },
+      { type: "wheel", spokes: 3 },
+    ];
+    for (const [filter, transition] of transitions.map(
+      (filter, index) => [filter, expected[index]] as const,
+    )) {
+      if (transition === undefined) throw new Error("missing expected transition");
+      const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:presentation><draw:page><anim:par>${filter}</anim:par></draw:page></office:presentation></office:body></office:document-content>`;
+      const parsed = await parsePresentation(
+        generateOcf("application/vnd.oasis.opendocument.presentation", { "content.xml": content }),
+      );
+      expect(parsed.slides?.[0]?.transition).toMatchObject(transition);
+      const regenerated = await parsePresentation(await generatePresentation(parsed));
+      expect(regenerated.slides?.[0]?.transition).toEqual(parsed.slides?.[0]?.transition);
+    }
+  });
+
+  it("preserves unmapped SMIL transition types in typed animations", async () => {
+    const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:presentation><draw:page><anim:par><anim:transitionFilter smil:type="barnDoorWipe"/></anim:par></draw:page></office:presentation></office:body></office:document-content>`;
+    const parsed = await parsePresentation(
+      generateOcf("application/vnd.oasis.opendocument.presentation", { "content.xml": content }),
+    );
+    expect(parsed.slides?.[0]?.animations).toEqual([
+      {
+        children: [
+          {
+            behavior: "transitionFilter",
+            fadeColor: undefined,
+            transitionSubType: undefined,
+            transitionType: "barnDoorWipe",
+          },
+        ],
+        timeNode: "par",
+      },
+    ]);
+    const regenerated = await parsePresentation(await generatePresentation(parsed));
+    expect(regenerated.slides?.[0]?.animations).toEqual(parsed.slides?.[0]?.animations);
+  });
+
+  it("preserves compatibility presentation additive tokens", async () => {
+    const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:presentation><draw:page><anim:par presentation:additive="base"/></draw:page></office:presentation></office:body></office:document-content>`;
+    const parsed = await parsePresentation(
+      generateOcf("application/vnd.oasis.opendocument.presentation", { "content.xml": content }),
+    );
+    expect(parsed.slides?.[0]?.animations?.[0]).toMatchObject({
+      presentationAdditiveToken: "base",
+      timeNode: "par",
+    });
+    const regenerated = await parsePresentation(await generatePresentation(parsed));
+    expect(regenerated.slides?.[0]?.animations?.[0]).toMatchObject({
+      presentationAdditiveToken: "base",
+    });
+  });
+
+  it("treats inherited object names as unknown drawing presets", async () => {
+    const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:presentation><draw:page><draw:custom-shape svg:x="1cm" svg:y="1cm" svg:width="1cm" svg:height="1cm"><draw:enhanced-geometry draw:type="constructor"/></draw:custom-shape></draw:page></office:presentation></office:body></office:document-content>`;
+    const parsed = await parsePresentation(
+      generateOcf("application/vnd.oasis.opendocument.presentation", { "content.xml": content }),
+    );
+    expect(parsed.slides?.[0]?.children).toEqual([
+      {
+        shape: {
+          height: 360000,
+          name: undefined,
+          odfGeometryType: "constructor",
+          width: 360000,
+          x: 360000,
+          y: 360000,
+        },
+      },
+    ]);
+  });
+
+  it("rejects inherited object names as style families", async () => {
+    const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:automatic-styles><style:style style:name="bad" style:family="constructor"/></office:automatic-styles><office:body><office:presentation><draw:page/></office:presentation></office:body></office:document-content>`;
+    await expect(
+      parsePresentation(
+        generateOcf("application/vnd.oasis.opendocument.presentation", { "content.xml": content }),
+      ),
+    ).rejects.toMatchObject({ reason: "unknown style family" });
   });
 
   it("round-trips slide comments with authors and anchors", async () => {
@@ -400,7 +840,12 @@ describe("ODP codec", () => {
               table: {
                 name: "Budget",
                 columnWidths: [914400, 1828800],
-                rows: [{ cells: [{ text: "A", columnSpan: 2 }, { text: "B" }] }],
+                rows: [
+                  {
+                    cells: [{ text: "A", columnSpan: 2, rowSpan: 2 }, { text: "B" }],
+                  },
+                  { cells: [{ text: "C" }] },
+                ],
               },
             },
           ],
@@ -414,8 +859,12 @@ describe("ODP codec", () => {
         columnWidths: [914400, 1828800],
         rows: [
           {
-            cells: [{ children: [{ text: "A" }], columnSpan: 2 }, { children: [{ text: "B" }] }],
+            cells: [
+              { children: [{ text: "A" }], columnSpan: 2, rowSpan: 2 },
+              { children: [{ text: "B" }] },
+            ],
           },
+          { cells: [{ children: [{ text: "C" }] }] },
         ],
       },
     });
@@ -728,7 +1177,7 @@ describe("ODP codec", () => {
     ).rejects.toMatchObject({ reason: "embedded-replacement-image-missing" });
   });
 
-  it("round-trips picture accessibility metadata and rejects unknown image types", async () => {
+  it("round-trips picture accessibility metadata and unknown external image types", async () => {
     const parsed = await parsePresentation(
       await generatePresentation({
         slides: [
@@ -756,13 +1205,18 @@ describe("ODP codec", () => {
     });
     expect(await parsePresentation(await generatePresentation(parsed))).toEqual(parsed);
     const unsupported = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:presentation><draw:page><draw:frame svg:x="1cm" svg:y="1cm" svg:width="1cm" svg:height="1cm"><draw:image xlink:href="https://example.com/image.tiff"/></draw:frame></draw:page></office:presentation></office:body></office:document-content>`;
-    await expect(
-      parsePresentation(
-        generateOcf("application/vnd.oasis.opendocument.presentation", {
-          "content.xml": unsupported,
-        }),
-      ),
-    ).rejects.toMatchObject({ reason: "unsupported-image-extension" });
+    const unknown = await parsePresentation(
+      generateOcf("application/vnd.oasis.opendocument.presentation", {
+        "content.xml": unsupported,
+      }),
+    );
+    expect(unknown.slides?.[0]?.odpNodes?.[0]?.node).toMatchObject({
+      frame: {
+        contents: [{ kind: "image", image: { data: { href: "https://example.com/image.tiff" } } }],
+      },
+    });
+    const regenerated = await parsePresentation(await generatePresentation(unknown));
+    expect(regenerated.slides?.[0]?.odpNodes).toEqual(unknown.slides?.[0]?.odpNodes);
   });
 
   it("validates slide event listeners strictly", async () => {

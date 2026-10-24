@@ -15,6 +15,7 @@ export type {
 } from "./options";
 export type { OdpEmbeddedObjectOptions, OdpEmbeddedObjectFrameOptions } from "./embedded-objects";
 export type { OdpAnimationEntry } from "./animation";
+export type { OdpTransitionOptions } from "./transition";
 export type { OdpMeasureTextSegmentKind } from "./text-run";
 export type {
   OdpAppletOptions,

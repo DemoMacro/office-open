@@ -4,7 +4,7 @@ import type { Element } from "@office-open/xml";
 
 import { OdpParseError } from "./error";
 
-const ANIMATION_PATH =
+export const ANIMATION_PATH =
   "/office:document-content/office:body/office:presentation/draw:page/animation";
 
 const CONTAINER_NAMES = new Set(["anim:par", "anim:seq", "anim:iterate"]);
@@ -26,8 +26,6 @@ const BEHAVIOR_NAMES = new Set(BEHAVIOR_BY_ELEMENT.keys());
 export interface OdpAnimationEntry extends AnimationEntry {
   /** Preserves ODF `presentation:additive="base"` emitted by legacy producers. */
   presentationAdditiveToken?: "base";
-  /** Preserves ODF transition directions outside the PPTX spatial-direction model. */
-  smilDirectionToken?: "forward" | "reverse";
 }
 
 const CONTAINER_ATTRIBUTES = [
@@ -400,7 +398,7 @@ function parseBehavior(element: Element): AnimationEntry {
     options.fadeColor = attributeString(element, "smil:fadeColor");
     const direction = attributeString(element, "smil:direction");
     if (direction)
-      (options as OdpAnimationEntry).smilDirectionToken = parseLiteral(
+      options.transitionDirection = parseLiteral(
         element,
         "animation transition direction",
         direction,
@@ -526,7 +524,7 @@ function animationAttributes(
       attributes["smil:rotate"] = options.motionRotation;
       break;
     case "transitionFilter":
-      attributes["smil:direction"] = options.smilDirectionToken ?? options.transitionDirection;
+      attributes["smil:direction"] = options.transitionDirection;
       attributes["smil:fadeColor"] = options.fadeColor;
       attributes["smil:mode"] = options.transitionMode;
       attributes["smil:subtype"] = options.transitionSubType;

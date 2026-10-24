@@ -13,14 +13,15 @@ import {
   unknownChildElement,
   xmlElement,
   type GraphicStyle,
+  type OdfPackageFiles,
 } from "@office-open/odf";
+import type { StyleResourceOptions } from "@office-open/odf";
 import type {
   AnimationEntry,
   GroupOptions,
   SlideChild,
   SlideCommentOptions,
   TableOptions,
-  TransitionOptions,
 } from "@office-open/pptx";
 import type { Element } from "@office-open/xml";
 
@@ -46,7 +47,7 @@ import {
   type OdpEmbeddedObjectPool,
 } from "./embedded-frames";
 import { OdpGenerateError, OdpParseError, unknownSlideChild } from "./error";
-import type { OdpSlideOptions } from "./options";
+import type { OdpPresentationOptions, OdpSlideOptions } from "./options";
 import { formsXml, parseForms } from "./presentation";
 import {
   assignOdfShapeIds,
@@ -74,6 +75,16 @@ import {
 } from "./slide-nodes";
 import { addColumnStyle } from "./styles";
 import { parseParagraph, textBodyXml, type TextProperties } from "./text-run";
+import {
+  applyTransitionToStyleResource,
+  hasTransitionOverlay,
+  parseTransition,
+  requiresTransitionStyle,
+  transitionDrawingPageXml,
+  materializeOdpTransitionSound,
+  transitionXml,
+  type OdpTransitionOptions,
+} from "./transition";
 
 export function slideXml(
   slide: OdpSlideOptions,
@@ -83,6 +94,9 @@ export function slideXml(
   mediaFiles: OdpImage[],
   embeddedObjects: OdpEmbeddedObjectPool,
   charts: OdpChart[],
+  usedStyleNames: Set<string>,
+  transitionSounds: ReadonlyMap<OdpSlideOptions, OdpTransitionOptions>,
+  occupiedPaths: Set<string>,
 ): string {
   if (typeof slide.transition === "string") {
     throw new OdpGenerateError(
@@ -104,6 +118,28 @@ export function slideXml(
       0,
       slideNodeXml(node.node, styles, charts),
     );
+  const transition =
+    slide.transition === undefined || typeof slide.transition === "string"
+      ? undefined
+      : slide.transition;
+  const transitionForStyle =
+    transition === undefined
+      ? undefined
+      : (transitionSounds.get(slide) ??
+        materializeOdpTransitionSound(transition, mediaFiles, occupiedPaths));
+  const transitionStyleName =
+    slide.drawingPageStyleName ??
+    (transitionForStyle !== undefined && requiresTransitionStyle(transitionForStyle)
+      ? uniqueTransitionStyleName(index, usedStyleNames)
+      : undefined);
+  if (transitionStyleName !== undefined) usedStyleNames.add(transitionStyleName);
+  const transitionStyleXml =
+    slide.drawingPageStyleName === undefined &&
+    transitionStyleName !== undefined &&
+    transitionForStyle !== undefined
+      ? transitionDrawingPageXml(transitionStyleName, transitionForStyle)
+      : undefined;
+  if (transitionStyleXml !== undefined) styles.push(transitionStyleXml);
   const notes = typeof slide.notes === "string" ? slide.notes : slide.notes?.text;
   const notesXml = notes
     ? xmlElement("presentation:notes", undefined, [
@@ -119,6 +155,7 @@ export function slideXml(
     {
       "draw:name": slide.name ?? `Slide${index}`,
       "draw:master-page-name": slide.master ?? "Default",
+      "draw:style-name": transitionStyleName,
     },
     [
       ...(slide.forms === undefined ? [] : [formsXml(slide.forms)]),
@@ -126,7 +163,7 @@ export function slideXml(
         ? []
         : Array.isArray(slide.animations) && slide.animations.some(containsTransitionFilter)
           ? []
-          : [transitionXml(slide.transition)]),
+          : [transitionXml(slide.transition, mediaFiles)]),
       ...(Array.isArray(slide.animations) && animationsXml(slide.animations)
         ? [animationsXml(slide.animations)!]
         : []),
@@ -135,6 +172,73 @@ export function slideXml(
       ...(notesXml ? [notesXml] : []),
     ],
   );
+}
+
+function uniqueTransitionStyleName(index: number, usedStyleNames: Set<string>): string {
+  let suffix = index;
+  let name = `ODPTransition${suffix}`;
+  while (usedStyleNames.has(name)) name = `ODPTransition${++suffix}`;
+  return name;
+}
+
+export function reconcileTransitionStyleResources(
+  options: OdpPresentationOptions,
+  transitionSounds: ReadonlyMap<OdpSlideOptions, OdpTransitionOptions>,
+): StyleResourceOptions[] {
+  const resources = [...(options.styleResources ?? [])];
+  const styleProjections = new Map<string, string>();
+  for (const slide of options.slides ?? []) {
+    if (
+      slide.drawingPageStyleName === undefined ||
+      slide.transition === undefined ||
+      typeof slide.transition === "string" ||
+      !requiresTransitionStyle(slide.transition)
+    ) {
+      continue;
+    }
+    const transition = transitionSounds.get(slide) ?? slide.transition;
+    if (transition === undefined || typeof transition === "string") continue;
+    const name = slide.drawingPageStyleName;
+    const projection = transitionStyleProjection(transition);
+    const existingProjection = styleProjections.get(name);
+    if (existingProjection !== undefined) {
+      if (existingProjection !== projection) {
+        throw new OdpGenerateError(
+          `ODP slides cannot share drawing-page style "${name}" with different transition styles`,
+          "content.xml",
+          `/office:automatic-styles/style:style[@style:name="${name}"]`,
+          name,
+          "conflicting-shared-transition-style",
+        );
+      }
+      continue;
+    }
+    styleProjections.set(name, projection);
+    const index = resources.findIndex(
+      (resource) => resource.name === name && resource.family === "drawing-page",
+    );
+    const existing = index === -1 ? undefined : resources[index];
+    const resource: StyleResourceOptions =
+      existing === undefined
+        ? { name, family: "drawing-page", properties: [] }
+        : { ...existing, properties: [...existing.properties] };
+    applyTransitionToStyleResource(resource, transition);
+    if (index === -1) resources.push(resource);
+    else resources[index] = resource;
+  }
+  return resources;
+}
+
+function transitionStyleProjection(transition: OdpTransitionOptions): string {
+  const projection = {
+    advanceAfterTime: transition.advanceAfterTime,
+    advanceOnClick: transition.advanceOnClick,
+    soundHref: transition.soundHref,
+    soundPlayFull: transition.soundPlayFull,
+    soundXmlId: transition.soundXmlId,
+    speed: transition.speed,
+  };
+  return JSON.stringify(projection);
 }
 
 function annotationXml(comment: SlideCommentOptions): string {
@@ -296,21 +400,41 @@ export function parseSlide(
   textStyles: Map<string, TextProperties>,
   columnWidths: Map<string, number>,
   binaries: Record<string, Uint8Array>,
+  packageMembers: OdfPackageFiles,
   graphicStyles: Map<string, GraphicStyle>,
   chartPool: Map<string, ChartSpaceOptions>,
   usedBinaryPaths: Set<string>,
   embeddedObjects: OdpEmbeddedObjectPool,
   manifestMediaTypes: Map<string, string | undefined>,
   nextEmbeddedShapeId: { value: number },
+  styleResources?: StyleResourceOptions[],
 ): OdpSlideOptions {
   const normalizedPage = compatibilityPage(page);
   const forms = parseForms(normalizedPage);
   const parsedAnimationRoots = (normalizedPage.elements ?? [])
     .filter((child): child is Element => child.name !== undefined && isAnimationElement(child.name))
     .map(parseAnimation);
-  const transition = parseTransition(parsedAnimationRoots);
+  const pageStyleName = attributeString(page, "draw:style-name");
+  const transitionStyle = styleResources?.find((resource) => resource.name === pageStyleName);
+  const transition = parseTransition(
+    parsedAnimationRoots,
+    transitionStyle,
+    packageMembers,
+    binaries,
+  );
+  const transitionEntry = parsedAnimationRoots.map(findTransitionFilter).find(Boolean);
+  const hasOtherAnimations =
+    parsedAnimationRoots.length > 1 ||
+    parsedAnimationRoots.some(
+      (entry) => entry !== transitionEntry && containsTransitionFilter(entry),
+    );
   const animationRoots = parsedAnimationRoots.filter(
-    (entry) => !(transition !== undefined && containsTransitionFilter(entry)),
+    (entry) =>
+      !(
+        transition !== undefined &&
+        containsTransitionFilter(entry) &&
+        (!hasOtherAnimations || hasTransitionOverlay(transitionEntry))
+      ),
   );
   const shapeReferences = collectOdfShapeIds(normalizedPage);
   const notes = childNamed(
@@ -487,6 +611,7 @@ export function parseSlide(
     children,
     ...(odpNodes.length > 0 ? { odpNodes } : {}),
     ...(transition !== undefined ? { transition } : {}),
+    ...(pageStyleName ? { drawingPageStyleName: pageStyleName } : {}),
     ...(animations.length > 0 ? { animations } : {}),
     ...(comments.length > 0 ? { comments } : {}),
     ...(notesText ? { notes: notesText } : {}),
@@ -555,101 +680,9 @@ function findTransitionFilter(entry: AnimationEntry): AnimationEntry | undefined
   return undefined;
 }
 
-const TRANSITION_TYPES = {
-  barWipe: "wipe",
-  blindsWipe: "blinds",
-  checkerBoardWipe: "checker",
-  dissolve: "dissolve",
-  ellipseWipe: "circle",
-  fade: "fade",
-  fanWipe: "wedge",
-  fourBoxWipe: "plus",
-  irisWipe: "diamond",
-  pushWipe: "push",
-  randomBarWipe: "randomBar",
-  slideWipe: "cover",
-} as const satisfies Record<string, TransitionOptions["type"]>;
-
-const SMIL_TRANSITION_TYPES: Partial<Record<NonNullable<TransitionOptions["type"]>, string>> = {
-  blinds: "blindsWipe",
-  checker: "checkerBoardWipe",
-  circle: "ellipseWipe",
-  cover: "slideWipe",
-  diamond: "irisWipe",
-  dissolve: "dissolve",
-  fade: "fade",
-  plus: "fourBoxWipe",
-  push: "pushWipe",
-  random: "random",
-  randomBar: "randomBarWipe",
-  wedge: "fanWipe",
-  wipe: "barWipe",
-  zoom: "zoom",
-};
-
 function containsTransitionFilter(entry: AnimationEntry): boolean {
   if (entry.behavior === "transitionFilter") return true;
   return (entry.children ?? []).some(containsTransitionFilter);
-}
-
-function parseTransition(entries: readonly AnimationEntry[]): TransitionOptions | undefined {
-  const filter = entries.map(findTransitionFilter).find(Boolean);
-  if (filter === undefined) return undefined;
-  const type = TRANSITION_TYPES[(filter.transitionType as keyof typeof TRANSITION_TYPES) ?? ""];
-  if (type === undefined) return undefined;
-  const subtype = filter.transitionSubType;
-  return {
-    type,
-    ...(filter.duration !== undefined && typeof filter.duration === "number"
-      ? { duration: filter.duration }
-      : filter.duration === "indefinite"
-        ? {}
-        : {}),
-    ...(subtype?.includes("horizontal") || subtype === "across" ? { orient: "horizontal" } : {}),
-    ...(subtype?.includes("vertical") || subtype === "down" ? { orient: "vertical" } : {}),
-    ...(subtype === "fadeOverColor" || subtype === "rectangle" ? { thruBlk: true } : {}),
-    ...(subtype === "fromRight" ? { direction: "left" } : {}),
-    ...(subtype === "fromLeft" ? { direction: "right" } : {}),
-    ...(subtype === "fromBottom" ? { direction: "up" } : {}),
-    ...(subtype === "fromTop" ? { direction: "down" } : {}),
-  } satisfies TransitionOptions;
-}
-
-function transitionXml(options: TransitionOptions): string {
-  const smilType = options.type === undefined ? undefined : SMIL_TRANSITION_TYPES[options.type];
-  if (!smilType) {
-    throw new OdpGenerateError(
-      `ODP cannot represent slide transition type: ${options.type}`,
-      "content.xml",
-      "/office:document-content/office:body/office:presentation/draw:page/anim:transitionFilter",
-      options.type ?? "(missing)",
-      "unsupported-transition-type",
-    );
-  }
-  const subtype =
-    options.type === "fade"
-      ? options.thruBlk
-        ? "fadeOverColor"
-        : "crossfade"
-      : options.orient !== undefined
-        ? options.orient === "horizontal"
-          ? "horizontal"
-          : "vertical"
-        : options.direction === "left"
-          ? "fromRight"
-          : options.direction === "right"
-            ? "fromLeft"
-            : options.direction === "up"
-              ? "fromBottom"
-              : options.direction === "down"
-                ? "fromTop"
-                : undefined;
-  const filter = xmlElement("anim:transitionFilter", {
-    "smil:type": smilType,
-    ...(subtype ? { "smil:subtype": subtype } : {}),
-    ...(options.duration !== undefined ? { "smil:dur": `${options.duration}ms` } : {}),
-  });
-  return xmlElement("anim:par", { "presentation:node-type": "timing-root" }, [filter]);
 }
 
 function resolveAnimationTargets(
@@ -856,15 +889,6 @@ function parseTableRowCells(
           "covered-cell-count-does-not-match-column-span",
         );
       }
-    }
-    if (children[index + coveredCount + 1]?.name === "table:covered-table-cell") {
-      throw new OdpParseError(
-        "Invalid ODP table covered-cell sequence",
-        "content.xml",
-        "/draw:page/table:table/table:table-row",
-        cell.name ?? "",
-        "covered-cell-count-does-not-match-column-span",
-      );
     }
     index += coveredCount;
   }

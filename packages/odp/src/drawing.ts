@@ -265,14 +265,6 @@ function pictureTypeFromUrl(value: string): PictureOptions["type"] | undefined {
       : (["png", "jpg", "gif", "bmp", "tif", "ico", "emf", "wmf"] as const).find(
           (candidate) => candidate === extension,
         );
-  if (!type)
-    throw new OdpParseError(
-      "Unsupported external image extension",
-      "content.xml",
-      "/office:document-content/office:presentation/draw:page/draw:frame/draw:image",
-      value,
-      "unsupported-image-extension",
-    );
   return type;
 }
 

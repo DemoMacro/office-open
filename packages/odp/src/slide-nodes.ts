@@ -1557,7 +1557,7 @@ function parseRequiredData(element: Element, path: string): { data: OdpDataRefer
 function parseData(element: Element, path: string): OdpDataReferenceOptions {
   const href = attributeString(element, "xlink:href");
   if (!href) throw requiredAttributeError(path, "xlink:href");
-  if (attributeString(element, "xlink:type") !== "simple") {
+  if ((attributeString(element, "xlink:type") ?? "simple") !== "simple") {
     throw new OdpParseError(
       "Data reference must be a simple link",
       "content.xml",
