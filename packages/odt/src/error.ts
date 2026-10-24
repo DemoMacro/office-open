@@ -17,7 +17,9 @@ export class OdtParseError extends Error {
 export class OdtGenerateError extends Error {
   constructor(
     message: string,
-    readonly field: string,
+    readonly part: string,
+    readonly path: string,
+    readonly elementName: string,
     readonly reason: string,
     options?: ErrorOptions,
   ) {

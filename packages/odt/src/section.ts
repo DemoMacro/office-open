@@ -14,6 +14,7 @@ import type { Element } from "@office-open/xml";
 import { blockXml, blocksXml, parseBlocks, unknownOdtElement, type ParseContext } from "./body";
 import type { OdtChart, OdtImage } from "./drawing";
 import type { OdtEmbeddedObjectOptions } from "./embedded-objects";
+import { OdtParseError } from "./error";
 import type { CanonicalRevision, OdtVariableValueType } from "./paragraph";
 
 /** Footnote/endnote entry, indexed from the shared docx document model. */
@@ -52,6 +53,7 @@ export interface NotesContext {
   endnotes: Map<number, NoteChildren>;
   bookmarkNames: Map<number, string>;
   bookmarkEndNames: Map<number, string[]>;
+  bookmarkXmlIdCounts: Map<number, number>;
   sequenceNames: Set<string>;
   variableTypes: Map<string, OdtVariableValueType>;
   forms: OfficeFormsOptions;
@@ -66,6 +68,13 @@ export function sectionChildText(child: SectionChild): string {
   if ("paragraph" in child)
     return typeof child.paragraph === "string" ? child.paragraph : (child.paragraph.text ?? "");
   return "";
+}
+
+/** Allocate a unique XML ID when the canonical bookmark id occurs repeatedly. */
+export function nextBookmarkXmlId(id: number, notes: NotesContext): string {
+  const occurrence = (notes.bookmarkXmlIdCounts.get(id) ?? 0) + 1;
+  notes.bookmarkXmlIdCounts.set(id, occurrence);
+  return occurrence === 1 ? `bookmark-${id}` : `bookmark-${id}-${occurrence}`;
 }
 
 /** Note reference renders inline as text:note carrying its body paragraphs. */
@@ -200,8 +209,28 @@ export function encodeSectionTag(styleName: string): string {
   return `odf:text-section;style=${styleName.replace(/([\\;])/g, "\\$1")}`;
 }
 
+export function trackBookmarkId(context: ParseContext, name: string, id: number): void {
+  assertSafeBookmarkId(id, "bookmark-id");
+  context.bookmarkIdAllocator.value = Math.max(context.bookmarkIdAllocator.value, id);
+  context.bookmarkIds.set(name, id);
+}
+
 export function nextBookmarkId(context: ParseContext): number {
-  return Math.max(0, ...context.bookmarkIds.values()) + 1;
+  const id = context.bookmarkIdAllocator.value + 1;
+  assertSafeBookmarkId(id, "bookmark-id");
+  context.bookmarkIdAllocator.value = id;
+  return id;
+}
+
+export interface BookmarkIdDiagnostic {
+  elementName?: string;
+  path?: string;
+}
+
+export function parseBookmarkId(digits: string, diagnostic?: BookmarkIdDiagnostic): number {
+  const id = Number(digits);
+  assertSafeBookmarkId(id, "bookmark-id", diagnostic);
+  return id;
 }
 
 export function bookmarkDisplayName(id: number, name: string, notes: NotesContext): string {
@@ -227,10 +256,32 @@ export function countBookmarkName(id: number, name: string, notes: NotesContext)
   notes.bookmarkNames.set(id, name);
 }
 
-export function canonicalBookmarkName(name: string): { name: string; encodedId?: number } {
+export function canonicalBookmarkName(
+  name: string,
+  diagnostic?: BookmarkIdDiagnostic,
+): { name: string; encodedId?: number } {
   const match = /^(?<name>.+)__office-open-id-(?<id>\d+)(?:-\d+)?__$/.exec(name);
   if (!match) return { name };
-  return { name: match.groups?.name ?? name, encodedId: Number(match.groups?.id) };
+  return {
+    name: match.groups?.name ?? name,
+    encodedId: parseBookmarkId(match.groups?.id ?? "", diagnostic),
+  };
+}
+
+function assertSafeBookmarkId(
+  id: number,
+  fallbackName: string,
+  diagnostic?: BookmarkIdDiagnostic,
+): void {
+  if (!Number.isSafeInteger(id) || id < 0) {
+    throw new OdtParseError(
+      "ODT bookmark id is not a non-negative safe integer",
+      "content.xml",
+      diagnostic?.path ?? "/office:body/office:text",
+      diagnostic?.elementName ?? fallbackName,
+      "unsafe-bookmark-id",
+    );
+  }
 }
 
 export function parseAnnotation(element: Element): ParagraphChild {
@@ -279,7 +330,15 @@ export function parseIndex(
   const scope = attributeString(source, "text:index-scope");
   if (scope !== undefined && scope !== "document") throw unknownOdtElement(element);
   const body = childNamed(element, "text:index-body");
-  const entries = body ? parseBlocks(body.elements ?? [], context) : [];
+  const entries = body
+    ? parseBlocks(
+        body.elements ?? [],
+        context,
+        0,
+        undefined,
+        `${context.sourcePath ?? "/office:body/office:text"}/${element.name}/text:index-body`,
+      )
+    : [];
   return {
     alias: attributeString(element, "text:name"),
     captionLabelIncludingNumbers:
@@ -296,7 +355,15 @@ export function parseContentIndex(
   const source = childNamed(element, sourceName);
   const title = childNamed(source, "text:index-title-template");
   const body = childNamed(element, "text:index-body");
-  const entries = body ? parseBlocks(body.elements ?? [], context) : [];
+  const entries = body
+    ? parseBlocks(
+        body.elements ?? [],
+        context,
+        0,
+        undefined,
+        `${context.sourcePath ?? "/office:body/office:text"}/${element.name}/text:index-body`,
+      )
+    : [];
   return {
     alias: attributeString(element, "text:name"),
     hyperlink: childrenNamed(source, "text:table-of-content-entry-template").some((template) =>
@@ -333,7 +400,15 @@ export function parseBibliography(
 
 export function parseNote(element: Element, context: ParseContext): ParagraphChild[] {
   const body = childNamed(element, "text:note-body");
-  const children = body ? parseBlocks(body.elements ?? [], context) : [];
+  const children = body
+    ? parseBlocks(
+        body.elements ?? [],
+        context,
+        0,
+        undefined,
+        `${context.sourcePath ?? "/office:body/office:text"}/${element.name}/text:note-body`,
+      )
+    : [];
   const isEndnote = attributeString(element, "text:note-class") === "endnote";
   const notes = isEndnote ? context.notes.endnotes : context.notes.footnotes;
   notes.push({ id: notes.length + 1, children });

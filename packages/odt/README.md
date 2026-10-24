@@ -46,13 +46,13 @@ const options = await parseDocument(odt);
 - `generateDocument(options, output?)` — generate an `.odt` package from `OdtDocumentOptions` as `Promise` (`Uint8Array` by default); `generateDocumentSync` covers synchronous output and `generateDocumentStream` returns a `ReadableStream<Uint8Array>`
 - `parseDocument(data)` — parse bytes, Base64/data-URL strings, `Blob`, or `ReadableStream` into `OdtDocumentOptions` (the canonical `DocumentOptions` ODF overlay) as `Promise`; `parseDocumentSync` covers synchronous parsing (rejects `Blob` and `ReadableStream` inputs)
 - `patchDocument({ data, commands })` — parse an ODT package, apply ordered canonical edits, and regenerate it
-- `OdtParseError` — structured parse failure with part, path, and reason diagnostics
+- `OdtParseError` / `OdtGenerateError` — structured failures with part, path, element, and reason diagnostics
 
 Every input is a plain JSON object (`DocumentOptions` and its option types). The full typed API reference lives in the [documentation](https://www.office-open.com/en/getting-started/more-formats).
 
 ## Errors and Limitations
 
-- Invalid ZIP containers, unexpected mimetypes, truncated XML, and unknown content-model elements throw `OdtParseError`.
+- Invalid ZIP containers, unexpected mimetypes, truncated XML, and unknown content-model elements throw `OdtParseError`; unrepresentable canonical document output throws `OdtGenerateError`.
 - Generated output targets ODF 1.3.
 - Patching edits the canonical model and preserves package overlays unless they are explicitly changed.
 

@@ -57,10 +57,13 @@ import {
   bookmarkDisplayName,
   canonicalBookmarkName,
   nextBookmarkId,
+  nextBookmarkXmlId,
+  parseBookmarkId,
   noteXml,
   parseAnnotationEnd,
   parseAnnotationStart,
   parseNote,
+  trackBookmarkId,
   type NotesContext,
 } from "./section";
 
@@ -527,7 +530,10 @@ export function runXml(
       notes.bookmarkEndNames.set(child.bookmarkStart.id, endNames);
       notes.bookmarkNames.set(child.bookmarkStart.id, name);
       return xmlElement("text:bookmark-start", {
-        "xml:id": child.bookmarkStart.id ? `bookmark-${child.bookmarkStart.id}` : undefined,
+        "xml:id":
+          child.bookmarkStart.id === undefined
+            ? undefined
+            : nextBookmarkXmlId(child.bookmarkStart.id, notes),
         "text:name": name,
       });
     }
@@ -963,6 +969,8 @@ export function unsupportedField(instruction: string): OdtParseError {
 function unrepresentableCommentRange(id: number): OdtGenerateError {
   return new OdtGenerateError(
     `comment range ${id}: ODF annotation requires a comment body`,
+    "content.xml",
+    "/office:document-content/office:body/office:text",
     "commentRange",
     "unrepresentable-orphan-comment-range",
   );
@@ -1244,10 +1252,10 @@ export function bookmarkReferenceXml(value: { name: string; referenceFormat?: st
 export function bookmarkEndXml(id: number, notes: NotesContext): string {
   const name = notes.bookmarkEndNames.get(id)?.shift() ?? notes.bookmarkNames.get(id);
   if (!name) {
-    const orphanName = `bookmark-${id}`;
+    const orphanName = nextBookmarkXmlId(id, notes);
     return (
       xmlElement("text:bookmark-start", {
-        "xml:id": `bookmark-${id}`,
+        "xml:id": orphanName,
         "text:name": orphanName,
       }) + xmlElement("text:bookmark-end", { "text:name": orphanName })
     );
@@ -1578,8 +1586,12 @@ export function parseRuns(
         return [{ bookmark: { name } }];
       }
       if (child.name === "text:bookmark-start" || child.name === "text:reference-mark-start") {
+        const bookmarkDiagnostic = {
+          path: `${context.sourcePath ?? "/office:body/office:text"}/${child.name}`,
+          elementName: child.name,
+        };
         const sourceName = attributeString(child, "text:name") ?? "";
-        const decoded = canonicalBookmarkName(sourceName);
+        const decoded = canonicalBookmarkName(sourceName, bookmarkDiagnostic);
         const name = decoded.name;
         if (!name) throw unknownOdtElement(child);
         const existingId = context.bookmarkIds.get(name);
@@ -1591,19 +1603,24 @@ export function parseRuns(
         if (existingId !== undefined && sourceName === name && encodedId !== String(existingId)) {
           throw unknownOdtElement(child);
         }
+        if (encodedId !== undefined) parseBookmarkId(encodedId, bookmarkDiagnostic);
         const id = decoded.encodedId ?? existingId ?? bookmarkRunId(context, name);
-        if (existingId === undefined) context.bookmarkIds.set(name, id);
-        if (sourceName !== name) context.bookmarkIds.set(sourceName, id);
+        if (existingId === undefined) trackBookmarkId(context, name, id);
+        if (sourceName !== name) trackBookmarkId(context, sourceName, id);
         return [{ bookmarkStart: { id, name } }];
       }
       if (child.name === "text:bookmark-end" || child.name === "text:reference-mark-end") {
+        const bookmarkDiagnostic = {
+          path: `${context.sourcePath ?? "/office:body/office:text"}/${child.name}`,
+          elementName: child.name,
+        };
         const sourceName = attributeString(child, "text:name") ?? "";
-        const name = canonicalBookmarkName(sourceName).name;
+        const name = canonicalBookmarkName(sourceName, bookmarkDiagnostic).name;
         const id = context.bookmarkIds.get(sourceName) ?? context.bookmarkIds.get(name);
         if (!name) throw unknownOdtElement(child);
         if (id === undefined) {
           const allocated = bookmarkRunId(context, name);
-          context.bookmarkIds.set(name, allocated);
+          trackBookmarkId(context, name, allocated);
           return [{ bookmarkStart: { id: allocated, name } }, { bookmarkEnd: { id: allocated } }];
         }
         return [{ bookmarkEnd: { id } }];
@@ -2279,7 +2296,7 @@ export function bookmarkRunId(context: ParseContext, name: string): number {
   const existing = context.bookmarkIds.get(name);
   if (existing !== undefined) return existing;
   const id = nextBookmarkId(context);
-  context.bookmarkIds.set(name, id);
+  trackBookmarkId(context, name, id);
   return id;
 }
 

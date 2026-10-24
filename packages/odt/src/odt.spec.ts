@@ -5,7 +5,13 @@ import type { ParagraphOptions } from "@office-open/docx";
 import { CHART_MIME, generateOcf, ODF_NAMESPACES, readOcf } from "@office-open/odf";
 import { describe, expect, it } from "vite-plus/test";
 
-import { generateDocument, OdtParseError, parseDocument, type OdtDocumentOptions } from "./index";
+import {
+  generateDocument,
+  OdtGenerateError,
+  OdtParseError,
+  parseDocument,
+  type OdtDocumentOptions,
+} from "./index";
 import { trackRevisionBlocks } from "./paragraph";
 
 const FORM_NAMESPACE = 'xmlns:form="urn:oasis:names:tc:opendocument:xmlns:form:1.0"';
@@ -545,6 +551,83 @@ describe("ODT canonical projection", () => {
     expect(projection(parsed.sections[0]?.children)).toEqual(options.sections[0]?.children);
   });
 
+  it("rejects bookmark ids outside the safe integer range", async () => {
+    await expect(
+      parseDocument(
+        odtPackage(
+          "<text:bookmark-start text:id='9007199254740993' text:name='unsafe'/>" +
+            "<text:bookmark-end text:name='unsafe'/>",
+        ),
+      ),
+    ).rejects.toThrow(OdtParseError);
+    await expect(
+      parseDocument(
+        odtPackage(
+          "<text:bookmark-start text:name='unsafe__office-open-id-9007199254740993__'/>" +
+            "<text:bookmark-end text:name='unsafe__office-open-id-9007199254740993__'/>",
+        ),
+      ),
+    ).rejects.toThrow(OdtParseError);
+    await expect(
+      parseDocument(
+        odtPackage(
+          "<text:bookmark-start text:id='9007199254740991' text:name='maximum'/>" +
+            "<text:bookmark-start text:name='overflow'/>" +
+            "<text:bookmark-end text:name='overflow'/>",
+        ),
+      ),
+    ).rejects.toThrow(OdtParseError);
+  });
+
+  it("reports bookmark diagnostics with the source path", async () => {
+    await expect(
+      parseDocument(
+        odtPackage(
+          "<text:p>prefix</text:p>" +
+            "<text:p><text:bookmark-start text:name='unsafe__office-open-id-9007199254740993__'/>" +
+            "<text:bookmark-end text:name='unsafe__office-open-id-9007199254740993__'/></text:p>",
+        ),
+      ),
+    ).rejects.toMatchObject({
+      elementName: "text:bookmark-start",
+      path: "/office:body/office:text/text:p/text:bookmark-start",
+      reason: "unsafe-bookmark-id",
+    });
+  });
+
+  it("reports bookmark paths through nested containers", async () => {
+    const bookmark = (name: string): string =>
+      `<text:p><text:bookmark-start text:name='${name}'/>` +
+      `<text:bookmark-end text:name='${name}'/></text:p>`;
+    await expect(
+      parseDocument(
+        odtPackage(
+          `<text:section text:name='section'>${bookmark("unsafe__office-open-id-9007199254740993__")}</text:section>`,
+        ),
+      ),
+    ).rejects.toMatchObject({
+      path: "/office:body/office:text/text:section/text:p/text:bookmark-start",
+    });
+    await expect(
+      parseDocument(
+        odtPackage(
+          `<text:list><text:list-item>${bookmark("unsafe__office-open-id-9007199254740993__")}</text:list-item></text:list>`,
+        ),
+      ),
+    ).rejects.toMatchObject({
+      path: "/office:body/office:text/text:list/text:list-item/text:p/text:bookmark-start",
+    });
+    await expect(
+      parseDocument(
+        odtPackage(
+          `<text:p><text:note text:note-class='footnote'><text:note-body>${bookmark("unsafe__office-open-id-9007199254740993__")}</text:note-body></text:note></text:p>`,
+        ),
+      ),
+    ).rejects.toMatchObject({
+      path: "/office:body/office:text/text:p/text:note/text:note-body/text:p/text:bookmark-start",
+    });
+  });
+
   it("round-trips sender fields", async () => {
     const source = odtPackage(
       "<text:p><text:sender-initials>AI</text:sender-initials><text:sender-city>City</text:sender-city><text:sender-state-or-province>State</text:sender-state-or-province></text:p>",
@@ -1048,6 +1131,19 @@ describe("ODT canonical projection", () => {
     expect(parsed.comments).toEqual([{ id: 1, children: [] }]);
   });
 
+  it("reports unrepresentable orphan comment ranges consistently", async () => {
+    const error = await generateDocument({
+      sections: [{ children: [{ paragraph: { children: [{ commentRangeEnd: { id: 2 } }] } }] }],
+    }).catch((caught: unknown) => caught);
+    expect(error).toBeInstanceOf(OdtGenerateError);
+    expect(error).toMatchObject({
+      part: "content.xml",
+      path: "/office:document-content/office:body/office:text",
+      elementName: "commentRange",
+      reason: "unrepresentable-orphan-comment-range",
+    });
+  });
+
   it("round-trips duplicate bookmark names with distinct canonical ids", async () => {
     const options: DocumentOptions = {
       sections: [
@@ -1202,6 +1298,27 @@ describe("ODT canonical projection", () => {
         children: [{ bookmarkStart: { id: 1, name: "bookmark-7" } }, { bookmarkEnd: { id: 1 } }],
       },
     });
+  });
+
+  it("creates unique XML IDs for repeated orphan bookmark ends", async () => {
+    const content = new TextDecoder().decode(
+      unzipSync(
+        await generateDocument({
+          sections: [
+            {
+              children: [
+                { paragraph: { children: [{ bookmarkEnd: { id: 7 } }] } },
+                { paragraph: { children: [{ bookmarkEnd: { id: 7 } }] } },
+              ],
+            },
+          ],
+        }),
+      )["content.xml"]!,
+    );
+    expect(content.match(/xml:id="bookmark-7(?:-\d+)?"/g)).toEqual([
+      'xml:id="bookmark-7"',
+      'xml:id="bookmark-7-2"',
+    ]);
   });
 
   it("reports unknown body elements with structured errors", async () => {

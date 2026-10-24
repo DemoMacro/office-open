@@ -113,11 +113,14 @@ import {
   encodeSectionTag,
   indexXml,
   nextBookmarkId,
+  nextBookmarkXmlId,
+  parseBookmarkId,
   parseAnnotationEnd,
   parseAnnotationStart,
   parseBibliography,
   parseContentIndex,
   parseIndex,
+  trackBookmarkId,
   type NoteChildren,
   type NoteEntry,
   type NotesContext,
@@ -149,6 +152,7 @@ export interface ParseContext {
   comments: NonNullable<DocumentOptions["comments"]>;
   annotationIds: Map<string, number>;
   bookmarkIds: Map<string, number>;
+  bookmarkIdAllocator: { value: number };
   indexAutoMarkFile?: import("./options").OdtIndexAutoMarkFileOptions;
   pendingFormatChanges: Map<string, import("./paragraph").ChangedProperties>;
   sectionSources: Map<string, import("./options").OdtSectionSourceOptions>;
@@ -161,6 +165,7 @@ export interface ParseContext {
   documentVariables: NonNullable<NonNullable<DocumentOptions["settings"]>["docVars"]>;
   pendingSequences: Set<string>;
   pendingVariables: Map<string, import("./paragraph").OdtVariableValueType>;
+  sourcePath?: string;
   nextEmbeddedShapeId: number;
   trackRevisions?: boolean;
 }
@@ -291,6 +296,7 @@ export function notesContext(options: OdtDocumentOptions): NotesContext {
     endnotes,
     bookmarkNames: new Map(),
     bookmarkEndNames: new Map(),
+    bookmarkXmlIdCounts: new Map(),
     sequenceNames: new Set(
       (options.sequenceDeclarations ?? []).map((declaration) => declaration.name),
     ),
@@ -487,6 +493,7 @@ function parseOdtPackage(data: Uint8Array): OdtDocumentOptions {
     comments: [],
     annotationIds: new Map(),
     bookmarkIds: new Map(),
+    bookmarkIdAllocator: { value: 0 },
     pendingFormatChanges: new Map(),
     sectionSources: new Map(),
     changes: new Map(),
@@ -694,7 +701,10 @@ export function blockXml(
     notes.bookmarkEndNames.set(child.bookmarkStart.id, endNames);
     notes.bookmarkNames.set(child.bookmarkStart.id, name);
     return xmlElement("text:bookmark-start", {
-      "xml:id": child.bookmarkStart.id ? `bookmark-${child.bookmarkStart.id}` : undefined,
+      "xml:id":
+        child.bookmarkStart.id === undefined
+          ? undefined
+          : nextBookmarkXmlId(child.bookmarkStart.id, notes),
       "text:name": name,
     });
   }
@@ -746,7 +756,15 @@ export function parseBlock(element: Element, context: ParseContext): SectionChil
     return {
       sdt: {
         properties: { alias: attributeString(element, "text:name") ?? "" },
-        children: blockChildren(parseBlocks(element.elements ?? [], context)),
+        children: blockChildren(
+          parseBlocks(
+            element.elements ?? [],
+            context,
+            0,
+            undefined,
+            `${context.sourcePath}/${element.name}`,
+          ),
+        ),
       },
     };
   if (element.name === "table:table")
@@ -853,7 +871,9 @@ export function parseBlocks(
   context: ParseContext,
   listDepth = 0,
   listState?: { name: string; ordered: boolean },
+  sourcePath = "/office:body/office:text",
 ): SectionChild[] {
+  context.sourcePath = sourcePath;
   const result: SectionChild[] = [];
   let pendingPageBreak = false;
   let resumeAfter = -1;
@@ -876,6 +896,16 @@ export function parseBlocks(
     for (const revision of context.pendingFormatChanges.values())
       tracked = formatRevisionBlocks(tracked, revision);
     result.push(...tracked);
+  };
+  const parseWithPath = (element: Element, parse: () => void): void => {
+    const previousPath = context.sourcePath;
+    const basePath = previousPath ?? "/office:body/office:text";
+    context.sourcePath = element.name ? `${basePath}/${element.name}` : basePath;
+    try {
+      parse();
+    } finally {
+      context.sourcePath = previousPath;
+    }
   };
   for (const [elementIndex, element] of hoistedElements.entries()) {
     if (elementIndex <= resumeAfter) continue;
@@ -943,6 +973,7 @@ export function parseBlocks(
               context,
               listDepth,
               listState,
+              `${sourcePath}/text:section`,
             ),
           ),
         },
@@ -956,7 +987,15 @@ export function parseBlocks(
       const name = attributeString(element, "text:style-name") ?? "";
       const state = { name, ordered: context.listStyles.get(name) ?? false };
       for (const item of childrenNamed(element, "text:list-item")) {
-        push(...parseBlocks(item.elements ?? [], context, listDepth + 1, state));
+        push(
+          ...parseBlocks(
+            item.elements ?? [],
+            context,
+            listDepth + 1,
+            state,
+            `${sourcePath}/text:list/text:list-item`,
+          ),
+        );
       }
       continue;
     }
@@ -969,8 +1008,12 @@ export function parseBlocks(
       continue;
     }
     if (element.name === "text:bookmark-start") {
+      const bookmarkDiagnostic = {
+        path: `${context.sourcePath ?? "/office:body/office:text"}/${element.name}`,
+        elementName: element.name,
+      };
       const sourceName = attributeString(element, "text:name") ?? "";
-      const decoded = canonicalBookmarkName(sourceName);
+      const decoded = canonicalBookmarkName(sourceName, bookmarkDiagnostic);
       const name = decoded.name;
       if (!name) throw unknownOdtElement(element);
       const existingId = context.bookmarkIds.get(name);
@@ -981,20 +1024,25 @@ export function parseBlocks(
       )?.[1];
       if (existingId !== undefined && sourceName === name && encodedId !== String(existingId))
         throw unknownOdtElement(element);
+      if (encodedId !== undefined) parseBookmarkId(encodedId, bookmarkDiagnostic);
       const id =
         decoded.encodedId ??
         existingId ??
-        (encodedId ? Number(encodedId) : nextBookmarkId(context));
-      if (existingId === undefined) context.bookmarkIds.set(name, id);
-      if (sourceName !== name) context.bookmarkIds.set(sourceName, id);
+        (encodedId ? parseBookmarkId(encodedId, bookmarkDiagnostic) : nextBookmarkId(context));
+      if (existingId === undefined) trackBookmarkId(context, name, id);
+      if (sourceName !== name) trackBookmarkId(context, sourceName, id);
       push({
         bookmarkStart: { id, name },
       });
       continue;
     }
     if (element.name === "text:bookmark-end") {
+      const bookmarkDiagnostic = {
+        path: `${context.sourcePath ?? "/office:body/office:text"}/${element.name}`,
+        elementName: element.name,
+      };
       const sourceName = attributeString(element, "text:name") ?? "";
-      const name = canonicalBookmarkName(sourceName).name;
+      const name = canonicalBookmarkName(sourceName, bookmarkDiagnostic).name;
       const id = context.bookmarkIds.get(sourceName) ?? context.bookmarkIds.get(name);
       if (!name || id === undefined) throw unknownOdtElement(element);
       push({
@@ -1005,7 +1053,7 @@ export function parseBlocks(
     if (element.name === "text:reference-mark-start") {
       const name = attributeString(element, "text:name") ?? "";
       const id = context.bookmarkIds.get(name) ?? nextBookmarkId(context);
-      context.bookmarkIds.set(name, id);
+      trackBookmarkId(context, name, id);
       push({
         bookmarkStart: { id, name },
       });
@@ -1062,6 +1110,7 @@ export function parseBlocks(
         context,
         listDepth,
         listState,
+        `${sourcePath}/${element.name}`,
       );
       push(
         ...(change.kind === "format"
@@ -1081,7 +1130,7 @@ export function parseBlocks(
       throw invalidOdtElement(element);
     }
     if (element.name === "text:change") {
-      push({ paragraph: { children: parseRuns(element, context) } });
+      parseWithPath(element, () => push({ paragraph: { children: parseRuns(element, context) } }));
       continue;
     }
     if (element.name === "office:annotation-end") {
@@ -1176,20 +1225,22 @@ export function parseBlocks(
       throw unknownOdtElement(element);
     }
     if (element.name === "text:p" || element.name === "text:h" || element.name === "table:table") {
-      const child = parseBlock(element, context);
-      if (listDepth > 0 && "paragraph" in child) {
-        const paragraph = normalizeParagraph(child.paragraph);
-        const mappedChild = {
-          paragraph: listState?.ordered
-            ? { ...paragraph, numbering: { reference: listState.name, level: listDepth - 1 } }
-            : { ...paragraph, bullet: { level: listDepth - 1 } },
-        } as SectionChild;
-        push(pendingPageBreak ? withPageBreakBefore(mappedChild) : mappedChild);
-        pendingPageBreak = false;
-      } else {
-        push(pendingPageBreak ? withPageBreakBefore(child) : child);
-        pendingPageBreak = false;
-      }
+      parseWithPath(element, () => {
+        const child = parseBlock(element, context);
+        if (listDepth > 0 && "paragraph" in child) {
+          const paragraph = normalizeParagraph(child.paragraph);
+          const mappedChild = {
+            paragraph: listState?.ordered
+              ? { ...paragraph, numbering: { reference: listState.name, level: listDepth - 1 } }
+              : { ...paragraph, bullet: { level: listDepth - 1 } },
+          } as SectionChild;
+          push(pendingPageBreak ? withPageBreakBefore(mappedChild) : mappedChild);
+          pendingPageBreak = false;
+        } else {
+          push(pendingPageBreak ? withPageBreakBefore(child) : child);
+          pendingPageBreak = false;
+        }
+      });
     } else if (element.name) {
       throw unknownOdtElement(element);
     }
