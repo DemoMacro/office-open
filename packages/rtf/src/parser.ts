@@ -1,4 +1,4 @@
-import { sanitizeXmlText } from "@office-open/core";
+import { sanitizeOptionsText } from "@office-open/core";
 import type { DocumentOptions } from "@office-open/docx";
 
 import { RtfParseError } from "./errors";
@@ -20,17 +20,5 @@ export function parseDocument(
   ) {
     throw new RtfParseError('RTF must begin with "{\\rtf"', tokens[0]?.position ?? 0, sourceText);
   }
-  return sanitizeDocumentText(parseRtfTokens(tokens, sourceText));
-}
-
-function sanitizeDocumentText<T>(value: T): T {
-  if (typeof value === "string") return sanitizeXmlText(value) as T;
-  if (value instanceof Uint8Array || value instanceof Date) return value;
-  if (Array.isArray(value)) return value.map(sanitizeDocumentText) as T;
-  if (value && typeof value === "object") {
-    return Object.fromEntries(
-      Object.entries(value).map(([key, child]) => [key, sanitizeDocumentText(child)]),
-    ) as T;
-  }
-  return value;
+  return sanitizeOptionsText(parseRtfTokens(tokens, sourceText));
 }
