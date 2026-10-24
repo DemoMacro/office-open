@@ -1,3 +1,5 @@
+import { assertValidXmlCharacters, isValidXmlCharacter } from "./characters";
+import { XmlParseError } from "./errors";
 import type { Element, ParseOptions } from "./types";
 
 const ENTITY_MAP: Record<string, string> = {
@@ -11,45 +13,9 @@ const ENTITY_MAP: Record<string, string> = {
 // (&#65; decimal, &#x42; hex). The final alternative catches malformed and
 // unsupported references so callers never receive their source text.
 const ENTITY_PATTERN = /&(?:amp|lt|gt|quot|apos);|&#x[0-9a-fA-F]+;|&#[0-9]+;|&/g;
-// XML 1.0 allows TAB, LF, CR, U+0020–D7FF, E000–FFFD, and paired U+10000–
-// 10FFFF. Native regex first rejects the common valid document in one scan;
-// the byte loop only runs for malformed input to produce a precise diagnostic.
-const INVALID_XML_CHARACTERS =
-  /[\p{Control}--[\t\n\r]]|[\uFFFE\uFFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/v;
 // "Contains a non-whitespace character" — same predicate as
 // `text.trim().length > 0` without allocating the trimmed copy.
 const HAS_CONTENT = /\S/;
-
-function isValidXmlCharacter(code: number): boolean {
-  return (
-    code === 0x09 ||
-    code === 0x0a ||
-    code === 0x0d ||
-    (code >= 0x20 && code <= 0xd7ff) ||
-    (code >= 0xe000 && code <= 0xfffd) ||
-    (code >= 0x10000 && code <= 0x10ffff)
-  );
-}
-
-function validateXmlCharacters(source: string): void {
-  if (!INVALID_XML_CHARACTERS.test(source)) return;
-  for (let index = 0; index < source.length; index += 1) {
-    const code = source.charCodeAt(index);
-    if (code >= 0xd800 && code <= 0xdbff) {
-      const low = source.charCodeAt(index + 1);
-      const combined =
-        low >= 0xdc00 && low <= 0xdfff ? 0x10000 + ((code - 0xd800) << 10) + (low - 0xdc00) : 0;
-      if (combined >= 0x10000 && combined <= 0x10ffff) {
-        index += 1;
-        continue;
-      }
-      throw new Error(`Malformed XML: invalid character U+${code.toString(16).padStart(4, "0")}.`);
-    }
-    if (!isValidXmlCharacter(code)) {
-      throw new Error(`Malformed XML: invalid character U+${code.toString(16).padStart(4, "0")}.`);
-    }
-  }
-}
 
 export function unescapeXml(str: string): string {
   // Fast path: entities all start with '&', and OOXML parts overwhelmingly
@@ -58,14 +24,14 @@ export function unescapeXml(str: string): string {
   // profiles, so gate it on the sentinel byte.
   if (str.indexOf("&") === -1) return str;
   return str.replace(ENTITY_PATTERN, (match) => {
-    if (match === "&") throw new Error("Malformed XML: unsupported or malformed entity.");
+    if (match === "&") throw new XmlParseError("Malformed XML: unsupported or malformed entity.");
     if (ENTITY_MAP[match] !== undefined) return ENTITY_MAP[match];
     // Numeric character reference: strip "&#" prefix and ";" suffix.
     const body = match.slice(2, -1);
     const code =
       body[0] === "x" || body[0] === "X" ? parseInt(body.slice(1), 16) : parseInt(body, 10);
     if (!Number.isSafeInteger(code) || code < 0 || !isValidXmlCharacter(code)) {
-      throw new Error(`Malformed XML: invalid character reference ${match}.`);
+      throw new XmlParseError(`Malformed XML: invalid character reference ${match}.`);
     }
     return String.fromCodePoint(code);
   });
@@ -145,7 +111,7 @@ function setXmlAttribute(
   value: string,
 ): Record<string, string> {
   if (attrs !== undefined && Object.hasOwn(attrs, name)) {
-    throw new Error(`Malformed XML: duplicate attribute ${name}.`);
+    throw new XmlParseError(`Malformed XML: duplicate attribute ${name}.`);
   }
   const result = attrs ?? {};
   result[name] = value;
@@ -160,7 +126,7 @@ function claimCanonicalNamespace(
   const owner = namespaces.get(canonicalPrefix);
   if (owner !== undefined && owner !== namespace) {
     const label = canonicalPrefix === "" ? "default namespace" : `prefix ${canonicalPrefix}`;
-    throw new Error(`Malformed XML: normalized ${label} has conflicting namespaces.`);
+    throw new XmlParseError(`Malformed XML: normalized ${label} has conflicting namespaces.`);
   }
   namespaces.set(canonicalPrefix, namespace);
 }
@@ -174,7 +140,7 @@ function setNamespaceDeclaration(
   const existing = attrs?.[name];
   if (existing !== undefined) {
     if (existing !== namespace) {
-      throw new Error(`Malformed XML: duplicate attribute ${name}.`);
+      throw new XmlParseError(`Malformed XML: duplicate attribute ${name}.`);
     }
     return attrs ?? {};
   }
@@ -251,22 +217,22 @@ function findDeferredClose(source: string, tagName: string, from: number): Defer
 
     if (source.startsWith("<![CDATA[", openIndex)) {
       cursor = markupEnd(source, openIndex + 9, "]]>");
-      if (cursor === -1) throw new Error("Malformed XML: unclosed CDATA section.");
+      if (cursor === -1) throw new XmlParseError("Malformed XML: unclosed CDATA section.");
       continue;
     }
     if (source.startsWith("<!--", openIndex)) {
       cursor = markupEnd(source, openIndex + 4, "-->");
-      if (cursor === -1) throw new Error("Malformed XML: unclosed comment.");
+      if (cursor === -1) throw new XmlParseError("Malformed XML: unclosed comment.");
       continue;
     }
     if (source.startsWith("<?", openIndex)) {
       cursor = markupEnd(source, openIndex + 2, "?>");
-      if (cursor === -1) throw new Error("Malformed XML: unclosed processing instruction.");
+      if (cursor === -1) throw new XmlParseError("Malformed XML: unclosed processing instruction.");
       continue;
     }
     if (source.startsWith("<!DOCTYPE", openIndex)) {
       const end = doctypeEnd(source, openIndex + 9);
-      if (end === -1) throw new Error("Malformed XML: unclosed DOCTYPE declaration.");
+      if (end === -1) throw new XmlParseError("Malformed XML: unclosed DOCTYPE declaration.");
       cursor = end + 1;
       continue;
     }
@@ -276,12 +242,12 @@ function findDeferredClose(source: string, tagName: string, from: number): Defer
     const nameEnd = findTagNameEnd(source, nameStart);
     const name = source.slice(nameStart, nameEnd);
     const tagEnd = isClosing ? nameEnd : openingTagEnd(source, nameEnd);
-    if (tagEnd === -1) throw new Error(`Malformed XML: unclosed tag <${name}>.`);
+    if (tagEnd === -1) throw new XmlParseError(`Malformed XML: unclosed tag <${name}>.`);
     if (isClosing) {
       let afterName = nameEnd;
       while (afterName < source.length && /\s/.exec(source[afterName]!)) afterName++;
       if (source.charCodeAt(afterName) !== 0x3e) {
-        throw new Error(`Malformed XML: invalid closing tag </${name}>.`);
+        throw new XmlParseError(`Malformed XML: invalid closing tag </${name}>.`);
       }
       if (name === tagName) {
         depth--;
@@ -295,11 +261,11 @@ function findDeferredClose(source: string, tagName: string, from: number): Defer
     if (name === tagName && !selfClosing) depth++;
     cursor = tagEnd;
   }
-  throw new Error(`Malformed XML: unclosed element <${tagName}>.`);
+  throw new XmlParseError(`Malformed XML: unclosed element <${tagName}>.`);
 }
 
 export function parse(xmlString: string, options?: ParseOptions): Element {
-  validateXmlCharacters(xmlString);
+  assertValidXmlCharacters(xmlString);
   const captureSpaces = options?.captureSpacesBetweenElements ?? false;
   const trim = options?.trim ?? false;
   const ignoreDeclaration = options?.ignoreDeclaration ?? false;
@@ -379,7 +345,7 @@ export function parse(xmlString: string, options?: ParseOptions): Element {
     // <? processing instruction / declaration
     if (xmlString.charCodeAt(i) === 0x3f /* ? */) {
       const end = xmlString.indexOf("?>", i + 1);
-      if (end === -1) throw new Error("Malformed XML: unclosed processing instruction.");
+      if (end === -1) throw new XmlParseError("Malformed XML: unclosed processing instruction.");
       const body = xmlString.slice(i + 1, end);
       i = end + 2;
 
@@ -408,7 +374,7 @@ export function parse(xmlString: string, options?: ParseOptions): Element {
     // !-- comment
     if (xmlString.charCodeAt(i) === 0x21 && xmlString.slice(i, i + 3) === "!--") {
       const end = xmlString.indexOf("-->", i + 3);
-      if (end === -1) throw new Error("Malformed XML: unclosed comment.");
+      if (end === -1) throw new XmlParseError("Malformed XML: unclosed comment.");
       const comment = xmlString.slice(i + 3, end);
       i = end + 3;
       if (!ignoreComment) {
@@ -421,7 +387,7 @@ export function parse(xmlString: string, options?: ParseOptions): Element {
     // ![CDATA[
     if (xmlString.charCodeAt(i) === 0x21 && xmlString.slice(i, i + 8) === "![CDATA[") {
       const end = xmlString.indexOf("]]>", i + 8);
-      if (end === -1) throw new Error("Malformed XML: unclosed CDATA section.");
+      if (end === -1) throw new XmlParseError("Malformed XML: unclosed CDATA section.");
       const cdata = xmlString.slice(i + 8, end);
       i = end + 3;
       if (!ignoreCdata) {
@@ -434,7 +400,7 @@ export function parse(xmlString: string, options?: ParseOptions): Element {
     // <!DOCTYPE
     if (xmlString.charCodeAt(i) === 0x21 && xmlString.slice(i, i + 8) === "!DOCTYPE") {
       const end = doctypeEnd(xmlString, i + 9);
-      if (end === -1) throw new Error("Malformed XML: unclosed DOCTYPE declaration.");
+      if (end === -1) throw new XmlParseError("Malformed XML: unclosed DOCTYPE declaration.");
       const doctype = xmlString.slice(i + 9, end).trim();
       i = end + 1;
       if (!ignoreDoctype) {
@@ -446,16 +412,16 @@ export function parse(xmlString: string, options?: ParseOptions): Element {
     // </ closing tag
     if (xmlString.charCodeAt(i) === 0x2f /* / */) {
       const end = xmlString.indexOf(">", i + 1);
-      if (end === -1) throw new Error("Malformed XML: unclosed closing tag.");
+      if (end === -1) throw new XmlParseError("Malformed XML: unclosed closing tag.");
       const closingName = xmlString.slice(i + 1, end).trim();
-      if (closingName.length === 0) throw new Error("Malformed XML: empty closing tag.");
+      if (closingName.length === 0) throw new XmlParseError("Malformed XML: empty closing tag.");
       const closingLayer = nsStack[nsStack.length - 1]!;
       const closingFinalName = nsTable
         ? canonicalXmlName(closingName, closingLayer.prefixes, closingLayer.defaultCanonical)
         : closingName;
       const openName = openNames.pop();
       if (openName === undefined || openName !== closingFinalName) {
-        throw new Error(
+        throw new XmlParseError(
           `Malformed XML: expected closing tag </${openName ?? "root"}>, got </${closingFinalName}>.`,
         );
       }
@@ -503,7 +469,7 @@ export function parse(xmlString: string, options?: ParseOptions): Element {
       const hasEquals = xmlString.charCodeAt(pos) === 0x3d;
       if (!hasEquals) {
         if (name.length > 0) {
-          throw new Error(`Malformed XML: attribute ${name} is missing a value.`);
+          throw new XmlParseError(`Malformed XML: attribute ${name} is missing a value.`);
         }
         break;
       }
@@ -513,7 +479,7 @@ export function parse(xmlString: string, options?: ParseOptions): Element {
 
       const quote = xmlString.charCodeAt(pos);
       if (quote !== 0x22 && quote !== 0x27) {
-        throw new Error(`Malformed XML: attribute ${name} is missing a quoted value.`);
+        throw new XmlParseError(`Malformed XML: attribute ${name} is missing a quoted value.`);
       }
       pos++;
       const valueStart = pos;
@@ -541,10 +507,10 @@ export function parse(xmlString: string, options?: ParseOptions): Element {
       }
       attrs = setXmlAttribute(attrs, name, value);
     }
-    if (pos >= len) throw new Error(`Malformed XML: unclosed element <${tagName}>.`);
+    if (pos >= len) throw new XmlParseError(`Malformed XML: unclosed element <${tagName}>.`);
     const terminal = xmlString.charCodeAt(pos);
     if (terminal !== 0x3e && terminal !== 0x2f) {
-      throw new Error("Malformed XML: malformed opening tag.");
+      throw new XmlParseError("Malformed XML: malformed opening tag.");
     }
 
     let rawValues: Record<string, string> | undefined;
@@ -577,7 +543,7 @@ export function parse(xmlString: string, options?: ParseOptions): Element {
           if (c !== undefined && c !== p) {
             const renamed = c === "" ? key.slice(kcolon + 1) : c + key.slice(kcolon);
             if (renamed !== key && Object.hasOwn(attrs, renamed)) {
-              throw new Error(`Malformed XML: duplicate attribute ${renamed}.`);
+              throw new XmlParseError(`Malformed XML: duplicate attribute ${renamed}.`);
             }
             const attrValue = attrs[key];
             if (attrValue !== undefined) attrs[renamed] = attrValue;
@@ -651,7 +617,9 @@ export function parse(xmlString: string, options?: ParseOptions): Element {
   }
 
   if (openNames.length > 0) {
-    throw new Error(`Malformed XML: unclosed element <${openNames[openNames.length - 1]!}>.`);
+    throw new XmlParseError(
+      `Malformed XML: unclosed element <${openNames[openNames.length - 1]!}>.`,
+    );
   }
 
   return result;

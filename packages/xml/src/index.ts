@@ -1,4 +1,5 @@
 export * from "./parse";
+export * from "./errors";
 export * from "./stringify";
 export * from "./stringify-element";
 export * from "./escape";

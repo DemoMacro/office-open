@@ -310,7 +310,8 @@ export async function runLibrary(
       const structured = error instanceof Error && error.name.endsWith("ParseError");
       const structuredReason = structured ? (error as { reason?: string }).reason : undefined;
       const classifiedMalformed =
-        structured && STRUCTURED_MALFORMED_PARSE_REASONS.has(structuredReason);
+        (error as { name?: string }).name === "XmlParseError" ||
+        (structured && STRUCTURED_MALFORMED_PARSE_REASONS.has(structuredReason));
       const parseFailed = structured && !classifiedMalformed;
       if (parseFailed) current.parseFail++;
       else current.malformed++;

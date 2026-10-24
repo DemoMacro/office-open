@@ -27,7 +27,7 @@ import {
   generateWorkbook as generateOdsWorkbook,
   parseWorkbook as parseOdsWorkbook,
 } from "../../packages/ods/dist/index.mjs";
-import { OdsParseError } from "../../packages/ods/dist/index.mjs";
+import { OdsGenerateError, OdsParseError } from "../../packages/ods/dist/index.mjs";
 import {
   generateDocument as generateOdtDocument,
   parseDocument as parseOdtDocument,
@@ -52,6 +52,7 @@ import {
   parseWorkbook as parseXlsxDocument,
 } from "../../packages/xlsx/dist/index.mjs";
 import { XlsxParseError } from "../../packages/xlsx/dist/index.mjs";
+import { XmlParseError } from "../../packages/xml/dist/index.mjs";
 
 type DocumentSource = "doc" | "docx" | "docm" | "dotx" | "dotm" | "rtf" | "odt";
 type WorkbookSource = "xls" | "xlsx" | "xlsm" | "xltx" | "xltm" | "ods";
@@ -165,19 +166,19 @@ function familyOf(source: SourceFormat): Family {
 
 function outcomeOf(error: unknown): Exclude<Outcome, "generated"> {
   const name = (error as { name?: string })?.name;
-  const message = String((error as Error)?.message ?? "");
   const reason =
     (error as { context?: { reason?: string }; reason?: string })?.context?.reason ??
     (error as { reason?: string })?.reason;
   if (
     name === RtfGenerateError.name ||
     name === OdpGenerateError.name ||
+    name === OdsGenerateError.name ||
     name === OdtGenerateError.name
   ) {
     return "unsupported-target";
   }
   if (
-    message.startsWith("Malformed XML:") ||
+    name === XmlParseError.name ||
     name === DocParseError.name ||
     name === XlsParseError.name ||
     name === PptParseError.name ||

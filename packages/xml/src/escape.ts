@@ -1,8 +1,12 @@
+import { assertValidXmlCharacters } from "./characters";
+
 // Non-global on purpose: a /g regex would carry stateful lastIndex across calls.
 const XML_SPECIALS = /[&"'<>]/;
 
 /** Escape text content for XML. Fast path returns original string when no special chars. */
 export function escapeXml(str: string): string {
+  assertValidXmlCharacters(str);
+
   // Fast path: most text content doesn't contain XML-special characters.
   // A character-class regex test beats a manual charCodeAt loop by ~10× (V8
   // compiles it to a native SIMD scan); returning the original string
@@ -20,13 +24,13 @@ export function escapeXml(str: string): string {
     .replace(/>/g, "&gt;");
 }
 
-/** Removes XML-illegal control characters while preserving tab, LF, and CR. */
+/** Normalizes legacy soft breaks and removes XML-illegal control characters. */
 export function sanitizeXmlText(value: string): string {
   let result = "";
   for (const character of value) {
     const code = character.codePointAt(0)!;
     if (code === 0x0b) result += "\n";
-    else if (code >= 0x20) result += character;
+    else if (code === 0x09 || code === 0x0a || code === 0x0d || code >= 0x20) result += character;
   }
   return result;
 }

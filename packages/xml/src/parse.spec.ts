@@ -1,10 +1,20 @@
 import { describe, expect, it } from "vitest";
 
+import { XmlParseError } from "../src/errors";
 import { parse } from "../src/parse";
 import { stringify } from "../src/stringify";
 import { attr } from "../src/utils";
 
 describe("parse", () => {
+  it("throws structured errors for malformed XML", () => {
+    expect(() => parse("<root>")).toThrowError(XmlParseError);
+    try {
+      parse("<root>unfinished");
+    } catch (error) {
+      expect(error).toBeInstanceOf(XmlParseError);
+      expect((error as XmlParseError).name).toBe("XmlParseError");
+    }
+  });
   it("parses a simple element", () => {
     const result = parse("<w:t>Hello</w:t>");
     expect(result.elements?.[0]).toEqual({
