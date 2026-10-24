@@ -1357,6 +1357,10 @@ function buildCellString(
     cell.cachedValueTypeRaw !== undefined ? ` t="${escapeXml(cell.cachedValueTypeRaw)}"` : "";
   const valueElement = (content: string, preserve = false): string =>
     `<v${cachedTypeAttr}${preserve ? ' xml:space="preserve"' : ""}>${content}</v>`;
+  const inlineValueElement = (): string => {
+    if (cell.inlineValueRaw === undefined) return "";
+    return `<v>${escapeXml(cell.inlineValueRaw)}</v>`;
+  };
 
   // Formula path — formula takes precedence; value is the cached result.
   if (cell.formula) {
@@ -1389,9 +1393,18 @@ function buildCellString(
       }
     } else if (value instanceof Date) {
       vStr = `<v>${dateToSerialNumber(value)}</v>`;
+    } else if (typeof value === "object") {
+      if (cell.sharedIndex !== undefined && sharedStrings) {
+        tAttr = ' t="s"';
+        vStr = `<v>${cell.sharedIndex}</v>`;
+      } else {
+        tAttr = ' t="inlineStr"';
+        vStr = `<is>${buildRstXml(value)}</is>`;
+      }
     }
     if (vStr) {
-      return `<c${rAttr}${sAttr}${mdAttr}${tAttr}>${fStr}${vStr}</c>`;
+      const inlineCache = tAttr === ' t="inlineStr"' ? inlineValueElement() : "";
+      return `<c${rAttr}${sAttr}${mdAttr}${tAttr}>${fStr}${inlineCache}${vStr}</c>`;
     }
     return `<c${rAttr}${sAttr}${mdAttr}>${fStr}</c>`;
   }
@@ -1407,8 +1420,7 @@ function buildCellString(
   // Rich text value (RichTextOptions)
   if (typeof value === "object" && !(value instanceof Date)) {
     if (cell.inline) {
-      const inlineV =
-        cell.inlineValueRaw !== undefined ? `<v>${escapeXml(cell.inlineValueRaw)}</v>` : "";
+      const inlineV = inlineValueElement();
       return `<c${rAttr}${sAttr}${mdAttr} t="inlineStr">${inlineV}<is>${buildRstXml(value)}</is></c>`;
     }
     if (sharedStrings) {

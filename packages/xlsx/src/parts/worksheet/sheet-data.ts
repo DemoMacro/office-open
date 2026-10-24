@@ -534,7 +534,7 @@ export function parseSheetDataRows(
           let vNum: number | undefined;
           let vRaw: string | undefined;
           let vTypeRaw: string | undefined;
-          let vPreserve = false;
+          let vSpaceRaw: "default" | "preserve" | undefined;
           let inline:
             | {
                 text?: string;
@@ -565,7 +565,8 @@ export function parseSheetDataRows(
             if (nameLen === 1 && first === 0x76 /* v */) {
               const vSelfClosing = raw.charCodeAt(tEnd - 1) === 0x2f;
               scanAttrs(raw, nameEnd, vSelfClosing ? tEnd - 1 : tEnd, (name, value) => {
-                if (name === "xml:space" && value === "preserve") vPreserve = true;
+                if (name === "xml:space" && (value === "preserve" || value === "default"))
+                  vSpaceRaw = value;
                 else if (name === "t") vTypeRaw = value;
               });
               if (vSelfClosing) {
@@ -711,7 +712,8 @@ export function parseSheetDataRows(
             cell.value = vNum !== undefined ? String(vNum) : vText!;
           } else if (type === "inlineStr" && hasInline) {
             cell.inline = true;
-            if (vNum !== undefined) cell.inlineValueRaw = String(vNum);
+            if (vRaw !== undefined) cell.inlineValueRaw = vRaw;
+            else if (vNum !== undefined) cell.inlineValueRaw = String(vNum);
             else if (vText !== undefined) cell.inlineValueRaw = vText;
             if (inline?.runs && inline.runs.length > 0) {
               const entry: RichTextOptions = { runs: inline.runs };
@@ -758,7 +760,7 @@ export function parseSheetDataRows(
           if (vTypeRaw !== undefined) cell.cachedValueTypeRaw = vTypeRaw;
           if (
             (type === "b" && (vText === "true" || vText === "false")) ||
-            (vPreserve &&
+            (vSpaceRaw === "preserve" &&
               vText !== undefined &&
               (type === undefined || type === "str" || type === "d"))
           )

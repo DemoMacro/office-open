@@ -6,7 +6,7 @@ import type { ColorOptions } from "../shared/color";
 import { SharedStrings } from "./shared-strings";
 import { buildWorksheetXml } from "./worksheet";
 import { worksheetDesc } from "./worksheet";
-import type { AutoFilterOptions, WorksheetOptions } from "./worksheet";
+import type { AutoFilterOptions, RichTextOptions, WorksheetOptions } from "./worksheet";
 import { parseSheetDataRows } from "./worksheet/sheet-data";
 
 describe("Worksheet", () => {
@@ -113,17 +113,19 @@ describe("Worksheet", () => {
   });
 
   describe("worksheet source fidelity", () => {
-    const readCtx = {
-      resolveRelationship: (rid: string) =>
-        rid === "rId2" || rid === "rId6" ? "xl/ctrlProps/ctrlProp1.xml" : undefined,
-      getPart: () => undefined,
-      getRaw: () => undefined,
-      sharedStrings: [],
-    } as unknown as ReadContext;
-
-    function parseSource(xml: string): WorksheetOptions {
+    function parseSource(
+      xml: string,
+      strings: (string | RichTextOptions)[] = [],
+    ): WorksheetOptions {
       const el = parseXml(xml, { nativeTypeAttributes: true }).elements?.[0];
       if (!el) throw new Error("parsed document has no root element");
+      const readCtx = {
+        resolveRelationship: (rid: string) =>
+          rid === "rId2" || rid === "rId6" ? "xl/ctrlProps/ctrlProp1.xml" : undefined,
+        getPart: () => undefined,
+        getRaw: () => undefined,
+        sharedStrings: strings,
+      } as unknown as ReadContext;
       return worksheetDesc.parse(el, readCtx) as unknown as WorksheetOptions;
     }
 
@@ -245,6 +247,79 @@ describe("Worksheet", () => {
       expect(result.rows?.[0]?.cells?.[0]?.value).toBe(" value ");
       expect(buildWorksheetXml(result, {})).toContain(
         '<f>B1</f><v xml:space="preserve"> value </v>',
+      );
+    });
+
+    it("serializes cached rich text for formulas", () => {
+      const sharedStrings = new SharedStrings();
+      const richText = { runs: [{ text: "Cached" }] };
+      const inline = buildWorksheetXml(
+        {
+          rows: [{ cells: [{ formula: "B1", reference: "A1", value: richText }] }],
+        },
+        {},
+      );
+      const shared = buildWorksheetXml(
+        {
+          rows: [
+            {
+              cells: [
+                {
+                  formula: "B1",
+                  reference: "A1",
+                  sharedIndex: 4,
+                  value: richText,
+                },
+              ],
+            },
+          ],
+        },
+        { sharedStrings },
+      );
+      const roundTripped = parseSource(
+        `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">` +
+          `<sheetData><row r="1"><c r="A1" t="inlineStr"><f>B1</f>` +
+          `<v xml:space="preserve"> Cached </v>` +
+          `<is><r><t>Cached</t></r></is></c></row></sheetData></worksheet>`,
+      );
+      sharedStrings.loadEntries(["0", "1", "2", "3", richText]);
+      expect(inline).toContain('<c r="A1" t="inlineStr"><f>B1</f><is><r><t>Cached</t></r></is>');
+      expect(shared).toContain('<c r="A1" t="s"><f>B1</f><v>4</v></c>');
+      expect(sharedStrings.count).toBe(5);
+      const sharedSource = parseSource(
+        `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">` +
+          `<sheetData><row r="1"><c r="A1" t="s"><f>B1</f><v>4</v></c></row></sheetData></worksheet>`,
+        ["0", "1", "2", "3", richText],
+      );
+      expect(sharedSource.rows?.[0]?.cells?.[0]?.value).toBe(richText);
+      expect(buildWorksheetXml(sharedSource, { sharedStrings })).toContain(
+        '<c r="A1" t="s"><f>B1</f><v>4</v></c>',
+      );
+      expect(roundTripped.rows?.[0]?.cells?.[0]).toMatchObject({
+        formula: { formula: "B1" },
+        inline: true,
+        inlineValueRaw: " Cached ",
+        value: richText,
+      });
+      expect(buildWorksheetXml(roundTripped, {})).toContain(
+        '<c r="A1" t="inlineStr"><f>B1</f>' + "<v> Cached </v><is><r><t>Cached</t></r></is>",
+      );
+    });
+
+    it("preserves lexical inline rich text formula caches", () => {
+      const result = parseSource(
+        `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">` +
+          `<sheetData><row r="1"><c r="A1" t="inlineStr"><f>B1</f>` +
+          `<v>01</v><is><r><t>Cached</t></r></is></c></row></sheetData></worksheet>`,
+      );
+      expect(result.rows?.[0]?.cells?.[0]).toMatchObject({
+        formula: { formula: "B1" },
+        inline: true,
+        inlineValueRaw: "01",
+        value: { runs: [{ text: "Cached" }] },
+      });
+      expect(buildWorksheetXml(result, {})).toContain(
+        '<c r="A1" t="inlineStr"><f>B1</f><v>01</v><is><r><t>Cached</t></r></is>',
       );
     });
 
