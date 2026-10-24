@@ -30,13 +30,13 @@ describe("sanitizeXmlText", () => {
   });
 
   it("normalizes vertical tab and removes invalid control characters", () => {
-    expect(sanitizeXmlText("a\u000Bb\u0000c\u0008d")).toBe("a\nbd");
+    expect(sanitizeXmlText("a\u000Bb\u0000c\u0008d")).toBe("a\nbcd");
   });
 });
 
 describe("XML code points", () => {
   it("rejects invalid controls and lone surrogates during escaping", () => {
-    expect(() => escapeXml("invalid\u0001")).toThrow(/U+0001/);
-    expect(() => escapeXml("surrogate\ud800")).toThrow(/U+d800/);
+    expect(() => escapeXml("invalid\u0001")).toThrow(/U\+0001/);
+    expect(() => escapeXml("surrogate\ud800")).toThrow(/U\+d800/);
   });
 });
