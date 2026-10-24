@@ -19,10 +19,11 @@ import type {
   BorderSideOptions,
   CellFillOptions,
   StyleOptions,
+  FontOptions,
 } from "@office-open/xlsx";
 import type { Element } from "@office-open/xml";
 
-import { OdsParseError } from "./error";
+import { OdsGenerateError, OdsParseError } from "./error";
 import { numFmtDataStyle } from "./numbering";
 
 const dataStyleCaches = new WeakMap<string[], Map<string, string>>();
@@ -116,8 +117,8 @@ export function cellStyleChildren(style: StyleOptions): string[] {
     "fo:font-size": font?.size !== undefined ? `${font.size}pt` : undefined,
     "fo:font-weight": font?.bold ? "bold" : undefined,
     "fo:font-style": font?.italic ? "italic" : undefined,
-    "fo:underline-style": font?.underline ? "solid" : undefined,
-    "fo:text-line-through-style": font?.strike ? "solid" : undefined,
+    ...underlineAttributes(font),
+    ...strikeAttributes(font),
   };
   const cellAttributes = {
     "fo:background-color": odfHex(solidFillColor(fill)),
@@ -142,6 +143,102 @@ export function cellStyleChildren(style: StyleOptions): string[] {
   if (Object.values(textAttributes).some((value) => value !== undefined))
     children.push(xmlElement("style:text-properties", textAttributes));
   return children;
+}
+
+/** Maps canonical font underlines to ODF attributes, rejecting ODF-incompatible modes. */
+export function underlineAttributes(font: FontOptions | undefined): XmlAttributes {
+  const underline = font?.underline;
+  const style = font?.underlineStyle ?? (underline ? "solid" : undefined);
+  const type = font?.underlineType ?? (underline === "double" ? "double" : "single");
+  if (!style) return {};
+  if (underline !== "singleAccounting" && underline !== "doubleAccounting") {
+    return {
+      "style:text-underline-style": style,
+      "style:text-underline-type": type,
+    };
+  }
+  throw new OdsGenerateError(
+    `ODF cannot represent underline mode: ${underline}`,
+    "styles.xml",
+    "/office:automatic-styles/style:style/style:text-properties",
+    "style:text-underline-type",
+    `${style}/${type}`,
+  );
+}
+
+/** Parses an ODF underline while rejecting values with no canonical equivalent. */
+export function parseOdfUnderline(
+  element: Element | undefined,
+): Pick<FontOptions, "underline" | "underlineStyle" | "underlineType"> | undefined {
+  const style = attributeString(element, "style:text-underline-style");
+  const legacyStyle = attributeString(element, "fo:underline-style");
+  const value = style ?? legacyStyle;
+  if (value === undefined || value === "none") return undefined;
+  const type = attributeString(element, "style:text-underline-type") ?? "single";
+  if (type !== "single" && type !== "double") throwUnderline(value, type);
+  if (value === "solid") return { underline: type === "double" ? "double" : true };
+  if (value === "dotted" || value === "dash") {
+    return {
+      underline: type === "double" ? "double" : true,
+      underlineStyle: value,
+      underlineType: type,
+    };
+  }
+  throwUnderline(value, type);
+}
+
+function throwUnderline(value: string, type: string): never {
+  throw new OdsParseError(
+    `styles.xml: unsupported ODF underline ${value}/${type}`,
+    "styles.xml",
+    "/office:automatic-styles/style:style/style:text-properties",
+    "style:text-underline-style",
+    "no canonical workbook mapping",
+  );
+}
+
+/** Maps canonical strike-through to its exact ODF single-line form. */
+export function strikeAttributes(font: FontOptions | undefined): XmlAttributes {
+  if (!font?.strike) return {};
+  return {
+    "style:text-line-through-style": font.strikeStyle ?? "solid",
+    "style:text-line-through-type": font.strikeType ?? "single",
+  };
+}
+
+/** Parses an ODF strike-through while rejecting non-canonical line styles. */
+export function parseOdfStrike(
+  element: Element | undefined,
+): Pick<FontOptions, "strike" | "strikeStyle" | "strikeType"> | undefined {
+  const style = attributeString(element, "style:text-line-through-style");
+  const legacyStyle = attributeString(element, "fo:text-line-through-style");
+  const value = style ?? legacyStyle;
+  if (value === undefined || value === "none") return undefined;
+  const type = attributeString(element, "style:text-line-through-type") ?? "single";
+  if (type !== "single" && type !== "double") throwStrike(value, type);
+  if (value === "solid") {
+    return {
+      strike: true,
+      ...(type === "double" ? { strikeStyle: value, strikeType: type } : {}),
+    };
+  }
+  throw new OdsParseError(
+    `styles.xml: unsupported ODF strike-through ${value}/${type}`,
+    "styles.xml",
+    "/office:automatic-styles/style:style/style:text-properties",
+    "style:text-line-through-style",
+    "no canonical workbook mapping",
+  );
+}
+
+function throwStrike(value: string, type: string): never {
+  throw new OdsParseError(
+    `styles.xml: unsupported ODF strike-through ${value}/${type}`,
+    "styles.xml",
+    "/office:automatic-styles/style:style/style:text-properties",
+    "style:text-line-through-style",
+    "no canonical workbook mapping",
+  );
 }
 
 /** XLSX cell borders → ODF border shorthand with explicit RGB colors. */

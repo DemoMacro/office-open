@@ -25,6 +25,39 @@ async function roundTrip(source: Uint8Array) {
 }
 
 describe("ODS spreadsheet semantics", () => {
+  it("writes schema-valid text decoration properties", async () => {
+    const options = {
+      worksheets: [
+        {
+          name: "Styles",
+          rows: [
+            {
+              cells: [
+                {
+                  reference: "A1",
+                  value: "Decorated",
+                  style: { font: { bold: true, italic: true, underline: true, strike: true } },
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+    const archive = await readOcf(
+      await generateWorkbook(options),
+      "application/vnd.oasis.opendocument.spreadsheet",
+    );
+    const content = archive.files["content.xml"]!;
+    expect(content).toContain('style:text-underline-style="solid"');
+    expect(content).toContain('style:text-line-through-style="solid"');
+    expect(content).not.toContain("fo:underline-style");
+    const parsed = await parseWorkbook(await generateWorkbook(options));
+    expect(parsed.worksheets?.[0]?.rows?.[0]?.cells?.[0]?.style).toMatchObject({
+      font: { bold: true, italic: true, underline: true, strike: true },
+    });
+  });
+
   it("round-trips sheet-local named expressions and ISO null dates", async () => {
     const { parsed, regenerated } = await roundTrip(
       packageWith(
@@ -37,6 +70,53 @@ describe("ODS spreadsheet semantics", () => {
     ]);
     expect(regenerated.calculation?.nullDate).toEqual({ year: 1904, month: 1, day: 1 });
     expect(regenerated.definedNames).toEqual(parsed.definedNames);
+  });
+
+  it("preserves exact underline and strike patterns", async () => {
+    const parsed = await parseWorkbook(
+      await generateWorkbook({
+        worksheets: [
+          {
+            name: "Styles",
+            rows: [{ cells: [{ reference: "A1", style: { font: { underline: "double" } } }] }],
+          },
+        ],
+      }),
+    );
+    expect(parsed.worksheets?.[0]?.rows?.[0]?.cells?.[0]?.style).toMatchObject({
+      font: { underline: "double" },
+    });
+    const source = packageWith(
+      '<table:table table:name="Sheet1"><table:table-row><table:table-cell table:style-name="ce1"/></table:table-row></table:table>',
+      '<style:style style:name="ce1" style:family="table-cell"><style:text-properties style:text-underline-style="dotted"/></style:style>',
+    );
+    const dotted = await parseWorkbook(source);
+    expect(dotted.worksheets?.[0]?.rows?.[0]?.cells?.[0]?.style).toMatchObject({
+      font: { underline: true, underlineStyle: "dotted", underlineType: "single" },
+    });
+    expect(await generateWorkbook(dotted)).toBeDefined();
+    const decorated = packageWith(
+      '<table:table table:name="Sheet1"><table:table-row><table:table-cell table:style-name="ce1"/></table:table-row></table:table>',
+      '<style:style style:name="ce1" style:family="table-cell"><style:text-properties style:text-underline-style="dash" style:text-line-through-style="solid" style:text-line-through-type="double"/></style:style>',
+    );
+    const parsedDecorated = await parseWorkbook(decorated);
+    expect(parsedDecorated.worksheets?.[0]?.rows?.[0]?.cells?.[0]?.style).toMatchObject({
+      font: {
+        underline: true,
+        underlineStyle: "dash",
+        strike: true,
+        strikeType: "double",
+      },
+    });
+    expect(await generateWorkbook(parsedDecorated)).toBeDefined();
+    await expect(
+      parseWorkbook(
+        packageWith(
+          '<table:table table:name="Sheet1"><table:table-row><table:table-cell table:style-name="ce1"/></table:table-row></table:table>',
+          '<style:style style:name="ce1" style:family="table-cell"><style:text-properties style:text-underline-style="unsupported"/></style:style>',
+        ),
+      ),
+    ).rejects.toThrow("unsupported ODF underline");
   });
 
   it("round-trips content validations through cell references", async () => {

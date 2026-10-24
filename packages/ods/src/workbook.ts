@@ -96,7 +96,7 @@ function generateOdsPackage(options: OdsWorkbookOptions): Uint8Array {
   const styles: string[] = styleResourcesXml(styleResources);
   const chartFrames = (options.worksheets ?? []).flatMap((worksheet, worksheetIndex) =>
     (worksheet.charts ?? []).map((chart, chartIndex) => ({
-      name: chart.name ?? `Object ${worksheetIndex + chartIndex + 1}`,
+      name: chart.name || `Object ${worksheetIndex + chartIndex + 1}`,
       worksheet: worksheet.name ?? `Sheet${worksheetIndex + 1}`,
       chart,
     })),

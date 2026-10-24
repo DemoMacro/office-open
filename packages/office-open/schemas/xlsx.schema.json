@@ -12248,8 +12248,27 @@
           "readOnly": true,
           "type": "string"
         },
+        "strikeStyle": {
+          "description": "Underlying strike pattern; ODF `style:text-line-through-style`.",
+          "enum": ["solid", "dotted", "dash", "longDash", "dotDash", "dotDotDash"],
+          "type": "string"
+        },
+        "strikeType": {
+          "description": "Strike line count; ODF `style:text-line-through-type`.",
+          "enum": ["single", "double"],
+          "type": "string"
+        },
         "underline": {
           "$ref": "#/definitions/FontUnderline"
+        },
+        "underlineStyle": {
+          "$ref": "#/definitions/FontUnderlineStyle",
+          "description": "Underlying line pattern; ODF `style:text-underline-style`."
+        },
+        "underlineType": {
+          "description": "Line count; ODF `style:text-underline-type`.",
+          "enum": ["single", "double"],
+          "type": "string"
         },
         "vertAlign": {
           "description": "Vertical alignment: superscript/subscript",
@@ -12314,6 +12333,20 @@
         }
       ],
       "description": "Styles — option types for xl/styles.xml.\n\nXLSX uses an index-based style system: cells reference style entries via the `s` attribute, which is an index into `cellXfs`."
+    },
+    "FontUnderlineStyle": {
+      "enum": [
+        "solid",
+        "dotted",
+        "dash",
+        "longDash",
+        "dotDash",
+        "dotDotDash",
+        "wave",
+        "waveHeavy",
+        "doubleWave"
+      ],
+      "type": "string"
     },
     "FontsContainerOptions": {
       "additionalProperties": false,

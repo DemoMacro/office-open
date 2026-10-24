@@ -16,6 +16,16 @@ export type { ForeignAttributeOptions };
 // ── Sub-style option interfaces ──
 
 export type FontUnderline = boolean | "single" | "double" | "singleAccounting" | "doubleAccounting";
+export type FontUnderlineStyle =
+  | "solid"
+  | "dotted"
+  | "dash"
+  | "longDash"
+  | "dotDash"
+  | "dotDotDash"
+  | "wave"
+  | "waveHeavy"
+  | "doubleWave";
 
 export interface FontOptions {
   /** Foreign-namespace attributes on `<font>` (e.g. hs:extension); round-trip only. */
@@ -31,7 +41,15 @@ export interface FontOptions {
   /** Source lexical form of `italic/@val`; round-trip only — do not hand-author. */
   italicRaw?: string;
   underline?: FontUnderline;
+  /** Underlying line pattern; ODF `style:text-underline-style`. */
+  underlineStyle?: FontUnderlineStyle;
+  /** Line count; ODF `style:text-underline-type`. */
+  underlineType?: "single" | "double";
   strike?: boolean;
+  /** Underlying strike pattern; ODF `style:text-line-through-style`. */
+  strikeStyle?: "solid" | "dotted" | "dash" | "longDash" | "dotDash" | "dotDotDash";
+  /** Strike line count; ODF `style:text-line-through-type`. */
+  strikeType?: "single" | "double";
   /** Source lexical form of `strike/@val`; round-trip only — do not hand-author. */
   strikeRaw?: string;
   size?: number;

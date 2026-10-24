@@ -15,7 +15,7 @@ import type {
 import type { Element } from "@office-open/xml";
 
 import { OdsParseError } from "./error";
-import { odfColor, parseBorder } from "./styles";
+import { odfColor, parseBorder, parseOdfStrike, parseOdfUnderline } from "./styles";
 
 /** Translates an Excel numFmt code into the matching ODF data style element. */
 export function numFmtDataStyle(numFmt: string): { name: string; children: string[] } {
@@ -138,8 +138,8 @@ export function parseNumberStyles(container: Element | undefined): Map<string, S
       size: size?.endsWith("pt") ? Number(size.slice(0, -2)) : undefined,
       bold: attributeString(text, "fo:font-weight") === "bold" || undefined,
       italic: attributeString(text, "fo:font-style") === "italic" || undefined,
-      underline: attributeString(text, "fo:underline-style") === "solid" || undefined,
-      strike: attributeString(text, "fo:text-line-through-style") === "solid" || undefined,
+      ...parseOdfUnderline(text),
+      ...parseOdfStrike(text),
     };
     if (Object.values(font).some((value) => value !== undefined)) options.font = font;
     const background = odfColor(
