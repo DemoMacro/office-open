@@ -7,11 +7,7 @@
  */
 import { element } from "@office-open/xml";
 
-/**
- * Bevel preset types (12 variations).
- *
- * Reference: ISO/IEC 29500-4, dml-main.xsd, ST_BevelPresetType
- */
+/** Bevel preset type (`circle`, `softRound`, `slope`, and related presets). */
 export type BevelPreset =
   | "relaxedInset"
   | "circle"

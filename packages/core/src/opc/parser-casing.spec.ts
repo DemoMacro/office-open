@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { zipSync } from "./packer";
+import { ZipStreamWriter, zipSync } from "./packer";
 import { parseArchive } from "./parser";
 
 const enc = (s: string): Uint8Array => new TextEncoder().encode(s);
@@ -62,5 +62,25 @@ describe("ParsedArchive case-insensitive part names", () => {
         }),
       ),
     ).toThrow("duplicate ZIP part name");
+  });
+
+  it("rejects zero-byte members that collide as OPC part names", async () => {
+    const chunks: Uint8Array[] = [];
+    const writer = new ZipStreamWriter((error, chunk, final) => {
+      if (error) throw error;
+      chunks.push(chunk);
+      if (final) {
+        const archive = new Uint8Array(chunks.reduce((total, part) => total + part.length, 0));
+        let offset = 0;
+        for (const part of chunks) {
+          archive.set(part, offset);
+          offset += part.length;
+        }
+        expect(() => parseArchive(archive)).toThrow("duplicate ZIP part name");
+      }
+    }, 0);
+    writer.addPart("xl/Sheet1.xml", 0).end();
+    writer.addPart("xl/sheet1.xml", 0).end();
+    writer.end();
   });
 });

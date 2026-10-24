@@ -626,13 +626,7 @@ export const pointMeasureValue = unsignedDecimalNumber;
  */
 export const dateTimeValue = (val: Date): string => val.toISOString();
 
-/**
- * Theme color values used throughout OOXML for referencing document theme colors.
- *
- * Reference: ST_ThemeColor in OOXML specification
- *
- * @publicApi
- */
+/** Theme color slot used by fills, lines, and text (`accent1`, `dark2`, etc.). */
 export type ThemeColor =
   | "dark1"
   | "light1"
@@ -652,13 +646,7 @@ export type ThemeColor =
   | "background2"
   | "text2";
 
-/**
- * Theme font values used for referencing document theme fonts.
- *
- * Reference: ST_Theme in OOXML specification
- *
- * @publicApi
- */
+/** Theme font slot used by text and table styles (`majorEastAsia`, `minorAscii`, etc.). */
 export type ThemeFont =
   | "majorEastAsia"
   | "majorBidi"

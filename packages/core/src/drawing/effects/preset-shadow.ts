@@ -13,11 +13,7 @@ import type { UniversalMeasure } from "../../util/values";
 import { createColorElement } from "../color/solid-fill";
 import type { SolidFillOptions } from "../color/solid-fill";
 
-/**
- * Preset shadow types (20 variations).
- *
- * Reference: ISO/IEC 29500-4, dml-main.xsd, ST_PresetShadowVal
- */
+/** Preset shadow geometry (`shadow1` through `shadow20`). */
 export type PresetShadow =
   | "shadow1"
   | "shadow2"

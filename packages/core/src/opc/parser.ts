@@ -81,6 +81,10 @@ export class ParsedArchive {
         }
         for (const [name, bytes] of Object.entries(eager)) {
           const path = name.replace(/\\/g, "/");
+          const partKey = path.toLowerCase();
+          if (this.byLower.has(partKey)) {
+            throw new OpcPackageError(`duplicate ZIP part name: ${path}`, path, "duplicate-part");
+          }
           this.parts.set(path, bytes);
           this.indexPath(path);
         }
@@ -127,7 +131,7 @@ export class ParsedArchive {
     }));
     const seenParts = new Set<string>();
     for (const entry of normalizedEntries) {
-      if (entry.name.endsWith("/") || entry.uncompSize === 0) continue;
+      if (entry.name.endsWith("/")) continue;
       const partKey = entry.name.toLowerCase();
       if (seenParts.has(partKey))
         throw new OpcPackageError(

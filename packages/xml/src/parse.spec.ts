@@ -188,6 +188,17 @@ describe("parse", () => {
     ).toThrowError("Malformed XML: duplicate attribute w:a.");
   });
 
+  it("keeps the default namespace binding when another prefix canonicalizes to empty", () => {
+    const result = parse('<root xmlns="http://example/default" xmlns:q="http://example/main"/>', {
+      normalizeNamespaces: { "http://example/default": "d", "http://example/main": "" },
+    }).elements![0]!;
+    expect(result.name).toBe("d:root");
+    expect(result.attributes).toEqual({
+      "xmlns:d": "http://example/default",
+      xmlns: "http://example/main",
+    });
+  });
+
   it("rejects canonical prefixes claimed by different namespaces", () => {
     expect(() =>
       parse(

@@ -535,7 +535,6 @@ export function parse(xmlString: string, options?: ParseOptions): Element {
           nsDefault = canonicalPrefix;
         } else {
           nsPrefixes!.set(prefix, canonicalPrefix);
-          if (canonical === "") nsDefault = canonical;
         }
         attrs = setNamespaceDeclaration(attrs, canonicalPrefix, value);
         continue;

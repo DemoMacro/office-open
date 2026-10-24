@@ -1,8 +1,30 @@
+import type { Element } from "@office-open/xml";
 import { describe, expect, it } from "vite-plus/test";
 
-import { buildRootRelationships, Relationships, TargetModeType } from "./relationships";
+import { OpcPackageError } from "./package-error";
+import {
+  assertUniqueRelationshipIds,
+  buildRootRelationships,
+  Relationships,
+  TargetModeType,
+} from "./relationships";
 
 describe("Relationships", () => {
+  it("assertUniqueRelationshipIds rejects duplicate source relationship ids", () => {
+    const element: Element = {
+      type: "element",
+      name: "Relationships",
+      elements: [
+        { type: "element", name: "Relationship", attributes: { Id: "rId1" } },
+        { type: "element", name: "Relationship", attributes: { Id: "rId2" } },
+        { type: "element", name: "Relationship", attributes: { Id: "rId1" } },
+      ],
+    };
+    expect(() => assertUniqueRelationshipIds(element, "word/_rels/document.xml.rels")).toThrow(
+      OpcPackageError,
+    );
+  });
+
   it("add() allocates sequential ids and returns the numeric id", () => {
     const rels = new Relationships();
     expect(
@@ -93,6 +115,13 @@ describe("Relationships", () => {
       "theme/theme1.xml",
     );
     expect(rels.serialize()).toContain('Id="rId1"');
+  });
+
+  it("addRelationship() rejects a duplicate explicit id", () => {
+    const rels = new Relationships("word/document.xml");
+    const theme = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme";
+    rels.addRelationship(1, theme, "theme/theme1.xml");
+    expect(() => rels.addRelationship(1, theme, "theme/theme2.xml")).toThrow(OpcPackageError);
   });
 
   it("buildRootRelationships creates fixed package relationships with optional custom props", () => {
@@ -190,6 +219,15 @@ describe("Relationships", () => {
       "fontTable.xml",
     );
     expect(rels.nextRelationshipId).toBe(8);
+  });
+
+  it("addIfAbsent() replays exact compiler relationships idempotently", () => {
+    const type = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/fontTable";
+    const rels = new Relationships();
+    rels.addRelationship("rId5", type, "fontTable.xml");
+    rels.addIfAbsent("rId5", type, "fontTable.xml");
+    expect(rels.relationshipCount).toBe(1);
+    expect(() => rels.addIfAbsent("rId5", type, "other.xml")).toThrow(OpcPackageError);
   });
 
   it("reserveId() ignores malformed ids instead of corrupting the watermark", () => {

@@ -1,4 +1,5 @@
 export {
+  assertUniqueRelationshipIds,
   RELATIONSHIP_TYPES,
   Relationships,
   TargetModeType,

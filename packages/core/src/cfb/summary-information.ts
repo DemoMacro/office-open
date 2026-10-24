@@ -1,4 +1,5 @@
 import type { CorePropertiesOptions } from "../opc/core";
+import { CfbError } from "./cfb-error";
 
 const VT_I2 = 2;
 const VT_I4 = 3;
@@ -37,23 +38,41 @@ function decodeString(
   wide: boolean,
   codepage: number,
 ): string {
-  if (offset + 4 > data.byteLength) return "";
+  if (offset + 4 > data.byteLength) throw new CfbError("Truncated summary information string");
   const characters = view.getUint32(offset, true);
   if (wide) {
     const bytes = Math.min(characters * 2, data.byteLength - offset - 4);
+    if (bytes < characters * 2) throw new CfbError("Truncated UTF-16 summary information string");
     return new TextDecoder("utf-16le")
       .decode(data.subarray(offset + 4, offset + 4 + bytes))
       .replaceAll("\0", "");
   }
   const bytes = Math.min(characters, data.byteLength - offset - 4);
+  if (bytes < characters) throw new CfbError("Truncated summary information string");
   const encoded = data.subarray(offset + 4, offset + 4 + bytes);
   if (codepage === 65001) {
     return new TextDecoder("utf-8").decode(encoded).replaceAll("\0", "");
   }
-  return Array.from(
-    encoded.filter((byte) => byte !== 0),
-    (byte) => String.fromCharCode(byte),
-  ).join("");
+  return new TextDecoder(summaryEncoding(codepage)).decode(encoded).replaceAll("\0", "");
+}
+
+function summaryEncoding(codepage: number): string {
+  const encodings: Record<number, string> = {
+    932: "shift_jis",
+    936: "gbk",
+    949: "euc-kr",
+    950: "big5",
+    1250: "windows-1250",
+    1251: "windows-1251",
+    1252: "windows-1252",
+    1253: "windows-1253",
+    1254: "windows-1254",
+    1255: "windows-1255",
+    1256: "windows-1256",
+    1257: "windows-1257",
+    1258: "windows-1258",
+  };
+  return encodings[codepage] ?? "windows-1252";
 }
 
 function fileTimeToW3cdtf(view: DataView, offset: number): string | undefined {

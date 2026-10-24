@@ -1,5 +1,6 @@
-import { escapeXml } from "@office-open/xml";
+import { escapeXml, type Element } from "@office-open/xml";
 
+import { OpcPackageError } from "./package-error";
 import type { XmlifyedFile } from "./packer";
 
 /** OPC relationship type URIs keyed by their trailing token — the single
@@ -183,8 +184,29 @@ export class Relationships {
     // A string id is the full "rIdN" form (a passthrough source id) — prefix
     // only numbers, so "rId2" can't become "rIdrId2".
     const rid = typeof id === "number" ? `rId${id}` : id;
+    if (this.hasId(rid)) {
+      throw new OpcPackageError(
+        `Duplicate relationship id: ${rid}`,
+        this.ownerPath || undefined,
+        "duplicate-relationship-id",
+      );
+    }
     this.trackId(rid);
     this.entries.push({ id: rid, type, target, targetMode });
+  }
+
+  /** Add a compiler-wired relationship unless that exact id/target pair was
+   * already claimed from the source package. Unlike `addRelationship`, this
+   * makes placeholder replay idempotent without hiding a true id conflict. */
+  public addIfAbsent(
+    id: number | string,
+    type: string,
+    target: string,
+    targetMode?: (typeof TargetModeType)[keyof typeof TargetModeType],
+  ): void {
+    const rid = typeof id === "number" ? `rId${id}` : id;
+    if (this.hasExactRelationship(rid, type, target, targetMode)) return;
+    this.addRelationship(id, type as RelationshipType, target, targetMode);
   }
 
   /**
@@ -336,7 +358,12 @@ export class Relationships {
         rel.targetMode,
       );
     } else {
-      this.add(rel.relationshipType as RelationshipType, rel.target, rel.targetMode);
+      const entry = this.entries.find((candidate) => candidate.id === rel.rId);
+      if (entry) {
+        entry.type = rel.relationshipType;
+        entry.target = rel.target;
+        entry.targetMode = rel.targetMode;
+      }
     }
   }
 
@@ -553,6 +580,24 @@ export function partPathToRelsPath(partPath: string): string {
   const dir = partPath.substring(0, idx);
   const file = partPath.substring(idx + 1);
   return dir ? `${dir}/_rels/${file}.rels` : `_rels/${file}.rels`;
+}
+
+/** Reject a relationship part whose ids violate the OPC uniqueness invariant. */
+export function assertUniqueRelationshipIds(element: Element, ownerPath: string): void {
+  const ids = new Set<string>();
+  for (const child of element.elements ?? []) {
+    if (child.name !== "Relationship") continue;
+    const id = typeof child.attributes?.Id === "string" ? child.attributes.Id : "";
+    if (!id) continue;
+    if (ids.has(id)) {
+      throw new OpcPackageError(
+        `Duplicate relationship id: ${id}`,
+        ownerPath,
+        "duplicate-relationship-id",
+      );
+    }
+    ids.add(id);
+  }
 }
 
 /**

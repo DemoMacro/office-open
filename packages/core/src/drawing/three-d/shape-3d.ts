@@ -13,11 +13,7 @@ import type { SolidFillOptions } from "../color/solid-fill";
 import { createBevel, createBottomBevel } from "./bevel";
 import type { BevelOptions } from "./bevel";
 
-/**
- * Preset material types for 3D shapes (15 variations).
- *
- * Reference: ISO/IEC 29500-4, dml-main.xsd, ST_PresetMaterialType
- */
+/** Preset material used to shade a 3D shape (`matte`, `metal`, `flat`, etc.). */
 export type PresetMaterial =
   | "legacyMatte"
   | "legacyPlastic"

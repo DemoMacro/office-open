@@ -8,9 +8,9 @@ import type { GeometryGuide } from "./adjustment-values";
 import { stringifyAdjustmentValues } from "./adjustment-values";
 
 /**
- * Preset shape tokens (a:prstGeom `@prst`, ST_ShapeType — dml-main.xsd, 188
- * values verbatim). `textNoShape` is a text-body-only preset; the arrows,
- * flowChart*, and actionButton* families round out the set.
+ * Preset shape tokens (a:prstGeom `@prst`, ST_ShapeType — dml-main.xsd, 187
+ * values verbatim). The arrows, flowChart*, and actionButton* families round
+ * out the set.
  */
 export type ShapeType =
   | "line"
@@ -199,8 +199,7 @@ export type ShapeType =
   | "plaqueTabs"
   | "chartX"
   | "chartStar"
-  | "chartPlus"
-  | "textNoShape";
+  | "chartPlus";
 
 export interface PresetGeometryOptions {
   /** Preset token (a:prstGeom `@prst`, ST_ShapeType) */

@@ -156,9 +156,8 @@ describe("deriveContentTypes", () => {
 });
 
 describe("finalizeContentTypes", () => {
-  it("preserves source defaults and drops overrides for absent parts", () => {
+  it("drops absent-part overrides without round-trip preservation", () => {
     const source: ContentTypesInput = {
-      preserveSourceDeclarations: true,
       defaults: [
         {
           extension: "rels",
@@ -183,6 +182,25 @@ describe("finalizeContentTypes", () => {
     expect(xml).not.toContain('PartName="/docProps/core.xml"');
     expect(xml).toContain('Extension="rels"');
     expect(xml).toContain('PartName="/xl/workbook.xml"');
+  });
+
+  it("drops absent-part overrides in round-trip mode", () => {
+    const source: ContentTypesInput = {
+      preserveSourceDeclarations: true,
+      defaults: [],
+      overrides: [{ partName: "/xl/theme/theme1.xml", contentType: "theme+xml" }],
+    };
+    const xml = finalizeContentTypes(
+      { "xl/workbook.xml": new TextEncoder().encode("<workbook/>") },
+      {
+        resolve: (path) => (path === "xl/workbook.xml" ? "spreadsheetml.workbook+xml" : undefined),
+        mediaContentTypes: {},
+        source,
+      },
+      {} as never,
+    );
+
+    expect(xml).not.toContain('PartName="/xl/theme/theme1.xml"');
   });
 
   it("does not force an override when the source default already declares the same type", () => {

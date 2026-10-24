@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { CfbError } from "./cfb-error";
 import { parseDocumentSummaryInformation, parseSummaryInformation } from "./summary-information";
 
 const SUMMARY_PROPERTY_SET = [
@@ -45,6 +46,10 @@ function lpString(value: string): readonly number[] {
     ...byteNumber(value.length),
     ...Array.from(value, (character) => character.charCodeAt(0)),
   ];
+}
+
+function bytes(value: readonly number[]): readonly number[] {
+  return [30, 0, 0, 0, ...byteNumber(value.length), ...value];
 }
 
 function fileTime(iso: string): readonly number[] {
@@ -144,5 +149,25 @@ describe("CFB summary information", () => {
       creator: "Author",
       category: "Reports",
     });
+  });
+
+  it("decodes legacy code-page strings and rejects truncated values", () => {
+    const chinese = [0xd6, 0xd0, 0xce, 0xc4];
+    const section = propertySet([
+      propertyValue(1, [2, 0, 0, 0, ...uint16(936)]),
+      propertyValue(2, bytes(chinese)),
+    ]);
+    const stream = new Uint8Array([
+      ...uint16(0xfffe),
+      ...uint16(0),
+      ...byteNumber(0),
+      ...zeroBytes(16),
+      ...byteNumber(1),
+      ...guid(SUMMARY_PROPERTY_SET),
+      ...byteNumber(48),
+      ...section,
+    ]);
+    expect(parseSummaryInformation(stream).title).toBe("中文");
+    expect(() => parseSummaryInformation(stream.slice(0, stream.length - 1))).toThrow(CfbError);
   });
 });

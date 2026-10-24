@@ -24,9 +24,13 @@ import type { UniversalMeasure } from "../util/values";
 // </xsd:complexType>
 
 export interface Transform2DOptions {
+  /** Horizontal offset in EMUs (`914400` = 1") or a universal measure. */
   x?: number | UniversalMeasure;
+  /** Vertical offset in EMUs (`914400` = 1") or a universal measure. */
   y?: number | UniversalMeasure;
+  /** Width in EMUs (`914400` = 1") or a universal measure. */
   width?: number | UniversalMeasure;
+  /** Height in EMUs (`914400` = 1") or a universal measure. */
   height?: number | UniversalMeasure;
   flipHorizontal?: boolean;
   flipVertical?: boolean;
