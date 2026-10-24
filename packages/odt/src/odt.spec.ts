@@ -2,16 +2,10 @@ import { strFromU8, unzipSync } from "@office-open/core";
 import type { FormControlOptions, OfficeFormsOptions } from "@office-open/core";
 import type { DocumentOptions, TableOptions } from "@office-open/docx";
 import type { ParagraphOptions } from "@office-open/docx";
-import { CHART_MIME, generateOcf, ODF_NAMESPACES } from "@office-open/odf";
+import { CHART_MIME, generateOcf, ODF_NAMESPACES, readOcf } from "@office-open/odf";
 import { describe, expect, it } from "vite-plus/test";
 
-import {
-  generateDocument,
-  OdtGenerateError,
-  OdtParseError,
-  parseDocument,
-  type OdtDocumentOptions,
-} from "./index";
+import { generateDocument, OdtParseError, parseDocument, type OdtDocumentOptions } from "./index";
 import { trackRevisionBlocks } from "./paragraph";
 
 const FORM_NAMESPACE = 'xmlns:form="urn:oasis:names:tc:opendocument:xmlns:form:1.0"';
@@ -67,6 +61,40 @@ async function parseBodyError(body: string, name: string, reason?: string): Prom
 }
 
 describe("ODT canonical projection", () => {
+  it("writes mandatory label alignment for generated list levels", async () => {
+    const options = {
+      numbering: {
+        abstractNumberings: [
+          {
+            reference: "List",
+            levels: [
+              {
+                level: 0,
+                format: "decimal" as const,
+                text: "%1.",
+                paragraph: { indent: { left: 720, hanging: 360 } },
+              },
+            ],
+          },
+        ],
+      },
+      sections: [
+        {
+          children: [
+            { paragraph: { numbering: { reference: "List", level: 0 }, children: ["Item"] } },
+          ],
+        },
+      ],
+    };
+    const archive = await readOcf(
+      await generateDocument(options),
+      "application/vnd.oasis.opendocument.text",
+    );
+    const styles = `${archive.files["content.xml"] ?? ""}${archive.files["styles.xml"] ?? ""}`;
+    expect(styles).toContain('text:label-followed-by="nothing"');
+    await expect(parseDocument(await generateDocument(options))).resolves.toBeTruthy();
+  });
+
   it("projects a minimal document without hidden root fields", async () => {
     const parsed = await parseDocument(
       await generateDocument({ sections: [{ children: [{ paragraph: "ODT" }] }] }),
@@ -1162,20 +1190,18 @@ describe("ODT canonical projection", () => {
     ).toContain("no canonical");
   });
 
-  it("rejects orphan bookmarks without ODF representations", async () => {
+  it("represents orphan bookmark ends as zero-length ODF bookmarks", async () => {
     const section = (children: NonNullable<ParagraphOptions["children"]>): DocumentOptions => ({
       sections: [{ children: [{ paragraph: { children } }] }],
     });
-    try {
-      await generateDocument(section([{ bookmarkEnd: { id: 7 } }]));
-    } catch (cause) {
-      expect(cause).toBeInstanceOf(OdtGenerateError);
-      const error = cause as OdtGenerateError;
-      expect(error.field).toBe("bookmarkEnd");
-      expect(error.reason).toBe("unrepresentable-orphan-bookmark-end");
-      return;
-    }
-    throw new Error("Expected canonical input without ODF representation to reject generation");
+    const parsed = await parseDocument(
+      await generateDocument(section([{ bookmarkEnd: { id: 7 } }])),
+    );
+    expect(parsed.sections[0]?.children[0]).toEqual({
+      paragraph: {
+        children: [{ bookmarkStart: { id: 1, name: "bookmark-7" } }, { bookmarkEnd: { id: 1 } }],
+      },
+    });
   });
 
   it("reports unknown body elements with structured errors", async () => {

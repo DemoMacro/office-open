@@ -1243,12 +1243,15 @@ export function bookmarkReferenceXml(value: { name: string; referenceFormat?: st
 
 export function bookmarkEndXml(id: number, notes: NotesContext): string {
   const name = notes.bookmarkEndNames.get(id)?.shift() ?? notes.bookmarkNames.get(id);
-  if (!name)
-    throw new OdtGenerateError(
-      `bookmark end ${id}: ODF requires a matching bookmark start`,
-      "bookmarkEnd",
-      "unrepresentable-orphan-bookmark-end",
+  if (!name) {
+    const orphanName = `bookmark-${id}`;
+    return (
+      xmlElement("text:bookmark-start", {
+        "xml:id": `bookmark-${id}`,
+        "text:name": orphanName,
+      }) + xmlElement("text:bookmark-end", { "text:name": orphanName })
     );
+  }
   return xmlElement("text:bookmark-end", { "text:name": name });
 }
 

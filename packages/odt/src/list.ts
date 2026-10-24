@@ -146,7 +146,9 @@ export function listLevelXml(level: NumberingLevel): string {
             attributes: { "text:list-level-position-and-space-mode": "label-alignment" },
             labelAlignment: {
               attributes: {
-                "text:label-followed-by": level.suffix ? SUFFIX_ODF[level.suffix] : undefined,
+                "text:label-followed-by": level.suffix
+                  ? SUFFIX_ODF[level.suffix]
+                  : SUFFIX_ODF.nothing,
                 "fo:margin-left": marginLeft !== undefined ? twipsToLength(marginLeft) : undefined,
                 "fo:text-indent": hanging !== undefined ? twipsToLength(-hanging) : undefined,
               },
@@ -246,6 +248,9 @@ export function addListStyle(
               {
                 name: "style:list-level-properties",
                 attributes: { "text:list-level-position-and-space-mode": "label-alignment" },
+                labelAlignment: {
+                  attributes: { "text:label-followed-by": SUFFIX_ODF.nothing },
+                },
               },
               "emu",
             ),
