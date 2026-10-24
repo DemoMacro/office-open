@@ -3,6 +3,7 @@ import { describe, expect, it } from "vite-plus/test";
 
 import { parseParagraph } from "../../body";
 import type { DocxReadContext } from "../../context";
+import { DocxParseError } from "../../errors";
 
 // Range markers never touch the read context, so an empty mock suffices.
 const readCtx = {} as unknown as DocxReadContext;
@@ -139,6 +140,18 @@ describe("range markers parse", () => {
   it("drops a marker missing its required w:id", () => {
     const cs = childrenOf(parseParagraphXml(`<w:moveToRangeEnd/>`));
     expect(cs).toHaveLength(0);
+  });
+
+  it("rejects marker ids outside the safe non-negative integer range", () => {
+    expect(() => parseParagraphXml(`<w:bookmarkStart w:id="-1" w:name="negative"/>`)).toThrow(
+      DocxParseError,
+    );
+    expect(() =>
+      parseParagraphXml(`<w:bookmarkStart w:id="9007199254740992" w:name="unsafe"/>`),
+    ).toThrow(DocxParseError);
+    expect(() => parseParagraphXml(`<w:customXmlInsRangeEnd w:id="9007199254740992"/>`)).toThrow(
+      DocxParseError,
+    );
   });
 });
 

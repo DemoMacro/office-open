@@ -342,11 +342,11 @@ export function parseSectionChild(el: Element, ctx: DocxReadContext): SectionChi
       // Body-level range markers sitting between paragraphs (e.g. _Toc bookmark
       // ends grouped after a heading). Carry them as first-class children so
       // they round-trip even though they are not wrapped in a paragraph.
-      const bookmarkStart = parseBookmarkStartOptions(el);
+      const bookmarkStart = parseBookmarkStartOptions(el, ctx.currentPart);
       return bookmarkStart ? { bookmarkStart } : { rawXml: stringifyElement(el) };
     }
     case "w:bookmarkEnd": {
-      const bookmarkEnd = parseBookmarkEndOptions(el);
+      const bookmarkEnd = parseBookmarkEndOptions(el, ctx.currentPart);
       return bookmarkEnd ? { bookmarkEnd } : { rawXml: stringifyElement(el) };
     }
     default:

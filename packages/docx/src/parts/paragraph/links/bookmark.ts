@@ -23,7 +23,7 @@ export type DisplacedByCustomXml = "next" | "prev";
  * or column range (only start markers do).
  */
 export interface MarkupRangeOptions {
-  /** Marker identifier (CT_Markup `@w:id`, required). */
+  /** Non-negative safe integer marker identifier (CT_Markup `@w:id`, required). */
   id: number;
   /** Displacement relative to a sibling customXml (CT_MarkupRange `@w:displacedByCustomXml`). */
   displacedByCustomXml?: DisplacedByCustomXml;
@@ -51,7 +51,7 @@ export interface BookmarkStartOptions extends MarkupRangeOptions {
  * always emit one for auto-generated move ranges.
  */
 export interface MoveRangeStartOptions {
-  /** Move range identifier (CT_Markup `@w:id`, required). */
+  /** Non-negative safe integer move range identifier (CT_Markup `@w:id`, required). */
   id: number;
   /** Move range name (CT_Bookmark `@w:name` — required by XSD, often absent in Word). */
   name?: string;

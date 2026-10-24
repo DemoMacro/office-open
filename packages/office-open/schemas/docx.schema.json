@@ -1663,8 +1663,7 @@
           "$ref": "#/definitions/MarkupRangeOptions/properties/displacedByCustomXml"
         },
         "id": {
-          "description": "Marker identifier.",
-          "type": "number"
+          "$ref": "#/definitions/MarkupRangeOptions/properties/id"
         },
         "name": {
           "description": "Bookmark name used for reference.",
@@ -16525,8 +16524,10 @@
           "description": "Displacement relative to a sibling customXml."
         },
         "id": {
-          "description": "Marker identifier.",
-          "type": "number"
+          "description": "Non-negative safe integer marker identifier.",
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
         }
       },
       "required": ["id"],
@@ -18204,8 +18205,10 @@
           "$ref": "#/definitions/MarkupRangeOptions/properties/displacedByCustomXml"
         },
         "id": {
-          "description": "Move range identifier.",
-          "type": "number"
+          "description": "Non-negative safe integer move range identifier.",
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
         },
         "name": {
           "description": "Move range name.",

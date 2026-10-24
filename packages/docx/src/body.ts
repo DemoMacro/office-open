@@ -2006,16 +2006,16 @@ function parseTrackChangeRuns(el: Element, ctx: DocxReadContext): TrackChangeChi
         out.push(runOpts);
       }
     } else if (sub.name === "w:commentRangeStart") {
-      const m = parseMarkupRangeOptions(sub);
+      const m = parseMarkupRangeOptions(sub, ctx.currentPart);
       if (m) out.push({ commentRangeStart: m });
     } else if (sub.name === "w:commentRangeEnd") {
-      const m = parseMarkupRangeOptions(sub);
+      const m = parseMarkupRangeOptions(sub, ctx.currentPart);
       if (m) out.push({ commentRangeEnd: m });
     } else if (sub.name === "w:bookmarkStart" || sub.name === "w:bookmarkEnd") {
       const marker =
         sub.name === "w:bookmarkStart"
-          ? parseBookmarkStartOptions(sub)
-          : parseBookmarkEndOptions(sub);
+          ? parseBookmarkStartOptions(sub, ctx.currentPart)
+          : parseBookmarkEndOptions(sub, ctx.currentPart);
       if (marker)
         out.push(
           sub.name === "w:bookmarkStart"
@@ -2147,22 +2147,22 @@ function parseContainerChildren(el: Element, ctx: DocxReadContext): ParagraphChi
         break;
       }
       case "w:bookmarkStart": {
-        const marker = parseBookmarkStartOptions(sub);
+        const marker = parseBookmarkStartOptions(sub, ctx.currentPart);
         if (marker) children.push({ bookmarkStart: marker });
         break;
       }
       case "w:bookmarkEnd": {
-        const marker = parseBookmarkEndOptions(sub);
+        const marker = parseBookmarkEndOptions(sub, ctx.currentPart);
         if (marker) children.push({ bookmarkEnd: marker });
         break;
       }
       case "w:commentRangeStart": {
-        const marker = parseMarkupRangeOptions(sub);
+        const marker = parseMarkupRangeOptions(sub, ctx.currentPart);
         if (marker) children.push({ commentRangeStart: marker });
         break;
       }
       case "w:commentRangeEnd": {
-        const marker = parseMarkupRangeOptions(sub);
+        const marker = parseMarkupRangeOptions(sub, ctx.currentPart);
         if (marker) children.push({ commentRangeEnd: marker });
         break;
       }
@@ -2245,8 +2245,11 @@ function parseCustomXmlInline(
 }
 
 /** Parse a move-revision range start (w:moveFromRangeStart / w:moveToRangeStart). */
-function parseMoveRangeStart(el: Element): MoveRangeStartOptions | null {
-  const id = attrNum(el, "w:id");
+function parseMoveRangeStart(
+  el: Element,
+  part = "word/document.xml",
+): MoveRangeStartOptions | null {
+  const id = parseMarkerId(el, el.name ?? "w:moveFromRangeStart", part);
   if (id === undefined) return null;
   const m: Partial<MoveRangeStartOptions> = { id };
   const name = attr(el, "w:name");
@@ -2267,8 +2270,9 @@ function parseMoveRangeStart(el: Element): MoveRangeStartOptions | null {
 /** Parse a customXml range start (Ins/Del/MoveFrom/MoveTo). */
 function parseCustomXmlRangeStart(
   el: Element,
+  part = "word/document.xml",
 ): { id: number; author?: string; date?: string } | null {
-  const id = attrNum(el, "w:id");
+  const id = parseMarkerId(el, el.name ?? "w:customXmlRangeStart", part);
   if (id === undefined) return null;
   const m: { id: number; author?: string; date?: string } = { id };
   const author = attr(el, "w:author");
@@ -2279,8 +2283,11 @@ function parseCustomXmlRangeStart(
 }
 
 /** Parse a CT_MarkupRange end marker (id + displacedByCustomXml). */
-function parseMarkupRangeOptions(el: Element): MarkupRangeOptions | undefined {
-  const id = attrNum(el, "w:id");
+function parseMarkupRangeOptions(
+  el: Element,
+  part = "word/document.xml",
+): MarkupRangeOptions | undefined {
+  const id = parseMarkerId(el, el.name ?? "w:markupRange", part);
   if (id === undefined) return undefined;
   const m: Partial<MarkupRangeOptions> = { id };
   const disp = attr(el, "w:displacedByCustomXml");
@@ -2298,8 +2305,11 @@ export function runRPrXml(run: Element): string | undefined {
 }
 
 /** Parse a w:bookmarkStart element (id + name + table-column extents). */
-export function parseBookmarkStartOptions(el: Element): BookmarkStartOptions | undefined {
-  const id = attrNum(el, "w:id");
+export function parseBookmarkStartOptions(
+  el: Element,
+  part = "word/document.xml",
+): BookmarkStartOptions | undefined {
+  const id = parseMarkerId(el, "w:bookmarkStart", part);
   const name = attr(el, "w:name");
   if (id === undefined || !name) return undefined;
   const bookmarkStart: Partial<BookmarkStartOptions> = { id, name };
@@ -2314,14 +2324,32 @@ export function parseBookmarkStartOptions(el: Element): BookmarkStartOptions | u
 }
 
 /** Parse a w:bookmarkEnd element (id + displacedByCustomXml). */
-export function parseBookmarkEndOptions(el: Element): MarkupRangeOptions | undefined {
-  const id = attrNum(el, "w:id");
+export function parseBookmarkEndOptions(
+  el: Element,
+  part = "word/document.xml",
+): MarkupRangeOptions | undefined {
+  const id = parseMarkerId(el, "w:bookmarkEnd", part);
   if (id === undefined) return undefined;
   const bookmarkEnd: Partial<MarkupRangeOptions> = { id };
   const disp = attr(el, "w:displacedByCustomXml");
   if (disp === "next" || disp === "prev")
     bookmarkEnd.displacedByCustomXml = disp as DisplacedByCustomXml;
   return bookmarkEnd as MarkupRangeOptions;
+}
+
+function parseMarkerId(el: Element, elementName: string, part: string): number | undefined {
+  const raw = attr(el, "w:id");
+  if (raw === undefined) return undefined;
+  const id = Number(raw);
+  if (!Number.isSafeInteger(id) || id < 0) {
+    throw new DocxParseError(
+      `Invalid ${elementName} marker id`,
+      part,
+      `/${elementName}/@w:id`,
+      "unsafe-marker-id",
+    );
+  }
+  return id;
 }
 
 /**
@@ -2380,8 +2408,8 @@ function parseHyperlinkChild(child: Element, ctx: DocxReadContext): ParagraphChi
     } else if (sub.name === "w:commentRangeStart" || sub.name === "w:commentRangeEnd") {
       const marker =
         sub.name === "w:commentRangeStart"
-          ? parseMarkupRangeOptions(sub)
-          : parseMarkupRangeOptions(sub);
+          ? parseMarkupRangeOptions(sub, ctx.currentPart)
+          : parseMarkupRangeOptions(sub, ctx.currentPart);
       if (marker)
         linkRuns.push(
           sub.name === "w:commentRangeStart"
@@ -2408,7 +2436,7 @@ function parseHyperlinkChild(child: Element, ctx: DocxReadContext): ParagraphChi
     } else if (sub.name === "w:bookmarkStart") {
       // Bookmarks may open inside link content (Word parks _GoBack on the
       // last edit position, often an image link run).
-      const bookmarkStart = parseBookmarkStartOptions(sub);
+      const bookmarkStart = parseBookmarkStartOptions(sub, ctx.currentPart);
       if (bookmarkStart) {
         const stage = activeFieldState(fieldState);
         const members = stage.collectingResult ? stage.resultMembers : stage.instructionMembers;
@@ -2416,7 +2444,7 @@ function parseHyperlinkChild(child: Element, ctx: DocxReadContext): ParagraphChi
         else linkRuns.push({ bookmarkStart });
       }
     } else if (sub.name === "w:bookmarkEnd") {
-      const bookmarkEnd = parseBookmarkEndOptions(sub);
+      const bookmarkEnd = parseBookmarkEndOptions(sub, ctx.currentPart);
       if (bookmarkEnd) {
         const stage = activeFieldState(fieldState);
         const members = stage.collectingResult ? stage.resultMembers : stage.instructionMembers;
@@ -2519,7 +2547,7 @@ function parseRunLevelChildren(
         break;
       }
       case "w:bookmarkStart": {
-        const bookmarkStart = parseBookmarkStartOptions(child);
+        const bookmarkStart = parseBookmarkStartOptions(child, ctx.currentPart);
         if (bookmarkStart) {
           const stage = activeFieldState(fieldState);
           const members = stage.collectingResult ? stage.resultMembers : stage.instructionMembers;
@@ -2529,7 +2557,7 @@ function parseRunLevelChildren(
         break;
       }
       case "w:bookmarkEnd": {
-        const bookmarkEnd = parseBookmarkEndOptions(child);
+        const bookmarkEnd = parseBookmarkEndOptions(child, ctx.currentPart);
         if (bookmarkEnd) {
           const stage = activeFieldState(fieldState);
           const members = stage.collectingResult ? stage.resultMembers : stage.instructionMembers;
@@ -2539,12 +2567,12 @@ function parseRunLevelChildren(
         break;
       }
       case "w:commentRangeStart": {
-        const m = parseMarkupRangeOptions(child);
+        const m = parseMarkupRangeOptions(child, ctx.currentPart);
         if (m) childList.push({ commentRangeStart: m });
         break;
       }
       case "w:commentRangeEnd": {
-        const m = parseMarkupRangeOptions(child);
+        const m = parseMarkupRangeOptions(child, ctx.currentPart);
         if (m) childList.push({ commentRangeEnd: m });
         break;
       }
@@ -2868,82 +2896,82 @@ function parseRunLevelChildren(
         break;
       }
       case "w:moveFromRangeStart": {
-        const m = parseMoveRangeStart(child);
+        const m = parseMoveRangeStart(child, ctx.currentPart);
         if (m) childList.push({ moveFromRangeStart: m });
         break;
       }
       case "w:moveFromRangeEnd": {
-        const m = parseMarkupRangeOptions(child);
+        const m = parseMarkupRangeOptions(child, ctx.currentPart);
         if (m) childList.push({ moveFromRangeEnd: m });
         break;
       }
       case "w:moveToRangeStart": {
-        const m = parseMoveRangeStart(child);
+        const m = parseMoveRangeStart(child, ctx.currentPart);
         if (m) childList.push({ moveToRangeStart: m });
         break;
       }
       case "w:moveToRangeEnd": {
-        const m = parseMarkupRangeOptions(child);
+        const m = parseMarkupRangeOptions(child, ctx.currentPart);
         if (m) childList.push({ moveToRangeEnd: m });
         break;
       }
       case "w:customXmlInsRangeStart": {
-        const m = parseCustomXmlRangeStart(child);
+        const m = parseCustomXmlRangeStart(child, ctx.currentPart);
         if (m) childList.push({ customXmlInsRangeStart: m });
         break;
       }
       case "w:customXmlInsRangeEnd": {
-        const id = attrNum(child, "w:id");
+        const id = parseMarkerId(child, "w:customXmlInsRangeEnd", ctx.currentPart);
         if (id !== undefined) childList.push({ customXmlInsRangeEnd: id });
         break;
       }
       case "w:customXmlDelRangeStart": {
-        const m = parseCustomXmlRangeStart(child);
+        const m = parseCustomXmlRangeStart(child, ctx.currentPart);
         if (m) childList.push({ customXmlDelRangeStart: m });
         break;
       }
       case "w:customXmlDelRangeEnd": {
-        const id = attrNum(child, "w:id");
+        const id = parseMarkerId(child, "w:customXmlDelRangeEnd", ctx.currentPart);
         if (id !== undefined) childList.push({ customXmlDelRangeEnd: id });
         break;
       }
       case "w:customXmlMoveFromRangeStart": {
-        const m = parseCustomXmlRangeStart(child);
+        const m = parseCustomXmlRangeStart(child, ctx.currentPart);
         if (m) childList.push({ customXmlMoveFromRangeStart: m });
         break;
       }
       case "w:customXmlMoveFromRangeEnd": {
-        const id = attrNum(child, "w:id");
+        const id = parseMarkerId(child, "w:customXmlMoveFromRangeEnd", ctx.currentPart);
         if (id !== undefined) childList.push({ customXmlMoveFromRangeEnd: id });
         break;
       }
       case "w:customXmlMoveToRangeStart": {
-        const m = parseCustomXmlRangeStart(child);
+        const m = parseCustomXmlRangeStart(child, ctx.currentPart);
         if (m) childList.push({ customXmlMoveToRangeStart: m });
         break;
       }
       case "w:customXmlMoveToRangeEnd": {
-        const id = attrNum(child, "w:id");
+        const id = parseMarkerId(child, "w:customXmlMoveToRangeEnd", ctx.currentPart);
         if (id !== undefined) childList.push({ customXmlMoveToRangeEnd: id });
         break;
       }
       case "w14:customXmlConflictInsRangeStart": {
-        const m = parseCustomXmlRangeStart(child);
+        const m = parseCustomXmlRangeStart(child, ctx.currentPart);
         if (m) childList.push({ customXmlConflictInsRangeStart: m });
         break;
       }
       case "w14:customXmlConflictInsRangeEnd": {
-        const id = attrNum(child, "w:id");
+        const id = parseMarkerId(child, "w14:customXmlConflictInsRangeEnd", ctx.currentPart);
         if (id !== undefined) childList.push({ customXmlConflictInsRangeEnd: id });
         break;
       }
       case "w14:customXmlConflictDelRangeStart": {
-        const m = parseCustomXmlRangeStart(child);
+        const m = parseCustomXmlRangeStart(child, ctx.currentPart);
         if (m) childList.push({ customXmlConflictDelRangeStart: m });
         break;
       }
       case "w14:customXmlConflictDelRangeEnd": {
-        const id = attrNum(child, "w:id");
+        const id = parseMarkerId(child, "w14:customXmlConflictDelRangeEnd", ctx.currentPart);
         if (id !== undefined) childList.push({ customXmlConflictDelRangeEnd: id });
         break;
       }

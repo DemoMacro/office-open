@@ -328,6 +328,16 @@ function postProcess(schema: Record<string, unknown>) {
     // resolve as a reference host. Only the root envelope carries an $id.
     delete obj.$id;
 
+    if (
+      obj.type === "number" &&
+      typeof obj.description === "string" &&
+      /non-negative safe integer/i.test(obj.description)
+    ) {
+      obj.type = "integer";
+      obj.minimum = 0;
+      obj.maximum = Number.MAX_SAFE_INTEGER;
+    }
+
     // P5: JSDoc often carries verbatim XSD excerpts (## XSD: CT_* ```xml …```)
     // for developers reading the source. Schema consumers need the semantics,
     // not the XSD source — strip the fenced blocks and their heading lines;
