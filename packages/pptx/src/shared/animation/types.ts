@@ -410,8 +410,8 @@ export interface AnimationOptions {
   transitionMode?: "in" | "out";
   /** Transition fade color (anim:transitionFilter smil:fadeColor). */
   fadeColor?: string;
-  /** Transition direction (anim:transitionFilter smil:direction). */
-  transitionDirection?: "left" | "right" | "up" | "down";
+  /** SMIL playback direction (anim:transitionFilter smil:direction). */
+  transitionDirection?: "forward" | "reverse";
   /** Color interpolation space for color animations. */
   colorInterpolation?: "rgb" | "hsl";
   /** Rotation direction when interpolating colors in HSL space. */

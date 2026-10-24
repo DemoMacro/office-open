@@ -28,5 +28,13 @@ describe("PPTX custom XML parts", () => {
         propertiesPath: "customXml/itemProps1.xml",
       },
     ]);
+
+    const roundTrip = generatePresentationSync(parsePresentationSync(output), {
+      type: "uint8array",
+    });
+    const relationships = decoder
+      .decode(unzipSync(roundTrip)["ppt/_rels/presentation.xml.rels"]!)
+      .match(/Target="\.\.\/customXml\/item1\.xml"/g);
+    expect(relationships).toHaveLength(1);
   });
 });

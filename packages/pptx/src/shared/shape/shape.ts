@@ -77,6 +77,8 @@ export interface ShapeOptions extends NonVisualDrawingPropertiesOptions, Transfo
   id?: number;
   /** Drawing control reference (`draw:control`); absent for ordinary presentation shapes. */
   controlId?: string;
+  /** Exact source ODF draw:type; used only when regenerating ODF shapes. */
+  odfGeometryType?: string;
   /**
    * Shape properties (a:spPr children): geometry/fill/outline/effects/3D and
    * the spPr extension list. Transform fields stay top-level on the shape.

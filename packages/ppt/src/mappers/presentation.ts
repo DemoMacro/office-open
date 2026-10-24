@@ -59,6 +59,7 @@ export function parsePresentation(
     throw new PptParseError(
       `Invalid CFB container: ${error instanceof Error ? error.message : String(error)}`,
       { part: "container", path: "/", reason: "invalid-container" },
+      { cause: error },
     );
   }
 
@@ -74,7 +75,7 @@ export function parsePresentation(
   let currentUser = reader.entry(CURRENT_USER_STREAM)
     ? readStream(reader, CURRENT_USER_STREAM)
     : undefined;
-  const pictures = reader.entry("Pictures") ? readPictureStore(reader.read("Pictures")) : [];
+  const pictures = reader.entry("Pictures") ? readPictureStore(readStream(reader, "Pictures")) : [];
   const documentView = createView(document);
   const lastEditOffset = currentUserOffset(documentView);
   if (currentUser === undefined) {

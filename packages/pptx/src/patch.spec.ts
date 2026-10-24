@@ -116,6 +116,37 @@ describe("patchPresentation commands", () => {
     expect(parsed.slides?.[0]?.comments).toHaveLength(2);
   });
 
+  it("removes slide-owned package parts and identities for replacement slides", async () => {
+    const source = await generatePresentation(
+      presentation([{ ...slide("A"), notes: "original notes" }, slide("B")]),
+    );
+    const patched = await patchPresentation({
+      data: source,
+      commands: [
+        { type: "remove", at: { field: "slides", route: [{ index: 0 }] } },
+        {
+          type: "insert",
+          at: { field: "slides" },
+          position: "end",
+          value: [{ ...slide("C"), notes: "new notes" }],
+        },
+      ],
+    });
+    const parsed = parsePresentationSync(patched);
+    const { unzipSync } = await import("@office-open/core/opc");
+    const archive = unzipSync(patched as Uint8Array);
+    const contentTypes = new TextDecoder().decode(archive["[Content_Types].xml"]!);
+    const paths = parsed.slides?.map((slide) => slide.sourcePath);
+
+    expect(paths).toEqual(["ppt/slides/slide2.xml", "ppt/slides/slide3.xml"]);
+    expect(new Set(paths)).toHaveLength(2);
+    expect(new Set(parsed.slides?.map((slide) => slide.slideId))).toHaveLength(2);
+    expect(archive["ppt/notesSlides/notesSlide1.xml"]).toBeUndefined();
+    expect(archive["ppt/notesSlides/notesSlide2.xml"]).toBeDefined();
+    expect(contentTypes).not.toContain('PartName="/ppt/notesSlides/notesSlide1.xml"');
+    expect(contentTypes).toContain('PartName="/ppt/notesSlides/notesSlide2.xml"');
+  });
+
   it("reports a missing route with a structured diagnostic", async () => {
     const source = await generatePresentation(presentation([slide("A")]));
     const error = await patchPresentation({

@@ -565,7 +565,7 @@ function wireSlidePlaceholderBatches(
       addSmartArtRelationships(
         allSaKeys,
         (id, type, target) => {
-          rels.addRelationship(id, type, target);
+          rels.addIfAbsent(id, type, target);
         },
         saOffset,
         saGlobalStart,
@@ -681,12 +681,15 @@ function wireSlidePlaceholderBatches(
       fileName: string,
     ): void => {
       const sourceId = Number(/^rId(\d+)$/.exec(id)?.[1] ?? NaN);
-      replacements.set(`${prefix}:${fileName}`, Number.isNaN(sourceId) ? `rId${fallback}` : id);
-      rels.addRelationship(
-        Number.isNaN(sourceId) ? fallback : sourceId,
-        type,
-        `../media/${fileName}`,
-      );
+      const target = `../media/${fileName}`;
+      const sourceRid = Number.isNaN(sourceId) ? undefined : `rId${sourceId}`;
+      const exactSource =
+        sourceRid !== undefined && rels.hasExactRelationship(sourceRid, type, target);
+      const reusableSource = sourceRid !== undefined && (!rels.hasId(sourceRid) || exactSource);
+      let assignedId = reusableSource ? sourceId : fallback;
+      while (rels.hasId(`rId${assignedId}`)) assignedId += 1;
+      if (!exactSource) rels.addRelationship(assignedId, type, target);
+      replacements.set(`${prefix}:${fileName}`, `rId${assignedId}`);
     };
     for (const [mi, mediaRef] of slideMediaRefs.entries()) {
       addMediaRelationship(

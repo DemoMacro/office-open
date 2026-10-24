@@ -11,6 +11,7 @@ export function readSummaryInformation(reader: CompoundFileReader): Presentation
     throw new PptParseError(
       `Invalid legacy PowerPoint summary information: ${(error as Error).message}`,
       { part: "stream", path, reason: "invalid-metadata" },
+      { cause: error },
     );
   }
 }
@@ -48,16 +49,24 @@ export function isLegacyPp40Reader(reader: CompoundFileReader): boolean {
 }
 
 export function readStream(reader: CompoundFileReader, path: string): Uint8Array {
+  if (!reader.entry(path)) {
+    throw new PptParseError(`Invalid legacy PowerPoint CFB container: missing "${path}" stream`, {
+      part: "stream",
+      path,
+      reason: "missing-required-stream",
+    });
+  }
   try {
     return reader.read(path);
-  } catch {
+  } catch (cause) {
     throw new PptParseError(
-      `Invalid legacy PowerPoint CFB container: missing or unreadable "${path}" stream`,
+      `Invalid legacy PowerPoint CFB container: unreadable "${path}" stream`,
       {
         part: "stream",
         path,
-        reason: "missing-required-stream",
+        reason: "invalid-stream",
       },
+      { cause },
     );
   }
 }

@@ -28,8 +28,12 @@ export class PptParseError extends Error {
   /** Canonical location describing the rejected PPT construct. */
   public readonly context: PptParseContext;
 
-  public constructor(message: string, context?: Partial<Omit<PptParseContext, "format">>) {
-    super(message);
+  public constructor(
+    message: string,
+    context?: Partial<Omit<PptParseContext, "format">>,
+    options?: ErrorOptions,
+  ) {
+    super(message, options);
     this.name = "PptParseError";
     this.context = {
       format: "ppt",

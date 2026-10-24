@@ -99,13 +99,17 @@ function stringifyPresentation(
     `<p:presentation xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"${rootAttrs.join("")}>`,
   );
 
+  const relationshipId = (id: number | string): string =>
+    typeof id === "number" ? `rId${id}` : id;
+
   // sldMasterIdLst
   parts.push("<p:sldMasterIdLst>");
   for (let mi = 0; mi < opts.masterCount; mi++) {
     const masterId =
       opts.masterIds?.[mi] === undefined ? 2147483648 + mi * 12 : opts.masterIds[mi]!;
     const masterIdAttr = masterId === null ? "" : ` id="${masterId}"`;
-    parts.push(`<p:sldMasterId${masterIdAttr} r:id="rId${mi + 1}"/>`);
+    const masterRId = opts.masterRIds?.[mi] ?? mi + 1;
+    parts.push(`<p:sldMasterId${masterIdAttr} r:id="${relationshipId(masterRId)}"/>`);
   }
   parts.push("</p:sldMasterIdLst>");
 
@@ -124,9 +128,9 @@ function stringifyPresentation(
   // element at all, so an empty list must not emit the wrapper.
   if (opts.slideIds.length > 0) {
     parts.push("<p:sldIdLst>");
-    const sRidOff = opts.masterCount + 1;
     for (let i = 0; i < opts.slideIds.length; i++) {
-      parts.push(`<p:sldId id="${opts.slideIds[i]}" r:id="rId${sRidOff + i}"/>`);
+      const slideRId = opts.slideRIds?.[i] ?? opts.masterCount + i + 1;
+      parts.push(`<p:sldId id="${opts.slideIds[i]}" r:id="${relationshipId(slideRId)}"/>`);
     }
     parts.push("</p:sldIdLst>");
   }

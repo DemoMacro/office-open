@@ -16,6 +16,7 @@ import {
   addModelBinaries,
   compileMapping,
   getReferencedMedia,
+  Relationships,
   replaceImagePlaceholders,
 } from "@office-open/core";
 import type { OoxmlPackageVariant, ReproducibleScope } from "@office-open/core";
@@ -58,12 +59,7 @@ import {
   PPTX_MEDIA_CONTENT_TYPES,
   compileTailParts,
 } from "./compile/parts";
-import {
-  XML_DECL,
-  type XmlifyedFileMapping,
-  encoder,
-  reserveClaimedSourceRids,
-} from "./compile/shared";
+import { XML_DECL, type XmlifyedFileMapping, encoder } from "./compile/shared";
 import { compileSlideParts } from "./compile/slides";
 import { PptxWriteContext } from "./context";
 import { presentationDesc } from "./parts/descriptors/presentation";
@@ -153,6 +149,23 @@ function buildPresAttrOpts(
   };
 }
 
+/** Use relationship-container ids, not structural slot guesses. */
+function relationshipIds(
+  relationships: Relationships,
+  relationshipType: string,
+  targets: readonly string[],
+): (number | string)[] {
+  return targets.map((target) => {
+    const relationshipId = relationships.idOf(relationshipType, target);
+    if (!relationshipId)
+      throw new Error(
+        `presentation relationship id missing for ${target}: ${relationships.serialize()}`,
+      );
+    const numeric = /^rId(\d+)$/.exec(relationshipId);
+    return numeric ? Number(numeric[1]) : relationshipId;
+  });
+}
+
 function sourceTagsRel(options: PresentationOptions) {
   const rId = options.customerData?.tags?.rId;
   return options.passthroughRelationships?.find(
@@ -218,30 +231,7 @@ export function compilePresentation(
   // Presence-based: a parsed empty docProps/custom.xml round-trips as an
   // empty part (undefined = fresh document, omit the part).
   const hasCustomProperties = options.customProperties !== undefined;
-  const presRels = initPresRels(masters, slides);
-  // Reserve the presentation's captured ids whose rels a claim will re-emit —
-  // after the structured slide/master slots above (their r:ids are written
-  // verbatim into sldMasterIdLst/sldIdLst and take precedence), but before
-  // the claim loop, so anything allocated on the way there lands above those
-  // ids. Kinds the compiler always re-emits (slides, masters, the property
-  // parts) are absorbed and skipped: reserving them would only open holes.
-  reserveClaimedSourceRids(
-    presRels,
-    "ppt/presentation.xml",
-    options.passthroughRelationships,
-    new Set([
-      "slide",
-      "slideMaster",
-      "theme",
-      "presProps",
-      "viewProps",
-      "tableStyles",
-      "notesMaster",
-      "handoutMaster",
-      "tags",
-      "customXml",
-    ]),
-  );
+  const presRels = initPresRels(masters, slides, options.passthroughRelationships);
   // Group slides into p14:sections by name (first-occurrence order); slides
   // without a section name are left ungrouped (absent from p14:sectionLst).
   const sectionOrder: string[] = [];
@@ -268,26 +258,36 @@ export function compilePresentation(
   for (const [index, item] of (options.customXml ?? []).entries()) {
     const sourceRel = sourceCustomXmlRel(options, item);
     const target = sourceRel?.target ?? `../customXml/item${index + 1}.xml`;
-    const rId = presRels.add(RELATIONSHIP_TYPES.customXml, target);
+    const existingRelationshipId = presRels.idOf(RELATIONSHIP_TYPES.customXml, target);
+    const rId = existingRelationshipId ?? presRels.add(RELATIONSHIP_TYPES.customXml, target);
     const rIdText = `rId${rId}`;
     customXmlRIds.set(item.contentPath ?? target, rIdText);
     if (sourceRel?.rId) customXmlRIds.set(sourceRel.rId, rIdText);
   }
 
+  const attachedMasters = masters
+    .filter((master) => master.attachedToPresentation)
+    .sort(
+      (left, right) => (left.presentationMasterOrder ?? 0) - (right.presentationMasterOrder ?? 0),
+    );
+  const masterTargets = attachedMasters.map((master) =>
+    relativePartTarget("ppt/presentation.xml", master.path),
+  );
+  const slideTargets = slides.map((slide, index) =>
+    relativePartTarget(
+      "ppt/presentation.xml",
+      slide.sourcePath ?? `ppt/slides/slide${index + 1}.xml`,
+    ),
+  );
   const presOptions: PresentationPartOptions = {
     slideWidth: sz.width,
     slideHeight: sz.height,
     slideSizeType: options.slideSizeType,
     slideIds: slides.map((slide, index) => slide.slideId ?? 256 + index),
-    masterIds: masters
-      .filter((master) => master.attachedToPresentation)
-      .sort(
-        (left, right) => (left.presentationMasterOrder ?? 0) - (right.presentationMasterOrder ?? 0),
-      )
-      .map((master) =>
-        master.masterId === null ? null : (master.masterId ?? 2147483648 + master.index * 12),
-      ),
-    masterCount: masters.filter((master) => master.attachedToPresentation).length,
+    masterIds: attachedMasters.map((master) =>
+      master.masterId === null ? null : (master.masterId ?? 2147483648 + master.index * 12),
+    ),
+    masterCount: attachedMasters.length,
     sections,
     ...buildPresAttrOpts(options),
     ...(options.ext !== undefined ? { ext: options.ext } : {}),
@@ -499,6 +499,8 @@ export function compilePresentation(
   }
 
   // Presentation XML
+  presOptions.masterRIds = relationshipIds(presRels, RELATIONSHIP_TYPES.slideMaster, masterTargets);
+  presOptions.slideRIds = relationshipIds(presRels, RELATIONSHIP_TYPES.slide, slideTargets);
   const presBody = presentationDesc.stringify(presOptions, descCtx);
   const presentationXml = presBody ? XML_DECL + presBody : "";
   const mediaData = getReferencedMedia(presentationXml, media.array);

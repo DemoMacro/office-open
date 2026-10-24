@@ -578,34 +578,34 @@ export function buildSlideRels(masters: MasterInfo[], slides: SlideOptions[]): R
 export function initPresRels(
   masters: readonly MasterInfo[],
   slides: readonly SlideOptions[],
+  passthroughRelationships: PresentationOptions["passthroughRelationships"],
 ): Relationships {
-  // Only structure-owned slots are pre-allocated here: slideMaster + slide rels.
-  // presProps/viewProps/theme/tableStyles are added at the end of the
-  // compiler pass after passthrough id pre-claim, so they slot in *after* the
-  // source ids (notesMaster, handoutMaster, …) and the source ordering of
-  // presentation.xml.rels survives round-trip.
-  const rels = new Relationships();
+  // Source relationships own their ids first. Structural slots that survive
+  // round-trip reuse the matching source entry; newly added slots get the next
+  // free id without colliding with an unrelated captured relationship.
+  const rels = new Relationships("ppt/presentation.xml");
+  for (const relationship of passthroughRelationships ?? []) {
+    if (relationship.source === "ppt/presentation.xml") rels.claimSourceRel(relationship);
+  }
   const attachedMasters = masters
     .filter((master) => master.attachedToPresentation)
     .sort(
       (left, right) => (left.presentationMasterOrder ?? 0) - (right.presentationMasterOrder ?? 0),
     );
-  for (const [slot, master] of attachedMasters.entries()) {
-    rels.addRelationship(
-      slot + 1,
-      RELATIONSHIP_TYPES.slideMaster,
-      relativePartTarget("ppt/presentation.xml", master.path),
-    );
+  for (const master of attachedMasters) {
+    const target = relativePartTarget("ppt/presentation.xml", master.path);
+    if (!rels.hasRelationship(RELATIONSHIP_TYPES.slideMaster, target)) {
+      rels.add(RELATIONSHIP_TYPES.slideMaster, target);
+    }
   }
-  for (const [i, slide] of slides.entries()) {
-    rels.addRelationship(
-      attachedMasters.length + i + 1,
-      RELATIONSHIP_TYPES.slide,
-      relativePartTarget(
-        "ppt/presentation.xml",
-        slide.sourcePath ?? `ppt/slides/slide${i + 1}.xml`,
-      ),
+  for (const [index, slide] of slides.entries()) {
+    const target = relativePartTarget(
+      "ppt/presentation.xml",
+      slide.sourcePath ?? `ppt/slides/slide${index + 1}.xml`,
     );
+    if (!rels.hasRelationship(RELATIONSHIP_TYPES.slide, target)) {
+      rels.add(RELATIONSHIP_TYPES.slide, target);
+    }
   }
   return rels;
 }
@@ -757,6 +757,13 @@ export function mapMasterAndLayoutParts(
     for (const rel of passthroughRelationships ?? []) {
       if (rel.source !== layoutInfo.path) continue;
       if (MEDIA_REL_KINDS.has(rel.relationshipType.split("/").pop()!)) continue;
+      if (rel.relationshipType === RELATIONSHIP_TYPES.slideMaster) {
+        const currentId = layoutRels.idOf(rel.relationshipType, rel.target);
+        const sourceId = /^rId(\d+)$/.exec(rel.rId)?.[1];
+        if (currentId !== undefined && sourceId !== undefined && !layoutRels.hasId(rel.rId)) {
+          layoutRels.renameEntryByType(rel.relationshipType, Number(sourceId));
+        }
+      }
       layoutRels.claimSourceRel(rel);
     }
     claimMediaSourceRelationships(layoutRels, layoutInfo.path, passthroughRelationships);

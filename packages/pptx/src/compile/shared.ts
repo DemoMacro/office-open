@@ -208,7 +208,8 @@ export function reserveClaimedSourceRids(
 /** Claim captured media relationships that the rebuilt part did not absorb.
  * Media ownership is target-specific: a modeled picture owns its target, while
  * an independent bullet image or legacy reference remains its own relationship.
- * Comparing source and model counts per kind+target keeps legal duplicates. */
+ * Source entries with distinct rIds stay distinct so legal duplicate targets
+ * survive when markup branches reference different relationship entries. */
 export function claimMediaSourceRelationships(
   rels: Relationships,
   source: string,
@@ -219,32 +220,31 @@ export function claimMediaSourceRelationships(
     (rel) =>
       rel.source === source && MEDIA_REL_KINDS.has(rel.relationshipType.split("/").pop() ?? ""),
   );
+  const semanticKey = (rel: (typeof sourceRelationships)[number]): string =>
+    `${rel.relationshipType.split("/").pop()}:${resolveRelationshipTarget("", rel.target)}`;
   const sourceCounts = new Map<string, number>();
   const claimedCounts = new Map<string, number>();
   for (const rel of sourceRelationships) {
-    const kind = rel.relationshipType.split("/").pop()!;
-    const key = `${kind}:${resolveRelationshipTarget("", rel.target)}`;
+    const key = semanticKey(rel);
     sourceCounts.set(key, (sourceCounts.get(key) ?? 0) + 1);
     claimedCounts.set(key, 0);
   }
   for (const rel of sourceRelationships) {
-    const kind = rel.relationshipType.split("/").pop()!;
+    const key = semanticKey(rel);
     const semanticTarget = resolveRelationshipTarget("", rel.target);
-    const key = `${kind}:${semanticTarget}`;
-    if (
-      referencedIds?.has(rel.rId) &&
-      !(rels.hasId(rel.rId) && rels.idOf(rel.relationshipType, semanticTarget) === rel.rId)
-    ) {
+    const alreadyClaimed =
+      rels.hasId(rel.rId) && rels.idOf(rel.relationshipType, semanticTarget) === rel.rId;
+    if (alreadyClaimed) continue;
+    if (referencedIds?.has(rel.rId) && !alreadyClaimed) {
       rels.claimSourceRel(rel, { force: true });
       continue;
     }
-    const duplicatesToClaim = Math.max(
+    const requiredClaims = Math.max(
       0,
       (sourceCounts.get(key) ?? 0) - rels.countRelationships(rel.relationshipType, semanticTarget),
     );
-    const claimedCount = claimedCounts.get(key) ?? 0;
-    if (claimedCount >= duplicatesToClaim) continue;
-    claimedCounts.set(key, claimedCount + 1);
+    if ((claimedCounts.get(key) ?? 0) >= requiredClaims) continue;
+    claimedCounts.set(key, (claimedCounts.get(key) ?? 0) + 1);
     rels.claimSourceRel(rel, { force: true });
   }
 }

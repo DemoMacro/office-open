@@ -143,7 +143,11 @@ export interface PresentationPartOptions {
   /** Source p:sldMasterIdLst identities; omitted entries use the compiler default. */
   /** `null` preserves a source `p:sldMasterId` that omitted the optional id. */
   masterIds?: (number | null)[];
+  /** Relationship ids assigned by the presentation relationship container. */
+  masterRIds?: (number | string)[];
   masterCount: number;
+  /** Relationship ids assigned by the presentation relationship container. */
+  slideRIds?: (number | string)[];
   notesMasterRId?: number;
   handoutMasterRId?: number;
   /** Server zoom in percent (p:presentation/@serverZoom, ST_Percentage). */
