@@ -15,4 +15,5 @@ export type GroupFrame = {
   paragraphAlignment: ParagraphOptions["alignment"];
   fontId?: number;
   fontName?: string;
+  fontNameBytes?: number[];
 };

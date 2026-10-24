@@ -88,6 +88,13 @@ describe("parseDocument RTF text and formatting", () => {
     });
   });
 
+  it("decodes multi-byte font names as a single charset sequence", () => {
+    const options = parseDocument(
+      String.raw`{\rtf1\ansicpg936{\fonttbl{\f0\fswiss\fcharset134\'d6\'d0\'ce\'c4;}}}`,
+    );
+    expect(options.fonts).toEqual([{ name: "中文", family: "swiss", characterSet: "86" }]);
+  });
+
   it("captures generator metadata and skips other starred unknown destinations", () => {
     const source = String.raw`{\rtf1Visible{\*\generator Hidden}{\info{\title Also Hidden}}After}`;
     expect(parseDocument(source)).toMatchObject({ application: "Hidden" });

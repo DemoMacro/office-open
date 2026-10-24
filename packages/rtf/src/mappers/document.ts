@@ -89,6 +89,23 @@ const RTF_FONT_CHARSET_ENCODINGS: Record<number, string> = {
   238: "windows-1250",
 };
 
+function fontTableEncoding(fontCharset: number, ansiCodePage: number): string {
+  const encoding = RTF_FONT_CHARSET_ENCODINGS[fontCharset] ?? RTF_CODE_PAGE_ENCODINGS[ansiCodePage];
+  if (!encoding) {
+    throw new Error(`unsupported RTF font encoding ${fontCharset || ansiCodePage}`);
+  }
+  return encoding;
+}
+
+function fontNameFromBytes(bytes: readonly number[], encoding: string): string {
+  const value = new TextDecoder(encoding).decode(new Uint8Array(bytes));
+  return value.replace(/;.*$/su, "").trim();
+}
+
+function appendTextBytes(bytes: number[], value: string): void {
+  for (const byte of new TextEncoder().encode(value)) bytes.push(byte);
+}
+
 function applyStoryBlocks(
   section: SectionOptions | undefined,
   headerBlocks: StoryBlocks,
@@ -180,6 +197,7 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
   let unicodeSkip = 0;
   let fontId: number | undefined;
   let fontName: string | undefined;
+  let fontNameBytes: number[] = [];
   let fontCharset = 0;
   let ansiCodePage = 1252;
   let hexBuffer: number[] = [];
@@ -559,6 +577,7 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
     if (word === "f") {
       fontId = parameter;
       fontName = "";
+      fontNameBytes = [];
       fontCharset = 0;
       fontFamily = undefined;
       return true;
@@ -1075,6 +1094,7 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
       paragraphAlignment: paragraph?.options.alignment,
       fontId,
       fontName,
+      fontNameBytes,
     });
     void position;
   };
@@ -1095,6 +1115,7 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
     }
     fontId = frame.fontId;
     fontName = frame.fontName;
+    fontNameBytes = frame.fontNameBytes ?? [];
   };
 
   while (tokenIndex < tokens.length) {
@@ -1458,9 +1479,9 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
         continue;
       }
       if (destination === "font-table" && fontId !== undefined && fontName !== undefined) {
-        const encoding =
-          RTF_FONT_CHARSET_ENCODINGS[fontCharset] ?? RTF_CODE_PAGE_ENCODINGS[ansiCodePage];
-        if (!encoding) {
+        try {
+          fontTableEncoding(fontCharset, ansiCodePage);
+        } catch {
           throw new RtfParseError(
             `unsupported RTF font encoding ${fontCharset || ansiCodePage}`,
             token.position,
@@ -1473,19 +1494,7 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
             },
           );
         }
-        fontName += new TextDecoder(encoding).decode(
-          new Uint8Array([Number.parseInt(token.value, 16)]),
-        );
-        if (fontName.includes(";")) {
-          const name = fontName.replace(/;.*$/u, "").trim();
-          if (name)
-            fonts.set(fontId, {
-              name,
-              ...(fontFamily ? { family: fontFamily } : {}),
-              characterSet: fontCharset.toString(16).padStart(2, "0"),
-            });
-          fontName = "";
-        }
+        fontNameBytes.push(Number.parseInt(token.value, 16));
         continue;
       }
       hexBuffer.push(Number.parseInt(token.value, 16));
@@ -1494,9 +1503,12 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
 
     if (token.kind === "text") {
       if (destination === "font-table" && fontId !== undefined && fontName !== undefined) {
-        fontName += token.value;
+        appendTextBytes(fontNameBytes, token.value);
         if (token.value.includes(";")) {
-          const name = fontName.replace(/;.*$/u, "").trim();
+          const name = fontNameFromBytes(
+            fontNameBytes,
+            fontTableEncoding(fontCharset, ansiCodePage),
+          );
           if (fontId !== undefined && name)
             fonts.set(fontId, {
               name,
@@ -1504,6 +1516,7 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
               characterSet: fontCharset.toString(16).padStart(2, "0"),
             });
           fontName = "";
+          fontNameBytes = [];
         }
       } else if (destination === "color-table" && token.value.includes(";")) {
         pushColor();
