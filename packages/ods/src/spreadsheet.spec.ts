@@ -119,6 +119,27 @@ describe("ODS spreadsheet semantics", () => {
     ).rejects.toThrow("unsupported ODF underline");
   });
 
+  it("round-trips all ODF strike line styles", async () => {
+    for (const style of ["dotted", "dash", "longDash", "dotDash", "dotDotDash"] as const) {
+      const parsed = await parseWorkbook(
+        packageWith(
+          '<table:table table:name="Sheet1"><table:table-row><table:table-cell table:style-name="ce1"/></table:table-row></table:table>',
+          `<style:style style:name="ce1" style:family="table-cell"><style:text-properties style:text-line-through-style="${style}"/></style:style>`,
+        ),
+      );
+      expect(parsed.worksheets?.[0]?.rows?.[0]?.cells?.[0]?.style).toMatchObject({
+        font: { strike: true, strikeStyle: style, strikeType: "single" },
+      });
+      const content = (
+        await readOcf(
+          await generateWorkbook(parsed),
+          "application/vnd.oasis.opendocument.spreadsheet",
+        )
+      ).files["content.xml"]!;
+      expect(content).toContain(`style:text-line-through-style="${style}"`);
+    }
+  });
+
   it("round-trips content validations through cell references", async () => {
     const { parsed, regenerated } = await roundTrip(
       packageWith(

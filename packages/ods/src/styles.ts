@@ -216,10 +216,17 @@ export function parseOdfStrike(
   if (value === undefined || value === "none") return undefined;
   const type = attributeString(element, "style:text-line-through-type") ?? "single";
   if (type !== "single" && type !== "double") throwStrike(value, type);
-  if (value === "solid") {
+  if (
+    value === "solid" ||
+    value === "dotted" ||
+    value === "dash" ||
+    value === "longDash" ||
+    value === "dotDash" ||
+    value === "dotDotDash"
+  ) {
     return {
       strike: true,
-      ...(type === "double" ? { strikeStyle: value, strikeType: type } : {}),
+      ...(value === "solid" && type === "single" ? {} : { strikeStyle: value, strikeType: type }),
     };
   }
   throw new OdsParseError(
