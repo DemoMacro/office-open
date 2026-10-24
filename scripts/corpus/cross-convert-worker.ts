@@ -165,6 +165,7 @@ function familyOf(source: SourceFormat): Family {
 
 function outcomeOf(error: unknown): Exclude<Outcome, "generated"> {
   const name = (error as { name?: string })?.name;
+  const message = String((error as Error)?.message ?? "");
   const reason =
     (error as { context?: { reason?: string }; reason?: string })?.context?.reason ??
     (error as { reason?: string })?.reason;
@@ -176,6 +177,7 @@ function outcomeOf(error: unknown): Exclude<Outcome, "generated"> {
     return "unsupported-target";
   }
   if (
+    message.startsWith("Malformed XML:") ||
     name === DocParseError.name ||
     name === XlsParseError.name ||
     name === PptParseError.name ||
