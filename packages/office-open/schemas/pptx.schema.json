@@ -1068,8 +1068,8 @@
           "type": "string"
         },
         "transitionDirection": {
-          "description": "Transition direction (anim:transitionFilter smil:direction).",
-          "enum": ["left", "right", "up", "down"],
+          "description": "SMIL playback direction (anim:transitionFilter smil:direction).",
+          "enum": ["forward", "reverse"],
           "type": "string"
         },
         "transitionMode": {
@@ -2412,7 +2412,7 @@
       "type": "object"
     },
     "BevelPreset": {
-      "description": "Bevel preset types (12 variations). Reference: ISO/IEC 29500-4, dml-main.xsd,",
+      "description": "Bevel preset type (`circle`, `softRound`, `slope`, and related presets).",
       "enum": [
         "relaxedInset",
         "circle",
@@ -6488,7 +6488,7 @@
           "type": "array"
         },
         "preserveSourceDeclarations": {
-          "description": "Preserve source Defaults and Overrides for parts still present. Round-trip only.",
+          "description": "Preserve source Defaults and Overrides for the final package file set. Round-trip only.",
           "readOnly": true,
           "type": "boolean"
         }
@@ -9936,14 +9936,7 @@
           "type": "boolean"
         },
         "height": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ]
+          "$ref": "#/definitions/ShapeOptions/properties/height"
         },
         "hidden": {
           "description": "XSD `@hidden` (default false); emitted as \"1\" only when true.",
@@ -9984,34 +9977,13 @@
           "type": "boolean"
         },
         "width": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ]
+          "$ref": "#/definitions/ShapeOptions/properties/width"
         },
         "x": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ]
+          "$ref": "#/definitions/ShapeOptions/properties/x"
         },
         "y": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ]
+          "$ref": "#/definitions/ShapeOptions/properties/y"
         }
       },
       "required": ["children"],
@@ -10091,14 +10063,7 @@
           "type": "boolean"
         },
         "height": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ]
+          "$ref": "#/definitions/ShapeOptions/properties/height"
         },
         "rotation": {
           "description": "Rotation angle in degrees (e.g., 45 = 45°).",
@@ -10109,34 +10074,13 @@
           "description": "a:scene3d."
         },
         "width": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ]
+          "$ref": "#/definitions/ShapeOptions/properties/width"
         },
         "x": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ]
+          "$ref": "#/definitions/ShapeOptions/properties/x"
         },
         "y": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ]
+          "$ref": "#/definitions/ShapeOptions/properties/y"
         }
       },
       "type": "object"
@@ -15261,7 +15205,7 @@
       "type": "object"
     },
     "PresetMaterial": {
-      "description": "Preset material types for 3D shapes (15 variations). Reference: ISO/IEC 29500-4, dml-main.xsd,",
+      "description": "Preset material used to shade a 3D shape (`matte`, `metal`, `flat`, etc.).",
       "enum": [
         "legacyMatte",
         "legacyPlastic",
@@ -15342,7 +15286,7 @@
       "type": "string"
     },
     "PresetShadow": {
-      "description": "Preset shadow types (20 variations). Reference: ISO/IEC 29500-4, dml-main.xsd,",
+      "description": "Preset shadow geometry (`shadow1` through `shadow20`).",
       "enum": [
         "shadow1",
         "shadow2",
@@ -16350,7 +16294,8 @@
             {
               "$ref": "#/definitions/UniversalMeasure"
             }
-          ]
+          ],
+          "description": "Height in EMUs (`914400` = 1\") or a universal measure."
         },
         "hidden": {
           "description": "XSD `@hidden` (default false); emitted as \"1\" only when true.",
@@ -16379,6 +16324,10 @@
             "$ref": "#/definitions/NvPrExtensionOptions"
           },
           "type": "array"
+        },
+        "odfGeometryType": {
+          "description": "Exact source ODF draw:type; used only when regenerating ODF shapes.",
+          "type": "string"
         },
         "placeholder": {
           "anyOf": [
@@ -16500,7 +16449,8 @@
             {
               "$ref": "#/definitions/UniversalMeasure"
             }
-          ]
+          ],
+          "description": "Width in EMUs (`914400` = 1\") or a universal measure."
         },
         "x": {
           "anyOf": [
@@ -16510,7 +16460,8 @@
             {
               "$ref": "#/definitions/UniversalMeasure"
             }
-          ]
+          ],
+          "description": "Horizontal offset in EMUs (`914400` = 1\") or a universal measure."
         },
         "y": {
           "anyOf": [
@@ -16520,7 +16471,8 @@
             {
               "$ref": "#/definitions/UniversalMeasure"
             }
-          ]
+          ],
+          "description": "Vertical offset in EMUs (`914400` = 1\") or a universal measure."
         }
       },
       "type": "object"
@@ -16690,7 +16642,7 @@
       "type": "object"
     },
     "ShapeType": {
-      "description": "Preset shape tokens (a:prstGeom `@prst`, — dml-main.xsd, 188 values verbatim). `textNoShape` is a text-body-only preset; the arrows, flowChart*, and actionButton* families round out the set.",
+      "description": "Preset shape tokens (a:prstGeom `@prst`, — dml-main.xsd, 187 values verbatim). The arrows, flowChart*, and actionButton* families round out the set.",
       "enum": [
         "line",
         "lineInv",
@@ -16878,8 +16830,7 @@
         "plaqueTabs",
         "chartX",
         "chartStar",
-        "chartPlus",
-        "textNoShape"
+        "chartPlus"
       ],
       "type": "string"
     },
@@ -20107,48 +20058,20 @@
           "type": "boolean"
         },
         "height": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ]
+          "$ref": "#/definitions/ShapeOptions/properties/height"
         },
         "rotation": {
           "description": "Rotation angle in degrees (e.g., 45 = 45°).",
           "type": "number"
         },
         "width": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ]
+          "$ref": "#/definitions/ShapeOptions/properties/width"
         },
         "x": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ]
+          "$ref": "#/definitions/ShapeOptions/properties/x"
         },
         "y": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ]
+          "$ref": "#/definitions/ShapeOptions/properties/y"
         }
       },
       "type": "object"

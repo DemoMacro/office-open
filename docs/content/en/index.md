@@ -155,7 +155,7 @@ Create `.docx`, `.pptx`, and `.xlsx` files from plain JSON or fully typed TypeSc
             "children": [
                 {
                     "shape": {
-                        "x": 100, "y": 100, "width": 760, "height": 340,
+                        "x": "1cm", "y": "1cm", "width": "20cm", "height": "9cm",
                         "textBody": { "paragraphs": [{ "children": [{ "text": "Hello, World!", "size": 32 }] }] }
                     }
                 }

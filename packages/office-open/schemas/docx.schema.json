@@ -1188,7 +1188,7 @@
       "type": "object"
     },
     "BevelPreset": {
-      "description": "Bevel preset types (12 variations). Reference: ISO/IEC 29500-4, dml-main.xsd,",
+      "description": "Bevel preset type (`circle`, `softRound`, `slope`, and related presets).",
       "enum": [
         "relaxedInset",
         "circle",
@@ -8123,7 +8123,7 @@
           "type": "array"
         },
         "preserveSourceDeclarations": {
-          "description": "Preserve source Defaults and Overrides for parts still present. Round-trip only.",
+          "description": "Preserve source Defaults and Overrides for the final package file set. Round-trip only.",
           "readOnly": true,
           "type": "boolean"
         }
@@ -10302,7 +10302,7 @@
     },
     "DocumentProtectionOptions": {
       "additionalProperties": false,
-      "description": "Options for document protection (restrict editing). Reference: ISO/IEC 29500-4, wml.xsd,",
+      "description": "Options for document protection and editing restrictions.",
       "properties": {
         "algorithmExtensionId": {
           "type": "number"
@@ -14464,14 +14464,7 @@
           "type": "boolean"
         },
         "height": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ]
+          "$ref": "#/definitions/Transform2DOptions/properties/height"
         },
         "rotation": {
           "description": "Rotation angle in degrees (e.g., 45 = 45°).",
@@ -14482,34 +14475,13 @@
           "description": "a:scene3d."
         },
         "width": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ]
+          "$ref": "#/definitions/Transform2DOptions/properties/width"
         },
         "x": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ]
+          "$ref": "#/definitions/Transform2DOptions/properties/x"
         },
         "y": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ]
+          "$ref": "#/definitions/Transform2DOptions/properties/y"
         }
       },
       "type": "object"
@@ -23363,7 +23335,7 @@
       "type": "object"
     },
     "PresetMaterial": {
-      "description": "Preset material types for 3D shapes (15 variations). Reference: ISO/IEC 29500-4, dml-main.xsd,",
+      "description": "Preset material used to shade a 3D shape (`matte`, `metal`, `flat`, etc.).",
       "enum": [
         "legacyMatte",
         "legacyPlastic",
@@ -23444,7 +23416,7 @@
       "type": "string"
     },
     "PresetShadow": {
-      "description": "Preset shadow types (20 variations). Reference: ISO/IEC 29500-4, dml-main.xsd,",
+      "description": "Preset shadow geometry (`shadow1` through `shadow20`).",
       "enum": [
         "shadow1",
         "shadow2",
@@ -28215,6 +28187,9 @@
         "normalEastAsianFlow": {
           "$ref": "#/definitions/ShapeOptions/properties/normalEastAsianFlow"
         },
+        "odfGeometryType": {
+          "$ref": "#/definitions/ShapeOptions/properties/odfGeometryType"
+        },
         "outline": {
           "$ref": "#/definitions/OutlineOptions"
         },
@@ -28446,6 +28421,10 @@
         "normalEastAsianFlow": {
           "description": "East-Asian vertical text flow (wps:wsp `@normalEastAsianFlow`, default false).",
           "type": "boolean"
+        },
+        "odfGeometryType": {
+          "description": "Exact source ODF draw:type; used only when regenerating ODF shapes.",
+          "type": "string"
         },
         "outline": {
           "$ref": "#/definitions/OutlineOptions"
@@ -28701,7 +28680,7 @@
       ]
     },
     "ShapeType": {
-      "description": "Preset shape tokens (a:prstGeom `@prst`, — dml-main.xsd, 188 values verbatim). `textNoShape` is a text-body-only preset; the arrows, flowChart*, and actionButton* families round out the set.",
+      "description": "Preset shape tokens (a:prstGeom `@prst`, — dml-main.xsd, 187 values verbatim). The arrows, flowChart*, and actionButton* families round out the set.",
       "enum": [
         "line",
         "lineInv",
@@ -28889,8 +28868,7 @@
         "plaqueTabs",
         "chartX",
         "chartStar",
-        "chartPlus",
-        "textNoShape"
+        "chartPlus"
       ],
       "type": "string"
     },
@@ -32733,7 +32711,7 @@
       "type": "object"
     },
     "ThemeColor": {
-      "description": "Theme color values used throughout OOXML for referencing document theme colors. Reference: in OOXML specification",
+      "description": "Theme color slot used by fills, lines, and text (`accent1`, `dark2`, etc.).",
       "enum": [
         "dark1",
         "light1",
@@ -32773,7 +32751,7 @@
       "type": "object"
     },
     "ThemeFont": {
-      "description": "Theme font values used for referencing document theme fonts. Reference: in OOXML specification",
+      "description": "Theme font slot used by text and table styles (`majorEastAsia`, `minorAscii`, etc.).",
       "enum": [
         "majorEastAsia",
         "majorBidi",
@@ -33231,7 +33209,8 @@
             {
               "$ref": "#/definitions/UniversalMeasure"
             }
-          ]
+          ],
+          "description": "Height in EMUs (`914400` = 1\") or a universal measure."
         },
         "rotation": {
           "description": "Rotation angle in degrees (e.g., 45 = 45°).",
@@ -33245,7 +33224,8 @@
             {
               "$ref": "#/definitions/UniversalMeasure"
             }
-          ]
+          ],
+          "description": "Width in EMUs (`914400` = 1\") or a universal measure."
         },
         "x": {
           "anyOf": [
@@ -33255,7 +33235,8 @@
             {
               "$ref": "#/definitions/UniversalMeasure"
             }
-          ]
+          ],
+          "description": "Horizontal offset in EMUs (`914400` = 1\") or a universal measure."
         },
         "y": {
           "anyOf": [
@@ -33265,7 +33246,8 @@
             {
               "$ref": "#/definitions/UniversalMeasure"
             }
-          ]
+          ],
+          "description": "Vertical offset in EMUs (`914400` = 1\") or a universal measure."
         }
       },
       "type": "object"
@@ -40173,7 +40155,7 @@
     },
     "WriteProtectionOptions": {
       "additionalProperties": false,
-      "description": "Options for write protection (read-only recommendation, not enforcement). Reference: ISO/IEC 29500-4, wml.xsd,",
+      "description": "Options for write protection, such as a read-only recommendation.",
       "properties": {
         "algorithmExtensionId": {
           "type": "number"

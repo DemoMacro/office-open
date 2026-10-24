@@ -118,10 +118,12 @@ npx office-open schema slice docx ParagraphOptions RunOptions
 
 - `detectOffice(input)` — identify format, family, and container from bytes or RTF text
 - `parseOffice(input, options?)` — parse any supported format into a discriminated canonical model
-- `generateOffice(format, options, output?)` — generate any writable format
+- `generateOffice(format, options, output?, generationOptions?)` — generate any writable format
 - `parseDocument` / `generateDocument` / `patchDocument` — document family dispatch
 - `parseWorkbook` / `generateWorkbook` / `patchWorkbook` — workbook family dispatch
 - `parsePresentation` / `generatePresentation` / `patchPresentation` — presentation family dispatch
+
+Family dispatch is async-only. Per-format subpaths additionally expose `*Sync` and `*Stream` variants where the underlying writer supports them.
 
 Additional entries include `office-open/convert`, `office-open/schemas`, `office-open/ai`, `office-open/core`, and `office-open/xml`.
 
@@ -160,6 +162,7 @@ Every parser returns the same family model. Therefore legacy and ODF content can
 
 ```typescript
 import { officeOpenTools } from "office-open/ai";
+import { generateText } from "ai";
 
 const result = await generateText({
   model,
@@ -168,7 +171,7 @@ const result = await generateText({
 });
 ```
 
-The tools use skeleton schemas by default. Use `officeOpenTools({ fullSchemas: true })` when the model can afford the complete schemas.
+The tools use skeleton schemas by default. Use `office-open-schema-lookup` or `office-open/schemas` when a model needs complete definitions. The AI subpath requires the optional `ai` peer package.
 
 ## JSON Schemas
 

@@ -32,7 +32,7 @@ export interface OfficeOptionsFor {
   pptm: PresentationOptions;
   potx: PresentationOptions;
   potm: PresentationOptions;
-  odp: OdpPresentationOptions;
+  odp: PresentationOptions | OdpPresentationOptions;
 }
 
 type OdfGenerateFormat = "odt" | "ods" | "odp";

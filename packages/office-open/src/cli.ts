@@ -312,8 +312,8 @@ const convertCommands = Object.fromEntries(
 const mainCommand = defineCommand({
   meta: {
     name: "office-open",
-    version: "0.14.6",
-    description: "Generate OOXML and OpenDocument files from JSON",
+    version: "0.15.0",
+    description: "Parse and generate Office formats from JSON",
   },
   subCommands: {
     ...convertCommands,
