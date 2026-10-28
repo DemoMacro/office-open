@@ -140,6 +140,8 @@ importers:
         specifier: workspace:*
         version: link:../xml
 
+  packages/formula: {}
+
   packages/odf:
     dependencies:
       '@office-open/core':
@@ -208,6 +210,9 @@ importers:
       '@office-open/docx':
         specifier: workspace:*
         version: link:../docx
+      '@office-open/formula':
+        specifier: workspace:*
+        version: link:../formula
       '@office-open/odp':
         specifier: workspace:*
         version: link:../odp

@@ -47,11 +47,15 @@ describe("family APIs", () => {
 
   it("exposes only the aggregate public runtime API", () => {
     expect(Object.keys(officeOpen).sort()).toEqual([
+      "calculateWorkbookFormulas",
+      "createWorkbookFormulaContext",
       "detectOffice",
+      "evaluateWorkbookFormula",
       "generateDocument",
       "generateOffice",
       "generatePresentation",
       "generateWorkbook",
+      "lintWorkbookFormulas",
       "parseDocument",
       "parseOffice",
       "parsePresentation",

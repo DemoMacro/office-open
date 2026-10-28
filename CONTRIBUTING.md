@@ -45,6 +45,10 @@ ooxml-schemas/  — OOXML XSD schemas (golden source of truth)
 odf-schemas/    — Official ODF 1.3 Relax NG schemas (golden source of truth)
 ```
 
+## Package Boundaries
+
+Dependency direction stays one-way: format packages may use `core` and `xml`; shared packages never import a format package. `office-open` is the only aggregate that imports every public codec, and peer format packages do not import one another. Keep type-only exceptions explicit when a family codec models its OOXML peer's canonical options.
+
 Every format package (docx, pptx, xlsx) follows the same layout:
 
 ```

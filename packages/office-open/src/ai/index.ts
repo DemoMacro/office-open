@@ -18,9 +18,8 @@ import { jsonSchema, tool } from "ai";
 
 export { formatToolError } from "./error";
 
-import { lintWorkbookFormulas } from "@office-open/xlsx";
-
 import { generateDocument } from "../document";
+import { lintWorkbookFormulas } from "../formula";
 import { generateOffice } from "../generate";
 import {
   getSkeletonSchema,
@@ -217,7 +216,7 @@ export const odsTool: Tool<WorkbookOptions, GeneratedDocumentOutput> = tool({
   execute: async (options) => {
     try {
       const validated = validateDocumentInput("xlsx", options);
-      const formulaIssues = lintWorkbookFormulas(validated);
+      const formulaIssues = lintWorkbookFormulas(validated, "openformula");
       if (formulaIssues.length > 0) {
         const lines = formulaIssues.map(
           (issue) => `  ${issue.location}: ${issue.message} — formula "${issue.formula}"`,

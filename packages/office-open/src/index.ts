@@ -45,3 +45,15 @@ export {
   type WorkbookPatchFormat,
   type WorkbookPatchRequest,
 } from "./workbook";
+export {
+  calculateWorkbookFormulas,
+  createWorkbookFormulaContext,
+  evaluateWorkbookFormula,
+  lintWorkbookFormulas,
+  type WorkbookFormulaCalculation,
+  type WorkbookFormulaDialect,
+  type WorkbookFormulaFailure,
+  type WorkbookFormulaPosition,
+  type WorkbookFormulaIssue,
+  type WorkbookFormulaRecalculation,
+} from "./formula";

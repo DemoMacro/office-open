@@ -491,7 +491,7 @@ export function cellXml(
       children,
     );
   }
-  const formula = typeof cell.formula === "string" ? cell.formula : cell.formula?.formula;
+  const formula = typeof cell.formula === "string" ? { formula: cell.formula } : cell.formula;
   const cached = cacheAttributes(cell.value);
   const styleOptions = typeof cell.style === "object" ? cell.style : undefined;
   const valueKind = numFmtKind(styleOptions?.numFmt);
@@ -514,7 +514,10 @@ export function cellXml(
       "table:number-columns-spanned": span?.columnsSpanned,
       "table:number-rows-spanned": span?.rowsSpanned,
       "table:content-validation-name": contentValidationName,
-      "table:formula": formula ? `of:=${formula}` : undefined,
+      "table:formula": formula ? `of:=${formula.formula}` : undefined,
+      ...(formula?.type === "array" && formula.reference
+        ? matrixSpanAttributes(formula.reference)
+        : {}),
       "office:value-type": type,
       "office:value": cached.type === "float" ? cached.value : undefined,
       "office:currency":
@@ -528,6 +531,25 @@ export function cellXml(
     },
     children,
   );
+}
+
+function matrixSpanAttributes(reference: string): {
+  "table:number-matrix-columns-spanned": number;
+  "table:number-matrix-rows-spanned": number;
+} {
+  const [start, end = start] = reference.replace(/^\$/, "").split(":");
+  const startMatch = /^([A-Z]+)([0-9]+)$/u.exec(start ?? "");
+  const endMatch = /^([A-Z]+)([0-9]+)$/u.exec(end ?? "");
+  if (!startMatch || !endMatch)
+    return { "table:number-matrix-columns-spanned": 1, "table:number-matrix-rows-spanned": 1 };
+  const firstColumn = columnNumber(startMatch[1]!);
+  const lastColumn = columnNumber(endMatch[1]!);
+  const firstRow = Number(startMatch[2]);
+  const lastRow = Number(endMatch[2]);
+  return {
+    "table:number-matrix-columns-spanned": Math.abs(lastColumn - firstColumn) + 1,
+    "table:number-matrix-rows-spanned": Math.abs(lastRow - firstRow) + 1,
+  };
 }
 
 function cellRangeSourceXml(source: CellRangeSourceOptions): string {
@@ -1057,6 +1079,8 @@ export function parseRow(
               "table:number-columns-repeated",
               "table:content-validation-name",
               "table:formula",
+              "table:number-matrix-columns-spanned",
+              "table:number-matrix-rows-spanned",
               "office:value",
               "office:string-value",
               "office:currency",
@@ -1427,7 +1451,20 @@ export function parseCell(
   const style = cellStyles.get(attributeString(cell, "table:style-name") ?? "");
   if (style) result.style = style;
   const formula = attributeString(cell, "table:formula");
-  if (formula) result.formula = formula.replace(/^of:=/, "");
+  if (formula) {
+    result.formula = formula.replace(/^(?:(?:of|ooow|msoxl):)?=/u, "");
+    const columnsSpanned = attributeNumber(cell, "table:number-matrix-columns-spanned");
+    const rowsSpanned = attributeNumber(cell, "table:number-matrix-rows-spanned");
+    if ((columnsSpanned ?? 1) > 1 || (rowsSpanned ?? 1) > 1) {
+      result.formula = {
+        formula: result.formula,
+        type: "array",
+        reference: `${result.reference}:${columnName(column + (columnsSpanned ?? 1) - 1)}${
+          row + (rowsSpanned ?? 1) - 1
+        }`,
+      };
+    }
+  }
   const valueType = attributeString(cell, "office:value-type");
   if (valueType === "float") result.value = attributeNumber(cell, "office:value");
   else if (valueType === "percentage") {

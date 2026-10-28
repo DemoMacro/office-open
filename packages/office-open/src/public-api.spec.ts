@@ -19,11 +19,15 @@ const FORBIDDEN_NAMES = [
 
 const RUNTIME_EXPORTS: Record<string, readonly string[]> = {
   ".": [
+    "calculateWorkbookFormulas",
+    "createWorkbookFormulaContext",
     "detectOffice",
+    "evaluateWorkbookFormula",
     "generateDocument",
     "generateOffice",
     "generatePresentation",
     "generateWorkbook",
+    "lintWorkbookFormulas",
     "parseDocument",
     "parseOffice",
     "parsePresentation",
@@ -136,6 +140,12 @@ const RUNTIME_EXPORTS: Record<string, readonly string[]> = {
     "xlsxSchema",
   ],
   "./workbook": ["generateWorkbook", "parseWorkbook", "patchWorkbook"],
+  "./formula": [
+    "calculateWorkbookFormulas",
+    "createWorkbookFormulaContext",
+    "evaluateWorkbookFormula",
+    "lintWorkbookFormulas",
+  ],
   "./xls": ["parseWorkbook", "XlsParseError"],
   "./xml": [
     "allChildren",
@@ -185,6 +195,7 @@ const SOURCE_PATHS: Record<string, string> = {
   "./xlsx": "src/xlsx.ts",
   "./document": "src/document.ts",
   "./workbook": "src/workbook.ts",
+  "./formula": "src/formula.ts",
   "./presentation": "src/presentation.ts",
   "./doc": "src/doc.ts",
   "./xls": "src/xls.ts",
@@ -210,6 +221,7 @@ const DIST_PATHS: Record<string, string> = {
   "./rtf": "dist/rtf.d.mts",
   "./schemas": "dist/schemas/index.d.mts",
   "./workbook": "dist/workbook.d.mts",
+  "./formula": "dist/formula.d.mts",
   "./xls": "dist/xls.d.mts",
   "./xml": "dist/xml.d.mts",
   "./xlsx": "dist/xlsx.d.mts",

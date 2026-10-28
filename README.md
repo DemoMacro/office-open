@@ -1,6 +1,5 @@
 # office-open
 
-The package graph follows format ownership: `odf` owns the OCF container, XML runtime, metadata, and shared chart/database codecs; each ODF document codec may type-import its OOXML peer while using `core` and `odf` at runtime; peer codecs do not import one another; `core` never imports a format codec; only `office-open` aggregates every public document codec.
 English | [简体中文](./README.zh-CN.md)
 
 [![npm downloads](https://img.shields.io/npm/dm/office-open)](https://www.npmjs.com/package/office-open)
@@ -27,6 +26,7 @@ Used in production by [json-to-office](https://json-to-office.com/) — its qual
 - 📐 **Spec-Compliant** — Output validates against the OOXML Transitional XSD schemas (ISO/IEC 29500) and is verified to open in Microsoft Office, WPS Office, LibreOffice, and Google Workspace
 - 🔒 **Fully Typed** — Comprehensive TypeScript definitions for autocomplete and type safety across every API
 - 🔄 **Parse & Patch** — Read existing .docx, .pptx, .xlsx files for round-trip workflows, or patch templates by placeholder replacement
+- 🧮 **Spreadsheet Formulas** — Parse, analyze, rewrite, and recalculate Excel and OpenFormula expressions with dependency ordering
 - 🎨 **Rich Content** — Paragraphs, tables, images, charts, SmartArt, math equations, effects, animations, and more
 - 🔀 **Cross-Format Copy** — Convert pictures, shapes, tables, and text between formats; each format keeps its native types, conversions reuse shared `core` domains — no unified model layer
 - ⚡ **High Performance** — Pure string concatenation for XML generation, no intermediate AST, native zlib compression — see the [benchmarks](#performance)
@@ -56,22 +56,23 @@ Most Office libraries only generate files. office-open closes the loop with gene
 
 ## Packages
 
-| Package                                         | Version                                                | Description                                          |
-| ----------------------------------------------- | ------------------------------------------------------ | ---------------------------------------------------- |
-| [office-open](./packages/office-open/README.md) | ![npm](https://img.shields.io/npm/v/office-open)       | Umbrella: all packages + CLI + AI SDK tools          |
-| [@office-open/docx](./packages/docx/README.md)  | ![npm](https://img.shields.io/npm/v/@office-open/docx) | Word document generation, parsing, and patching      |
-| [@office-open/pptx](./packages/pptx/README.md)  | ![npm](https://img.shields.io/npm/v/@office-open/pptx) | PowerPoint generation, parsing, and patching         |
-| [@office-open/xlsx](./packages/xlsx/README.md)  | ![npm](https://img.shields.io/npm/v/@office-open/xlsx) | Spreadsheet generation, parsing, and patching        |
-| [@office-open/doc](./packages/doc/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/doc)  | Legacy Word .doc parsing                             |
-| [@office-open/xls](./packages/xls/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/xls)  | Legacy Excel .xls parsing                            |
-| [@office-open/ppt](./packages/ppt/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/ppt)  | Legacy PowerPoint .ppt parsing                       |
-| [@office-open/rtf](./packages/rtf/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/rtf)  | Rich Text Format generation and parsing              |
-| [@office-open/odf](./packages/odf/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/odf)  | Shared OpenDocument container and runtime            |
-| [@office-open/odt](./packages/odt/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/odt)  | OpenDocument text generation and parsing             |
-| [@office-open/ods](./packages/ods/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/ods)  | OpenDocument spreadsheet generation and parsing      |
-| [@office-open/odp](./packages/odp/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/odp)  | OpenDocument presentation generation and parsing     |
-| [@office-open/core](./packages/core/README.md)  | ![npm](https://img.shields.io/npm/v/@office-open/core) | Shared OOXML infrastructure, charts, unit converters |
-| [@office-open/xml](./packages/xml/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/xml)  | Low-level XML parsing and serialization              |
+| Package                                              | Version                                                   | Description                                                      |
+| ---------------------------------------------------- | --------------------------------------------------------- | ---------------------------------------------------------------- |
+| [office-open](./packages/office-open/README.md)      | ![npm](https://img.shields.io/npm/v/office-open)          | Umbrella: all packages + CLI + AI SDK tools                      |
+| [@office-open/docx](./packages/docx/README.md)       | ![npm](https://img.shields.io/npm/v/@office-open/docx)    | Word document generation, parsing, and patching                  |
+| [@office-open/pptx](./packages/pptx/README.md)       | ![npm](https://img.shields.io/npm/v/@office-open/pptx)    | PowerPoint generation, parsing, and patching                     |
+| [@office-open/xlsx](./packages/xlsx/README.md)       | ![npm](https://img.shields.io/npm/v/@office-open/xlsx)    | Spreadsheet generation, parsing, and patching                    |
+| [@office-open/formula](./packages/formula/README.md) | ![npm](https://img.shields.io/npm/v/@office-open/formula) | Spreadsheet formula parsing, analysis, rewriting, and evaluation |
+| [@office-open/doc](./packages/doc/README.md)         | ![npm](https://img.shields.io/npm/v/@office-open/doc)     | Legacy Word .doc parsing                                         |
+| [@office-open/xls](./packages/xls/README.md)         | ![npm](https://img.shields.io/npm/v/@office-open/xls)     | Legacy Excel .xls parsing                                        |
+| [@office-open/ppt](./packages/ppt/README.md)         | ![npm](https://img.shields.io/npm/v/@office-open/ppt)     | Legacy PowerPoint .ppt parsing                                   |
+| [@office-open/rtf](./packages/rtf/README.md)         | ![npm](https://img.shields.io/npm/v/@office-open/rtf)     | Rich Text Format generation and parsing                          |
+| [@office-open/odf](./packages/odf/README.md)         | ![npm](https://img.shields.io/npm/v/@office-open/odf)     | Shared OpenDocument container and runtime                        |
+| [@office-open/odt](./packages/odt/README.md)         | ![npm](https://img.shields.io/npm/v/@office-open/odt)     | OpenDocument text generation and parsing                         |
+| [@office-open/ods](./packages/ods/README.md)         | ![npm](https://img.shields.io/npm/v/@office-open/ods)     | OpenDocument spreadsheet generation and parsing                  |
+| [@office-open/odp](./packages/odp/README.md)         | ![npm](https://img.shields.io/npm/v/@office-open/odp)     | OpenDocument presentation generation and parsing                 |
+| [@office-open/core](./packages/core/README.md)       | ![npm](https://img.shields.io/npm/v/@office-open/core)    | Shared OOXML infrastructure, charts, unit converters             |
+| [@office-open/xml](./packages/xml/README.md)         | ![npm](https://img.shields.io/npm/v/@office-open/xml)     | Low-level XML parsing and serialization                          |
 
 ## Format Capabilities
 
@@ -83,8 +84,6 @@ Most Office libraries only generate files. office-open closes the loop with gene
 | ODF `.odt`/`.ods`/`.odp`      | ✅    | ✅       | ✅    | Canonical format-family read/write codecs |
 
 The matrix is a capability contract, not an invitation to synthesize unsupported editing: legacy formats have no writers, RTF rejects unsupported canonical fields rather than dropping them, and ODF patching edits the canonical model before regenerating the package.
-
-The package graph follows format ownership: `odf` owns the OCF container, XML runtime, metadata, and shared chart/database codecs, each ODF document codec may type-import its OOXML peer while using `core` and `odf` at runtime, peer codecs do not import one another, `core` never imports a format codec, and only `office-open` aggregates every public document codec.
 
 ## Quick Start
 

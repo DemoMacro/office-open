@@ -11,6 +11,7 @@ export default defineConfig({
       "src/presentation.ts",
       "src/xlsx.ts",
       "src/workbook.ts",
+      "src/formula.ts",
       "src/doc.ts",
       "src/xls.ts",
       "src/ppt.ts",

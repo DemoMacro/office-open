@@ -78,6 +78,10 @@
       "types": "./dist/workbook.d.mts",
       "import": "./dist/workbook.mjs"
     },
+    "./formula": {
+      "types": "./dist/formula.d.mts",
+      "import": "./dist/formula.mjs"
+    },
     "./presentation": {
       "types": "./dist/presentation.d.mts",
       "import": "./dist/presentation.mjs"
@@ -133,6 +137,7 @@
     "@office-open/core": "workspace:*",
     "@office-open/doc": "workspace:*",
     "@office-open/docx": "workspace:*",
+    "@office-open/formula": "workspace:*",
     "@office-open/odp": "workspace:*",
     "@office-open/ods": "workspace:*",
     "@office-open/odt": "workspace:*",

@@ -72,6 +72,26 @@ describe("ODS spreadsheet semantics", () => {
     expect(regenerated.definedNames).toEqual(parsed.definedNames);
   });
 
+  it("round-trips matrix formula ranges", async () => {
+    const formula = {
+      formula: "TRANSPOSE([.A1:.B2])",
+      type: "array" as const,
+      reference: "A1:B2",
+    };
+    const options = {
+      worksheets: [
+        {
+          name: "Matrix",
+          rows: [{ cells: [{ reference: "A1", formula, value: 1 }] }],
+        },
+      ],
+    };
+    const parsed = await parseWorkbook(await generateWorkbook(options));
+    const regenerated = await parseWorkbook(await generateWorkbook(parsed));
+    expect(parsed.worksheets?.[0]?.rows?.[0]?.cells?.[0]?.formula).toEqual(formula);
+    expect(regenerated.worksheets?.[0]?.rows?.[0]?.cells?.[0]?.formula).toEqual(formula);
+  });
+
   it("preserves exact underline and strike patterns", async () => {
     const parsed = await parseWorkbook(
       await generateWorkbook({

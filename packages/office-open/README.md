@@ -11,6 +11,7 @@
 - 🧠 **Canonical Models** — `DocumentOptions`, `WorkbookOptions`, and `PresentationOptions`
 - 📄 **Word** — DOCX, RTF, and ODT generation, parsing, and patching; DOC parsing
 - 📊 **Excel** — XLSX and ODS generation, parsing, and patching; XLS parsing
+- 🧮 **Formulas** — Parse, validate, and recalculate `WorkbookOptions` with Excel and OpenFormula dialects
 - 📈 **PowerPoint** — PPTX and ODP generation, parsing, and patching; PPT parsing
 - 📝 **RTF** — Strict read/write and canonical patching through `DocumentOptions`
 - 📦 **OpenDocument** — ODT, ODS, and ODP read/write and canonical patching
@@ -125,7 +126,7 @@ npx office-open schema slice docx ParagraphOptions RunOptions
 
 Family dispatch is async-only. Per-format subpaths additionally expose `*Sync` and `*Stream` variants where the underlying writer supports them.
 
-Additional entries include `office-open/convert`, `office-open/schemas`, `office-open/ai`, `office-open/core`, and `office-open/xml`.
+Additional entries include `office-open/formula`, `office-open/convert`, `office-open/schemas`, `office-open/ai`, `office-open/core`, and `office-open/xml`.
 
 ## Format Support
 
