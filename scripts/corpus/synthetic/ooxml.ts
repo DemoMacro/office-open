@@ -38,7 +38,7 @@ export async function docxPrinterSettings(): Promise<void> {
     part,
     "printer settings path projection",
   );
-  auditSyntheticOptions(options, part);
+  auditSyntheticOptions(options, part, "docx");
   const output = await generateDocument(options, { type: "uint8array" });
   assertEqual(
     unzipSync(output)["word/printerSettings/settings.bin"]?.join(","),
@@ -126,7 +126,7 @@ export async function docxRevisionIdentity(): Promise<void> {
     part,
     "deleted drawing run identity",
   );
-  auditSyntheticOptions(options, part);
+  auditSyntheticOptions(options, part, "docx");
   const output = await generateDocument(options, { type: "uint8array" });
   const generated = partText(output, part);
   assert(
@@ -187,7 +187,7 @@ export async function pptxIndefiniteTiming(): Promise<void> {
     part,
     "duration projection",
   );
-  auditSyntheticOptions(options, part);
+  auditSyntheticOptions(options, part, "pptx");
   const output = await generatePresentation(options, { type: "uint8array" });
   assert(
     partText(output, "ppt/slides/slide1.xml").includes('dur="indefinite"'),
@@ -233,7 +233,7 @@ export async function xlsxPivotCalculatedItems(): Promise<void> {
     part,
     "calculated item pivot area projection",
   );
-  auditSyntheticOptions(options, part);
+  auditSyntheticOptions(options, part, "xlsx");
   const output = await generateWorkbook(options, { type: "uint8array" });
   const generated = partText(output, "xl/pivotCache/pivotCacheDefinition1.xml");
   assert(generated.includes('formula="A*2"'), part, "generated calculated item");

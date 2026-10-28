@@ -183,28 +183,28 @@
   },
   "libreoffice-core": {
     "docx": {
-      "total": 2212,
-      "clean": 2178,
+      "total": 2313,
+      "clean": 2180,
       "diff": 0,
       "parseFail": 0,
       "genFail": 0,
-      "malformed": 34
+      "malformed": 133
     },
     "xlsx": {
-      "total": 410,
+      "total": 571,
       "clean": 401,
       "diff": 0,
       "parseFail": 0,
       "genFail": 0,
-      "malformed": 9
+      "malformed": 170
     },
     "pptx": {
-      "total": 516,
+      "total": 587,
       "clean": 514,
       "diff": 0,
       "parseFail": 0,
       "genFail": 0,
-      "malformed": 2
+      "malformed": 73
     }
   }
 }

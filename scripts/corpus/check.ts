@@ -1,4 +1,4 @@
-import { execSync } from "node:child_process";
+import { execFileSync, execSync } from "node:child_process";
 import * as fs from "node:fs";
 import os from "node:os";
 import * as path from "node:path";
@@ -39,6 +39,20 @@ const LIBRARIES = LOCKED_SOURCES.map((source) => ({
   dest: source.destination,
   commit: source.commit,
 }));
+const OOXML_ARCHIVE_EXTENSIONS = new Set([
+  ".docx",
+  ".docm",
+  ".dotx",
+  ".dotm",
+  ".xlsx",
+  ".xlsm",
+  ".xltx",
+  ".xltm",
+  ".pptx",
+  ".pptm",
+  ".potx",
+  ".potm",
+]);
 
 function isCorpusCheckoutReady(destination: string): boolean {
   if (!fs.existsSync(path.join(destination, ".git"))) return false;
@@ -51,6 +65,50 @@ function isCorpusCheckoutReady(destination: string): boolean {
     return true;
   } catch {
     return false;
+  }
+}
+
+function isSparseCheckout(destination: string): boolean {
+  try {
+    return (
+      execSync("git config --get core.sparseCheckout", {
+        cwd: destination,
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "ignore"],
+      })
+        .trim()
+        .toLowerCase() === "true"
+    );
+  } catch {
+    return false;
+  }
+}
+
+function materializeOfficeCorpus(libraryId: string, destination: string, treeish = "HEAD"): void {
+  if (!isSparseCheckout(destination)) return;
+
+  const trackedFiles = execFileSync("git", ["ls-tree", "-r", "--name-only", treeish], {
+    cwd: destination,
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "ignore"],
+    maxBuffer: 16 * 1024 * 1024,
+  })
+    .split(/\r?\n/)
+    .filter((file) => OOXML_ARCHIVE_EXTENSIONS.has(path.extname(file).toLowerCase()));
+  const patterns = ["/*"];
+
+  console.log(`[setup] ${libraryId}: materializing office corpus from sparse checkout`);
+  execSync("git sparse-checkout set --no-cone --stdin", {
+    cwd: destination,
+    input: `${patterns.join("\n")}\n`,
+    stdio: ["pipe", "ignore", "inherit"],
+  });
+
+  const missing = trackedFiles.filter((file) => !fs.existsSync(path.join(destination, file)));
+  if (missing.length > 0) {
+    throw new Error(
+      `corpus checkout for ${libraryId} is incomplete: ${missing.length} office files missing`,
+    );
   }
 }
 
@@ -75,9 +133,11 @@ function setup(): void {
           stdio: "inherit",
         });
         execSync("git checkout --quiet FETCH_HEAD", { cwd: destination, stdio: "inherit" });
+        materializeOfficeCorpus(library.id, destination);
         continue;
       }
       const current = head;
+      materializeOfficeCorpus(library.id, destination);
       if (current === library.commit) {
         console.log(`[setup] ${library.id}: pinned at ${library.commit}`);
         continue;
@@ -88,6 +148,7 @@ function setup(): void {
         stdio: "inherit",
       });
       execSync(`git checkout --quiet "${library.commit}"`, { cwd: destination, stdio: "inherit" });
+      materializeOfficeCorpus(library.id, destination);
       continue;
     }
     console.log(`[setup] ${library.id}: fetching pinned ${library.commit}`);
@@ -346,14 +407,15 @@ for (const library of availableLibraries) {
       continue;
     }
     if (
+      current.total !== expected.total ||
       current.clean < expected.clean ||
       current.parseFail > expected.parseFail ||
       current.genFail > expected.genFail ||
-      current.malformed > (expected.malformed ?? Number.POSITIVE_INFINITY)
+      current.malformed > expected.malformed
     ) {
       failed = true;
       console.log(
-        `      FAIL regressed vs baseline (clean ${expected.clean}, parseFail ${expected.parseFail}, genFail ${expected.genFail})`,
+        `      FAIL corpus mismatch vs baseline (total ${expected.total} -> ${current.total}, clean ${expected.clean} -> ${current.clean}, parseFail ${expected.parseFail} -> ${current.parseFail}, genFail ${expected.genFail} -> ${current.genFail}, malformed ${expected.malformed} -> ${current.malformed})`,
       );
     } else if (current.clean > expected.clean) {
       console.log(`      improved: clean ${expected.clean} → ${current.clean} (refresh baseline)`);
@@ -361,7 +423,9 @@ for (const library of availableLibraries) {
   }
 }
 
-if (updateBaseline) {
+if (updateBaseline && failed) {
+  console.error("\nbaseline not written because the corpus gate failed");
+} else if (updateBaseline) {
   fs.writeFileSync(BASELINE_PATH, JSON.stringify(nextBaseline, null, 2) + "\n");
   console.log(`\nbaseline written to ${path.relative(ROOT_DIR, BASELINE_PATH)}`);
 }

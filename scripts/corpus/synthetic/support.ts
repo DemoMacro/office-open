@@ -48,8 +48,12 @@ export function partText(packageBytes: Uint8Array, path: string): string {
   return DECODER.decode(value);
 }
 
-export function auditSyntheticOptions(options: unknown, part: string): void {
-  const blockers = auditCanonicalOptions(options, opaquePassthroughPolicy("docx").opaquePatterns);
+export function auditSyntheticOptions(
+  options: unknown,
+  part: string,
+  format: "docx" | "pptx" | "xlsx" = "docx",
+): void {
+  const blockers = auditCanonicalOptions(options, opaquePassthroughPolicy(format).opaquePatterns);
   const blocker = blockers[0];
   if (blocker) throw new ProjectionError(part, `${blocker.reason}:${blocker.part}`);
 }
