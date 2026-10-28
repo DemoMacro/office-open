@@ -17,7 +17,6 @@ export * from "./util";
 export * from "./canonical";
 
 export type { HyperlinkTarget, ReadContext, WriteContext } from "./descriptor";
-export { parse as parseDescriptor, stringify as stringifyDescriptor } from "./descriptor";
 export { parse, stringify } from "./descriptor";
 export type { CustomDescriptor } from "./descriptor";
 
