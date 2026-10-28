@@ -29,7 +29,7 @@
 - ☑️ **Checkboxes** — Form checkbox support in documents
 - 🖌️ **DrawingML** — Shapes with fills, shadows, effects, and transformations
 - 🔤 **Custom Fonts** — Font embedding and custom font tables
-- 🔧 **Template Patching** — Patch existing DOCX templates via placeholder replacement
+- 🔧 **Package Patching** — Patch existing DOCX packages with typed commands
 - ⚙️ **Settings** — Comprehensive document settings and compatibility options
 
 ## Installation

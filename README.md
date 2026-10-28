@@ -25,7 +25,7 @@ Used in production by [json-to-office](https://json-to-office.com/) — its qual
 - 🧭 **Core OOXML Coverage** — All 2,273 elements and 1,969 attributes across the 21 OOXML Transitional schemas (WordprocessingML, PresentationML, SpreadsheetML, DrawingML, shared math, VML, and Word extensions) are implemented for both generation and parsing, verified by automated XSD coverage tooling
 - 📐 **Spec-Compliant** — Output validates against the OOXML Transitional XSD schemas (ISO/IEC 29500) and is verified to open in Microsoft Office, WPS Office, LibreOffice, and Google Workspace
 - 🔒 **Fully Typed** — Comprehensive TypeScript definitions for autocomplete and type safety across every API
-- 🔄 **Parse & Patch** — Read existing .docx, .pptx, .xlsx files for round-trip workflows, or patch templates by placeholder replacement
+- 🔄 **Parse & Patch** — Read existing .docx, .pptx, .xlsx files for round-trip workflows, or patch existing packages with typed commands
 - 🧮 **Spreadsheet Formulas** — Parse, analyze, rewrite, and recalculate Excel and OpenFormula expressions with dependency ordering
 - 🎨 **Rich Content** — Paragraphs, tables, images, charts, SmartArt, math equations, effects, animations, and more
 - 🔀 **Cross-Format Copy** — Convert pictures, shapes, tables, and text between formats; each format keeps its native types, conversions reuse shared `core` domains — no unified model layer

@@ -23,7 +23,7 @@
 - 💬 **Comments** — Cell comments with author tracking and rich text support
 - 🔒 **Sheet & Workbook Protection** — Password-protect worksheets and workbook structure
 - 📖 **Parsing** — Parse existing .xlsx files with `parseWorkbook` for round-trip workflows
-- 🔧 **Template Patching** — Patch existing XLSX templates via placeholder replacement
+- 🔧 **Package Patching** — Patch existing XLSX packages with typed commands
 
 ## Installation
 
