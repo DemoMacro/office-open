@@ -32,6 +32,7 @@ function chartContext(): DocxReadContext {
         get: (path: string) => (path === "word/charts/chart1.xml" ? chartEl : undefined),
       },
     },
+    withPart: (_path: string, parse: () => unknown) => parse(),
   } as unknown as DocxReadContext;
 }
 
@@ -102,6 +103,7 @@ describe("parseChartDrawing alt text", () => {
         },
         doc: { get: () => chartEl },
       },
+      withPart: (_path: string, parse: () => unknown) => parse(),
     } as unknown as DocxReadContext;
     const el = parseXml(
       drawingXml('id="1" name="Chart 1"', '<a:hlinkClick r:id="rId2"/><a:hlinkHover r:id="rId3"/>'),

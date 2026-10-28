@@ -184,27 +184,27 @@
   "libreoffice-core": {
     "docx": {
       "total": 2313,
-      "clean": 2180,
+      "clean": 2276,
       "diff": 0,
       "parseFail": 0,
       "genFail": 0,
-      "malformed": 133
+      "malformed": 37
     },
     "xlsx": {
       "total": 571,
-      "clean": 401,
+      "clean": 562,
       "diff": 0,
       "parseFail": 0,
       "genFail": 0,
-      "malformed": 170
+      "malformed": 9
     },
     "pptx": {
       "total": 587,
-      "clean": 514,
+      "clean": 584,
       "diff": 0,
       "parseFail": 0,
       "genFail": 0,
-      "malformed": 73
+      "malformed": 3
     }
   }
 }

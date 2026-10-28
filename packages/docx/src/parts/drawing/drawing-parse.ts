@@ -1935,7 +1935,7 @@ function parseGroupGraphicFrame(
   if (!chartXml) return undefined;
   // Full c:chartSpace model via the core descriptor (same descriptor that
   // stringifies on generate) — keeps axes, externalData, spPr, dLbls, …
-  const chartOpts = chartSpaceDesc.parse(chartXml, ctx);
+  const chartOpts = ctx.withPart(chartPath, () => chartSpaceDesc.parse(chartXml, ctx));
   if (!chartOpts.type) return undefined;
   consumePartPath(ctx, chartPath);
   consumePartPath(ctx, partPathToRelsPath(chartPath));
@@ -1992,7 +1992,7 @@ function parseGroupChartExGraphicFrame(
   }
   let options: ChartExSpaceOptions;
   try {
-    options = chartExSpaceDesc.parse(chartExXml, ctx);
+    options = ctx.withPart(chartExPath, () => chartExSpaceDesc.parse(chartExXml, ctx));
   } catch (error) {
     if (error instanceof ChartExParseError) throw error;
     throw new DocxParseError(
@@ -2306,7 +2306,7 @@ function parseChartDrawing(el: Element, ctx: DocxReadContext): { chart: ChartOpt
 
   // Full c:chartSpace model via the core descriptor — the same descriptor
   // that stringifies on generate, so every field round-trips symmetrically.
-  const chartSpace = chartSpaceDesc.parse(chartXml, ctx);
+  const chartSpace = ctx.withPart(chartPath, () => chartSpaceDesc.parse(chartXml, ctx));
   if (!chartSpace.type) return undefined;
   consumePartPath(ctx, chartPath);
   consumePartPath(ctx, partPathToRelsPath(chartPath));
@@ -2367,7 +2367,7 @@ function parseChartExDrawing(el: Element, ctx: DocxReadContext): { chartEx: Char
 
   let options: ChartExSpaceOptions;
   try {
-    options = chartExSpaceDesc.parse(chartExXml, ctx);
+    options = ctx.withPart(chartExPath, () => chartExSpaceDesc.parse(chartExXml, ctx));
   } catch (error) {
     if (error instanceof ChartExParseError) throw error;
     throw new DocxParseError(

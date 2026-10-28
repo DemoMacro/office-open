@@ -8,6 +8,7 @@
  */
 
 import {
+  findAndReplaceImagePlaceholders,
   Relationships,
   replacePlaceholders,
   toUint8Array,
@@ -22,6 +23,7 @@ import {
   stringifyLayoutDefinitionPart,
   stringifyStyleDefinitionPart,
 } from "@office-open/core/smartart";
+import type { DocumentOptions } from "@parts/core-properties";
 
 import type { DocxWriteContext } from "../context";
 import { XML_DECL, embeddingRelationshipType } from "./shared";
@@ -42,6 +44,46 @@ function relativeTarget(ownerPath: string, targetPath: string): string {
   ].join("/");
 }
 
+function sourceMediaRelationshipIds(
+  sourceRelationships: readonly { target: string; rId: string }[],
+  options: DocumentOptions,
+): Map<string, string> {
+  const ids = new Map<string, string>();
+  const owned = [...sourceRelationships, ...(options.passthroughRelationships ?? [])];
+  for (const relationship of owned) {
+    if (relationship.target === undefined || relationship.rId === undefined) continue;
+    const match = /(?:^|\/)media\/([^/]+)$/.exec(relationship.target);
+    const fileName = match?.[1];
+    if (fileName) ids.set(fileName, relationship.rId);
+  }
+  return ids;
+}
+
+function resolveChartPartMedia(
+  xml: string,
+  chartPath: string,
+  sourceRelationships: readonly { target: string; rId: string }[],
+  options: DocumentOptions,
+  ctx: DocxWriteContext,
+  relationships: Relationships,
+): string {
+  const sourceRids = sourceMediaRelationshipIds(sourceRelationships, options);
+  const media = findAndReplaceImagePlaceholders(
+    xml,
+    ctx.media.array,
+    relationships.nextRelationshipId,
+    "rId",
+    sourceRids,
+  );
+  for (const reference of media.referenced) {
+    const sourceRid = sourceRids.get(reference.fileName);
+    if (sourceRid !== undefined && relationships.hasId(sourceRid)) continue;
+    const target = relativeTarget(chartPath, `word/media/${reference.fileName}`);
+    relationships.add(RELATIONSHIP_TYPES.image, target);
+  }
+  return media.xml;
+}
+
 export function compileChartParts(ctx: DocxWriteContext): {
   Charts?: XmlifyedFile[];
   ChartEmbeddings?: XmlifyedFile[];
@@ -50,9 +92,25 @@ export function compileChartParts(ctx: DocxWriteContext): {
   return {
     Charts: ctx.charts.array.flatMap((chartData, i) => {
       const chartPath = chartData.sourcePath ?? `word/charts/chart${i + 1}.xml`;
+      const relationships = new Relationships(chartPath);
+      for (const rel of ctx._options.passthroughRelationships ?? []) {
+        if (rel.source === chartPath) relationships.claimSourceRel(rel);
+      }
+      for (const rel of chartData.sourceRelationships ?? []) {
+        relationships.claimSourceRel(rel);
+      }
       const parts: Array<{ data: string; path: string }> = [
         {
-          data: XML_DECL + chartData.chartSpaceXml,
+          data:
+            XML_DECL +
+            resolveChartPartMedia(
+              chartData.chartSpaceXml,
+              chartPath,
+              chartData.sourceRelationships ?? [],
+              ctx._options,
+              ctx,
+              relationships,
+            ),
           path: chartPath,
         },
       ];
@@ -68,13 +126,6 @@ export function compileChartParts(ctx: DocxWriteContext): {
       // Embedded workbook behind c:externalData rides in the same rels
       // part. Relationship ids are carried verbatim so the re-emitted
       // r:ids resolve without rewriting.
-      const relationships = new Relationships(chartPath);
-      for (const rel of ctx._options.passthroughRelationships ?? []) {
-        if (rel.source === chartPath) relationships.claimSourceRel(rel);
-      }
-      for (const rel of chartData.sourceRelationships ?? []) {
-        relationships.claimSourceRel(rel);
-      }
       if (chartData.embedding) {
         relationships.claimSourceRel({
           relationshipType: embeddingRelationshipType(chartData.embedding.relationshipType),
@@ -133,7 +184,19 @@ export function compileChartExParts(ctx: DocxWriteContext): {
           if (rel.source === chartExPath) relationships.claimSourceRel(rel);
         }
         const parts: Array<{ data: string; path: string }> = [
-          { data: XML_DECL + chartExData.chartExXml, path: chartExPath },
+          {
+            data:
+              XML_DECL +
+              resolveChartPartMedia(
+                chartExData.chartExXml,
+                chartExPath,
+                chartExData.sourceRelationships ?? [],
+                ctx._options,
+                ctx,
+                relationships,
+              ),
+            path: chartExPath,
+          },
         ];
         if (relationships.relationshipCount > 0) {
           parts.push({

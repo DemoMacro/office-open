@@ -314,6 +314,7 @@ describe("run rsid round-trip", () => {
           get: (path: string) => (path === "word/charts/chart1.xml" ? chartElement : undefined),
         },
       },
+      withPart: (_path: string, parse: () => unknown) => parse(),
     } as unknown as DocxReadContext;
     const paragraphElement = parseXml(
       `<w:p ${NS}><w:r w:rsidR="00112233" w:rsidRPr="AABBCCDD"><w:drawing>` +

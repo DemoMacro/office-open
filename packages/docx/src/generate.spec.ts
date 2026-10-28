@@ -358,6 +358,71 @@ describe("chart embedding rels", () => {
     );
     expect(rels).toContain('Target="style1.xml"');
   });
+
+  it("resolves chart image fills through chart part relationships", () => {
+    const packed = generateDocumentSync({
+      sections: [
+        {
+          children: [
+            {
+              paragraph: {
+                children: [
+                  {
+                    picture: {
+                      type: "jpg",
+                      data: new Uint8Array([1, 2, 3]),
+                      fileName: "styles.xml",
+                      transformation: { width: 9525, height: 9525 },
+                    },
+                  },
+                  {
+                    chart: {
+                      type: "column",
+                      series: [{ values: [1, 2, 3] }],
+                      transformation: { width: 5486400, height: 3200400 },
+                      shapeProperties: {
+                        fill: {
+                          type: "blip",
+                          data: new Uint8Array([4, 5, 6]),
+                          imageType: "jpg",
+                          fileName: "image1.jpeg",
+                        },
+                      },
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      ],
+    });
+    const files = unzipSync(packed);
+    const chartRels = new TextDecoder().decode(
+      files["word/charts/_rels/chart1.xml.rels"] as Uint8Array,
+    );
+    expect(chartRels).toContain('Target="../media/image1.jpeg"');
+
+    const parsed = parseDocumentSync(packed);
+    const child = parsed.sections[0]?.children[0];
+    const chart =
+      child && "paragraph" in child && typeof child.paragraph !== "string"
+        ? child.paragraph.children?.find(
+            (item) => typeof item === "object" && item && "chart" in item,
+          )
+        : undefined;
+    expect(chart).toBeDefined();
+    expect(
+      (chart as { chart?: { shapeProperties?: { fill?: { fileName?: string } } } }).chart
+        ?.shapeProperties?.fill?.fileName,
+    ).toBe("image1.jpeg");
+
+    const regenerated = unzipSync(generateDocumentSync(parsed, { type: "uint8array" }));
+    const regeneratedChartRels = new TextDecoder().decode(
+      regenerated["word/charts/_rels/chart1.xml.rels"] as Uint8Array,
+    );
+    expect(regeneratedChartRels).toContain('Target="../media/image1.jpeg"');
+  });
 });
 
 describe("package metadata presence", () => {
