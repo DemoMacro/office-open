@@ -267,6 +267,21 @@ describe("finalizeContentTypes", () => {
     expect(input).toContain('Extension="png" ContentType="image/png"');
   });
 
+  it("treats raw passthrough paths as case-insensitive OPC part names", () => {
+    const files = { "Word/Media/Image1.png": new Uint8Array([1]) };
+    finalizeContentTypes(
+      files,
+      {
+        resolve: () => undefined,
+        mediaContentTypes: { png: "image/png" },
+        rawParts: [{ path: "word/media/image1.png", data: new Uint8Array([2]) }],
+      },
+      {} as never,
+    );
+    expect(Object.keys(files)).toEqual(["Word/Media/Image1.png"]);
+    expect(files["Word/Media/Image1.png"]).toEqual(new Uint8Array([1]));
+  });
+
   it("retains a covering binary default and adds the explicit media override", () => {
     const input = finalizeContentTypes(
       { "word/media/image1.bin": new Uint8Array([1]) },

@@ -442,12 +442,14 @@ export function finalizeContentTypes(
 ): string {
   const rawParts = options.rawParts ?? [];
   const passthroughSkipped = new Set<string>();
+  const existingPaths = new Set(Object.keys(files).map((path) => path.toLowerCase()));
   for (const part of rawParts) {
-    if (files[part.path] !== undefined) {
+    if (existingPaths.has(part.path.toLowerCase())) {
       passthroughSkipped.add(part.path);
       continue;
     }
     files[part.path] = toUint8Array(part.data);
+    existingPaths.add(part.path.toLowerCase());
   }
 
   const input = deriveContentTypes(Object.keys(files), {
