@@ -243,13 +243,14 @@ function mergeLibraryResults(results: LibraryRunResult[]): LibraryRunResult {
         results.reduce(
           (merged, result) => ({
             files: merged.files + result.rawAudit[format].files,
-            xmlParts: merged.xmlParts + result.rawAudit[format].xmlParts,
-            binaryParts: merged.binaryParts + result.rawAudit[format].binaryParts,
+            independentXmlParts:
+              merged.independentXmlParts + result.rawAudit[format].independentXmlParts,
+            opaqueBinaryParts: merged.opaqueBinaryParts + result.rawAudit[format].opaqueBinaryParts,
           }),
-          { files: 0, xmlParts: 0, binaryParts: 0 },
+          { files: 0, independentXmlParts: 0, opaqueBinaryParts: 0 },
         ),
       ]),
-    ) as Record<Format, { files: number; xmlParts: number; binaryParts: number }>,
+    ) as Record<Format, { files: number; independentXmlParts: number; opaqueBinaryParts: number }>,
     rawBlockers: Object.fromEntries(
       formats.map((format) => [
         format,
@@ -388,7 +389,7 @@ for (const library of availableLibraries) {
     const raw = result.rawAudit[format];
     if (raw.files > 0) {
       console.log(
-        `      rawParts audit: ${raw.files} files | ${raw.xmlParts} XML parts (absorption gaps) | ${raw.binaryParts} opaque binaries`,
+        `      rawParts audit: ${raw.files} files | ${raw.independentXmlParts} independent XML parts | ${raw.opaqueBinaryParts} opaque binaries`,
       );
     }
     const rawBlockers = result.rawBlockers[format]

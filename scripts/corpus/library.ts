@@ -209,7 +209,10 @@ export interface LibraryRunResult {
   counts: Record<Format, FormatCounts>;
   blockers: Record<Format, [string, number][]>;
   diagnostics: FileDiagnostic[];
-  rawAudit: Record<Format, { files: number; xmlParts: number; binaryParts: number }>;
+  rawAudit: Record<
+    Format,
+    { files: number; independentXmlParts: number; opaqueBinaryParts: number }
+  >;
   rawBlockers: Record<Format, [string, number][]>;
 }
 
@@ -266,10 +269,13 @@ export async function runLibrary(
     pptx: new Map(),
   };
   const diagnostics: FileDiagnostic[] = [];
-  const rawAudit: Record<Format, { files: number; xmlParts: number; binaryParts: number }> = {
-    docx: { files: 0, xmlParts: 0, binaryParts: 0 },
-    xlsx: { files: 0, xmlParts: 0, binaryParts: 0 },
-    pptx: { files: 0, xmlParts: 0, binaryParts: 0 },
+  const rawAudit: Record<
+    Format,
+    { files: number; independentXmlParts: number; opaqueBinaryParts: number }
+  > = {
+    docx: { files: 0, independentXmlParts: 0, opaqueBinaryParts: 0 },
+    xlsx: { files: 0, independentXmlParts: 0, opaqueBinaryParts: 0 },
+    pptx: { files: 0, independentXmlParts: 0, opaqueBinaryParts: 0 },
   };
   const rawBlockerMaps: Record<Format, Map<string, number>> = {
     docx: new Map(),
@@ -384,8 +390,8 @@ export async function runLibrary(
     if (rawParts?.length) {
       rawAudit[format].files++;
       for (const part of rawParts) {
-        if (/\.xml$|\.rels$/i.test(part.path)) rawAudit[format].xmlParts++;
-        else rawAudit[format].binaryParts++;
+        if (/\.xml$|\.rels$/i.test(part.path)) rawAudit[format].independentXmlParts++;
+        else rawAudit[format].opaqueBinaryParts++;
       }
     }
     const { auditCanonicalOptions } = await import("./synthetic/raw-audit");
