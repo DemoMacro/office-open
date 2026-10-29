@@ -7,6 +7,7 @@
  */
 import { element } from "@office-open/xml";
 
+import { NOOP_WRITE_CONTEXT, type WriteContext } from "../../descriptor";
 import { convertToEmu } from "../../util/converters";
 import type { UniversalMeasure } from "../../util/values";
 import type { FillOverlayEffectOptions } from "./fill-overlay";
@@ -183,12 +184,16 @@ const createBlurEffect = (options: BlurEffectOptions): string => {
  * Append the eight CT_EffectList effects (also valid in CT_EffectContainer),
  * in XSD sequence order. Shared by createEffectList and the DAG container.
  */
-export const appendCommonEffects = (options: EffectListOptions, children: string[]): void => {
+export const appendCommonEffects = (
+  options: EffectListOptions,
+  children: string[],
+  context: WriteContext = NOOP_WRITE_CONTEXT,
+): void => {
   if (options.blur) {
     children.push(createBlurEffect(options.blur));
   }
   if (options.fillOverlay) {
-    children.push(createFillOverlayEffect(options.fillOverlay));
+    children.push(createFillOverlayEffect(options.fillOverlay, context));
   }
   if (options.glow) {
     children.push(createGlowEffect(options.glow));
@@ -212,8 +217,11 @@ export const appendCommonEffects = (options: EffectListOptions, children: string
   }
 };
 
-export const createEffectList = (options: EffectListOptions): string => {
+export const createEffectList = (
+  options: EffectListOptions,
+  context: WriteContext = NOOP_WRITE_CONTEXT,
+): string => {
   const children: string[] = [];
-  appendCommonEffects(options, children);
+  appendCommonEffects(options, children, context);
   return element("a:effectLst", undefined, children);
 };

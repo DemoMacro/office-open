@@ -1,6 +1,7 @@
 import type { BaseGroupOptions } from "@office-open/core";
 import type {
   BlackWhiteMode,
+  EffectDagOptions,
   EffectListOptions,
   FillOptions,
   GroupTransform2DOptions,
@@ -24,6 +25,8 @@ export interface GroupOptions extends BaseGroupOptions, GroupTransform2DOptions 
   fill?: FillOptions;
   /** Group-level effects (EG_EffectProperties on grpSpPr). */
   effects?: EffectListOptions;
+  /** Group-level effect DAG (alternative to `effects`). */
+  effectDag?: EffectDagOptions;
   /** `@bwMode` (ST_BlackWhiteMode) on `p:grpSpPr` — how the group renders in black-and-white mode. */
   blackWhiteMode?: BlackWhiteMode;
   children: SlideChild[];

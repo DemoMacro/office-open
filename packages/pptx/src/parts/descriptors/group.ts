@@ -57,15 +57,23 @@ export const groupShapeDesc: CustomDescriptor<GroupOptions> = {
               ...(opts.flipHorizontal !== undefined ? { flipHorizontal: opts.flipHorizontal } : {}),
               ...(opts.flipVertical !== undefined ? { flipVertical: opts.flipVertical } : {}),
               ...(opts.rotation !== undefined ? { rotation: opts.rotation } : {}),
-              // chOff/chExt default to off/ext when the child coordinate system is unchanged.
-              childOffsetX: opts.childOffsetX !== undefined ? convertToEmu(opts.childOffsetX) : x,
-              childOffsetY: opts.childOffsetY !== undefined ? convertToEmu(opts.childOffsetY) : y,
-              childExtentWidth:
-                opts.childExtentWidth !== undefined ? convertToEmu(opts.childExtentWidth) : w,
-              childExtentHeight:
-                opts.childExtentHeight !== undefined ? convertToEmu(opts.childExtentHeight) : h,
+              ...(opts.childOffsetX !== undefined
+                ? { childOffsetX: convertToEmu(opts.childOffsetX) }
+                : {}),
+              ...(opts.childOffsetY !== undefined
+                ? { childOffsetY: convertToEmu(opts.childOffsetY) }
+                : {}),
+              childOffsetPresent: opts.childOffsetPresent ?? true,
+              ...(opts.childExtentWidth !== undefined
+                ? { childExtentWidth: convertToEmu(opts.childExtentWidth) }
+                : {}),
+              ...(opts.childExtentHeight !== undefined
+                ? { childExtentHeight: convertToEmu(opts.childExtentHeight) }
+                : {}),
+              childExtentPresent: opts.childExtentPresent ?? true,
               ...(opts.fill !== undefined ? { fill: opts.fill } : {}),
               ...(opts.effects !== undefined ? { effects: opts.effects } : {}),
+              ...(opts.effectDag !== undefined ? { effectDag: opts.effectDag } : {}),
             },
         descCtx,
       ) ?? "";
@@ -123,21 +131,29 @@ export const groupShapeDesc: CustomDescriptor<GroupOptions> = {
     if (grpSpPr) {
       const props = groupShapePropertiesDesc.parse(grpSpPr, ctx);
       if (findChild(grpSpPr, "a:xfrm") === undefined) result.transformless = true;
+      const groupXfrm = findChild(grpSpPr, "a:xfrm");
+      result.childOffsetPresent = findChild(groupXfrm, "a:chOff") !== undefined;
+      result.childExtentPresent = findChild(groupXfrm, "a:chExt") !== undefined;
       if (props.x !== undefined) result.x = props.x;
       if (props.y !== undefined) result.y = props.y;
       if (props.width !== undefined) result.width = props.width;
       if (props.height !== undefined) result.height = props.height;
       if (props.rotation !== undefined) result.rotation = props.rotation;
-      if (props.flipHorizontal) result.flipHorizontal = true;
-      if (props.flipVertical) result.flipVertical = true;
+      if (props.flipHorizontal !== undefined) result.flipHorizontal = props.flipHorizontal;
+      if (props.flipVertical !== undefined) result.flipVertical = props.flipVertical;
       if (props.childOffsetX !== undefined) result.childOffsetX = props.childOffsetX;
       if (props.childOffsetY !== undefined) result.childOffsetY = props.childOffsetY;
       if (props.childExtentWidth !== undefined) result.childExtentWidth = props.childExtentWidth;
       if (props.childExtentHeight !== undefined) {
         result.childExtentHeight = props.childExtentHeight;
       }
+      if (props.childOffsetPresent !== undefined)
+        result.childOffsetPresent = props.childOffsetPresent;
+      if (props.childExtentPresent !== undefined)
+        result.childExtentPresent = props.childExtentPresent;
       if (props.fill !== undefined) result.fill = props.fill;
       if (props.effects !== undefined) result.effects = props.effects;
+      if (props.effectDag !== undefined) result.effectDag = props.effectDag;
       const bwMode = grpSpPr.attributes?.["bwMode"];
       if (bwMode !== undefined) result.blackWhiteMode = bwMode as BlackWhiteMode;
     }
@@ -149,7 +165,7 @@ export const groupShapeDesc: CustomDescriptor<GroupOptions> = {
       const parsed = parseChild(child, ctx);
       if (parsed !== undefined) groupChildren.push(parsed);
     }
-    if (groupChildren.length > 0) result.children = groupChildren;
+    result.children = groupChildren;
 
     return result as GroupOptions;
   },

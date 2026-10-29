@@ -36,7 +36,7 @@ describe("effectListDesc", () => {
 
   it("round-trips fillOverlay", () => {
     const opts: EffectListOptions = {
-      fillOverlay: { blend: "over" },
+      fillOverlay: { blend: "over", fill: { type: "none" } },
     };
     const result = roundTrip(opts);
     expect(result.fillOverlay).toBeDefined();
@@ -47,7 +47,7 @@ describe("effectListDesc", () => {
     const xml = stringify(
       effectListDesc,
       {
-        fillOverlay: { blend: "multiply" },
+        fillOverlay: { blend: "multiply", fill: { type: "none" } },
         outerShadow: { alignment: "center", color: { value: "000000" } },
         reflection: { alignment: "center" },
       },

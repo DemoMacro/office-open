@@ -1,9 +1,11 @@
 import type {
   DataType,
+  BlackWhiteMode,
   NonVisualDrawingPropertiesOptions,
   PictureLockingOptions,
+  ShapePropertiesExtensionOptions,
+  ShapePropertiesOptions,
   SourceRectangleOptions,
-  UniversalMeasure,
 } from "@office-open/core";
 import type { MediaData } from "@shared/media/data";
 
@@ -13,18 +15,15 @@ import type { MediaData } from "@shared/media/data";
  * {@link NonVisualDrawingPropertiesOptions}.
  * @internal
  */
-export interface MediaFrameBaseOptions extends NonVisualDrawingPropertiesOptions {
+export interface MediaFrameBaseOptions
+  extends NonVisualDrawingPropertiesOptions, Omit<ShapePropertiesOptions, "ext"> {
   id?: number;
-  x?: number | UniversalMeasure;
-  y?: number | UniversalMeasure;
-  width?: number | UniversalMeasure;
-  height?: number | UniversalMeasure;
-  /** Flip horizontally (a:xfrm `@flipH`). */
-  flipHorizontal?: boolean;
-  /** Flip vertically (a:xfrm `@flipV`). */
-  flipVertical?: boolean;
-  /** Rotation angle in degrees (e.g., 45 = 45°). */
-  rotation?: number;
+  /** @bwMode on `p:spPr` — black-and-white render mode. */
+  blackWhiteMode?: BlackWhiteMode;
+  /** Structured extensions (a:extLst/a:ext) on p:spPr. */
+  shapePropertiesExtensions?: ShapePropertiesExtensionOptions[];
+  /** Raw a:extLst inner XML on p:spPr; round-trip only. */
+  shapePropertiesExt?: string;
   data: DataType;
   type: MediaData["type"];
   /**

@@ -7,15 +7,10 @@
  */
 import { element } from "@office-open/xml";
 
+import { NOOP_WRITE_CONTEXT, type WriteContext } from "../../descriptor";
 import { xsdBlendMode } from "../../util/mappings";
-import { createSolidFill } from "../color/solid-fill";
-import type { SolidFillOptions } from "../color/solid-fill";
-import { createGradientFill } from "../fill/gradient-fill";
-import type { GradientFillOptions } from "../fill/gradient-fill";
-import { createGroupFill } from "../fill/group-fill";
-import { createNoFill } from "../fill/no-fill";
-import { createPatternFill } from "../fill/pattern-fill";
-import type { PatternFillOptions } from "../fill/pattern-fill";
+import { fillDesc } from "../fill/fill-descriptors";
+import type { FillOptions } from "../fill/fill-options";
 
 /**
  * Blend modes for fill overlay effect.
@@ -52,13 +47,8 @@ export const BlendMode = {
 export interface FillOverlayEffectOptions {
   /** Blend mode (required) */
   blend: (typeof BlendMode)[keyof typeof BlendMode];
-  /** Solid fill color */
-  solidFill?: SolidFillOptions;
-  gradientFill?: GradientFillOptions;
-  patternFill?: PatternFillOptions;
-  /** Group fill (inherit from parent) */
-  groupFill?: boolean;
-  noFill?: boolean;
+  /** Overlay fill (CT_FillOverlayEffect EG_FillProperties child). */
+  fill: FillOptions;
 }
 
 /**
@@ -89,23 +79,10 @@ export interface FillOverlayEffectOptions {
  * });
  * ```
  */
-export const createFillOverlayEffect = (options: FillOverlayEffectOptions): string => {
-  let fillElement: string;
-
-  if (options.noFill) {
-    fillElement = createNoFill();
-  } else if (options.solidFill) {
-    fillElement = createSolidFill(options.solidFill);
-  } else if (options.gradientFill) {
-    fillElement = createGradientFill(options.gradientFill);
-  } else if (options.patternFill) {
-    fillElement = createPatternFill(options.patternFill);
-  } else if (options.groupFill) {
-    fillElement = createGroupFill();
-  } else {
-    // Default to solid fill if nothing specified
-    fillElement = createSolidFill({ value: "000000" });
-  }
-
-  return element("a:fillOverlay", { blend: xsdBlendMode.to(options.blend) }, [fillElement]);
-};
+export const createFillOverlayEffect = (
+  options: FillOverlayEffectOptions,
+  context: WriteContext = NOOP_WRITE_CONTEXT,
+): string =>
+  element("a:fillOverlay", { blend: xsdBlendMode.to(options.blend) }, [
+    fillDesc.stringify(options.fill, context) ?? "",
+  ]);

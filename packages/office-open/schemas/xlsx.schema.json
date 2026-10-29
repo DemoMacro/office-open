@@ -10896,10 +10896,6 @@
         "presetShadow": {
           "$ref": "#/definitions/PresetShadowEffectOptions"
         },
-        "raw": {
-          "description": "Verbatim a:effectDag element for unmodeled effect payloads. Round-trip channel: captured from a parsed source; do not hand-author.",
-          "type": "string"
-        },
         "reflection": {
           "anyOf": [
             {
@@ -11604,23 +11600,12 @@
       "additionalProperties": false,
       "description": "Fill effect — applies a fill as an effect.",
       "properties": {
-        "gradientFill": {
-          "$ref": "#/definitions/GradientFillOptions"
-        },
-        "groupFill": {
-          "description": "Group fill (inherit from parent)",
-          "type": "boolean"
-        },
-        "noFill": {
-          "type": "boolean"
-        },
-        "patternFill": {
-          "$ref": "#/definitions/PatternFillOptions"
-        },
-        "solidFill": {
-          "$ref": "#/definitions/SolidFillOptions"
+        "fill": {
+          "$ref": "#/definitions/FillOptions",
+          "description": "Effect fill."
         }
       },
+      "required": ["fill"],
       "type": "object"
     },
     "FillImageResource": {
@@ -11890,25 +11875,12 @@
           "enum": ["over", "multiply", "screen", "darken", "lighten"],
           "type": "string"
         },
-        "gradientFill": {
-          "$ref": "#/definitions/GradientFillOptions"
-        },
-        "groupFill": {
-          "description": "Group fill (inherit from parent)",
-          "type": "boolean"
-        },
-        "noFill": {
-          "type": "boolean"
-        },
-        "patternFill": {
-          "$ref": "#/definitions/PatternFillOptions"
-        },
-        "solidFill": {
-          "$ref": "#/definitions/SolidFillOptions",
-          "description": "Solid fill color"
+        "fill": {
+          "$ref": "#/definitions/FillOptions",
+          "description": "Overlay fill."
         }
       },
-      "required": ["blend"],
+      "required": ["blend", "fill"],
       "type": "object"
     },
     "FilterColumnOptions": {

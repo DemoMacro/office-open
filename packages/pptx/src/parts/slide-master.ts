@@ -175,6 +175,7 @@ function copyFacets(src: PlaceholderDefinition, dst: Partial<PlaceholderDefiniti
   if (src.fill !== undefined) dst.fill = src.fill;
   if (src.outline !== undefined) dst.outline = src.outline;
   if (src.effects !== undefined) dst.effects = src.effects;
+  if (src.effectDag !== undefined) dst.effectDag = src.effectDag;
   if (src.scene3d !== undefined) dst.scene3d = src.scene3d;
   if (src.shape3d !== undefined) dst.shape3d = src.shape3d;
   if (src.extensions !== undefined) dst.extensions = src.extensions;
@@ -209,6 +210,7 @@ function phSp(
       fill: def.fill,
       outline: def.outline,
       effects: def.effects,
+      effectDag: def.effectDag,
       scene3d: def.scene3d,
       shape3d: def.shape3d,
       extensions: def.extensions,

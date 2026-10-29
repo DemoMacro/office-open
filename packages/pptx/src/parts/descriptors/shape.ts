@@ -280,9 +280,9 @@ export const pictureDesc: CustomDescriptor<PictureOptions> = {
         }
         if (xfrm.attributes) {
           const flipH = parseOnOff(xfrm.attributes["flipH"]);
-          if (flipH !== undefined && flipH) result.flipHorizontal = true;
+          if (flipH !== undefined) result.flipHorizontal = flipH;
           const flipV = parseOnOff(xfrm.attributes["flipV"]);
-          if (flipV !== undefined && flipV) result.flipVertical = true;
+          if (flipV !== undefined) result.flipVertical = flipV;
           const rot = xfrm.attributes["rot"];
           if (rot !== undefined && rot !== "") result.rotation = Number(rot) / 60000;
         }
@@ -317,6 +317,7 @@ export const pictureDesc: CustomDescriptor<PictureOptions> = {
       if (spProperties.extensions !== undefined) {
         result.shapePropertiesExt = spProperties.ext ?? "";
       }
+      if (spProperties.effectDag !== undefined) result.effectDag = spProperties.effectDag;
     }
 
     // p:style
@@ -739,6 +740,7 @@ function stringifyPicSpPr(opts: PictureOptions, ctx: WriteContext): string {
       fill: opts.fill,
       outline: opts.outline,
       effects: opts.effects,
+      effectDag: opts.effectDag,
       scene3d: opts.scene3d,
       shape3d: opts.shape3d,
       extensions: opts.shapePropertiesExtensions,

@@ -3,6 +3,7 @@ import type {
   BasePictureOptions,
   BlipCompression,
   BlackWhiteMode,
+  EffectDagOptions,
   EffectListOptions,
   CustomGeometryOptions,
   PictureLockingOptions,
@@ -57,6 +58,8 @@ export interface PictureOptions extends BasePictureOptions, NvPrPlaceholderOptio
   compression?: BlipCompression;
   /** Shape-level effects on p:spPr (e.g. shadow/reflection). */
   effects?: EffectListOptions;
+  /** Effect DAG (EG_EffectProperties alternative to `effects`). */
+  effectDag?: EffectDagOptions;
   /** Raw a:extLst inner XML on p:spPr; round-trip only. */
   shapePropertiesExt?: string;
   /** Structured shape-property extensions (`a:extLst/a:ext`). */

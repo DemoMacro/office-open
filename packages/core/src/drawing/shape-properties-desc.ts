@@ -19,6 +19,7 @@ import { parse } from "../descriptor";
 import type { UniversalMeasure } from "../util/values";
 import { createEffectDag } from "./effects/effect-dag";
 import type { EffectDagOptions } from "./effects/effect-dag";
+import { parseEffectContainer } from "./effects/effect-dag-parser";
 import { effectListDesc } from "./effects/effect-descriptors";
 import type { EffectListOptions } from "./effects/effect-list";
 import { fillDesc, findFillChild } from "./fill/fill-descriptors";
@@ -147,11 +148,7 @@ export const shapePropertiesDesc: CustomDescriptor<ShapePropertiesOptions> = {
 
     // EG_EffectProperties: effectDag | effectLst (mutually exclusive).
     if (opts.effectDag) {
-      if (opts.effectDag.raw !== undefined) {
-        parts.push(opts.effectDag.raw);
-      } else {
-        parts.push(createEffectDag(opts.effectDag));
-      }
+      parts.push(createEffectDag(opts.effectDag, ctx));
     } else if (opts.effects) {
       const e = effectListDesc.stringify(opts.effects, ctx);
       if (e) parts.push(e);
@@ -261,7 +258,7 @@ export const shapePropertiesDesc: CustomDescriptor<ShapePropertiesOptions> = {
     if (effectLst) result.effects = effectListDesc.parse(effectLst, ctx);
 
     const effectDag = findChild(el, "a:effectDag");
-    if (effectDag) result.effectDag = { raw: stringifyElement(effectDag) };
+    if (effectDag) result.effectDag = parseEffectContainer(effectDag, ctx);
 
     // a:scene3d
     const scene3d = findChild(el, "a:scene3d");

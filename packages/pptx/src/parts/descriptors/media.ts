@@ -14,6 +14,7 @@ import { parseOnOff, toUint8Array } from "@office-open/core";
 import type { DataType } from "@office-open/core";
 import type { PictureLockingOptions } from "@office-open/core";
 import type { CustomDescriptor, ReadContext, WriteContext } from "@office-open/core/descriptor";
+import type { ShapePropertiesOptions } from "@office-open/core/drawing";
 import { createSourceRectangle } from "@office-open/core/drawing";
 import {
   shapePropertiesDesc,
@@ -29,13 +30,8 @@ import type { VideoFrameOptions, VideoType } from "@shared/media/video-frame";
 import type { PictureOptions } from "@shared/picture";
 
 import type { MediaEntry, PptxReadContext, PptxWriteContext } from "../../context";
-import { readCnvPr, readPositionFromXfrm } from "./shape";
+import { readCnvPr } from "./shape";
 import { nextSlideDrawingId } from "./slide-drawing-ids";
-
-type MediaFrameTransformOptions = Pick<
-  MediaFrameBaseOptions,
-  "x" | "y" | "width" | "height" | "flipHorizontal" | "flipVertical" | "rotation"
->;
 
 // ── ID counters ──
 
@@ -204,12 +200,9 @@ export const videoDesc: CustomDescriptor<VideoFrameOptions> = {
   parse(el, _ctx) {
     const result: Partial<VideoFrameOptions> = {};
 
-    // Position from p:spPr
+    // Complete CT_ShapeProperties on p:spPr.
     const spPr = findChild(el, "p:spPr");
-    if (spPr) {
-      const xfrm = findChild(spPr, "a:xfrm");
-      if (xfrm) Object.assign(result, readMediaTransformFromXfrm(xfrm));
-    }
+    if (spPr) readMediaShapeProperties(spPr, _ctx, result);
 
     // id + name from p:nvPicPr → a:cNvPr or p:cNvPr
     Object.assign(result, readCnvPr(el, "p:nvPicPr"));
@@ -361,12 +354,9 @@ export const audioDesc: CustomDescriptor<AudioFrameOptions> = {
   parse(el, _ctx) {
     const result: Partial<AudioFrameOptions> = {};
 
-    // Position from p:spPr
+    // Complete CT_ShapeProperties on p:spPr.
     const spPr = findChild(el, "p:spPr");
-    if (spPr) {
-      const xfrm = findChild(spPr, "a:xfrm");
-      if (xfrm) Object.assign(result, readMediaTransformFromXfrm(xfrm));
-    }
+    if (spPr) readMediaShapeProperties(spPr, _ctx, result);
 
     // id + name from p:nvPicPr
     Object.assign(result, readCnvPr(el, "p:nvPicPr"));
@@ -534,36 +524,46 @@ function registerMediaFile(
   return pptx.addImage(fileName, entry).fileName;
 }
 
-/** p:spPr for a media frame: position/size + rect geometry (picture precedent). */
+/** p:spPr for a media frame: the full CT_ShapeProperties surface. */
 function stringifyMediaSpPr(
-  opts: MediaFrameTransformOptions,
+  opts: Omit<MediaFrameBaseOptions, "data" | "type">,
   ctx: Parameters<typeof shapePropertiesDesc.stringify>[1],
 ): string {
   const content = shapePropertiesDesc.stringify(
     {
+      ...opts,
       x: opts.x ?? 0,
       y: opts.y ?? 0,
       width: opts.width ?? 0,
       height: opts.height ?? 0,
-      ...(opts.flipHorizontal !== undefined ? { flipHorizontal: opts.flipHorizontal } : {}),
-      ...(opts.flipVertical !== undefined ? { flipVertical: opts.flipVertical } : {}),
-      ...(opts.rotation !== undefined ? { rotation: opts.rotation } : {}),
-      geometry: "rect",
+      geometry: opts.geometry === undefined ? "rect" : opts.geometry,
+      extensions: opts.shapePropertiesExtensions,
+      ext: opts.shapePropertiesExt,
     },
     ctx,
   );
-  return `<p:spPr>${content ?? ""}</p:spPr>`;
+  const bwMode = opts.blackWhiteMode === undefined ? "" : ` bwMode="${opts.blackWhiteMode}"`;
+  return `<p:spPr${bwMode}>${content ?? ""}</p:spPr>`;
 }
 
-function readMediaTransformFromXfrm(xfrm: Element): Partial<MediaFrameTransformOptions> {
-  const result: Partial<MediaFrameTransformOptions> = readPositionFromXfrm(xfrm);
-  const flipHorizontal = parseOnOff(xfrm.attributes?.["flipH"]);
-  if (flipHorizontal !== undefined) result.flipHorizontal = flipHorizontal;
-  const flipVertical = parseOnOff(xfrm.attributes?.["flipV"]);
-  if (flipVertical !== undefined) result.flipVertical = flipVertical;
-  const rotation = attrNum(xfrm, "rot");
-  if (rotation !== undefined) result.rotation = rotation / 60000;
-  return result;
+function readMediaShapeProperties(
+  spPr: Element,
+  ctx: ReadContext,
+  result: Partial<MediaFrameBaseOptions>,
+): void {
+  const { ext, extensions, ...properties } = shapePropertiesDesc.parse(
+    spPr,
+    ctx,
+  ) as ShapePropertiesOptions;
+  Object.assign(result, properties);
+  if (extensions !== undefined) result.shapePropertiesExtensions = extensions;
+  if (ext !== undefined) result.shapePropertiesExt = ext;
+  const blackWhiteMode = attr(spPr, "bwMode");
+  if (blackWhiteMode !== undefined)
+    result.blackWhiteMode = blackWhiteMode as MediaFrameBaseOptions["blackWhiteMode"];
+  if (!findChild(spPr, "a:prstGeom") && !findChild(spPr, "a:custGeom")) {
+    result.geometry ??= null;
+  }
 }
 
 function mediaTypeFromPath(path: string, kind: "video"): VideoType;

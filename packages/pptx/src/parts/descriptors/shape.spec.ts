@@ -600,6 +600,28 @@ describe("pictureDesc round-trip", () => {
     expect(result.rotation).toBe(90);
   });
 
+  it("round-trips explicit false picture transforms and effect DAG", () => {
+    const result = roundTripPicture({
+      id: 8,
+      name: "Explicit False",
+      data: "dummy",
+      type: "png",
+      x: 10,
+      y: 20,
+      width: 100,
+      height: 50,
+      flipHorizontal: false,
+      flipVertical: false,
+      rotation: 0,
+      effectDag: { glow: { radius: 40000, color: { value: "FF0000" } } },
+    });
+
+    expect(result.flipHorizontal).toBe(false);
+    expect(result.flipVertical).toBe(false);
+    expect(result.rotation).toBe(0);
+    expect(result.effectDag?.glow?.radius).toBe(40000);
+  });
+
   it("round-trips picture fill rotation and black-white mode", () => {
     const result = roundTripPicture({
       id: 8,

@@ -55,9 +55,9 @@ function stringifyBackgroundInner(opts: BackgroundOptions, ctx: WriteContext): s
 
   let effectsXml = "";
   if (opts.effectsList) {
-    effectsXml = createEffectList(opts.effectsList).replaceAll("a:effectLst", "a:effectsLst");
+    effectsXml = createEffectList(opts.effectsList, ctx).replaceAll("a:effectLst", "a:effectsLst");
   } else if (opts.effects) {
-    effectsXml = createEffectList(opts.effects);
+    effectsXml = createEffectList(opts.effects, ctx);
   }
 
   return `<p:bg${bgAttrs.join("")}><p:bgPr${bgPrAttrs.join("")}>${fillXml}${effectsXml}</p:bgPr></p:bg>`;

@@ -127,6 +127,7 @@ export interface PlaceholderFacets {
   fill?: ShapePropertiesOptions["fill"];
   outline?: ShapePropertiesOptions["outline"];
   effects?: ShapePropertiesOptions["effects"];
+  effectDag?: ShapePropertiesOptions["effectDag"];
   scene3d?: ShapePropertiesOptions["scene3d"];
   shape3d?: ShapePropertiesOptions["shape3d"];
   extensions?: ShapePropertiesOptions["extensions"];
@@ -206,6 +207,7 @@ function pickFacets(def: PlaceholderDefinition | undefined): PlaceholderFacets |
   if (def.fill !== undefined) facets.fill = def.fill;
   if (def.outline !== undefined) facets.outline = def.outline;
   if (def.effects !== undefined) facets.effects = def.effects;
+  if (def.effectDag !== undefined) facets.effectDag = def.effectDag;
   if (def.scene3d !== undefined) facets.scene3d = def.scene3d;
   if (def.shape3d !== undefined) facets.shape3d = def.shape3d;
   if (def.extensions !== undefined) facets.extensions = def.extensions;
@@ -376,6 +378,7 @@ export function extractPlaceholderDefinition(
       if (spPrOpts.fill !== undefined) def.fill = spPrOpts.fill;
       if (spPrOpts.outline !== undefined) def.outline = spPrOpts.outline;
       if (spPrOpts.effects !== undefined) def.effects = spPrOpts.effects;
+      if (spPrOpts.effectDag !== undefined) def.effectDag = spPrOpts.effectDag;
       if (spPrOpts.scene3d !== undefined) def.scene3d = spPrOpts.scene3d;
       if (spPrOpts.shape3d !== undefined) def.shape3d = spPrOpts.shape3d;
       if (spPrOpts.extensions !== undefined) def.extensions = spPrOpts.extensions;

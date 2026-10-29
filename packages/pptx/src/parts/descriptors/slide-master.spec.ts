@@ -269,15 +269,18 @@ describe("slide-master placeholder facets round-trip", () => {
           height: 200,
           flipHorizontal: true,
           rotation: 45,
+          effectDag: { glow: { color: { value: "FF0000" } } },
         },
       },
     });
     const title = result.placeholders?.title as {
       flipHorizontal?: boolean;
       rotation?: number;
+      effectDag?: { glow?: { color?: { value: string } } };
     };
     expect(title.flipHorizontal).toBe(true);
     expect(title.rotation).toBe(45);
+    expect(title.effectDag?.glow?.color).toEqual({ value: "FF0000" });
   });
 
   it("keeps cSld display name separate from master identity", () => {

@@ -20,9 +20,9 @@ import {
 } from "../../util/converters";
 import { xsdBlendMode, xsdPresetShadow, xsdRectAlignment } from "../../util/mappings";
 import { parseOnOff } from "../../util/values";
-import { parseColorChoice, solidFillDesc, stringifyColorChoice } from "../color/color-descriptors";
+import { parseColorChoice, stringifyColorChoice } from "../color/color-descriptors";
 import type { SolidFillOptions } from "../color/solid-fill";
-import { gradientFillDesc, patternFillDesc } from "../fill/fill-descriptors";
+import { fillDesc } from "../fill/fill-descriptors";
 import type { BlurEffectOptions, EffectListOptions } from "./effect-list";
 import { createFillOverlayEffect } from "./fill-overlay";
 import type { FillOverlayEffectOptions } from "./fill-overlay";
@@ -88,7 +88,7 @@ export const effectListDesc: CustomDescriptor<EffectListOptions> = {
 
     // Fill overlay — CT_FillOverlayEffect requires an EG_FillProperties child.
     if (opts.fillOverlay) {
-      parts.push(createFillOverlayEffect(opts.fillOverlay));
+      parts.push(createFillOverlayEffect(opts.fillOverlay, ctx));
     }
 
     // Glow
@@ -289,20 +289,14 @@ export const effectListDesc: CustomDescriptor<EffectListOptions> = {
     // Fill overlay
     const fillOverlay = findChild(el, "a:fillOverlay");
     if (fillOverlay) {
-      const overlayOpts: Partial<FillOverlayEffectOptions> = {};
-      if (fillOverlay.attributes?.["blend"] !== undefined)
-        overlayOpts.blend = xsdBlendMode.from(
-          String(fillOverlay.attributes["blend"]),
-        ) as FillOverlayEffectOptions["blend"];
-      const foSolid = findChild(fillOverlay, "a:solidFill");
-      if (foSolid) overlayOpts.solidFill = parse(solidFillDesc, foSolid, ctx) as SolidFillOptions;
-      const foGrad = findChild(fillOverlay, "a:gradFill");
-      if (foGrad) overlayOpts.gradientFill = parse(gradientFillDesc, foGrad, ctx);
-      const foPatt = findChild(fillOverlay, "a:pattFill");
-      if (foPatt) overlayOpts.patternFill = parse(patternFillDesc, foPatt, ctx);
-      if (findChild(fillOverlay, "a:noFill")) overlayOpts.noFill = true;
-      if (findChild(fillOverlay, "a:grpFill")) overlayOpts.groupFill = true;
-      result.fillOverlay = overlayOpts as FillOverlayEffectOptions;
+      const blendAttribute = fillOverlay.attributes?.["blend"];
+      if (blendAttribute === undefined)
+        throw new Error("a:fillOverlay requires a blend attribute.");
+      const blend = xsdBlendMode.from(String(blendAttribute)) as FillOverlayEffectOptions["blend"];
+      result.fillOverlay = {
+        blend,
+        fill: parse(fillDesc, fillOverlay, ctx),
+      };
     }
 
     // Preset shadow

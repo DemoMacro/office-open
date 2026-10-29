@@ -11,16 +11,13 @@
  */
 import { element } from "@office-open/xml";
 
+import { NOOP_WRITE_CONTEXT, type WriteContext } from "../../descriptor";
+import { emitPercent } from "../../util/converters";
 import { xsdBlendMode, xsdEffectContainer } from "../../util/mappings";
-import { createSolidFill } from "../color/solid-fill";
 import type { SolidFillOptions } from "../color/solid-fill";
 import { createColorElement } from "../color/solid-fill";
-import { createGradientFill } from "../fill/gradient-fill";
-import type { GradientFillOptions } from "../fill/gradient-fill";
-import { createGroupFill } from "../fill/group-fill";
-import { createNoFill } from "../fill/no-fill";
-import { createPatternFill } from "../fill/pattern-fill";
-import type { PatternFillOptions } from "../fill/pattern-fill";
+import { fillDesc } from "../fill/fill-descriptors";
+import type { FillOptions } from "../fill/fill-options";
 import type { BlurEffectOptions } from "./effect-list";
 import { appendCommonEffects } from "./effect-list";
 import type { FillOverlayEffectOptions } from "./fill-overlay";
@@ -102,12 +99,8 @@ export interface BlendEffectOptions {
 
 /** Fill effect — applies a fill as an effect (CT_FillEffect). */
 export interface FillEffectOptions {
-  solidFill?: SolidFillOptions;
-  gradientFill?: GradientFillOptions;
-  patternFill?: PatternFillOptions;
-  /** Group fill (inherit from parent) */
-  groupFill?: boolean;
-  noFill?: boolean;
+  /** Effect fill (CT_FillEffect EG_FillProperties child). */
+  fill: FillOptions;
 }
 
 /** Relative offset effect (CT_RelativeOffsetEffect). */
@@ -157,11 +150,6 @@ export interface EffectReferenceOptions {
  * ```
  */
 export interface EffectDagOptions {
-  /**
-   * Verbatim a:effectDag element for unmodeled effect payloads. Round-trip
-   * channel: captured from a parsed source; do not hand-author.
-   */
-  raw?: string;
   /** Container type: "sib" (parallel) or "tree" (sequential) */
   type?: EffectContainer;
   /** Container name */
@@ -227,7 +215,7 @@ export interface EffectDagOptions {
 // ─── New Effect Factories ───────────────────────────────────────────────────
 
 const createAlphaBiLevelEffect = (options: AlphaBiLevelEffectOptions): string =>
-  `<a:alphaBiLevel thresh="${options.threshold}"/>`;
+  `<a:alphaBiLevel thresh="${emitPercent(options.threshold)}"/>`;
 
 const createAlphaCeilingEffect = (): string => "<a:alphaCeiling/>";
 
@@ -254,9 +242,12 @@ const createAlphaReplaceEffect = (options: AlphaReplaceEffectOptions): string =>
 const createBiLevelEffect = (thresh: number): string =>
   `<a:biLevel thresh="${Math.round(thresh * 1000)}"/>`;
 
-const createBlendEffect = (options: BlendEffectOptions): string =>
+const createBlendEffect = (
+  options: BlendEffectOptions,
+  context: WriteContext = NOOP_WRITE_CONTEXT,
+): string =>
   element("a:blend", { blend: xsdBlendMode.to(options.blend) }, [
-    createEffectContainer(options.container),
+    createEffectContainer(options.container, "a:cont", context),
   ]);
 
 const createColorChangeEffect = (options: ColorChangeEffectOptions): string => {
@@ -285,25 +276,10 @@ const createDuotoneEffect = (options: DuotoneEffectOptions): string =>
     [createColorElement(options.color1), createColorElement(options.color2)],
   );
 
-const createFillEffect = (options: FillEffectOptions): string => {
-  let fillElement: string;
-
-  if (options.noFill) {
-    fillElement = createNoFill();
-  } else if (options.solidFill) {
-    fillElement = createSolidFill(options.solidFill);
-  } else if (options.gradientFill) {
-    fillElement = createGradientFill(options.gradientFill);
-  } else if (options.patternFill) {
-    fillElement = createPatternFill(options.patternFill);
-  } else if (options.groupFill) {
-    fillElement = createGroupFill();
-  } else {
-    fillElement = createNoFill();
-  }
-
-  return element("a:fill", undefined, [fillElement]);
-};
+const createFillEffect = (
+  options: FillEffectOptions,
+  context: WriteContext = NOOP_WRITE_CONTEXT,
+): string => element("a:fill", undefined, [fillDesc.stringify(options.fill, context) ?? ""]);
 
 const createGrayscaleEffect = (): string => "<a:grayscl/>";
 
@@ -370,7 +346,11 @@ const createEffectReference = (options: EffectReferenceOptions): string =>
  * @param options - Container options with effects
  * @param elementName - Element name, defaults to "a:cont" for top-level
  */
-const createEffectContainer = (options: EffectDagOptions, elementName = "a:cont"): string => {
+const createEffectContainer = (
+  options: EffectDagOptions,
+  elementName = "a:cont",
+  context: WriteContext = NOOP_WRITE_CONTEXT,
+): string => {
   const attrs: Record<string, string | number> = {};
   if (options.type) attrs.type = xsdEffectContainer.to(options.type);
   if (options.name) attrs.name = options.name;
@@ -378,12 +358,12 @@ const createEffectContainer = (options: EffectDagOptions, elementName = "a:cont"
   const children: string[] = [];
 
   // The eight CT_EffectList effects, then the DAG-only ones below.
-  appendCommonEffects(options, children);
+  appendCommonEffects(options, children, context);
 
   // ── New effects for CT_EffectContainer ──
   if (options.containers) {
     for (const nested of options.containers) {
-      children.push(createEffectContainer(nested));
+      children.push(createEffectContainer(nested, "a:cont", context));
     }
   }
   if (options.effectRefs) {
@@ -404,7 +384,11 @@ const createEffectContainer = (options: EffectDagOptions, elementName = "a:cont"
     children.push(createAlphaInverseEffect(options.alphaInverse));
   }
   if (options.alphaModulate) {
-    children.push(element("a:alphaMod", undefined, [createEffectContainer(options.alphaModulate)]));
+    children.push(
+      element("a:alphaMod", undefined, [
+        createEffectContainer(options.alphaModulate, "a:cont", context),
+      ]),
+    );
   }
   if (options.alphaModulateFixed) {
     children.push(createAlphaModulateFixedEffect(options.alphaModulateFixed));
@@ -418,9 +402,7 @@ const createEffectContainer = (options: EffectDagOptions, elementName = "a:cont"
   if (options.biLevel) {
     children.push(createBiLevelEffect(options.biLevel.threshold));
   }
-  if (options.blend) {
-    children.push(createBlendEffect(options.blend));
-  }
+  if (options.blend) children.push(createBlendEffect(options.blend, context));
   if (options.colorChange) {
     children.push(createColorChangeEffect(options.colorChange));
   }
@@ -430,9 +412,7 @@ const createEffectContainer = (options: EffectDagOptions, elementName = "a:cont"
   if (options.duotone) {
     children.push(createDuotoneEffect(options.duotone));
   }
-  if (options.fill) {
-    children.push(createFillEffect(options.fill));
-  }
+  if (options.fill) children.push(createFillEffect(options.fill, context));
   if (options.grayscale) {
     children.push(createGrayscaleEffect());
   }
@@ -483,5 +463,7 @@ const createEffectContainer = (options: EffectDagOptions, elementName = "a:cont"
  * });
  * ```
  */
-export const createEffectDag = (options: EffectDagOptions): string =>
-  createEffectContainer(options, "a:effectDag");
+export const createEffectDag = (
+  options: EffectDagOptions,
+  context: WriteContext = NOOP_WRITE_CONTEXT,
+): string => createEffectContainer(options, "a:effectDag", context);

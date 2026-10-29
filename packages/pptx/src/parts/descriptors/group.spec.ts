@@ -74,6 +74,45 @@ describe("groupShapeDesc round-trip", () => {
     expect(result.flipHorizontal).toBe(true);
   });
 
+  it("round-trips explicit false group flips", () => {
+    const result = roundTrip({
+      children: [],
+      x: 50,
+      y: 50,
+      width: 200,
+      height: 200,
+      flipHorizontal: false,
+      flipVertical: false,
+    });
+
+    expect(result.flipHorizontal).toBe(false);
+    expect(result.flipVertical).toBe(false);
+  });
+
+  it("round-trips group effect DAG and omitted child coordinate system", () => {
+    const xml = groupShapeDesc.stringify(
+      {
+        children: [],
+        x: 10,
+        y: 20,
+        width: 300,
+        height: 200,
+        childOffsetPresent: false,
+        childExtentPresent: false,
+        effectDag: { glow: { color: { value: "FF0000" } } },
+      },
+      writeCtx,
+    )!;
+    expect(xml).not.toContain("<a:chOff");
+    expect(xml).not.toContain("<a:chExt");
+    expect(xml).toContain("<a:effectDag");
+
+    const parsed = groupShapeDesc.parse(parseXml(xml).elements![0]!, readCtx);
+    expect(parsed.childOffsetPresent).toBe(false);
+    expect(parsed.childExtentPresent).toBe(false);
+    expect(parsed.effectDag?.glow?.color).toEqual({ value: "FF0000" });
+  });
+
   it("round-trips group with rotation", () => {
     const opts: GroupOptions = {
       children: [],

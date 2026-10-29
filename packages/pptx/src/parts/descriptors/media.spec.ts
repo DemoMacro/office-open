@@ -78,6 +78,41 @@ describe("videoDesc round-trip", () => {
     expect(result.rotation).toBe(45);
   });
 
+  it("round-trips explicit false transforms and full shape properties", () => {
+    const xml = videoDesc.stringify(
+      {
+        id: 111,
+        data: "dummy",
+        type: "mp4",
+        x: 10,
+        y: 20,
+        width: 30,
+        height: 40,
+        flipHorizontal: false,
+        flipVertical: false,
+        rotation: 0,
+        geometry: null,
+        outline: { width: 12700, type: "solidFill", color: { value: "1F1F1F" } },
+        effectDag: { glow: { radius: 40000, color: { value: "FF0000" } } },
+      },
+      writeCtx,
+    );
+    expect(xml).toContain('flipH="0"');
+    expect(xml).toContain('flipV="0"');
+    expect(xml).toContain('rot="0"');
+    expect(xml).not.toContain("<a:prstGeom");
+    expect(xml).toContain("<a:ln ");
+    expect(xml).toContain("<a:effectDag");
+
+    const result = videoDesc.parse(parseRoot(xml), readCtx);
+    expect(result.flipHorizontal).toBe(false);
+    expect(result.flipVertical).toBe(false);
+    expect(result.rotation).toBe(0);
+    expect(result.geometry).toBeNull();
+    expect(result.outline?.width).toBe(12700);
+    expect(result.effectDag?.glow?.radius).toBe(40000);
+  });
+
   it("round-trips video with default name", () => {
     const opts: VideoFrameOptions = {
       id: 102,
@@ -88,6 +123,32 @@ describe("videoDesc round-trip", () => {
 
     // Default name is "Video 102"
     expect(result.name).toBe("Video 102");
+  });
+
+  it("keeps cNvPr and spPr extension lists separate", () => {
+    const source = parseRoot(
+      `<p:pic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" ` +
+        `xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" ` +
+        `xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">` +
+        `<p:nvPicPr><p:cNvPr id="112" name="Video"><a:extLst>` +
+        `<a:ext uri="{creation}"><a16:creationId id="{id}"/></a:ext>` +
+        `</a:extLst></p:cNvPr><p:cNvPicPr/><p:nvPr>` +
+        `<a:videoFile r:link="rId1"/></p:nvPr></p:nvPicPr>` +
+        `<p:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="10" cy="10"/></a:xfrm>` +
+        `<a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr></p:pic>`,
+    );
+    const parsed = videoDesc.parse(source, readCtx);
+
+    expect(parsed.ext).toContain("a16:creationId");
+    expect(parsed.shapePropertiesExt).toBeUndefined();
+
+    const xml = videoDesc.stringify(
+      { ...parsed, data: "dummy", type: "mp4" } as VideoFrameOptions,
+      writeCtx,
+    );
+    if (!xml) throw new Error("stringify returned undefined");
+    const spPr = xml.slice(xml.indexOf("<p:spPr>"));
+    expect(spPr).not.toContain("<a:extLst>");
   });
 
   it("round-trips video contentType", () => {

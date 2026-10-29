@@ -14,6 +14,7 @@ import { parse } from "../descriptor";
 import type { ReadContext, WriteContext } from "../descriptor/context";
 import type { EffectDagOptions } from "./effects/effect-dag";
 import { createEffectDag } from "./effects/effect-dag";
+import { parseEffectContainer } from "./effects/effect-dag-parser";
 import { effectListDesc } from "./effects/effect-descriptors";
 import type { EffectListOptions } from "./effects/effect-list";
 import { fillDesc } from "./fill/fill-descriptors";
@@ -47,7 +48,7 @@ function stringifyEffectChoice(
   options: { effects?: EffectListOptions; effectDag?: EffectDagOptions },
   ctx: WriteContext,
 ): string {
-  if (options.effectDag) return createEffectDag(options.effectDag);
+  if (options.effectDag) return createEffectDag(options.effectDag, ctx);
   if (options.effects) return effectListDesc.stringify(options.effects, ctx) ?? "";
   return "";
 }
@@ -96,14 +97,17 @@ function parseExtensions(parent: Element, prefix: string): OfficeArtExtensionOpt
   return extensions.length > 0 ? extensions : [];
 }
 
-function parseEffectChoice(parent: Element): {
+function parseEffectChoice(
+  parent: Element,
+  ctx: ReadContext,
+): {
   effects?: EffectListOptions;
   effectDag?: EffectDagOptions;
 } {
   const effectDag = findChild(parent, "a:effectDag");
-  if (effectDag) return { effectDag: { raw: stringifyElement(effectDag) } };
+  if (effectDag) return { effectDag: parseEffectContainer(effectDag, ctx) };
   const effectList = findChild(parent, "a:effectLst");
-  return effectList ? { effects: effectListDesc.parse(effectList, {} as ReadContext) } : {};
+  return effectList ? { effects: effectListDesc.parse(effectList, ctx) } : {};
 }
 
 export function parseBackgroundFormatting(
@@ -120,7 +124,7 @@ export function parseBackgroundFormatting(
     findChild(el, "a:grpFill") ??
     findChild(el, "a:blipFill");
   if (fillChild) result.fill = parse(fillDesc, fillChild, ctx);
-  Object.assign(result, parseEffectChoice(el));
+  Object.assign(result, parseEffectChoice(el, ctx));
   const extensions = parseExtensions(el, containerPrefix);
   if (extensions) result.extensions = extensions;
   return result;
@@ -134,7 +138,7 @@ export function parseWholeE2oFormatting(
   const result: WholeE2oFormattingOptions = {};
   const outline = findChild(el, "a:ln");
   if (outline) result.outline = outlineDesc.parse(outline, ctx);
-  Object.assign(result, parseEffectChoice(el));
+  Object.assign(result, parseEffectChoice(el, ctx));
   const extensions = parseExtensions(el, containerPrefix);
   if (extensions) result.extensions = extensions;
   return result;

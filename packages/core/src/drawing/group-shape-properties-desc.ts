@@ -25,6 +25,7 @@ import type { CustomDescriptor } from "../descriptor";
 import { parse } from "../descriptor";
 import { createEffectDag } from "./effects/effect-dag";
 import type { EffectDagOptions } from "./effects/effect-dag";
+import { parseEffectContainer } from "./effects/effect-dag-parser";
 import { effectListDesc } from "./effects/effect-descriptors";
 import type { EffectListOptions } from "./effects/effect-list";
 import { fillDesc, findFillChild } from "./fill/fill-descriptors";
@@ -88,7 +89,7 @@ export const groupShapePropertiesDesc: CustomDescriptor<GroupShapePropertiesOpti
 
     // EG_EffectProperties: effectDag | effectLst (mutually exclusive).
     if (opts.effectDag) {
-      parts.push(createEffectDag(opts.effectDag));
+      parts.push(createEffectDag(opts.effectDag, ctx));
     } else if (opts.effects) {
       const e = effectListDesc.stringify(opts.effects, ctx);
       if (e) parts.push(e);
@@ -119,11 +120,11 @@ export const groupShapePropertiesDesc: CustomDescriptor<GroupShapePropertiesOpti
       result.fill = parse(fillDesc, fillChild, ctx);
     }
 
-    // EG_EffectProperties — effectLst. (effectDag parse is not modeled here;
-    // matches shapePropertiesDesc behavior. effectDag still round-trips via
-    // stringify when the caller supplies it.)
+    // EG_EffectProperties.
     const effectLst = findChild(el, "a:effectLst");
     if (effectLst) result.effects = effectListDesc.parse(effectLst, ctx);
+    const effectDag = findChild(el, "a:effectDag");
+    if (effectDag) result.effectDag = parseEffectContainer(effectDag, ctx);
 
     // a:scene3d
     const scene3d = findChild(el, "a:scene3d");
