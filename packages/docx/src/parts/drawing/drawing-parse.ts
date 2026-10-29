@@ -89,7 +89,7 @@ import type {
   PictureOptions,
   SvgMediaOptions,
 } from "@parts/paragraph/run/picture-run";
-import type { SmartArtNode, SmartArtOptions } from "@parts/paragraph/run/smartart-run";
+import type { SmartArtOptions, TreeNode } from "@parts/paragraph/run/smartart-run";
 import type {
   UnsupportedDrawingOptions,
   XmlElementData,
@@ -2445,7 +2445,7 @@ function parseSmartArtDrawing(
   if (sourceRelationships.length > 0) smartArtSourceRelationships.set(opts, sourceRelationships);
 
   // Verbatim source parts: byte-exact round-trip outranks the modeled fold.
-  const raw = readSmartArtRawParts(dataPath, ctx, sourcePaths);
+  let raw = readSmartArtRawParts(dataPath, ctx, sourcePaths);
 
   // Custom definitions come back structured; built-in stubs fold to their id
   // string so round-tripping a built-in diagram keeps the compact form.
@@ -2453,7 +2453,9 @@ function parseSmartArtDrawing(
   if (layoutPath) {
     const layoutEl = ctx.docx.doc.get(layoutPath);
     if (layoutEl) {
-      const layout = parseLayoutDefinition(layoutEl);
+      const layout = ctx.withPart(layoutPath, () => parseLayoutDefinition(layoutEl, ctx));
+      const layoutMedia = readDiagramMedia(layoutPath, ctx);
+      if (layoutMedia.length > 0) raw = { ...raw, layoutMedia };
       sourcePaths.layout = layoutPath;
       consumePartPath(ctx, layoutPath);
       const layoutId = layout.uniqueId?.split("/").pop();
@@ -2492,6 +2494,23 @@ function parseSmartArtDrawing(
   if (info?.extensionIds) opts.extensionIds = info.extensionIds;
 
   return { smartArt: opts };
+}
+
+/** Images referenced by one diagram part's own relationships. */
+function readDiagramMedia(partPath: string, ctx: DocxReadContext): SmartArtRawMediaPart[] {
+  const relsEl = ctx.docx.doc.get(partPathToRelsPath(partPath));
+  const media = new Map<string, SmartArtRawMediaPart>();
+  for (const relationship of relsEl?.elements ?? []) {
+    if (relationship.name !== "Relationship") continue;
+    const target = attr(relationship, "Target");
+    if (!target || attr(relationship, "TargetMode") === "External") continue;
+    if (!(attr(relationship, "Type") ?? "").endsWith("/image")) continue;
+    const path = resolveRelationshipTarget(partPath, target);
+    const data = ctx.docx.doc.getRaw(path);
+    const fileName = path.split("/").pop() ?? path;
+    if (data && !media.has(path)) media.set(path, { fileName, data, partPath: path });
+  }
+  return [...media.values()];
 }
 
 /** Resolve a dgm:relIds attribute through a part-kind map to its part path. */
@@ -2660,7 +2679,7 @@ function buildSmartArtNode(
   id: string,
   nodeMap: Map<string, string>,
   childrenMap: Map<string, string[]>,
-): SmartArtNode {
+): TreeNode {
   const text = nodeMap.get(id) ?? "";
   const childIds = childrenMap.get(id) ?? [];
 

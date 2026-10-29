@@ -4,7 +4,7 @@
  * @module
  */
 
-import { attr, attrBool, attrNum, escapeXml, findChild, stringifyElement } from "@office-open/xml";
+import { attr, attrBool, attrNum, escapeXml, findChild } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 
 import type { ReadContext, WriteContext } from "../../descriptor/context";
@@ -17,6 +17,7 @@ import {
 } from "../../drawing/diagram/diagram-props";
 import type { EffectDagOptions } from "../../drawing/effects/effect-dag";
 import { createEffectDag } from "../../drawing/effects/effect-dag";
+import { parseEffectContainer } from "../../drawing/effects/effect-dag-parser";
 import { effectListDesc } from "../../drawing/effects/effect-descriptors";
 import type { EffectListOptions } from "../../drawing/effects/effect-list";
 import { fillDesc, findFillChild } from "../../drawing/fill/fill-descriptors";
@@ -207,7 +208,9 @@ function stringifyEffectChoice(
   },
   ctx: WriteContext,
 ): string {
-  if (options.effectDag) return createEffectDag(options.effectDag);
+  if (options.effectDag && options.effects)
+    throw new Error("Data model effect choice cannot carry both effects and effectDag.");
+  if (options.effectDag) return createEffectDag(options.effectDag, ctx);
   if (options.effects) return effectListDesc.stringify(options.effects, ctx) ?? "";
   return "";
 }
@@ -241,7 +244,7 @@ function parseEffectChoice(
   effectDag?: EffectDagOptions;
 } {
   const effectDag = findChild(el, "a:effectDag");
-  if (effectDag) return { effectDag: { raw: stringifyElement(effectDag) } };
+  if (effectDag) return { effectDag: parseEffectContainer(effectDag, ctx) };
   const effectList = findChild(el, "a:effectLst");
   return effectList ? { effects: effectListDesc.parse(effectList, ctx) } : {};
 }
@@ -263,11 +266,13 @@ export function parseDataModelOptions(
   const ptLst = findChild(el, "dgm:ptLst");
   if (ptLst) {
     const points: DataModelPointMemberOptions[] = [];
-    for (const pt of ptLst.elements ?? []) {
+    for (const pt of (ptLst.elements ?? []).filter((child) => child.type === "element")) {
       if (pt.name === "dgm:pt") points.push(parseDataModelPoint(pt, ctx));
       else if (pt.name === "mc:AlternateContent") {
         const alternative = parseDataModelAlternativeContent(pt, ctx);
         if (alternative) points.push(alternative);
+      } else {
+        throw new Error(`Unsupported dgm:ptLst child: ${pt.name ?? "text"}`);
       }
     }
     result.points = points;
@@ -276,28 +281,34 @@ export function parseDataModelOptions(
   const cxnLst = findChild(el, "dgm:cxnLst");
   if (cxnLst) {
     const connections: DataModelConnectionOptions[] = [];
-    for (const cxn of cxnLst.elements ?? []) {
-      if (cxn.name !== "dgm:cxn") continue;
+    for (const cxn of (cxnLst.elements ?? []).filter((child) => child.type === "element")) {
+      if (cxn.name !== "dgm:cxn")
+        throw new Error(`Unsupported dgm:cxnLst child: ${cxn.name ?? "text"}`);
       const connection: DataModelConnectionOptions = {
-        modelId: attr(cxn, "modelId") ?? "",
-        sourceId: attr(cxn, "srcId") ?? "",
-        destinationId: attr(cxn, "destId") ?? "",
+        modelId: requireModelId(cxn, "modelId"),
+        sourceId: requireModelId(cxn, "srcId"),
+        destinationId: requireModelId(cxn, "destId"),
       };
       const type = attr(cxn, "type");
+      if (type !== undefined && !CONNECTION_TYPES.includes(type as ConnectionType))
+        throw new Error(`Invalid dgm:cxn @type: ${type}`);
       if (type) connection.type = type as DataModelConnectionOptions["type"];
       const srcOrd = attrNum(cxn, "srcOrd");
       if (srcOrd !== undefined) connection.sourceOrder = srcOrd;
       const destOrd = attrNum(cxn, "destOrd");
       if (destOrd !== undefined) connection.destinationOrder = destOrd;
       const parTransId = attr(cxn, "parTransId");
-      if (parTransId) connection.parentTransitionId = parTransId;
+      if (parTransId !== undefined)
+        connection.parentTransitionId = requireModelId(cxn, "parTransId");
       const sibTransId = attr(cxn, "sibTransId");
-      if (sibTransId) connection.siblingTransitionId = sibTransId;
+      if (sibTransId !== undefined)
+        connection.siblingTransitionId = requireModelId(cxn, "sibTransId");
       const presId = attr(cxn, "presId");
-      if (presId) connection.presentationId = presId;
+      if (presId !== undefined) connection.presentationId = presId;
       const connectionExtensions = findChild(cxn, "dgm:extLst");
       if (connectionExtensions)
         connection.extensions = parseDiagramExtensions(connectionExtensions);
+      assertConnectionChildren(cxn);
       connections.push(connection);
     }
     result.connections = connections;
@@ -307,7 +318,7 @@ export function parseDataModelOptions(
   if (bg) {
     const background: DataModelBackgroundOptions = {};
     if (findFillChild(bg)) background.fill = fillDesc.parse(bg, ctx);
-    Object.assign(background, parseEffectChoice(bg, DIRECT_READ_CONTEXT));
+    Object.assign(background, parseEffectChoice(bg, ctx));
     result.background = background;
   }
 
@@ -316,7 +327,7 @@ export function parseDataModelOptions(
     const whole: DataModelWholeOptions = {};
     const outline = findChild(wholeEl, "a:ln");
     if (outline) whole.outline = outlineDesc.parse(outline, ctx);
-    Object.assign(whole, parseEffectChoice(wholeEl, DIRECT_READ_CONTEXT));
+    Object.assign(whole, parseEffectChoice(wholeEl, ctx));
     result.whole = whole;
   }
 
@@ -327,11 +338,13 @@ export function parseDataModelOptions(
 }
 
 function parseDataModelPoint(pt: Element, ctx: ReadContext): DataModelPointOptions {
-  const point: DataModelPointOptions = { modelId: attr(pt, "modelId") ?? "" };
+  const point: DataModelPointOptions = { modelId: requireModelId(pt, "modelId") };
   const type = attr(pt, "type");
+  if (type !== undefined && !POINT_TYPES.includes(type as PointType))
+    throw new Error(`Invalid dgm:pt @type: ${type}`);
   if (type) point.type = type as DataModelPointOptions["type"];
   const cxnId = attr(pt, "cxnId");
-  if (cxnId) point.connectionId = cxnId;
+  if (cxnId !== undefined) point.connectionId = requireModelId(pt, "cxnId");
   Object.assign(point, parsePointDetails(pt, ctx));
   const t = findChild(pt, "dgm:t");
   if (t && !point.textBody) point.text = extractPointText(t);
@@ -339,7 +352,41 @@ function parseDataModelPoint(pt: Element, ctx: ReadContext): DataModelPointOptio
   if (prSet) point.propertySet = parsePointPropertySet(prSet, ctx);
   const pointExtensions = findChild(pt, "dgm:extLst");
   if (pointExtensions) point.extensions = parseDiagramExtensions(pointExtensions);
+  assertPointChildren(pt);
   return point;
+}
+
+const CONNECTION_TYPES = ["parOf", "presOf", "presParOf", "unknownRelationship"] as const;
+type ConnectionType = (typeof CONNECTION_TYPES)[number];
+const POINT_TYPES = ["node", "asst", "doc", "pres", "parTrans", "sibTrans"] as const;
+type PointType = (typeof POINT_TYPES)[number];
+
+function requireModelId(el: Element, name: string): string {
+  const value = attr(el, name);
+  if (value === undefined || value === "")
+    throw new Error(`${el.name} is missing required @${name}`);
+  return value;
+}
+
+function assertPointChildren(el: Element): void {
+  for (const child of el.elements ?? []) {
+    if (
+      child.type === "element" &&
+      child.name !== "dgm:prSet" &&
+      child.name !== "dgm:spPr" &&
+      child.name !== "dgm:t" &&
+      child.name !== "dgm:extLst"
+    ) {
+      throw new Error(`Unsupported dgm:pt child: ${child.name}`);
+    }
+  }
+}
+
+function assertConnectionChildren(el: Element): void {
+  const invalid = (el.elements ?? []).find(
+    (child) => child.type === "element" && child.name !== "dgm:extLst",
+  );
+  if (invalid) throw new Error(`Unsupported dgm:cxn child: ${invalid.name}`);
 }
 
 function parseDataModelAlternativeContent(

@@ -9,6 +9,8 @@
 
 import {
   findAndReplaceImagePlaceholders,
+  getReferencedMedia,
+  imageTypeFromPath,
   Relationships,
   replacePlaceholders,
   toUint8Array,
@@ -217,8 +219,10 @@ export function compileSmartArtParts(ctx: DocxWriteContext): {
   DiagramColors?: XmlifyedFile[];
   DiagramDrawing?: XmlifyedFile[];
   SmartArtDataRels?: XmlifyedFile[];
+  SmartArtLayoutRels?: XmlifyedFile[];
 } {
   if (ctx.smartArts.array.length === 0) return {};
+  const smartArtLayoutRels: XmlifyedFile[] = [];
   const smartArtParts = ctx.smartArts.array.map((smartArtData, i) => {
     const dataPath = smartArtData.sourcePaths?.data ?? `word/diagrams/data${i + 1}.xml`;
     const drawingFileIndex = ctx.smartArts.array.indexOf(smartArtData) + 1;
@@ -248,6 +252,15 @@ export function compileSmartArtParts(ctx: DocxWriteContext): {
         existingId ?? `rId${relationships.add(RELATIONSHIP_TYPES.image, target)}`,
       );
     }
+    for (const mediaItem of getReferencedMedia(smartArtData.dataModelXml, ctx.media.array)) {
+      if (mediaIds.has(mediaItem.fileName)) continue;
+      const target = relativeTarget(dataPath, `word/media/${mediaItem.fileName}`);
+      const existingId = relationships.idOf(RELATIONSHIP_TYPES.image, target);
+      mediaIds.set(
+        mediaItem.fileName,
+        existingId ?? `rId${relationships.add(RELATIONSHIP_TYPES.image, target)}`,
+      );
+    }
     return {
       smartArtData,
       dataPath,
@@ -264,13 +277,55 @@ export function compileSmartArtParts(ctx: DocxWriteContext): {
       data: dataXml,
       path: dataPath,
     })),
-    DiagramLayout: ctx.smartArts.array.map((smartArtData, i) => ({
-      data:
+    DiagramLayout: ctx.smartArts.array.map((smartArtData, i) => {
+      const layoutPath = smartArtData.sourcePaths?.layout ?? `word/diagrams/layout${i + 1}.xml`;
+      let layoutXml =
         typeof smartArtData.layout === "string"
           ? getLayoutXml(smartArtData.layout)
-          : stringifyLayoutDefinitionPart(smartArtData.layout),
-      path: smartArtData.sourcePaths?.layout ?? `word/diagrams/layout${i + 1}.xml`,
-    })),
+          : stringifyLayoutDefinitionPart(smartArtData.layout);
+      if (typeof smartArtData.layout === "object" && smartArtData.raw?.layoutMedia?.length) {
+        const layoutRels = new Relationships(layoutPath);
+        for (const media of smartArtData.raw.layoutMedia) {
+          const data = toUint8Array(media.data);
+          const type = imageTypeFromPath(media.fileName);
+          const entry = ctx.media.addMedia(
+            data,
+            type,
+            (fileName: string) => ({
+              type,
+              data,
+              fileName,
+              ...(media.partPath?.split("/").slice(0, -1)
+                ? {
+                    partPath: [...media.partPath.split("/").slice(0, -1), fileName].join("/"),
+                  }
+                : {}),
+              transformation: { width: 0, height: 0 },
+            }),
+            media.fileName,
+          );
+          const target = `../media/${entry.fileName}`;
+          const relationshipId = layoutRels.add(RELATIONSHIP_TYPES.image, target);
+          const reference = media.partPath ?? `word/media/${media.fileName}`;
+          layoutXml = layoutXml.replaceAll(
+            `{smartart-layout-image:${reference}}`,
+            `rId${relationshipId}`,
+          );
+          if (entry.fileName !== media.fileName)
+            layoutXml = layoutXml.replaceAll(
+              `{smartart-layout-image:word/media/${media.fileName}}`,
+              `rId${relationshipId}`,
+            );
+        }
+        if (layoutRels.relationshipCount > 0) {
+          smartArtLayoutRels.push({
+            data: XML_DECL + layoutRels.serialize(),
+            path: partPathToRelsPath(layoutPath),
+          });
+        }
+      }
+      return { data: layoutXml, path: layoutPath };
+    }),
     DiagramStyle: ctx.smartArts.array.map((smartArtData, i) => ({
       data:
         typeof smartArtData.style === "string"
@@ -315,5 +370,6 @@ export function compileSmartArtParts(ctx: DocxWriteContext): {
         },
       ];
     }),
+    ...(smartArtLayoutRels.length > 0 ? { SmartArtLayoutRels: smartArtLayoutRels } : {}),
   };
 }

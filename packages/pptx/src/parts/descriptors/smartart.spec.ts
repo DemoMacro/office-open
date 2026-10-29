@@ -131,6 +131,24 @@ describe("smartArtDesc round-trip", () => {
     expect(result.height).toBe(1080);
   });
 
+  it("round-trips graphic-frame transforms", () => {
+    const result = roundTrip({
+      id: 600,
+      nodes: [],
+      x: 100,
+      y: 200,
+      width: 300,
+      height: 400,
+      rotation: 45,
+      flipHorizontal: false,
+      flipVertical: true,
+    });
+
+    expect(result.rotation).toBe(45);
+    expect(result.flipHorizontal).toBe(false);
+    expect(result.flipVertical).toBe(true);
+  });
+
   it("round-trips a typed data model without raw bytes", () => {
     smartArtParts.clear();
     const dataModel: DataModelOptions = {
@@ -300,6 +318,64 @@ describe("smartArtDesc custom definitions", () => {
     expect(result.layout).toEqual(customLayout);
     expect(result.style).toEqual(customStyle);
     expect(result.color).toEqual(customColors);
+  });
+
+  it("resolves custom layout preview images through layout relationships", () => {
+    const layoutWithPreview: LayoutDefinitionOptions = {
+      ...customLayout,
+      layoutNode: {
+        name: "diagram",
+        children: [{ shape: { type: "none", blipPath: "ppt/media/preview.png" } }],
+      },
+    };
+    const frameXml = smartArtDesc.stringify(
+      {
+        id: 603,
+        nodes: [{ text: "Preview" }],
+        layout: layoutWithPreview,
+        style: customStyle,
+        color: customColors,
+      },
+      writeCtx,
+    );
+    if (!frameXml) throw new Error("graphic frame was not emitted");
+    const frameEl = parseXml(frameXml).elements?.[0];
+    if (!frameEl) throw new Error("graphic frame has no root element");
+    const layoutXml = stringifyLayoutDefinitionPart(layoutWithPreview).replaceAll(
+      "{smartart-layout-image:ppt/media/preview.png}",
+      "rId9",
+    );
+    const layoutEl = parseXml(layoutXml).elements?.[0];
+    const layoutRelsEl = parseXml(
+      '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        '<Relationship Id="rId9" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/preview.png"/>' +
+        "</Relationships>",
+    ).elements?.[0];
+    if (!layoutEl || !layoutRelsEl) throw new Error("layout fixtures were not parsed");
+    const preview = new Uint8Array([9, 8, 7]);
+    const ctx = {
+      resolveRelationship: (rid: string) => {
+        if (rid.startsWith("{smartart-lo:")) return "ppt/diagrams/layout1.xml";
+        if (rid.startsWith("{smartart-qs:")) return "ppt/diagrams/quickStyle1.xml";
+        if (rid.startsWith("{smartart-cs:")) return "ppt/diagrams/colors1.xml";
+        return undefined;
+      },
+      getPart: (path: string) => {
+        if (path === "ppt/diagrams/layout1.xml") return layoutEl;
+        if (path === "ppt/diagrams/_rels/layout1.xml.rels") return layoutRelsEl;
+        return undefined;
+      },
+      getRaw: (path: string) => (path === "ppt/media/preview.png" ? preview : undefined),
+    } as unknown as ReadContext;
+
+    const result = smartArtDesc.parse(frameEl, ctx);
+    const layout = result.layout as LayoutDefinitionOptions;
+    const child = layout.layoutNode.children?.[0];
+    const shape = child && "shape" in child ? child.shape : undefined;
+    expect(shape?.blipPath).toBe("ppt/media/preview.png");
+    expect(result.raw?.layoutMedia).toEqual([
+      { fileName: "preview.png", data: preview, partPath: "ppt/media/preview.png" },
+    ]);
   });
 
   it("folds built-in definition stubs back to their id string", () => {

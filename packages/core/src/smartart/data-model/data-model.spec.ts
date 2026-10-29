@@ -199,4 +199,58 @@ describe("SmartArt data model", () => {
     };
     expect(roundTrip(model)).toEqual(model);
   });
+
+  it("rejects unsupported point and connection children", () => {
+    const unsupportedPoint = parseXml(
+      '<dgm:dataModel xmlns:dgm="http://schemas.openxmlformats.org/drawingml/2006/diagram">' +
+        '<dgm:ptLst><dgm:pt modelId="1"><dgm:unknown/></dgm:pt></dgm:ptLst></dgm:dataModel>',
+    ).elements?.[0];
+    expect(() => parseDataModelOptions(unsupportedPoint)).toThrow(
+      "Unsupported dgm:pt child: dgm:unknown",
+    );
+
+    const unsupportedConnection = parseXml(
+      '<dgm:dataModel xmlns:dgm="http://schemas.openxmlformats.org/drawingml/2006/diagram">' +
+        '<dgm:ptLst><dgm:pt modelId="0" type="doc"/></dgm:ptLst><dgm:cxnLst>' +
+        '<dgm:cxn modelId="1" srcId="0" destId="0" srcOrd="0" destOrd="0"><dgm:unknown/>' +
+        "</dgm:cxn></dgm:cxnLst></dgm:dataModel>",
+    ).elements?.[0];
+    expect(() => parseDataModelOptions(unsupportedConnection)).toThrow(
+      "Unsupported dgm:cxn child: dgm:unknown",
+    );
+  });
+
+  it("ignores insignificant whitespace between point-list children", () => {
+    const source = parseXml(
+      '<dgm:dataModel xmlns:dgm="http://schemas.openxmlformats.org/drawingml/2006/diagram">' +
+        '<dgm:ptLst>\n  <dgm:pt modelId="0" type="doc"/>\n</dgm:ptLst>' +
+        '<dgm:cxnLst>\n  <dgm:cxn modelId="1" srcId="0" destId="0" ' +
+        'srcOrd="0" destOrd="0"/>\n</dgm:cxnLst></dgm:dataModel>',
+    ).elements?.[0];
+    expect(parseDataModelOptions(source)).toMatchObject({
+      points: [{ modelId: "0", type: "doc" }],
+      connections: [{ modelId: "1", sourceId: "0", destinationId: "0" }],
+    });
+  });
+
+  it("rejects missing and invalid connection attributes", () => {
+    const source = parseXml(
+      '<dgm:dataModel xmlns:dgm="http://schemas.openxmlformats.org/drawingml/2006/diagram">' +
+        '<dgm:ptLst><dgm:pt modelId="0" type="doc"/></dgm:ptLst><dgm:cxnLst>' +
+        '<dgm:cxn modelId="1" srcId="0" srcOrd="0" destOrd="0"/></dgm:cxnLst>' +
+        "</dgm:dataModel>",
+    ).elements?.[0];
+    expect(() => parseDataModelOptions(source)).toThrow("dgm:cxn is missing required @destId");
+  });
+
+  it("rejects mutually exclusive effect choices", () => {
+    expect(() =>
+      stringifyDataModelOptions({
+        background: {
+          effects: {},
+          effectDag: { alphaCeiling: true },
+        },
+      }),
+    ).toThrow("both effects and effectDag");
+  });
 });

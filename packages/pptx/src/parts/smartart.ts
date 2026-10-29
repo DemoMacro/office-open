@@ -1,4 +1,4 @@
-import type { UniversalMeasure } from "@office-open/core";
+import type { Transform2DOptions } from "@office-open/core";
 import type { GraphicFrameLockingOptions } from "@office-open/core";
 import type { NonVisualDrawingPropertiesOptions } from "@office-open/core/drawing";
 import type {
@@ -43,7 +43,7 @@ export interface SmartArtDataRelationshipOptions {
  * @publicApi
  */
 export interface SmartArtOptions
-  extends NonVisualDrawingPropertiesOptions, GraphicFrameNvPrOptions {
+  extends NonVisualDrawingPropertiesOptions, GraphicFrameNvPrOptions, Transform2DOptions {
   /** Frame locking (a:graphicFrameLocks). undefined = fresh default
    * (noGrp="1"); null = empty cNvGraphicFramePr; object = explicit flags. */
   locking?: GraphicFrameLockingOptions | null;
@@ -51,10 +51,6 @@ export interface SmartArtOptions
   id?: number;
   /** Pre-generated SmartArt key (e.g. "smartart_1024"). Auto-generated if omitted. */
   smartArtKey?: string;
-  x?: number | UniversalMeasure;
-  y?: number | UniversalMeasure;
-  width?: number | UniversalMeasure;
-  height?: number | UniversalMeasure;
   /** Tree-shaped data for the diagram content. */
   nodes: TreeNode[];
   /** Complete canonical data model; preferred when rebuilding without raw bytes. */

@@ -17,6 +17,28 @@ function roundTrip<T>(desc: CustomDescriptor<T>, opts: T): T {
 }
 
 describe("layoutDefDesc", () => {
+  it("ignores insignificant whitespace between layout-node children", () => {
+    const source = parseXml(
+      '<dgm:layoutDef xmlns:dgm="http://schemas.openxmlformats.org/drawingml/2006/diagram" ' +
+        'uniqueId="urn:example:layout"><dgm:layoutNode name="root">\n' +
+        '<dgm:alg type="composite"/>\n<dgm:shape type="ellipse"/>\n' +
+        '<dgm:choose>\n<dgm:if name="when"/>\n<dgm:else name="otherwise"/>\n' +
+        "</dgm:choose>\n" +
+        "</dgm:layoutNode></dgm:layoutDef>",
+    ).elements?.[0];
+    if (!source) throw new Error("parsed layout document has no root");
+    expect(layoutDefDesc.parse(source, {} as ReadContext).layoutNode?.children).toEqual([
+      { algorithm: { type: "composite" } },
+      { shape: { type: "ellipse" } },
+      {
+        choose: {
+          conditions: [{ name: "when", function: "cnt", operator: "equ", value: "" }],
+          otherwise: { name: "otherwise" },
+        },
+      },
+    ]);
+  });
+
   it("round-trips a full layout definition", () => {
     const opts: LayoutDefinitionOptions = {
       uniqueId: "urn:microsoft.com/office/officeart/2005/8/layout/custom1",
@@ -161,7 +183,7 @@ describe("layoutDefDesc", () => {
   it("round-trips explicit empty shape details", () => {
     const opts: LayoutDefinitionOptions = {
       layoutNode: {
-        children: [{ shape: { type: "none", blip: null, adjustments: null } }],
+        children: [{ shape: { type: "none", blipPath: null, adjustments: null } }],
       },
     };
     expect(roundTrip(layoutDefDesc, opts)).toEqual(opts);
@@ -183,6 +205,16 @@ describe("layoutDefDesc", () => {
   it("round-trips a minimal layout definition", () => {
     const opts: LayoutDefinitionOptions = { layoutNode: { children: [] } };
     expect(roundTrip(layoutDefDesc, opts)).toEqual({ layoutNode: {} });
+  });
+
+  it("rejects a layout definition without its required layout node", () => {
+    const doc = parseXml(
+      '<dgm:layoutDef xmlns:dgm="http://schemas.openxmlformats.org/drawingml/2006/diagram" />',
+    );
+    const el = doc.elements?.[0];
+    expect(() => layoutDefDesc.parse(el!, {} as ReadContext)).toThrow(
+      "dgm:layoutDef is missing required dgm:layoutNode",
+    );
   });
 
   it("round-trips foreign-namespace extension content", () => {

@@ -6,7 +6,12 @@
  * @module
  */
 
-import { pickNonVisualDrawingProperties, Relationships, toUint8Array } from "@office-open/core";
+import {
+  imageTypeFromPath,
+  pickNonVisualDrawingProperties,
+  Relationships,
+  toUint8Array,
+} from "@office-open/core";
 import { buildUserShapesData, chartExSpaceDesc, chartSpaceDesc } from "@office-open/core/chart";
 import {
   partPathToRelsPath,
@@ -436,11 +441,43 @@ export function compileSheetDrawing(
           path: partPathToRelsPath(canonicalPaths.data),
         };
       }
+      let layoutXml =
+        typeof sa.layout === "string" || sa.layout === undefined
+          ? getLayoutXml(layoutId)
+          : stringifyLayoutDefinitionPart(sa.layout);
+      if (typeof sa.layout === "object" && sa.raw?.layoutMedia?.length) {
+        const layoutRels = new Relationships(canonicalPaths.layout);
+        for (const media of sa.raw.layoutMedia) {
+          const data = toUint8Array(media.data);
+          const type = imageTypeFromPath(media.fileName);
+          const entry = ctx.media.addMedia(
+            data,
+            type,
+            (fileName) => ({
+              type,
+              data,
+              fileName,
+              width: 0,
+              height: 0,
+            }),
+            media.fileName,
+          );
+          const relationshipId = layoutRels.add(IMAGE_REL, `../media/${entry.fileName}`);
+          const reference = media.partPath ?? `xl/media/${media.fileName}`;
+          layoutXml = layoutXml.replaceAll(
+            `{smartart-layout-image:${reference}}`,
+            `rId${relationshipId}`,
+          );
+        }
+        if (layoutRels.relationshipCount > 0) {
+          mapping[`SmartArtLayoutRels${smartArtIndex}`] = {
+            data: XML_DECL + layoutRels.serialize(),
+            path: partPathToRelsPath(canonicalPaths.layout),
+          };
+        }
+      }
       mapping[`SmartArtLayout${smartArtIndex}`] = {
-        data:
-          typeof sa.layout === "string" || sa.layout === undefined
-            ? getLayoutXml(layoutId)
-            : stringifyLayoutDefinitionPart(sa.layout),
+        data: layoutXml,
         path: canonicalPaths.layout,
       };
       mapping[`SmartArtQuickStyle${smartArtIndex}`] = {

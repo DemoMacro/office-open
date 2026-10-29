@@ -22,8 +22,8 @@ export function stringifyConnection(opts: {
     `destOrd="${opts.destOrd ?? 0}"`,
   ];
   if (opts.type) attrs.push(`type="${escapeXml(opts.type)}"`);
-  if (opts.parTransId) attrs.push(`parTransId="${escapeXml(opts.parTransId)}"`);
-  if (opts.sibTransId) attrs.push(`sibTransId="${escapeXml(opts.sibTransId)}"`);
-  if (opts.presId) attrs.push(`presId="${escapeXml(opts.presId)}"`);
+  if (opts.parTransId !== undefined) attrs.push(`parTransId="${escapeXml(opts.parTransId)}"`);
+  if (opts.sibTransId !== undefined) attrs.push(`sibTransId="${escapeXml(opts.sibTransId)}"`);
+  if (opts.presId !== undefined) attrs.push(`presId="${escapeXml(opts.presId)}"`);
   return `<dgm:cxn ${attrs.join(" ")}/>`;
 }

@@ -1855,6 +1855,9 @@
           "description": "Original audio file name",
           "type": "string"
         },
+        "blackWhiteMode": {
+          "$ref": "#/definitions/BlackWhiteMode"
+        },
         "contentType": {
           "description": "MIME content type of the linked audio",
           "type": "string"
@@ -1865,12 +1868,21 @@
         "creationIdExtension": {
           "$ref": "#/definitions/ShapeOptions/properties/creationIdExtension"
         },
+        "customGeometry": {
+          "$ref": "#/definitions/CustomGeometryOptions"
+        },
         "data": {
           "$ref": "#/definitions/DataType",
           "description": "Audio bytes — required for file-based audio, omitted for CD audio"
         },
         "description": {
           "$ref": "#/definitions/ShapeOptions/properties/description"
+        },
+        "effectDag": {
+          "$ref": "#/definitions/EffectDagOptions"
+        },
+        "effects": {
+          "$ref": "#/definitions/EffectListOptions"
         },
         "embeddedMedia": {
           "description": "Modern embedded-audio form: a:audioFile link plus the p14:media embed. Required to distinguish a modern embedded WAV from the legacy a:wavAudioFile element.",
@@ -1879,16 +1891,30 @@
         "ext": {
           "$ref": "#/definitions/ShapeOptions/properties/ext"
         },
+        "extensions": {
+          "$ref": "#/definitions/ShapeOptions/properties/properties/properties/extensions"
+        },
         "fileName": {
           "$ref": "#/definitions/VideoFrameOptions/properties/fileName"
         },
+        "fill": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/FillOptions"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "flipHorizontal": {
-          "description": "Flip horizontally (a:xfrm `@flipH`).",
           "type": "boolean"
         },
         "flipVertical": {
-          "description": "Flip vertically (a:xfrm `@flipV`).",
           "type": "boolean"
+        },
+        "geometry": {
+          "$ref": "#/definitions/ShapeOptions/properties/properties/properties/geometry"
         },
         "height": {
           "anyOf": [
@@ -1915,6 +1941,9 @@
         },
         "name": {
           "$ref": "#/definitions/ShapeOptions/properties/name"
+        },
+        "outline": {
+          "$ref": "#/definitions/OutlineOptions"
         },
         "playback": {
           "$ref": "#/definitions/VideoFrameOptions/properties/playback"
@@ -1947,6 +1976,18 @@
           "description": "Rotation angle in degrees (e.g., 45 = 45°).",
           "type": "number"
         },
+        "scene3d": {
+          "$ref": "#/definitions/Scene3DOptions"
+        },
+        "shape3d": {
+          "$ref": "#/definitions/Shape3DOptions"
+        },
+        "shapePropertiesExt": {
+          "$ref": "#/definitions/PictureOptions/properties/shapePropertiesExt"
+        },
+        "shapePropertiesExtensions": {
+          "$ref": "#/definitions/VideoFrameOptions/properties/shapePropertiesExtensions"
+        },
         "sourceRectangle": {
           "$ref": "#/definitions/VideoFrameOptions/properties/sourceRectangle"
         },
@@ -1960,6 +2001,9 @@
         "title": {
           "description": "XSD `@title`.",
           "type": "string"
+        },
+        "transformPresent": {
+          "$ref": "#/definitions/ShapeOptions/properties/properties/properties/transformPresent"
         },
         "trim": {
           "$ref": "#/definitions/VideoFrameOptions/properties/trim"
@@ -7778,10 +7822,6 @@
         "presetShadow": {
           "$ref": "#/definitions/PresetShadowEffectOptions"
         },
-        "raw": {
-          "description": "Verbatim a:effectDag element for unmodeled effect payloads. Round-trip channel: captured from a parsed source; do not hand-author.",
-          "type": "string"
-        },
         "reflection": {
           "anyOf": [
             {
@@ -8325,23 +8365,12 @@
       "additionalProperties": false,
       "description": "Fill effect — applies a fill as an effect.",
       "properties": {
-        "gradientFill": {
-          "$ref": "#/definitions/GradientFillOptions"
-        },
-        "groupFill": {
-          "description": "Group fill (inherit from parent)",
-          "type": "boolean"
-        },
-        "noFill": {
-          "type": "boolean"
-        },
-        "patternFill": {
-          "$ref": "#/definitions/PatternFillOptions"
-        },
-        "solidFill": {
-          "$ref": "#/definitions/SolidFillOptions"
+        "fill": {
+          "$ref": "#/definitions/FillOptions",
+          "description": "Effect fill."
         }
       },
+      "required": ["fill"],
       "type": "object"
     },
     "FillImageResource": {
@@ -8611,25 +8640,12 @@
           "enum": ["over", "multiply", "screen", "darken", "lighten"],
           "type": "string"
         },
-        "gradientFill": {
-          "$ref": "#/definitions/GradientFillOptions"
-        },
-        "groupFill": {
-          "description": "Group fill (inherit from parent)",
-          "type": "boolean"
-        },
-        "noFill": {
-          "type": "boolean"
-        },
-        "patternFill": {
-          "$ref": "#/definitions/PatternFillOptions"
-        },
-        "solidFill": {
-          "$ref": "#/definitions/SolidFillOptions",
-          "description": "Solid fill color"
+        "fill": {
+          "$ref": "#/definitions/FillOptions",
+          "description": "Overlay fill."
         }
       },
-      "required": ["blend"],
+      "required": ["blend", "fill"],
       "type": "object"
     },
     "FixedTextControlOptions": {
@@ -9930,6 +9946,10 @@
         "description": {
           "$ref": "#/definitions/ShapeOptions/properties/description"
         },
+        "effectDag": {
+          "$ref": "#/definitions/EffectDagOptions",
+          "description": "Group-level effect DAG (alternative to `effects`)."
+        },
         "effects": {
           "$ref": "#/definitions/EffectListOptions",
           "description": "Group-level effects (EG_EffectProperties on grpSpPr)."
@@ -11083,8 +11103,8 @@
           ],
           "description": "Geometry adjustment values; null preserves an empty list (dgm:adjLst)."
         },
-        "blip": {
-          "description": "Preview picture relationship id; null preserves an empty attribute (dgm:shape `@r:blip`).",
+        "blipPath": {
+          "description": "Preview picture package path resolved through the layout part's relationships; null preserves an empty attribute (dgm:shape `@r:blip`).",
           "type": ["string", "null"]
         },
         "blipPlaceholder": {
@@ -13720,6 +13740,10 @@
         "description": {
           "$ref": "#/definitions/ShapeOptions/properties/description"
         },
+        "effectDag": {
+          "$ref": "#/definitions/EffectDagOptions",
+          "description": "Effect DAG (EG_EffectProperties alternative to `effects`)."
+        },
         "effects": {
           "$ref": "#/definitions/EffectListOptions",
           "description": "Shape-level effects on p:spPr (e.g. shadow/reflection)."
@@ -13983,6 +14007,9 @@
         },
         "description": {
           "$ref": "#/definitions/ShapeOptions/properties/description"
+        },
+        "effectDag": {
+          "$ref": "#/definitions/EffectDagOptions"
         },
         "effects": {
           "$ref": "#/definitions/EffectListOptions"
@@ -17612,18 +17639,17 @@
         "ext": {
           "$ref": "#/definitions/ShapeOptions/properties/ext"
         },
+        "flipHorizontal": {
+          "type": "boolean"
+        },
+        "flipVertical": {
+          "type": "boolean"
+        },
         "hasCustomPrompt": {
           "type": "boolean"
         },
         "height": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ]
+          "$ref": "#/definitions/ShapeOptions/properties/height"
         },
         "hidden": {
           "description": "XSD `@hidden` (default false); emitted as \"1\" only when true.",
@@ -17688,6 +17714,10 @@
           "$ref": "#/definitions/SmartArtRawParts",
           "description": "Verbatim source diagram parts. Round-trip only — do not hand-author.",
           "readOnly": true
+        },
+        "rotation": {
+          "description": "Rotation angle in degrees (e.g., 45 = 45°).",
+          "type": "number"
         },
         "smartArtKey": {
           "description": "Pre-generated SmartArt key (e.g. \"smartart_1024\"). Auto-generated if omitted.",
@@ -17761,34 +17791,13 @@
           "type": "boolean"
         },
         "width": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ]
+          "$ref": "#/definitions/ShapeOptions/properties/width"
         },
         "x": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ]
+          "$ref": "#/definitions/ShapeOptions/properties/x"
         },
         "y": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ]
+          "$ref": "#/definitions/ShapeOptions/properties/y"
         }
       },
       "required": ["nodes"],
@@ -17831,6 +17840,13 @@
         "drawingRels": {
           "$ref": "#/definitions/DataType",
           "description": "Source drawing part's own rels; retained only with the drawing bytes."
+        },
+        "layoutMedia": {
+          "description": "Images referenced by the custom layout part's own rels (dgm:shape",
+          "items": {
+            "$ref": "#/definitions/SmartArtRawMediaPart"
+          },
+          "type": "array"
         },
         "media": {
           "description": "Images referenced by the data part's own rels (dgm:pt blipFill art).",
@@ -20940,6 +20956,9 @@
     "VideoFrameOptions": {
       "additionalProperties": false,
       "properties": {
+        "blackWhiteMode": {
+          "$ref": "#/definitions/BlackWhiteMode"
+        },
         "contentType": {
           "description": "MIME content type of the linked video",
           "type": "string"
@@ -20950,12 +20969,21 @@
         "creationIdExtension": {
           "$ref": "#/definitions/ShapeOptions/properties/creationIdExtension"
         },
+        "customGeometry": {
+          "$ref": "#/definitions/CustomGeometryOptions"
+        },
         "data": {
           "$ref": "#/definitions/DataType",
           "description": "Media bytes; omitted for a linked `sourceUrl`."
         },
         "description": {
           "$ref": "#/definitions/ShapeOptions/properties/description"
+        },
+        "effectDag": {
+          "$ref": "#/definitions/EffectDagOptions"
+        },
+        "effects": {
+          "$ref": "#/definitions/EffectListOptions"
         },
         "embeddedMedia": {
           "description": "Modern p14:media extension form; undefined means fresh-generation default. Set false for legacy pre-2010 video frames whose `a:videoFile` reference has no embedded extension copy.",
@@ -20964,17 +20992,31 @@
         "ext": {
           "$ref": "#/definitions/ShapeOptions/properties/ext"
         },
+        "extensions": {
+          "$ref": "#/definitions/ShapeOptions/properties/properties/properties/extensions"
+        },
         "fileName": {
           "description": "Media file name inside the package (ppt/media/<fileName>). Round-trip keeps the source name; fresh generation derives it from the frame name.",
           "type": "string"
         },
+        "fill": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/FillOptions"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "flipHorizontal": {
-          "description": "Flip horizontally (a:xfrm `@flipH`).",
           "type": "boolean"
         },
         "flipVertical": {
-          "description": "Flip vertically (a:xfrm `@flipV`).",
           "type": "boolean"
+        },
+        "geometry": {
+          "$ref": "#/definitions/ShapeOptions/properties/properties/properties/geometry"
         },
         "height": {
           "anyOf": [
@@ -21002,6 +21044,9 @@
         },
         "name": {
           "$ref": "#/definitions/ShapeOptions/properties/name"
+        },
+        "outline": {
+          "$ref": "#/definitions/OutlineOptions"
         },
         "playback": {
           "$ref": "#/definitions/MediaPlaybackOptions",
@@ -21034,6 +21079,22 @@
           "description": "Rotation angle in degrees (e.g., 45 = 45°).",
           "type": "number"
         },
+        "scene3d": {
+          "$ref": "#/definitions/Scene3DOptions"
+        },
+        "shape3d": {
+          "$ref": "#/definitions/Shape3DOptions"
+        },
+        "shapePropertiesExt": {
+          "$ref": "#/definitions/PictureOptions/properties/shapePropertiesExt"
+        },
+        "shapePropertiesExtensions": {
+          "description": "Structured extensions (a:extLst/a:ext) on p:spPr.",
+          "items": {
+            "$ref": "#/definitions/ShapePropertiesExtensionOptions"
+          },
+          "type": "array"
+        },
         "sourceRectangle": {
           "$ref": "#/definitions/SourceRectangleOptions",
           "description": "Crop rectangle (p:blipFill/a:srcRect), integer percent."
@@ -21049,6 +21110,9 @@
         "title": {
           "description": "XSD `@title`.",
           "type": "string"
+        },
+        "transformPresent": {
+          "$ref": "#/definitions/ShapeOptions/properties/properties/properties/transformPresent"
         },
         "trim": {
           "$ref": "#/definitions/MediaTrimOptions",

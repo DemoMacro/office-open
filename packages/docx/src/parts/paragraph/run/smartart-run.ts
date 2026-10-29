@@ -8,6 +8,7 @@
  * @module
  */
 import type { LongHexNumber } from "@office-open/core";
+import type { TreeNode } from "@office-open/core/smartart";
 import type {
   ColorDefinitionOptions,
   DataModelOptions,
@@ -22,13 +23,7 @@ import type { MediaTransformation } from "@shared/media";
 
 import type { RunPropertiesOptions } from "./properties";
 
-/**
- * A tree node for SmartArt data.
- */
-export interface SmartArtNode {
-  text: string;
-  children?: SmartArtNode[];
-}
+export type { TreeNode };
 
 /**
  * Options for creating a SmartArtRun.
@@ -37,7 +32,7 @@ export interface SmartArtNode {
  */
 export interface SmartArtOptions {
   /** Tree-shaped data for the diagram content. */
-  nodes: SmartArtNode[];
+  nodes: TreeNode[];
   /** Complete data model for points, connections, properties, and metadata. */
   dataModel?: DataModelOptions;
   /** Display dimensions */

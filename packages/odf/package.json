@@ -1,6 +1,6 @@
 {
   "name": "@office-open/odf",
-  "version": "0.15.0",
+  "version": "0.15.1",
   "description": "Shared OpenDocument container, XML runtime, metadata, chart, database, form, and drawing codecs",
   "keywords": [
     "chart",

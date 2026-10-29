@@ -13,7 +13,7 @@ import {
   toUint8Array,
   withDiagramNamespaces,
 } from "@office-open/core";
-import { ChartCollection } from "@office-open/core/chart";
+import { ChartCollection, type ChartSourceRelationship } from "@office-open/core/chart";
 import {
   IMAGE_MEDIA_CONTENT_TYPES,
   partContentTypeResolver,
@@ -107,7 +107,7 @@ export function compileTailParts(
     const sourceImageReplacements = new Map(
       (chart.sourceRelationships ?? [])
         .filter(
-          (relationship) =>
+          (relationship: ChartSourceRelationship) =>
             /^rId\d+$/.test(relationship.rId) && relationship.relationshipType.endsWith("/image"),
         )
         .flatMap((relationship) => {
@@ -181,6 +181,10 @@ export function compileTailParts(
     const drawingRelationship =
       sa.raw?.drawing !== undefined && sa.raw.drawingRelationship !== false;
     const mediaIds = new Map<string, string>();
+    let layoutXml =
+      typeof sa.layout === "string"
+        ? getLayoutXml(sa.layout)
+        : stringifyLayoutDefinitionPart(sa.layout);
     if (sa.sourceDataRelationships && sa.sourceDataRelationships.length > 0) {
       for (const media of sa.raw?.media ?? []) {
         const sourceRel = sa.sourceDataRelationships.find(
@@ -194,6 +198,19 @@ export function compileTailParts(
         mediaIds.set(media.fileName, `rId${(drawingRelationship ? 2 : 1) + mediaIndex}`);
       });
     }
+    for (const mediaItem of getReferencedMedia(sa.dataModelXml, descCtx.mediaCollection.array)) {
+      if (mediaIds.has(mediaItem.fileName)) continue;
+      const sourceRel = sa.sourceDataRelationships?.find(
+        (relationship: SmartArtDataRelationshipOptions) =>
+          relationship.relationshipType.endsWith("/image") &&
+          (relationship.target.endsWith(`/${mediaItem.fileName}`) ||
+            relationship.target === mediaItem.fileName),
+      );
+      mediaIds.set(
+        mediaItem.fileName,
+        sourceRel?.id ?? `rId${(sa.raw?.media?.length ?? 0) + mediaIds.size + 1}`,
+      );
+    }
     const sourceIds = new Map(
       (sa.sourceDataRelationships ?? [])
         .filter((relationship) => /^rId\d+$/.test(relationship.id))
@@ -204,11 +221,7 @@ export function compileTailParts(
       new Map([...mediaIds, ...sourceIds]),
     ).replace(/^<\?xml[^>]*\?>/, "");
     files[dataPath] = encoder.encode(XML_DECL + withDiagramNamespaces(dataBody));
-    files[layoutPath] = encoder.encode(
-      typeof sa.layout === "string"
-        ? getLayoutXml(sa.layout)
-        : stringifyLayoutDefinitionPart(sa.layout),
-    );
+    files[layoutPath] = encoder.encode(withDiagramNamespaces(layoutXml));
     files[quickStylePath] = encoder.encode(
       typeof sa.style === "string" ? getStyleXml(sa.style) : stringifyStyleDefinitionPart(sa.style),
     );
@@ -246,9 +259,37 @@ export function compileTailParts(
           `../media/${media.fileName}`,
         );
       }
+      for (const mediaItem of getReferencedMedia(sa.dataModelXml, descCtx.mediaCollection.array)) {
+        if (dataRels.hasRelationship(RELATIONSHIP_TYPES.image, `../media/${mediaItem.fileName}`))
+          continue;
+        dataRels.addRelationship(
+          mediaIds.get(mediaItem.fileName)!,
+          RELATIONSHIP_TYPES.image,
+          `../media/${mediaItem.fileName}`,
+        );
+      }
     }
     if (dataRels.relationshipCount > 0) {
       files[partPathToRelsPath(dataPath)] = encoder.encode(dataRels.serialize());
+    }
+    if (typeof sa.layout === "object") {
+      const layoutRels = new Relationships(layoutPath);
+      for (const media of sa.raw?.layoutMedia ?? []) {
+        const mediaPath = `ppt/media/${media.fileName}`;
+        const relationshipId = layoutRels.add(
+          RELATIONSHIP_TYPES.image,
+          relativePartTarget(layoutPath, mediaPath),
+        );
+        const reference = media.partPath ?? mediaPath;
+        layoutXml = layoutXml.replaceAll(
+          `{smartart-layout-image:${reference}}`,
+          `rId${relationshipId}`,
+        );
+      }
+      files[layoutPath] = encoder.encode(withDiagramNamespaces(layoutXml));
+      if (layoutRels.relationshipCount > 0) {
+        files[partPathToRelsPath(layoutPath)] = encoder.encode(XML_DECL + layoutRels.serialize());
+      }
     }
   }
 

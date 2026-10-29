@@ -33,6 +33,8 @@ export interface SmartArtRawParts {
   drawingRelationship?: boolean;
   /** Images referenced by the data part's own rels (dgm:pt blipFill art). */
   media?: SmartArtRawMediaPart[];
+  /** Images referenced by the custom layout part's own rels (dgm:shape @r:blip). */
+  layoutMedia?: SmartArtRawMediaPart[];
 }
 
 export interface SmartArtRawMediaPart {

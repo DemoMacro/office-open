@@ -1,6 +1,6 @@
 {
   "name": "@office-open/doc",
-  "version": "0.15.0",
+  "version": "0.15.1",
   "description": "Parse legacy Microsoft Word .doc documents into office-open DocumentOptions — no Microsoft Office required",
   "keywords": [
     "binary",

@@ -1,6 +1,6 @@
 {
   "name": "@office-open/ods",
-  "version": "0.15.0",
+  "version": "0.15.1",
   "description": "Generate and parse OpenDocument spreadsheets as canonical WorkbookOptions",
   "keywords": [
     "odf",

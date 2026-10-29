@@ -19,7 +19,7 @@ import {
   definitionId,
   stringifyDataModelOptions,
 } from "@office-open/core/smartart";
-import type { SmartArtRawParts } from "@office-open/core/smartart";
+import type { SmartArtRawMediaPart, SmartArtRawParts } from "@office-open/core/smartart";
 import { documentNamespaceDialect } from "@parts/document/document-attributes";
 import type { BackgroundRawMediaOptions } from "@parts/document/document-background/document-background";
 import type { ParagraphChild } from "@parts/paragraph/paragraph";
@@ -148,6 +148,7 @@ function rawSmartArtFingerprint(raw: SmartArtRawParts | undefined): string | und
   return JSON.stringify({
     drawing: b64(raw.drawing),
     media: raw.media?.map(({ fileName, partPath }) => ({ fileName, partPath })),
+    layoutMedia: raw.layoutMedia?.map(({ fileName, partPath }) => ({ fileName, partPath })),
   });
 }
 
@@ -594,9 +595,8 @@ export function stringifyDrawingChild(
     // pinned name taken by different bytes re-allocates — remap the verbatim
     // data rels target to follow, or the rels would point at the wrong bytes.
     let raw = opts.raw;
-    if (raw?.media) {
-      const media = [];
-      for (const m of raw.media) {
+    if (raw?.media || raw?.layoutMedia) {
+      const register = (m: SmartArtRawMediaPart) => {
         const data = toUint8Array(m.data);
         const type = imageTypeFromPath(m.fileName);
         const sourceDirectory = m.partPath?.split("/").slice(0, -1);
@@ -613,13 +613,16 @@ export function stringifyDrawingChild(
             }) as MediaData,
           m.fileName,
         );
-        media.push({
+        return {
           ...m,
           fileName: entry.fileName,
           ...(entry.partPath ? { partPath: entry.partPath } : {}),
-        });
-      }
-      raw = { ...raw, media };
+        };
+      };
+      const media = raw.media?.map(register);
+      const layoutMedia = raw.layoutMedia?.map(register);
+      raw = { ...raw, ...(media ? { media } : {}) };
+      if (layoutMedia) raw = { ...raw, layoutMedia };
     }
 
     ctx.file.smartArts.addSmartArt(smartArtKey, {

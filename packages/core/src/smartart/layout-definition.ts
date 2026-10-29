@@ -15,7 +15,7 @@ import { attr, attrNum, attrs, findChild } from "@office-open/xml";
 import { OOXML_XML_DECLARATION } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 
-import type { CustomDescriptor } from "../descriptor";
+import type { CustomDescriptor, ReadContext } from "../descriptor";
 import {
   createDiagramExtensionList,
   parseDiagramExtensions,
@@ -280,8 +280,11 @@ export interface LayoutShapeOptions {
   rotation?: number;
   /** Preset geometry name or "none"/"conn" (dgm:shape `@type`, ST_LayoutShapeType). */
   type?: ShapeType | "none" | "conn";
-  /** Preview picture relationship id; null preserves an empty attribute (dgm:shape `@r:blip`). */
-  blip?: string | null;
+  /**
+   * Preview picture package path resolved through the layout part's
+   * relationships; null preserves an empty attribute (dgm:shape `@r:blip`).
+   */
+  blipPath?: string | null;
   /** Z-order offset (dgm:shape `@zOrderOff`). */
   zOrderOffset?: number;
   /** Hide the shape geometry, keep the text (dgm:shape `@hideGeom`). */
@@ -476,7 +479,12 @@ function stringifyShape(o: LayoutShapeOptions): string {
   const attrStr = attrs({
     rot: o.rotation,
     type: o.type,
-    "r:blip": o.blip === undefined ? undefined : o.blip === null ? "" : o.blip,
+    "r:blip":
+      o.blipPath === undefined
+        ? undefined
+        : o.blipPath === null
+          ? ""
+          : `{smartart-layout-image:${o.blipPath}}`,
     zOrderOff: o.zOrderOffset,
     hideGeom: booleanAttr(o.hideGeometry),
     lkTxEntry: booleanAttr(o.lockTextEntry),
@@ -733,7 +741,7 @@ function parseAlgorithm(el: Element): AlgorithmOptions {
   const rev = attrNum(el, "rev");
   if (rev !== undefined) result.revision = rev;
   const parameters: AlgorithmParameterOptions[] = [];
-  for (const child of el.elements ?? []) {
+  for (const child of (el.elements ?? []).filter((child) => child.type === "element")) {
     if (child.name !== "dgm:param") continue;
     const raw = attr(child, "val") ?? "";
     const numeric = Number(raw);
@@ -751,14 +759,24 @@ function parseAlgorithm(el: Element): AlgorithmOptions {
   return result as AlgorithmOptions;
 }
 
-function parseShape(el: Element): LayoutShapeOptions {
+function parseShape(
+  el: Element,
+  relationships?: Pick<ReadContext, "resolveRelationship">,
+): LayoutShapeOptions {
   const result: Partial<LayoutShapeOptions> = {};
   const rot = attrNum(el, "rot");
   if (rot !== undefined) result.rotation = rot;
   const type = attr(el, "type");
   if (type !== undefined) result.type = type as LayoutShapeOptions["type"];
   const blip = attr(el, "r:blip");
-  if (blip !== undefined) result.blip = blip === "" ? null : blip;
+  if (blip !== undefined) {
+    if (blip === "") result.blipPath = null;
+    else {
+      const target = relationships?.resolveRelationship(blip);
+      if (!target) throw new Error(`Cannot resolve dgm:shape @r:blip relationship: ${blip}`);
+      result.blipPath = target;
+    }
+  }
   const zOrderOff = attrNum(el, "zOrderOff");
   if (zOrderOff !== undefined) result.zOrderOffset = zOrderOff;
   const hideGeom = attr(el, "hideGeom");
@@ -905,15 +923,18 @@ function parseVariables(el: Element): VariableListOptions {
   return result as VariableListOptions;
 }
 
-function parseChildren(el: Element): LayoutNodeChild[] | undefined {
+function parseChildren(
+  el: Element,
+  relationships?: Pick<ReadContext, "resolveRelationship">,
+): LayoutNodeChild[] | undefined {
   const children: LayoutNodeChild[] = [];
-  for (const child of el.elements ?? []) {
+  for (const child of (el.elements ?? []).filter((child) => child.type === "element")) {
     switch (child.name) {
       case "dgm:alg":
         children.push({ algorithm: parseAlgorithm(child) });
         break;
       case "dgm:shape":
-        children.push({ shape: parseShape(child) });
+        children.push({ shape: parseShape(child, relationships) });
         break;
       case "dgm:presOf":
         children.push({ presentationOf: readIteration(child) });
@@ -937,19 +958,22 @@ function parseChildren(el: Element): LayoutNodeChild[] | undefined {
         children.push({ forEach: parseForEach(child) });
         break;
       case "dgm:layoutNode":
-        children.push({ layoutNode: parseLayoutNode(child) });
+        children.push({ layoutNode: parseLayoutNode(child, relationships) });
         break;
       case "dgm:choose":
-        children.push({ choose: parseChoose(child) });
+        children.push({ choose: parseChoose(child, relationships) });
         break;
       default:
-        break;
+        throw new Error(`Unsupported dgm:layoutNode child: ${child.name}`);
     }
   }
   return children.length ? children : undefined;
 }
 
-function parseLayoutNode(el: Element): LayoutNodeOptions {
+function parseLayoutNode(
+  el: Element,
+  relationships?: Pick<ReadContext, "resolveRelationship">,
+): LayoutNodeOptions {
   const result: Partial<LayoutNodeOptions> = {};
   const name = attr(el, "name");
   if (name) result.name = name;
@@ -959,7 +983,7 @@ function parseLayoutNode(el: Element): LayoutNodeOptions {
   if (chOrder !== undefined && chOrder !== "b") result.childOrder = chOrder as ChildOrder;
   const moveWith = attr(el, "moveWith");
   if (moveWith) result.moveWith = moveWith;
-  const children = parseChildren(el);
+  const children = parseChildren(el, relationships);
   if (children) result.children = children;
   const extLst = findChild(el, "dgm:extLst") ?? findChild(el, "a:extLst");
   if (extLst) {
@@ -969,18 +993,24 @@ function parseLayoutNode(el: Element): LayoutNodeOptions {
   return result as LayoutNodeOptions;
 }
 
-function parseForEach(el: Element): ForEachOptions {
+function parseForEach(
+  el: Element,
+  relationships?: Pick<ReadContext, "resolveRelationship">,
+): ForEachOptions {
   const result: Partial<ForEachOptions> = readIteration(el);
   const name = attr(el, "name");
   if (name) result.name = name;
   const ref = attr(el, "ref");
   if (ref) result.reference = ref;
-  const children = parseChildren(el);
+  const children = parseChildren(el, relationships);
   if (children) result.children = children;
   return result as ForEachOptions;
 }
 
-function parseWhen(el: Element): WhenOptions {
+function parseWhen(
+  el: Element,
+  relationships?: Pick<ReadContext, "resolveRelationship">,
+): WhenOptions {
   const result: Partial<WhenOptions> = {
     ...readIteration(el),
     function: (attr(el, "func") ?? "cnt") as ConditionFunction,
@@ -991,17 +1021,21 @@ function parseWhen(el: Element): WhenOptions {
   if (name) result.name = name;
   const arg = attr(el, "arg");
   if (arg !== undefined && arg !== "none") result.argument = arg;
-  const children = parseChildren(el);
+  const children = parseChildren(el, relationships);
   if (children) result.children = children;
   return result as WhenOptions;
 }
 
-function parseChoose(el: Element): ChooseOptions {
+function parseChoose(
+  el: Element,
+  relationships?: Pick<ReadContext, "resolveRelationship">,
+): ChooseOptions {
   const conditions: WhenOptions[] = [];
   let otherwise: OtherwiseOptions | undefined;
-  for (const child of el.elements ?? []) {
-    if (child.name === "dgm:if") conditions.push(parseWhen(child));
-    else if (child.name === "dgm:else") otherwise = parseOtherwise(child);
+  for (const child of (el.elements ?? []).filter((child) => child.type === "element")) {
+    if (child.name === "dgm:if") conditions.push(parseWhen(child, relationships));
+    else if (child.name === "dgm:else") otherwise = parseOtherwise(child, relationships);
+    else throw new Error(`Unsupported dgm:choose child: ${child.name}`);
   }
   const result: Partial<ChooseOptions> = { conditions };
   const name = attr(el, "name");
@@ -1010,11 +1044,14 @@ function parseChoose(el: Element): ChooseOptions {
   return result as ChooseOptions;
 }
 
-function parseOtherwise(el: Element): OtherwiseOptions {
+function parseOtherwise(
+  el: Element,
+  relationships?: Pick<ReadContext, "resolveRelationship">,
+): OtherwiseOptions {
   const result: Partial<OtherwiseOptions> = {};
   const name = attr(el, "name");
   if (name) result.name = name;
-  const children = parseChildren(el);
+  const children = parseChildren(el, relationships);
   if (children) result.children = children;
   return result as OtherwiseOptions;
 }
@@ -1044,7 +1081,10 @@ function parseSampleData(el: Element | undefined): SampleDataOptions | undefined
 }
 
 /** Parse a dgm:layoutDef element into options. */
-export function parseLayoutDefinition(el: Element): LayoutDefinitionOptions {
+export function parseLayoutDefinition(
+  el: Element,
+  relationships?: Pick<ReadContext, "resolveRelationship">,
+): LayoutDefinitionOptions {
   const root = el.name === "dgm:layoutDef" ? el : (findChild(el, "dgm:layoutDef") ?? el);
   const result: Partial<LayoutDefinitionOptions> = {};
   const uniqueId = attr(root, "uniqueId");
@@ -1071,7 +1111,8 @@ export function parseLayoutDefinition(el: Element): LayoutDefinitionOptions {
   const colorData = parseSampleData(findChild(root, "dgm:clrData"));
   if (colorData) result.colorData = colorData;
   const layoutNode = findChild(root, "dgm:layoutNode");
-  if (layoutNode) result.layoutNode = parseLayoutNode(layoutNode);
+  if (!layoutNode) throw new Error("dgm:layoutDef is missing required dgm:layoutNode");
+  result.layoutNode = parseLayoutNode(layoutNode, relationships);
   const extLst = findChild(root, "dgm:extLst") ?? findChild(root, "a:extLst");
   if (extLst) {
     const extensions = parseDiagramExtensions(extLst);
@@ -1084,7 +1125,7 @@ export function parseLayoutDefinition(el: Element): LayoutDefinitionOptions {
 export const layoutDefDesc: CustomDescriptor<LayoutDefinitionOptions> = {
   kind: "custom",
   stringify: (opts: LayoutDefinitionOptions) => stringifyLayoutDefinition(opts),
-  parse: (el: Element) => parseLayoutDefinition(el),
+  parse: (el: Element, ctx) => parseLayoutDefinition(el, ctx),
 };
 
 /** Full layoutDef part body: XML declaration + namespaces + the element. */

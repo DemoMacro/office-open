@@ -8,7 +8,13 @@
  * @module
  */
 
-import { convertToEmu, imageTypeFromPath, toUint8Array } from "@office-open/core";
+import {
+  convertToEmu,
+  createTransform2D,
+  imageTypeFromPath,
+  toUint8Array,
+  transform2DDesc,
+} from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import type { ReadContext } from "@office-open/core/descriptor";
 import { partPathToRelsPath, resolveRelationshipTarget } from "@office-open/core/opc";
@@ -24,6 +30,7 @@ import {
   parseLayoutDefinition,
   parseStyleDefinition,
   stringifyDataModelOptions,
+  type SmartArtRawMediaPart,
   type TreeNode,
 } from "@office-open/core/smartart";
 import { attr, findChild, findFirst } from "@office-open/xml";
@@ -39,7 +46,7 @@ import {
   stringifyCnvGraphicFramePr,
   stringifyNvPr,
 } from "./graphic-frame";
-import { readCnvPr, readPositionFromXfrm } from "./shape";
+import { readCnvPr } from "./shape";
 import { nextSlideDrawingId } from "./slide-drawing-ids";
 
 // ── Types ──
@@ -53,21 +60,25 @@ function withRegisteredRawMedia(
   pptxCtx: PptxWriteContext,
   raw: SmartArtRawParts,
 ): SmartArtRawParts {
-  if (!raw.media) return raw;
+  const registered = [...(raw.media ?? []), ...(raw.layoutMedia ?? [])];
+  if (registered.length === 0) return raw;
   const renames = new Map<string, string>();
-  for (const media of raw.media) {
+  for (const media of registered) {
     const data = toUint8Array(media.data);
     const placeholder = pptxCtx.addMedia(data, imageTypeFromPath(media.fileName), media.fileName);
     const outputName = placeholder.slice(1, -1);
     if (outputName !== media.fileName) renames.set(media.fileName, outputName);
   }
   if (renames.size === 0) return raw;
-  return {
-    ...raw,
-    media: raw.media?.map((media) => {
+  const rename = (parts: SmartArtRawMediaPart[] | undefined) =>
+    parts?.map((media) => {
       const outputName = renames.get(media.fileName);
       return outputName ? { ...media, fileName: outputName } : media;
-    }),
+    });
+  return {
+    ...raw,
+    media: rename(raw.media),
+    layoutMedia: rename(raw.layoutMedia),
   };
 }
 
@@ -132,7 +143,20 @@ export const smartArtDesc: CustomDescriptor<SmartArtOptions> = {
     );
 
     // p:xfrm
-    parts.push(`<p:xfrm><a:off x="${x}" y="${y}"/><a:ext cx="${w}" cy="${h}"/></p:xfrm>`);
+    parts.push(
+      createTransform2D(
+        {
+          x,
+          y,
+          width: w,
+          height: h,
+          ...(opts.flipHorizontal !== undefined ? { flipHorizontal: opts.flipHorizontal } : {}),
+          ...(opts.flipVertical !== undefined ? { flipVertical: opts.flipVertical } : {}),
+          ...(opts.rotation !== undefined ? { rotation: opts.rotation } : {}),
+        },
+        "p:xfrm",
+      ),
+    );
 
     // a:graphic > a:graphicData > dgm:relIds (placeholders)
     parts.push(
@@ -150,7 +174,7 @@ export const smartArtDesc: CustomDescriptor<SmartArtOptions> = {
 
     // Position from p:xfrm
     const xfrm = findChild(el, "p:xfrm");
-    if (xfrm) Object.assign(result, readPositionFromXfrm(xfrm));
+    if (xfrm) Object.assign(result, transform2DDesc.parse(xfrm, _ctx));
 
     // Name from p:nvGraphicFramePr → p:cNvPr
     Object.assign(result, readCnvPr(el, "p:nvGraphicFramePr"));
@@ -172,7 +196,7 @@ export const smartArtDesc: CustomDescriptor<SmartArtOptions> = {
           if (dataEl) {
             const dataModel = parseDataModelOptions(
               dataEl,
-              readSmartArtDataContext(dataPath, _ctx),
+              readPartRelationshipContext(dataPath, _ctx),
             );
             if (dataModel) result.dataModel = dataModel;
             parseSmartArtDataXml(dataEl, result);
@@ -191,10 +215,15 @@ export const smartArtDesc: CustomDescriptor<SmartArtOptions> = {
 
       const layoutPath = readRelatedPartPath(_ctx, relIds, "r:lo");
       const layoutEl = layoutPath ? _ctx.getPart(layoutPath) : undefined;
-      if (layoutEl) {
-        const layout = parseLayoutDefinition(layoutEl);
+      if (layoutPath && layoutEl) {
+        const layout = parseLayoutDefinition(
+          layoutEl,
+          readPartRelationshipContext(layoutPath, _ctx),
+        );
         const id = layout.uniqueId?.split("/").pop();
         result.layout = id && isBuiltinLayoutDefinition(id, layout) ? id : layout;
+        const layoutMedia = readDiagramMedia(layoutPath, _ctx);
+        if (layoutMedia.length > 0) result.raw = { ...result.raw, layoutMedia };
       }
       const stylePath = readRelatedPartPath(_ctx, relIds, "r:qs");
       const styleEl = stylePath ? _ctx.getPart(stylePath) : undefined;
@@ -242,15 +271,15 @@ function readRelatedPartPath(
   return ctx.resolveRelationship(rId);
 }
 
-function readSmartArtDataContext(dataPath: string, parent: ReadContext): ReadContext {
-  const relsEl = parent.getPart(partPathToRelsPath(dataPath));
+function readPartRelationshipContext(partPath: string, parent: ReadContext): ReadContext {
+  const relsEl = parent.getPart(partPathToRelsPath(partPath));
   const relationships = new Map<string, string>();
   for (const relationship of relsEl?.elements ?? []) {
     if (relationship.name !== "Relationship") continue;
     const id = attr(relationship, "Id");
     const target = attr(relationship, "Target");
     if (!id || !target || attr(relationship, "TargetMode") === "External") continue;
-    relationships.set(id, resolveRelationshipTarget(dataPath, target));
+    relationships.set(id, resolveRelationshipTarget(partPath, target));
   }
   return {
     resolveRelationship: (rId) => relationships.get(rId),
@@ -332,6 +361,23 @@ function readDataRelationships(relsEl: Element | undefined) {
     });
   }
   return relationships;
+}
+
+/** Images referenced by one diagram part's own relationships. */
+function readDiagramMedia(partPath: string, parent: ReadContext): SmartArtRawMediaPart[] {
+  const relsEl = parent.getPart(partPathToRelsPath(partPath));
+  const media = new Map<string, SmartArtRawMediaPart>();
+  for (const relationship of relsEl?.elements ?? []) {
+    if (relationship.name !== "Relationship") continue;
+    const target = attr(relationship, "Target");
+    if (!target || attr(relationship, "TargetMode") === "External") continue;
+    if (!(attr(relationship, "Type") ?? "").endsWith("/image")) continue;
+    const path = resolveRelationshipTarget(partPath, target);
+    const data = parent.getRaw(path);
+    const fileName = path.split("/").pop() ?? path;
+    if (data && !media.has(path)) media.set(path, { fileName, data, partPath: path });
+  }
+  return [...media.values()];
 }
 
 /** Parse SmartArt data XML into options. */

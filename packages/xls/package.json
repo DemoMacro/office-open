@@ -1,6 +1,6 @@
 {
   "name": "@office-open/xls",
-  "version": "0.15.0",
+  "version": "0.15.1",
   "description": "Parse legacy Microsoft Excel .xls workbooks into office-open WorkbookOptions — no Microsoft Office required",
   "keywords": [
     "biff",

@@ -31,9 +31,11 @@ import type {
   TextHyperlinkOptions,
 } from "@office-open/core/drawing";
 import type {
+  SmartArtRawParts,
   ColorDefinitionOptions,
   LayoutDefinitionOptions,
   StyleDefinitionOptions,
+  TreeNode,
 } from "@office-open/core/smartart";
 import type { ThemeOverrideOptions } from "@office-open/core/theme";
 
@@ -721,7 +723,7 @@ export interface WorksheetContentPartOptions extends DrawingContentPartOptions {
 export interface WorksheetSmartArtOptions
   extends DrawingAnchorOptions, NonVisualDrawingPropertiesOptions {
   /** Tree-shaped data for the diagram content. */
-  nodes: SmartArtNode[];
+  nodes: TreeNode[];
   /** Diagram data part (dgm:relIds @r:dm, e.g. "xl/diagrams/data1.xml"). */
   dataPath?: string;
   /** Diagram layout part (dgm:relIds @r:lo). */
@@ -732,6 +734,8 @@ export interface WorksheetSmartArtOptions
   colorsPath?: string;
   /** Complete canonical data model parsed from the diagram data part. */
   dataModel?: DataModelOptions;
+  /** Images retained from diagram parts' own relationships. */
+  raw?: SmartArtRawParts;
   /** Built-in layout ID ("default") or a custom layout definition. */
   layout?: string | LayoutDefinitionOptions;
   /** Built-in quick style ID ("simple1") or a custom style definition. */
@@ -746,12 +750,6 @@ export interface WorksheetSmartArtOptions
   shapeId?: number;
   /** Macro reference (CT_GraphicFrame/@macro); empty string round-trips. */
   macro?: string;
-}
-
-/** A tree node for SmartArt data. */
-export interface SmartArtNode {
-  text: string;
-  children?: SmartArtNode[];
 }
 
 export interface WorksheetWebExtensionOptions

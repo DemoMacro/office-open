@@ -33,6 +33,8 @@ import {
   parseLayoutDefinition,
   parseStyleDefinition,
   type DataModelOptions,
+  type SmartArtRawMediaPart,
+  type TreeNode,
 } from "@office-open/core/smartart";
 import { themeOverrideDesc, type ThemeOverrideOptions } from "@office-open/core/theme";
 import { themeDesc } from "@office-open/core/theme";
@@ -93,7 +95,6 @@ import type {
   WorksheetChartExOptions,
   WorksheetWebExtensionOptions,
   WorksheetSmartArtOptions,
-  SmartArtNode,
   PictureOptions,
   WorksheetContentPartOptions,
   WorksheetOptions,
@@ -181,7 +182,7 @@ function orderWorksheets(
 function parseSmartArtNodes(
   dataElement: Element | undefined,
   model: DataModelOptions | undefined,
-): SmartArtNode[] {
+): TreeNode[] {
   const nodeText = new Map<string, string>();
   const pointList = dataElement ? findChild(dataElement, "dgm:ptLst") : undefined;
   for (const point of pointList?.elements ?? []) {
@@ -207,7 +208,7 @@ function parseSmartArtNodes(
     });
     children.set(connection.sourceId, list);
   }
-  const build = (id: string): SmartArtNode => {
+  const build = (id: string): TreeNode => {
     const childNodes = (children.get(id) ?? [])
       .slice()
       .sort((left, right) => left.order - right.order)
@@ -1381,6 +1382,11 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
           const layoutElement = xlsx.doc.get(layoutPath);
           const styleElement = xlsx.doc.get(quickStylePath);
           const colorElement = xlsx.doc.get(colorsPath);
+          const layoutMedia = readDiagramMedia(layoutPath, xlsx);
+          if (layoutMedia.length > 0) {
+            absorbedSmartArtParts.add(partPathToRelsPath(layoutPath));
+            for (const media of layoutMedia) absorbedSmartArtParts.add(media.partPath!);
+          }
           smartArts.push({
             ...pickAnchorOptions(anchor),
             ...pickNonVisualDrawingProperties(anchor),
@@ -1392,7 +1398,9 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
             ...(dataModel ? { dataModel } : {}),
             ...(layoutElement
               ? {
-                  layout: parseLayoutDefinition(layoutElement),
+                  layout: readContext.withPart(layoutPath, () =>
+                    parseLayoutDefinition(layoutElement, readContext),
+                  ),
                 }
               : {}),
             ...(styleElement
@@ -1405,6 +1413,7 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
                   color: parseColorDefinition(colorElement),
                 }
               : {}),
+            ...(layoutMedia.length > 0 ? { raw: { layoutMedia } } : {}),
             ...(anchor.frameLocks ? { frameLocks: anchor.frameLocks } : {}),
             ...(anchor.macro !== undefined ? { macro: anchor.macro } : {}),
             ...(anchor.zOrder !== undefined ? { zOrder: anchor.zOrder } : {}),
@@ -2124,4 +2133,21 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
   }
 
   return opts as WorkbookOptions;
+}
+
+/** Images referenced by the custom layout part's own relationships. */
+function readDiagramMedia(partPath: string, archive: XlsxDocument): SmartArtRawMediaPart[] {
+  const relsEl = archive.doc.get(partPathToRelsPath(partPath));
+  const media = new Map<string, SmartArtRawMediaPart>();
+  for (const relationship of relsEl?.elements ?? []) {
+    if (relationship.name !== "Relationship") continue;
+    const target = attr(relationship, "Target");
+    if (!target || attr(relationship, "TargetMode") === "External") continue;
+    if (!(attr(relationship, "Type") ?? "").endsWith("/image")) continue;
+    const path = resolveRelationshipTarget(partPath, target);
+    const data = archive.doc.getRaw(path);
+    const fileName = path.split("/").pop() ?? path;
+    if (data && !media.has(path)) media.set(path, { fileName, data, partPath: path });
+  }
+  return [...media.values()];
 }

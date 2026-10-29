@@ -15311,8 +15311,8 @@
           ],
           "description": "Geometry adjustment values; null preserves an empty list (dgm:adjLst)."
         },
-        "blip": {
-          "description": "Preview picture relationship id; null preserves an empty attribute (dgm:shape `@r:blip`).",
+        "blipPath": {
+          "description": "Preview picture package path resolved through the layout part's relationships; null preserves an empty attribute (dgm:shape `@r:blip`).",
           "type": ["string", "null"]
         },
         "blipPlaceholder": {
@@ -28906,23 +28906,6 @@
       "enum": ["area", "width"],
       "type": "string"
     },
-    "SmartArtNode": {
-      "additionalProperties": false,
-      "description": "A tree node for SmartArt data.",
-      "properties": {
-        "children": {
-          "items": {
-            "$ref": "#/definitions/SmartArtNode"
-          },
-          "type": "array"
-        },
-        "text": {
-          "type": "string"
-        }
-      },
-      "required": ["text"],
-      "type": "object"
-    },
     "SmartArtOptions": {
       "additionalProperties": false,
       "description": "Options for creating a SmartArtRun.",
@@ -28988,7 +28971,7 @@
         "nodes": {
           "description": "Tree-shaped data for the diagram content.",
           "items": {
-            "$ref": "#/definitions/SmartArtNode"
+            "$ref": "#/definitions/TreeNode"
           },
           "type": "array"
         },
@@ -29059,6 +29042,13 @@
         "drawingRels": {
           "$ref": "#/definitions/DataType",
           "description": "Source drawing part's own rels; retained only with the drawing bytes."
+        },
+        "layoutMedia": {
+          "description": "Images referenced by the custom layout part's own rels (dgm:shape",
+          "items": {
+            "$ref": "#/definitions/SmartArtRawMediaPart"
+          },
+          "type": "array"
         },
         "media": {
           "description": "Images referenced by the data part's own rels (dgm:pt blipFill art).",
@@ -33256,6 +33246,22 @@
           "type": "number"
         }
       },
+      "type": "object"
+    },
+    "TreeNode": {
+      "additionalProperties": false,
+      "properties": {
+        "children": {
+          "items": {
+            "$ref": "#/definitions/TreeNode"
+          },
+          "type": "array"
+        },
+        "text": {
+          "type": "string"
+        }
+      },
+      "required": ["text"],
       "type": "object"
     },
     "TrendlineLabelOptions": {

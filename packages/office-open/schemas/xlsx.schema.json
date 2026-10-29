@@ -15357,8 +15357,8 @@
           ],
           "description": "Geometry adjustment values; null preserves an empty list (dgm:adjLst)."
         },
-        "blip": {
-          "description": "Preview picture relationship id; null preserves an empty attribute (dgm:shape `@r:blip`).",
+        "blipPath": {
+          "description": "Preview picture package path resolved through the layout part's relationships; null preserves an empty attribute (dgm:shape `@r:blip`).",
           "type": ["string", "null"]
         },
         "blipPlaceholder": {
@@ -24375,21 +24375,59 @@
       "enum": ["area", "width"],
       "type": "string"
     },
-    "SmartArtNode": {
+    "SmartArtRawMediaPart": {
       "additionalProperties": false,
-      "description": "A tree node for SmartArt data.",
       "properties": {
-        "children": {
-          "items": {
-            "$ref": "#/definitions/SmartArtNode"
-          },
-          "type": "array"
+        "data": {
+          "$ref": "#/definitions/DataType"
         },
-        "text": {
+        "fileName": {
+          "type": "string"
+        },
+        "partPath": {
+          "description": "Physical package path from the source; round-trip only.",
+          "readOnly": true,
           "type": "string"
         }
       },
-      "required": ["text"],
+      "required": ["fileName", "data"],
+      "type": "object"
+    },
+    "SmartArtRawParts": {
+      "additionalProperties": false,
+      "description": "Verbatim source parts for byte-exact SmartArt round-trip. When set on a `SmartArtData` entry, the compiler re-emits these bytes under the diagram part names instead of rebuilding from the modeled XML.",
+      "properties": {
+        "drawing": {
+          "$ref": "#/definitions/DataType",
+          "description": "diagrams/drawingN.xml source bytes — the pre-rendered dsp:drawing snapshot (MS-ODRAWXML 2008 extension) cached beside the data model. Falls back to an empty spTree shell when absent."
+        },
+        "drawingFileName": {
+          "description": "Source drawing part file name (for sparse packages such as drawing10.xml).",
+          "type": "string"
+        },
+        "drawingRelationship": {
+          "description": "Whether the source data part's own rels referenced the drawing cache. Undefined means authoring input and therefore uses standard data-part wiring; false preserves slide-rel wiring found during parsing.",
+          "type": "boolean"
+        },
+        "drawingRels": {
+          "$ref": "#/definitions/DataType",
+          "description": "Source drawing part's own rels; retained only with the drawing bytes."
+        },
+        "layoutMedia": {
+          "description": "Images referenced by the custom layout part's own rels (dgm:shape",
+          "items": {
+            "$ref": "#/definitions/SmartArtRawMediaPart"
+          },
+          "type": "array"
+        },
+        "media": {
+          "description": "Images referenced by the data part's own rels (dgm:pt blipFill art).",
+          "items": {
+            "$ref": "#/definitions/SmartArtRawMediaPart"
+          },
+          "type": "array"
+        }
+      },
       "type": "object"
     },
     "SolidFillOptions": {
@@ -26960,6 +26998,22 @@
           "type": "number"
         }
       },
+      "type": "object"
+    },
+    "TreeNode": {
+      "additionalProperties": false,
+      "properties": {
+        "children": {
+          "items": {
+            "$ref": "#/definitions/TreeNode"
+          },
+          "type": "array"
+        },
+        "text": {
+          "type": "string"
+        }
+      },
+      "required": ["text"],
       "type": "object"
     },
     "TrendlineLabelOptions": {
@@ -32974,7 +33028,7 @@
         "nodes": {
           "description": "Tree-shaped data for the diagram content.",
           "items": {
-            "$ref": "#/definitions/SmartArtNode"
+            "$ref": "#/definitions/TreeNode"
           },
           "type": "array"
         },
@@ -32988,6 +33042,10 @@
         "quickStylePath": {
           "description": "Diagram quick style part (dgm:relIds",
           "type": "string"
+        },
+        "raw": {
+          "$ref": "#/definitions/SmartArtRawParts",
+          "description": "Images retained from diagram parts' own relationships."
         },
         "row": {
           "description": "1-based row (from marker)",

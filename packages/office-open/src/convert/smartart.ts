@@ -18,25 +18,10 @@
  */
 import { pickNonVisualDrawingProperties } from "@office-open/core";
 import type { NonVisualDrawingPropertiesOptions } from "@office-open/core";
-import type { TreeNode } from "@office-open/core/smartart";
 import type { SmartArtOptions as DocxSmartArt } from "@office-open/docx";
 import type { SmartArtOptions as PptxSmartArt } from "@office-open/pptx";
 
 import { boxFromDocx, boxFromPptx, boxToDocxTransformation, boxToPptx } from "./position";
-
-// SmartArtNode (docx) and TreeNode (core) are structurally identical trees.
-// Map recursively since docx children are mutable and core's are readonly.
-const toTreeNodes = (nodes: DocxSmartArt["nodes"]): TreeNode[] =>
-  nodes.map((n) => ({
-    text: n.text,
-    ...(n.children ? { children: toTreeNodes(n.children) } : {}),
-  }));
-
-const toDocxNodes = (nodes: TreeNode[]): DocxSmartArt["nodes"] =>
-  nodes.map((n) => ({
-    text: n.text,
-    ...(n.children ? { children: toDocxNodes([...n.children]) } : {}),
-  }));
 
 /**
  * Build the docx altText (wp:docPr) from the shared cNvPr. Only emitted when at
@@ -64,7 +49,7 @@ const altTextFromCnvPr = (
 export function toDocxSmartArt(source: PptxSmartArt): DocxSmartArt {
   const box = boxFromPptx(source.x, source.y, source.width, source.height);
   return {
-    nodes: toDocxNodes(source.nodes),
+    nodes: source.nodes,
     ...(source.dataModel ? { dataModel: source.dataModel } : {}),
     transformation: boxToDocxTransformation(box),
     ...altTextFromCnvPr(source),
@@ -81,7 +66,7 @@ export function toPptxSmartArt(source: DocxSmartArt): PptxSmartArt {
   const box = boxFromDocx(source.transformation);
   const pos = boxToPptx(box);
   return {
-    nodes: toTreeNodes(source.nodes),
+    nodes: source.nodes,
     ...(source.dataModel ? { dataModel: source.dataModel } : {}),
     x: pos.x,
     y: pos.y,
