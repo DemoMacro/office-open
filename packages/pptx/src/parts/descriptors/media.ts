@@ -32,6 +32,11 @@ import type { MediaEntry, PptxReadContext, PptxWriteContext } from "../../contex
 import { readCnvPr, readPositionFromXfrm } from "./shape";
 import { nextSlideDrawingId } from "./slide-drawing-ids";
 
+type MediaFrameTransformOptions = Pick<
+  MediaFrameBaseOptions,
+  "x" | "y" | "width" | "height" | "flipHorizontal" | "flipVertical" | "rotation"
+>;
+
 // ── ID counters ──
 
 let _nextVideoId = 100;
@@ -203,7 +208,7 @@ export const videoDesc: CustomDescriptor<VideoFrameOptions> = {
     const spPr = findChild(el, "p:spPr");
     if (spPr) {
       const xfrm = findChild(spPr, "a:xfrm");
-      if (xfrm) Object.assign(result, readPositionFromXfrm(xfrm));
+      if (xfrm) Object.assign(result, readMediaTransformFromXfrm(xfrm));
     }
 
     // id + name from p:nvPicPr → a:cNvPr or p:cNvPr
@@ -360,7 +365,7 @@ export const audioDesc: CustomDescriptor<AudioFrameOptions> = {
     const spPr = findChild(el, "p:spPr");
     if (spPr) {
       const xfrm = findChild(spPr, "a:xfrm");
-      if (xfrm) Object.assign(result, readPositionFromXfrm(xfrm));
+      if (xfrm) Object.assign(result, readMediaTransformFromXfrm(xfrm));
     }
 
     // id + name from p:nvPicPr
@@ -531,7 +536,7 @@ function registerMediaFile(
 
 /** p:spPr for a media frame: position/size + rect geometry (picture precedent). */
 function stringifyMediaSpPr(
-  opts: Pick<MediaFrameBaseOptions, "x" | "y" | "width" | "height">,
+  opts: MediaFrameTransformOptions,
   ctx: Parameters<typeof shapePropertiesDesc.stringify>[1],
 ): string {
   const content = shapePropertiesDesc.stringify(
@@ -540,11 +545,25 @@ function stringifyMediaSpPr(
       y: opts.y ?? 0,
       width: opts.width ?? 0,
       height: opts.height ?? 0,
+      ...(opts.flipHorizontal !== undefined ? { flipHorizontal: opts.flipHorizontal } : {}),
+      ...(opts.flipVertical !== undefined ? { flipVertical: opts.flipVertical } : {}),
+      ...(opts.rotation !== undefined ? { rotation: opts.rotation } : {}),
       geometry: "rect",
     },
     ctx,
   );
   return `<p:spPr>${content ?? ""}</p:spPr>`;
+}
+
+function readMediaTransformFromXfrm(xfrm: Element): Partial<MediaFrameTransformOptions> {
+  const result: Partial<MediaFrameTransformOptions> = readPositionFromXfrm(xfrm);
+  const flipHorizontal = parseOnOff(xfrm.attributes?.["flipH"]);
+  if (flipHorizontal !== undefined) result.flipHorizontal = flipHorizontal;
+  const flipVertical = parseOnOff(xfrm.attributes?.["flipV"]);
+  if (flipVertical !== undefined) result.flipVertical = flipVertical;
+  const rotation = attrNum(xfrm, "rot");
+  if (rotation !== undefined) result.rotation = rotation / 60000;
+  return result;
 }
 
 function mediaTypeFromPath(path: string, kind: "video"): VideoType;

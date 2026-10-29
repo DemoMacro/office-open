@@ -19,6 +19,12 @@ export interface MediaFrameBaseOptions extends NonVisualDrawingPropertiesOptions
   y?: number | UniversalMeasure;
   width?: number | UniversalMeasure;
   height?: number | UniversalMeasure;
+  /** Flip horizontally (a:xfrm `@flipH`). */
+  flipHorizontal?: boolean;
+  /** Flip vertically (a:xfrm `@flipV`). */
+  flipVertical?: boolean;
+  /** Rotation angle in degrees (e.g., 45 = 45°). */
+  rotation?: number;
   data: DataType;
   type: MediaData["type"];
   /**

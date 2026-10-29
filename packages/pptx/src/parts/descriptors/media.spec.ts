@@ -59,6 +59,25 @@ describe("videoDesc round-trip", () => {
     expect(result.type).toBe("mp4");
   });
 
+  it("round-trips complete video transforms", () => {
+    const result = roundTripVideo({
+      id: 110,
+      data: "dummy",
+      type: "mp4",
+      x: 50,
+      y: 100,
+      width: 640,
+      height: 480,
+      flipHorizontal: true,
+      flipVertical: true,
+      rotation: 45,
+    });
+
+    expect(result.flipHorizontal).toBe(true);
+    expect(result.flipVertical).toBe(true);
+    expect(result.rotation).toBe(45);
+  });
+
   it("round-trips video with default name", () => {
     const opts: VideoFrameOptions = {
       id: 102,
@@ -158,6 +177,25 @@ describe("audioDesc round-trip", () => {
     expect(result.width).toBeCloseTo(50, 0);
     expect(result.height).toBeCloseTo(50, 0);
     expect(result.type).toBe("mp3");
+  });
+
+  it("round-trips complete audio transforms", () => {
+    const result = roundTripAudio({
+      id: 209,
+      data: "dummy",
+      type: "mp3",
+      x: 30,
+      y: 40,
+      width: 50,
+      height: 50,
+      flipHorizontal: true,
+      flipVertical: true,
+      rotation: 45,
+    });
+
+    expect(result.flipHorizontal).toBe(true);
+    expect(result.flipVertical).toBe(true);
+    expect(result.rotation).toBe(45);
   });
 
   it("preserves poster bytes and source file name", () => {

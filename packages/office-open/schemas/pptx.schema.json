@@ -1882,6 +1882,14 @@
         "fileName": {
           "$ref": "#/definitions/VideoFrameOptions/properties/fileName"
         },
+        "flipHorizontal": {
+          "description": "Flip horizontally (a:xfrm `@flipH`).",
+          "type": "boolean"
+        },
+        "flipVertical": {
+          "description": "Flip vertically (a:xfrm `@flipV`).",
+          "type": "boolean"
+        },
         "height": {
           "anyOf": [
             {
@@ -1934,6 +1942,10 @@
         "rotWithShape": {
           "description": "Rotate image fill with the shape frame (p:blipFill",
           "type": "boolean"
+        },
+        "rotation": {
+          "description": "Rotation angle in degrees (e.g., 45 = 45°).",
+          "type": "number"
         },
         "sourceRectangle": {
           "$ref": "#/definitions/VideoFrameOptions/properties/sourceRectangle"
@@ -20956,6 +20968,14 @@
           "description": "Media file name inside the package (ppt/media/<fileName>). Round-trip keeps the source name; fresh generation derives it from the frame name.",
           "type": "string"
         },
+        "flipHorizontal": {
+          "description": "Flip horizontally (a:xfrm `@flipH`).",
+          "type": "boolean"
+        },
+        "flipVertical": {
+          "description": "Flip vertically (a:xfrm `@flipV`).",
+          "type": "boolean"
+        },
         "height": {
           "anyOf": [
             {
@@ -21009,6 +21029,10 @@
         "rotWithShape": {
           "description": "Rotate image fill with the shape frame (p:blipFill",
           "type": "boolean"
+        },
+        "rotation": {
+          "description": "Rotation angle in degrees (e.g., 45 = 45°).",
+          "type": "number"
         },
         "sourceRectangle": {
           "$ref": "#/definitions/SourceRectangleOptions",
