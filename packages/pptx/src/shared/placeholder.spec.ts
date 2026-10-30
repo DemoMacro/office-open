@@ -15,6 +15,10 @@ describe("PLACEHOLDER_TYPE_TO_KEY", () => {
   });
 
   it("covers every remaining ST_PlaceholderType token", () => {
+    expect(PLACEHOLDER_TYPE_TO_KEY.date).toBe("date");
+    expect(PLACEHOLDER_TYPE_TO_KEY.slideNumber).toBe("slideNumber");
+    expect(PLACEHOLDER_TYPE_TO_KEY.footer).toBe("footer");
+    expect(PLACEHOLDER_TYPE_TO_KEY.header).toBe("header");
     expect(PLACEHOLDER_TYPE_TO_KEY.hdr).toBe("header");
     expect(PLACEHOLDER_TYPE_TO_KEY.obj).toBe("object");
     expect(PLACEHOLDER_TYPE_TO_KEY.chart).toBe("chart");
@@ -72,6 +76,19 @@ describe("resolvePlaceholder", () => {
       placeholders: { title: { x: 5, y: 6, width: 7, height: 8 } },
     };
     expect(resolvePlaceholder("centerTitle", layout, undefined).position?.x).toBe(5);
+  });
+
+  it("resolves canonical public placeholder names", () => {
+    const layout: LayoutDefinition = {
+      placeholders: {
+        date: { x: 1, y: 2, width: 3, height: 4 },
+        footer: { x: 4, y: 5, width: 6, height: 7 },
+        slideNumber: { x: 7, y: 8, width: 9, height: 10 },
+      },
+    };
+    expect(resolvePlaceholder("date", layout, undefined).position?.x).toBe(1);
+    expect(resolvePlaceholder("footer", layout, undefined).position?.x).toBe(4);
+    expect(resolvePlaceholder("slideNumber", layout, undefined).position?.x).toBe(7);
   });
 
   it("returns empty for unknown placeholder type", () => {
