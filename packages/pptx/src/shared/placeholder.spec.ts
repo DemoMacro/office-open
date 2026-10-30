@@ -67,11 +67,11 @@ describe("resolvePlaceholder", () => {
     expect(resolvePlaceholder("ftr", undefined, master).hidden).toBe(true);
   });
 
-  it("ctrTitle normalizes to the title slot", () => {
+  it("centerTitle normalizes to the title slot", () => {
     const layout: LayoutDefinition = {
       placeholders: { title: { x: 5, y: 6, width: 7, height: 8 } },
     };
-    expect(resolvePlaceholder("ctrTitle", layout, undefined).position?.x).toBe(5);
+    expect(resolvePlaceholder("centerTitle", layout, undefined).position?.x).toBe(5);
   });
 
   it("returns empty for unknown placeholder type", () => {
