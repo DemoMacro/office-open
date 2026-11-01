@@ -95,7 +95,7 @@ function materializeOfficeCorpus(libraryId: string, destination: string, treeish
   })
     .split(/\r?\n/)
     .filter((file) => OOXML_ARCHIVE_EXTENSIONS.has(path.extname(file).toLowerCase()));
-  const patterns = ["/*"];
+  const patterns = trackedFiles;
 
   console.log(`[setup] ${libraryId}: materializing office corpus from sparse checkout`);
   execSync("git sparse-checkout set --no-cone --stdin", {
