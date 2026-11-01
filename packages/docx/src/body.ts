@@ -1017,7 +1017,7 @@ export function parseParagraphProperties(
       anchor?: { horizontal?: string; vertical?: string };
       space?: { horizontal?: number | UniversalMeasure; vertical?: number | UniversalMeasure };
       dropCap?: string;
-      lines?: string;
+      lines?: number;
       wrap?: string;
       rule?: string;
       anchorLock?: boolean;
@@ -1028,13 +1028,14 @@ export function parseParagraphProperties(
     } = {};
     for (const [attrName, optName] of [
       ["w:dropCap", "dropCap"],
-      ["w:lines", "lines"],
       ["w:wrap", "wrap"],
       ["w:hRule", "rule"],
     ] as const) {
       const val = attr(framePr, attrName);
       if (val !== undefined) frame[optName] = val;
     }
+    const lines = attrNum(framePr, "w:lines");
+    if (lines !== undefined) frame.lines = lines;
     // Position: absolute coordinates (w:x/w:y) vs alignment (w:xAlign/w:yAlign)
     const x = attrMeasure(framePr, "w:x") as number | UniversalMeasure;
     const y = attrMeasure(framePr, "w:y") as number | UniversalMeasure;

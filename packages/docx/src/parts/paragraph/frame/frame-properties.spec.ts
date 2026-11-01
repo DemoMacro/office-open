@@ -50,6 +50,17 @@ describe("framePr parse round-trip", () => {
     expect((result.anchor as Record<string, unknown>).vertical).toBe("margin");
   });
 
+  it("round-trips drop-cap line counts as decimal numbers", () => {
+    const result = roundTripFrame({
+      type: "alignment",
+      dropCap: "drop",
+      lines: 3,
+      anchor: { horizontal: "text", vertical: "text" },
+      wrap: "around",
+    });
+    expect(result).toMatchObject({ dropCap: "drop", lines: 3, wrap: "around" });
+  });
+
   it("round-trips anchorLock", () => {
     const result = roundTripFrame({
       type: "alignment",
