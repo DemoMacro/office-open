@@ -140,7 +140,7 @@ describe("deep documents", () => {
 });
 
 describe("malformed package boundaries", () => {
-  it("rejects negative paragraph spacing during parse", async () => {
+  it("tolerates negative paragraph spacing during parse", async () => {
     const generated = await generateDocument(
       { sections: [{ children: [{ paragraph: { children: ["Spacing"] } }] }] },
       { type: "uint8array" },
@@ -151,9 +151,11 @@ describe("malformed package boundaries", () => {
       documentXml.replace("<w:p>", '<w:p><w:pPr><w:spacing w:before="-1"/></w:pPr>'),
     );
     const invalid = zipSync(entries);
-    expect(() => parseDocumentSync(invalid)).toThrowError(
-      /Paragraph spacing before cannot be negative/,
-    );
+    const parsed = parseDocumentSync(invalid);
+    const paragraph = parsed.sections?.[0]?.children?.[0] as {
+      paragraph?: { spacing?: { before?: unknown } };
+    };
+    expect(paragraph.paragraph?.spacing?.before).toBe(-1);
   });
 
   it("tolerates a parsed table whose source omitted tblGrid", async () => {

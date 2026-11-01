@@ -136,7 +136,7 @@ function spacingStr(opts: SpacingProperties): string {
       opts.after !== undefined
         ? typeof opts.after === "string"
           ? opts.after
-          : twipsMeasureValue(opts.after)
+          : signedTwipsMeasureValue(opts.after)
         : undefined,
     "w:afterAutospacing":
       opts.afterAutoSpacing !== undefined ? (opts.afterAutoSpacing ? 1 : 0) : undefined,
@@ -145,7 +145,7 @@ function spacingStr(opts: SpacingProperties): string {
       opts.before !== undefined
         ? typeof opts.before === "string"
           ? opts.before
-          : twipsMeasureValue(opts.before)
+          : signedTwipsMeasureValue(opts.before)
         : undefined,
     "w:beforeAutospacing":
       opts.beforeAutoSpacing !== undefined ? (opts.beforeAutoSpacing ? 1 : 0) : undefined,

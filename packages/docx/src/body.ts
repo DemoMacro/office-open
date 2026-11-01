@@ -675,24 +675,8 @@ export function parseParagraphProperties(
   if (spacing) {
     const sp: SpacingProperties = {};
     const before = attrMeasure(spacing, "w:before");
-    if (before !== undefined && isNegativeMeasure(before)) {
-      throw new DocxParseError(
-        "Paragraph spacing before cannot be negative",
-        ctx.currentPart,
-        "/w:spacing/@w:before",
-        "invalid-value",
-      );
-    }
     if (before !== undefined) sp.before = before as SpacingProperties["before"];
     const after = attrMeasure(spacing, "w:after");
-    if (after !== undefined && isNegativeMeasure(after)) {
-      throw new DocxParseError(
-        "Paragraph spacing after cannot be negative",
-        ctx.currentPart,
-        "/w:spacing/@w:after",
-        "invalid-value",
-      );
-    }
     if (after !== undefined) sp.after = after as SpacingProperties["after"];
     const line = attrMeasure(spacing, "w:line");
     if (line !== undefined) sp.line = line as SpacingProperties["line"];
@@ -1125,10 +1109,6 @@ export function parseParagraphProperties(
   }
 
   return opts;
-}
-
-function isNegativeMeasure(value: number | string): boolean {
-  return typeof value === "number" ? value < 0 : value.trimStart().startsWith("-");
 }
 
 // CT_Cnf attribute order — shared by parseCnfStyle (w:val digits + w: attrs).
