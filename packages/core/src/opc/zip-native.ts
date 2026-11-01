@@ -21,6 +21,8 @@ import type { FlateError, Zippable, ZipOptions } from "fflate";
 import type { ByteSource } from "./byte-source";
 import { OpcPackageError } from "./package-error";
 
+type ZlibModule = typeof ZlibNode;
+
 // ── CRC-32 lookup table ──
 
 const CRC_TABLE = new Int32Array(256);
@@ -84,7 +86,9 @@ if (typeof bunApi?.deflateSync === "function") {
 try {
   // top-level await — ESM standard. Resolves to zlib with deflateRawSync;
   // rejects (or yields a stub without it) on incomplete polyfills.
-  const zlib = await import("node:zlib");
+  // Split the specifier so browsers do not eagerly resolve `node:` as a URL;
+  // the runtime probe still resolves it unchanged in Node and Bun.
+  const zlib: ZlibModule = await import(["node", "zlib"].join(":"));
   if (typeof zlib.deflateRawSync !== "function") throw new Error("no native deflate");
   _zlibModule = zlib;
   if (_nativeDeflate === undefined) {
