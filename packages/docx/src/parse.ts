@@ -9,7 +9,6 @@ import {
 } from "@office-open/core";
 import type { ThemeColor } from "@office-open/core";
 import {
-  assertUniqueRelationshipIds,
   collectPassthroughParts,
   isEncryptedContainer,
   opaquePassthroughPolicy,
@@ -281,7 +280,7 @@ function parseDocPartRefs(doc: ParsedArchive, documentPath = "word/document.xml"
 
   const relsEl = doc.get(partPathToRelsPath(documentPath));
   if (!relsEl) return refs;
-  assertUniqueRelationshipIds(relsEl, partPathToRelsPath(documentPath));
+  normalizeDuplicateRelationshipIds(relsEl);
 
   for (const child of relsEl.elements ?? []) {
     if (child.name !== "Relationship") continue;
@@ -354,7 +353,7 @@ function parseDocPartRefs(doc: ParsedArchive, documentPath = "word/document.xml"
     if (relsMarker < 0) continue;
     const relsEl = doc.get(relsPath);
     if (!relsEl) continue;
-    assertUniqueRelationshipIds(relsEl, relsPath);
+    normalizeDuplicateRelationshipIds(relsEl);
     const partPath = `${relsPath.slice(0, relsMarker)}/${relsPath.slice(relsMarker + 7, -5)}`;
     for (const rel of relsEl.elements ?? []) {
       if (rel.name !== "Relationship") continue;
@@ -419,6 +418,7 @@ function parseRootRels(doc: ParsedArchive): {
 } {
   const relsEl = doc.get("_rels/.rels");
   if (!relsEl) return { relationships: [] };
+  normalizeDuplicateRelationshipIds(relsEl);
 
   let coreProps: string | undefined;
   let appProps: string | undefined;
@@ -475,6 +475,42 @@ function parseRootRels(doc: ParsedArchive): {
     customProps,
     relationships: capturedRelationships,
   };
+}
+
+/**
+ * Normalize invalid duplicate relationship ids found in real-world packages.
+ * The last source entry keeps its id to match lookup semantics; earlier
+ * duplicates receive fresh ids so generated packages remain valid OPC.
+ */
+function normalizeDuplicateRelationshipIds(element: Element): void {
+  const remaining = new Map<string, number>();
+  let maxId = 0;
+  for (const child of element.elements ?? []) {
+    if (child.name !== "Relationship") continue;
+    const id = attr(child, "Id");
+    if (!id) continue;
+    maxId = Math.max(maxId, Number(/^rId(\d+)$/.exec(id)?.[1] ?? 0));
+    remaining.set(id, (remaining.get(id) ?? 0) + 1);
+  }
+  const seen = new Set<string>();
+  for (const child of element.elements ?? []) {
+    if (child.name !== "Relationship") continue;
+    const id = attr(child, "Id");
+    if (!id) continue;
+    const count = remaining.get(id) ?? 0;
+    remaining.set(id, count - 1);
+    if (count === 1) {
+      seen.add(id);
+      continue;
+    }
+    let freshId: string;
+    do {
+      freshId = `rId${++maxId}`;
+    } while (seen.has(freshId));
+    child.attributes ??= {};
+    child.attributes.Id = freshId;
+    seen.add(freshId);
+  }
 }
 
 function ensureNestedMap<K, V>(outer: Map<K, Map<K, V>>, key: K): Map<K, V> {

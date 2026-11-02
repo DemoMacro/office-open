@@ -13,7 +13,7 @@ describe("generateDocument entry guards", () => {
     expect(() => generateDocument({} as never)).toThrow(/sections is required/);
   });
 
-  it("rejects a source document part with duplicate relationship ids", () => {
+  it("normalizes duplicate source relationship ids while preserving last-value references", () => {
     const source = zipSync({
       "[Content_Types].xml": new TextEncoder().encode(
         '<?xml version="1.0"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
@@ -35,7 +35,18 @@ describe("generateDocument entry guards", () => {
           "</Relationships>",
       ),
     });
-    expect(() => parseDocumentSync(source)).toThrow(/Duplicate relationship id/);
+    const options = parseDocumentSync(source);
+    const relsXml = new TextDecoder().decode(
+      compileDocument(options)["word/_rels/document.xml.rels"] as Uint8Array,
+    );
+    const ids = [...relsXml.matchAll(/Id="([^"]+)"/g)].map((match) => match[1]!);
+    expect(ids).toHaveLength(new Set(ids).size);
+    expect(relsXml).toContain(
+      'Id="rId5" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image"',
+    );
+    expect(relsXml).toContain(
+      'Id="rId6" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/fontTable"',
+    );
   });
 });
 
