@@ -205,12 +205,12 @@ function resolveEmbeddedFontData(
 ): void {
   const relsEl = doc.get(partPathToRelsPath(fontTablePath));
   if (!relsEl && fonts.some((font) => embeddedFontParts(font).some(([, part]) => part.embedRid))) {
-    throw new DocxParseError(
-      "Embedded font relationship part is missing",
-      fontTablePath,
-      `/${fontTablePath}/w:fonts/w:font`,
-      "missing-package-part",
-    );
+    for (const font of fonts) {
+      for (const [, part] of embeddedFontParts(font)) {
+        part.embedRid = undefined;
+      }
+    }
+    return;
   }
   if (!relsEl) return;
   const ridToPath = new Map<string, string>();
