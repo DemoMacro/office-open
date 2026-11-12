@@ -26,10 +26,17 @@ export function addTextStyle(properties: TextProperties, styles: string[]): stri
         "fo:font-style": properties.italic ? "italic" : undefined,
         "style:text-underline-style": properties.underline ? "solid" : undefined,
         "fo:font-size": properties.size ? `${properties.size}pt` : undefined,
+        "fo:color": properties.fill ? `#${properties.fill}` : undefined,
+        "fo:font-family": properties.font ? fontFamilyValue(properties.font) : undefined,
       }),
     ]),
   );
   return name;
+}
+
+/** A family name with spaces or commas is quoted, as fo:font-family requires. */
+function fontFamilyValue(family: string): string {
+  return /[\s,]/.test(family) ? `'${family}'` : family;
 }
 
 export function styleResourcesXml(overlays: StyleResourceOptions[] | undefined): string[] {
@@ -60,6 +67,8 @@ export function parseTextStyles(container: Element | undefined): Map<string, Tex
     if (attributeString(style, "style:family") !== "text") continue;
     const properties = childNamed(style, "style:text-properties");
     const size = attributeString(properties, "fo:font-size");
+    const color = attributeString(properties, "fo:color");
+    const family = attributeString(properties, "fo:font-family");
     result.set(attributeString(style, "style:name") ?? "", {
       bold: attributeString(properties, "fo:font-weight") === "bold",
       italic: attributeString(properties, "fo:font-style") === "italic",
@@ -68,6 +77,8 @@ export function parseTextStyles(container: Element | undefined): Map<string, Tex
           ? "single"
           : undefined,
       size: size?.endsWith("pt") ? Number(size.slice(0, -2)) : undefined,
+      ...(color && /^#[0-9a-f]{6}$/i.test(color) ? { fill: color.slice(1) } : {}),
+      ...(family ? { font: family.replace(/^(['"])(.*)\1$/, "$2") } : {}),
     });
   }
   return result;
@@ -152,9 +163,14 @@ export function parseStyleResources(container: Element | undefined): StyleResour
 function isMappedTextAttribute(element: string, attribute: string): boolean {
   return (
     element === "style:text-properties" &&
-    ["fo:font-weight", "fo:font-style", "style:text-underline-style", "fo:font-size"].includes(
-      attribute,
-    )
+    [
+      "fo:font-weight",
+      "fo:font-style",
+      "style:text-underline-style",
+      "fo:font-size",
+      "fo:color",
+      "fo:font-family",
+    ].includes(attribute)
   );
 }
 
