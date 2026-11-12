@@ -789,6 +789,7 @@ describe("ODP codec", () => {
                         { text: "Bold", bold: true, size: 24 },
                         " and ",
                         { text: "plain" },
+                        { text: "Red", fill: "C00000", font: "Courier New" },
                       ],
                     },
                   ],
@@ -808,6 +809,7 @@ describe("ODP codec", () => {
       expect.objectContaining({ text: "Bold", bold: true, size: 24 }),
       " and ",
       { text: "plain" },
+      expect.objectContaining({ text: "Red", fill: "C00000", font: "Courier New" }),
     ]);
   });
 

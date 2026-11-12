@@ -16,6 +16,10 @@ export interface TextProperties {
   italic?: boolean;
   underline?: "single";
   size?: number;
+  /** Solid text colour as RRGGBB hex (fo:color). */
+  fill?: string;
+  /** Latin font family (fo:font-family). */
+  font?: string;
 }
 
 /** Semantic segment of a measurement text run inside draw:measure. */
@@ -53,7 +57,28 @@ export function textProperties(run: TextRunOptions): TextProperties {
     italic: run.italic,
     underline: run.underline === "single" ? "single" : undefined,
     size: run.size,
+    fill: solidHexColor(run.fill),
+    font: latinFontFamily(run.font),
   };
+}
+
+function latinFontFamily(font: TextRunOptions["font"]): string | undefined {
+  const latin = typeof font === "object" ? font.latin : font;
+  return typeof latin === "object" ? latin.typeface : latin;
+}
+
+/** RRGGBB of a plain solid fill; themed, transformed, and non-solid fills have no fo:color form. */
+function solidHexColor(fill: TextRunOptions["fill"]): string | undefined {
+  const color = typeof fill === "object" && fill.type === "solid" ? fill.color : fill;
+  const value =
+    typeof color === "string"
+      ? color
+      : typeof color === "object" && "value" in color && !("transforms" in color)
+        ? color.value
+        : undefined;
+  if (typeof value !== "string") return undefined;
+  const hex = value.startsWith("#") ? value.slice(1) : value;
+  return /^[0-9a-f]{6}$/i.test(hex) ? hex : undefined;
 }
 
 const OOXML_FIELD_TYPES: Record<string, TextFieldOptions["type"]> = {
