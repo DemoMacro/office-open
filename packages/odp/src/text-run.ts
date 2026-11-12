@@ -33,13 +33,13 @@ export function textBodyXml(body: TextBodyOptions | undefined, styles: string[])
             if ("break" in run) return xmlElement("text:line-break");
             if ("type" in run) return fieldXml(run as TextFieldOptions);
             const textRun = run as TextRunOptions;
-            if (!("text" in run) || !textRun.hyperlink) return "";
+            if (!("text" in run)) return "";
             const properties = textProperties(textRun);
             const styleName = addTextStyle(properties, styles);
             const span = xmlElement("text:span", { "text:style-name": styleName }, [
               escapeText(textRun.text ?? ""),
             ]);
-            return textRun.hyperlink.url
+            return textRun.hyperlink?.url
               ? xmlElement("text:a", { "xlink:href": textRun.hyperlink.url }, [span])
               : span;
           });
