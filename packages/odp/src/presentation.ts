@@ -43,7 +43,7 @@ import type { OdpChart, OdpImage } from "./drawing";
 import type { OdpEmbeddedObjectPool } from "./embedded-frames";
 import { OdpParseError } from "./error";
 import type { OdpPresentationOptions, OdpSlideOptions } from "./options";
-import { parseColumnWidths, parseSlide, slideXml } from "./slide";
+import { parseSlide, parseTableStyles, slideXml } from "./slide";
 import { reconcileTransitionStyleResources } from "./slide";
 import { parseStyleResources, parseTextStyles, styleResourcesXml } from "./styles";
 import { materializeOdpTransitionSound, type OdpTransitionOptions } from "./transition";
@@ -55,6 +55,7 @@ export const NAMESPACES = [
   'xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"',
   'xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0"',
   'xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0"',
+  'xmlns:table="urn:oasis:names:tc:opendocument:xmlns:table:1.0"',
   'xmlns:draw="urn:oasis:names:tc:opendocument:xmlns:drawing:1.0"',
   'xmlns:presentation="urn:oasis:names:tc:opendocument:xmlns:presentation:1.0"',
   'xmlns:svg="urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0"',
@@ -287,7 +288,7 @@ function parseOdpPackage(data: Uint8Array): OdpPresentationOptions {
       parseSlide(
         page,
         parseTextStyles(childNamed(content, "office:automatic-styles")),
-        parseColumnWidths(childNamed(content, "office:automatic-styles")),
+        parseTableStyles(childNamed(content, "office:automatic-styles")),
         binaries,
         files,
         graphicStyles,

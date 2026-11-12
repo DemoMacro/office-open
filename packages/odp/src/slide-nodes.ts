@@ -1443,7 +1443,7 @@ function parseTextBox(element: Element): OdpTextBoxOptions {
 }
 
 function parseTable(element: Element): TableOptions {
-  return parseSlideTable(element, new Map(), new Map()).table;
+  return parseSlideTable(element, new Map()).table;
 }
 
 function parseParameter(element: Element): OdpParameterOptions {

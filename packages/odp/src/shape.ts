@@ -26,7 +26,7 @@ import type { Element } from "@office-open/xml";
 import { endpointConnection, parseChartFrame, parsePictureFrame } from "./drawing";
 import { OdpGenerateError, OdpParseError, unknownSlideChild } from "./error";
 import { GeometryFormulaEvaluator } from "./geometry-formulas";
-import { parseSlideTable } from "./slide";
+import { parseSlideTable, type TableStyles } from "./slide";
 import { parseSlideNode, type OdpSlideNodeOptions } from "./slide-nodes";
 import { parseParagraph, textBodyXml, type TextProperties } from "./text-run";
 
@@ -617,7 +617,7 @@ export function parseGroup(
   element: Element,
   textStyles: Map<string, TextProperties>,
   graphicStyles: Map<string, GraphicStyle>,
-  columnWidths: Map<string, number>,
+  tableStyles: TableStyles,
   binaries: Record<string, Uint8Array>,
   chartPool: Map<string, ChartSpaceOptions>,
   usedBinaryPaths: Set<string>,
@@ -684,12 +684,12 @@ export function parseGroup(
         child,
         textStyles,
         graphicStyles,
-        columnWidths,
+        tableStyles,
         binaries,
         chartPool,
         usedBinaryPaths,
       );
-    if (child.name === "table:table") return [parseSlideTable(child, textStyles, columnWidths)];
+    if (child.name === "table:table") return [parseSlideTable(child, textStyles, tableStyles)];
     if (child.name === "dr3d:scene") {
       odpNodes.push({
         position: visibleChildIndex(element, child),
