@@ -96,6 +96,7 @@ const NUMBERING_NAMESPACE_KEYS = [
   "w",
   "w14",
   "w15",
+  "w16du",
   "wpg",
   "wpi",
   "wne",
@@ -314,7 +315,7 @@ export class Numbering {
       `<w:numbering ${documentNamespaceAttributesInDialect(
         NUMBERING_NAMESPACE_KEYS,
         documentNamespaceDialect(ctx),
-      )} mc:Ignorable="w14 w15 wp14">`,
+      )} mc:Ignorable="w14 w15 w16du wp14">`,
     );
 
     // numPicBullet elements come first (XSD order)

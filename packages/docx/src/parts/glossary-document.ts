@@ -227,6 +227,7 @@ const GLOSSARY_NS = documentNamespaceAttributes([
   "w",
   "w14",
   "w15",
+  "w16du",
   "wpg",
   "wpi",
   "wne",
@@ -479,7 +480,7 @@ export const glossaryDesc: CustomDescriptor<GlossaryDocumentOptions, BodyContext
 
   stringify(opts, ctx) {
     if (opts.hasDocParts === false) {
-      return `<w:glossaryDocument ${GLOSSARY_NS} mc:Ignorable="w14 w15"></w:glossaryDocument>`;
+      return `<w:glossaryDocument ${GLOSSARY_NS} mc:Ignorable="w14 w15 w16du"></w:glossaryDocument>`;
     }
     const partsXml = opts.parts
       .map(
@@ -488,7 +489,7 @@ export const glossaryDesc: CustomDescriptor<GlossaryDocumentOptions, BodyContext
       )
       .join("");
 
-    return `<w:glossaryDocument ${GLOSSARY_NS} mc:Ignorable="w14 w15"><w:docParts>${partsXml}</w:docParts></w:glossaryDocument>`;
+    return `<w:glossaryDocument ${GLOSSARY_NS} mc:Ignorable="w14 w15 w16du"><w:docParts>${partsXml}</w:docParts></w:glossaryDocument>`;
   },
 
   parse(el, ctx) {

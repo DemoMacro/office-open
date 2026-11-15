@@ -67,6 +67,7 @@ const createFieldChar = (
         "w:id": numberingChange.id,
         "w:author": numberingChange.author,
         "w:date": numberingChange.date,
+        "w16du:dateUtc": numberingChange.dateUtc,
       }),
     );
   }

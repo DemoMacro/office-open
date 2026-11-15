@@ -242,7 +242,7 @@ function stringifySectionPropertiesChange(
   opts: SectionPropertiesChangeOptions,
   scope?: ReproducibleScope,
 ): string {
-  const { author, date, id, ...inner } = opts;
+  const { author, date, dateUtc, id, ...inner } = opts;
   // The inner w:sectPr is a snapshot of the PREVIOUS properties — emit only
   // what the source carried. Injecting the fresh-document defaults (pgSz,
   // pgMar, docGrid) would fabricate elements the revision never had.
@@ -250,7 +250,8 @@ function stringifySectionPropertiesChange(
   // The snapshot's own rsid attributes round-trip too (CT_SectPrChange's
   // inner CT_SectPr carries them just like the top-level element).
   const dateAttr = date ? ` w:date="${escapeXml(date)}"` : "";
-  return `<w:sectPrChange w:author="${escapeXml(author)}"${dateAttr} w:id="${id ?? autoRevisionId(scope)}"><w:sectPr${sectPrRsidAttrs(inner)}>${innerXml}</w:sectPr></w:sectPrChange>`;
+  const dateUtcAttr = dateUtc ? ` w16du:dateUtc="${escapeXml(dateUtc)}"` : "";
+  return `<w:sectPrChange w:author="${escapeXml(author)}"${dateAttr}${dateUtcAttr} w:id="${id ?? autoRevisionId(scope)}"><w:sectPr${sectPrRsidAttrs(inner)}>${innerXml}</w:sectPr></w:sectPrChange>`;
 }
 
 // ── Core XML builder ──
@@ -693,6 +694,8 @@ export function parseSectionPropertiesEl(el: Element): SectionPropertiesOptions 
     if (author) rev.author = author;
     const revDate = attr(sectPrChange, "w:date");
     if (revDate) rev.date = revDate;
+    const revDateUtc = attr(sectPrChange, "w16du:dateUtc");
+    if (revDateUtc) rev.dateUtc = revDateUtc;
     const revId = attrNum(sectPrChange, "w:id");
     if (revId !== undefined) rev.id = revId;
     const innerSectPr = findChild(sectPrChange, "w:sectPr");

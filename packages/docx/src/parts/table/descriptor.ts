@@ -110,6 +110,8 @@ function parseChangeAttrs(el: Element): Partial<ChangedProperties> {
   if (author) change.author = author;
   const date = attr(el, "w:date");
   if (date) change.date = date;
+  const dateUtc = attr(el, "w16du:dateUtc");
+  if (dateUtc) change.dateUtc = dateUtc;
   return change;
 }
 
@@ -967,6 +969,8 @@ export function parseTablePropertiesEl(el: Element): TablePropertiesOptions {
     if (author) rev.author = author;
     const date = attr(tblPrChange, "w:date");
     if (date) rev.date = date;
+    const dateUtc = attr(tblPrChange, "w16du:dateUtc");
+    if (dateUtc) rev.dateUtc = dateUtc;
     const id = attrNum(tblPrChange, "w:id");
     if (id !== undefined) rev.id = id;
     const innerTblPr = findChild(tblPrChange, "w:tblPr");
@@ -1145,6 +1149,8 @@ export function parseTableRowPropertiesEl(el: Element): TableRowPropertiesOption
     if (author) rev.author = author;
     const date = attr(trPrChange, "w:date");
     if (date) rev.date = date;
+    const dateUtc = attr(trPrChange, "w16du:dateUtc");
+    if (dateUtc) rev.dateUtc = dateUtc;
     const id = attrNum(trPrChange, "w:id");
     if (id !== undefined) rev.id = id;
     const innerTrPr = findChild(trPrChange, "w:trPr");
@@ -1298,6 +1304,8 @@ export function parseTableCellPropertiesEl(el: Element): TableCellPropertiesOpti
     if (author) rev.author = author;
     const date = attr(tcPrChange, "w:date");
     if (date) rev.date = date;
+    const dateUtc = attr(tcPrChange, "w16du:dateUtc");
+    if (dateUtc) rev.dateUtc = dateUtc;
     const id = attrNum(tcPrChange, "w:id");
     if (id !== undefined) rev.id = id;
     const innerTcPr = findChild(tcPrChange, "w:tcPr");

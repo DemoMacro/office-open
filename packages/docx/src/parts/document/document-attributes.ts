@@ -45,6 +45,7 @@ export const DocumentAttributeNamespaces = {
   w16: "http://schemas.microsoft.com/office/word/2018/wordml",
   w16cex: "http://schemas.microsoft.com/office/word/2018/wordml/cex",
   w16cid: "http://schemas.microsoft.com/office/word/2016/wordml/cid",
+  w16du: "http://schemas.microsoft.com/office/word/2023/wordml/word16du",
   w16sdtdh: "http://schemas.microsoft.com/office/word/2020/wordml/sdtdatahash",
   w16se: "http://schemas.microsoft.com/office/word/2015/wordml/symex",
   wne: "http://schemas.microsoft.com/office/word/2006/wordml",

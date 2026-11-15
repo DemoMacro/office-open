@@ -59,6 +59,8 @@ export interface MoveRangeStartOptions {
   author?: string;
   /** Date of the move (CT_MoveBookmark `@w:date`). */
   date?: DateTime;
+  /** UTC timestamp written by recent Word versions (`w16du:dateUtc`). */
+  dateUtc?: DateTime;
   /** Displacement relative to a sibling customXml (CT_MarkupRange `@w:displacedByCustomXml`). */
   displacedByCustomXml?: DisplacedByCustomXml;
   /** First column of a table-cell move range scope (CT_BookmarkRange `@w:colFirst`). */
@@ -97,6 +99,8 @@ export interface MoveRangeOptions {
   author: string;
   /** Date of the move (CT_MoveBookmark + move run `@w:date`, required). */
   date: DateTime;
+  /** UTC timestamp written by recent Word versions (`w16du:dateUtc`). */
+  dateUtc?: DateTime;
   /** Moved content carried by the move run (inline runs/text). */
   wrap?: (string | RunOptions)[];
   /** Move range name (CT_Bookmark `@w:name`, required). Share it across the

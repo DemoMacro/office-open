@@ -5,7 +5,7 @@
  *
  * The document part is the only one whose media/embedding relationships
  * re-emit the source rIds on round-trip: the body XML references them
- * verbatim, so registration goes through sourceRidFor before falling back to
+ * verbatim, so registration goes through the source relationship before falling back to
  * the offset-derived id.
  *
  * @module
@@ -28,52 +28,6 @@ import {
 
 import type { DocxWriteContext } from "../context";
 import { XML_DECL, embeddingRelationship } from "./shared";
-
-/**
- * Look up the source rId for a document relationship by kind+target. Returns
- * the numeric id when the source carried the same rel, undefined otherwise.
- * The body XML's `r:id` references the source rId verbatim on round-trip, so
- * the structured compiler must emit the rel at that exact id — otherwise
- * `r:id="rId4"` would point at a different rel and Word refuses to open.
- */
-function sourceRidFor(
-  passthroughRelationships:
-    | readonly { source: string; relationshipType: string; target: string; rId: string }[]
-    | undefined,
-  ownerSource: string,
-  relationshipType: string,
-  target: string,
-): number | undefined {
-  if (!passthroughRelationships) return undefined;
-  for (const rel of passthroughRelationships) {
-    const kind = relationshipType.split("/").pop();
-    if (
-      rel.source === ownerSource &&
-      rel.relationshipType.split("/").pop() === kind &&
-      resolveRelationshipTarget(ownerSource, rel.target) ===
-        resolveRelationshipTarget(ownerSource, target)
-    ) {
-      const m = /^rId(\d+)$/.exec(rel.rId);
-      if (m) return Number(m[1]);
-    }
-  }
-  return undefined;
-}
-
-function sourceRidForPath(
-  passthroughRelationships: readonly { source: string; target: string; rId: string }[] | undefined,
-  ownerSource: string,
-  target: string,
-): number | undefined {
-  const source = passthroughRelationships?.find(
-    (rel) =>
-      rel.source === ownerSource &&
-      resolveRelationshipTarget(ownerSource, rel.target) ===
-        resolveRelationshipTarget(ownerSource, target),
-  );
-  const match = source ? /^rId(\d+)$/.exec(source.rId) : undefined;
-  return match ? Number(match[1]) : undefined;
-}
 
 function sourceRelationshipFor(
   passthroughRelationships:
@@ -214,7 +168,7 @@ export function compileDocumentEntries(
               ctx.charts.array[i]?.sourcePath ?? `word/charts/chart${i + 1}.xml`,
               documentPath,
             );
-            const sourceRid = sourceRidFor(
+            const sourceRel = sourceRelationshipFor(
               ctx._options.passthroughRelationships,
               documentPath,
               RELATIONSHIP_TYPES.chart,
@@ -223,7 +177,7 @@ export function compileDocumentEntries(
             entries.push({
               prefix: "chart:",
               key,
-              value: sourceRid !== undefined ? `rId${sourceRid}` : formatId(chartOffset, i, "rId"),
+              value: sourceRel?.rId ?? formatId(chartOffset, i, "rId"),
             });
           }
           for (const [i, key] of chartExKeys.entries()) {
@@ -231,7 +185,7 @@ export function compileDocumentEntries(
               ctx.chartExes.array[i]?.sourcePath ?? `word/charts/chartEx${i + 1}.xml`,
               documentPath,
             );
-            const sourceRid = sourceRidForPath(
+            const sourceRel = sourceRelationshipForPath(
               ctx._options.passthroughRelationships,
               documentPath,
               chartExTarget,
@@ -239,8 +193,7 @@ export function compileDocumentEntries(
             entries.push({
               prefix: "chartex:",
               key,
-              value:
-                sourceRid !== undefined ? `rId${sourceRid}` : formatId(chartExOffset, i, "rId"),
+              value: sourceRel?.rId ?? formatId(chartExOffset, i, "rId"),
             });
           }
           const saPrefixes = ["smartart:", "smartart-lo:", "smartart-qs:", "smartart-cs:"];
@@ -257,8 +210,8 @@ export function compileDocumentEntries(
                 smartArt?.sourcePaths?.[
                   p === 1 ? "layout" : p === 2 ? "quickStyle" : p === 3 ? "colors" : "data"
                 ];
-              const sourceRid = sourcePath
-                ? sourceRidFor(
+              const sourceRel = sourcePath
+                ? sourceRelationshipFor(
                     ctx._options.passthroughRelationships,
                     documentPath,
                     saRelationshipTypes[p]!,
@@ -269,9 +222,7 @@ export function compileDocumentEntries(
                 prefix: saPrefixes[p],
                 key,
                 value:
-                  sourceRid !== undefined
-                    ? `rId${sourceRid}`
-                    : formatId(smartArtOffset + p * smartArtKeys.length, i, "rId"),
+                  sourceRel?.rId ?? formatId(smartArtOffset + p * smartArtKeys.length, i, "rId"),
               });
             }
           }

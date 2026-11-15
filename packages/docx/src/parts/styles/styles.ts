@@ -191,14 +191,14 @@ export class Styles {
     // template path does, else w:styles emits with an unbound prefix
     const merged: Record<string, string> = {
       ...Object.fromEntries(
-        documentNamespaceAttributesInDialect(["mc", "r", "w", "w14", "w15"], dialect)
+        documentNamespaceAttributesInDialect(["mc", "r", "w", "w14", "w15", "w16du"], dialect)
           .split(" ")
           .map((attribute) => {
             const [name, value] = attribute.split("=");
             return [name!, value!.slice(1, -1)];
           }),
       ),
-      "mc:Ignorable": "w14 w15",
+      "mc:Ignorable": "w14 w15 w16du",
       ...this.attributes,
     };
 

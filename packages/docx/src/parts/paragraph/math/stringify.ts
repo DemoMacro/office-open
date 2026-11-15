@@ -16,6 +16,7 @@ import type { Element } from "@office-open/xml";
 
 import type { BodyContext, DocxReadContext } from "../../../context";
 import { autoRevisionId } from "../../../shared/track-revision/track-revision";
+import type { ChangedProperties } from "../../../shared/track-revision/track-revision";
 import { stringifyDrawingChild } from "../../inline-drawings";
 import type {
   MathArgumentPropertiesOptions,
@@ -60,9 +61,10 @@ function wRPrXml(opts: RunPropertiesOptions | undefined): string {
 }
 
 /** m:ctrlPr — always the last child of a structure's *Pr element. */
-function revisionAttrs(revision: { id?: number; author: string; date?: string }): string {
+function revisionAttrs(revision: ChangedProperties): string {
   const date = revision.date ? ` w:date="${escapeXml(revision.date)}"` : "";
-  return ` w:id="${revision.id ?? autoRevisionId()}" w:author="${escapeXml(revision.author)}"${date}`;
+  const dateUtc = revision.dateUtc ? ` w16du:dateUtc="${escapeXml(revision.dateUtc)}"` : "";
+  return ` w:id="${revision.id ?? autoRevisionId()}" w:author="${escapeXml(revision.author)}"${date}${dateUtc}`;
 }
 
 function ctrlPrXml(ctrlPr: MathControlPropertiesOptions | undefined): string {
@@ -121,12 +123,13 @@ function readCtrlPrElement(ctrlPr: Element): MathControlPropertiesOptions | unde
   return {};
 }
 
-function readRevision(el: Element): { id?: number; author: string; date?: string } {
+function readRevision(el: Element): ChangedProperties {
   const id = Number(attr(el, "w:id"));
   return {
     ...(Number.isFinite(id) ? { id } : {}),
     author: attr(el, "w:author") ?? "",
     ...(attr(el, "w:date") ? { date: attr(el, "w:date")! } : {}),
+    ...(attr(el, "w16du:dateUtc") ? { dateUtc: attr(el, "w16du:dateUtc")! } : {}),
   };
 }
 

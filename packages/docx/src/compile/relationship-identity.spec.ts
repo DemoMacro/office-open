@@ -270,4 +270,67 @@ describe("drawing relationship identity", () => {
       expect(rels).toContain(`Id="${rId}"`);
     }
   });
+
+  it("preserves descriptive chart and SmartArt relationship ids in body and rels", () => {
+    const kinds = [
+      ["diagramData", "data1.xml", "rIdDgmData"],
+      ["diagramLayout", "layout1.xml", "rIdDgmLayout"],
+      ["diagramQuickStyle", "quickStyle1.xml", "rIdDgmQuickStyle"],
+      ["diagramColors", "colors1.xml", "rIdDgmColors"],
+    ] as const;
+    const passthroughRelationships = [
+      {
+        source: "word/document.xml",
+        relationshipType:
+          "http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart",
+        target: "charts/chart1.xml",
+        rId: "rIdChart",
+      },
+      ...kinds.map(([kind, file, rId]) => ({
+        source: "word/document.xml",
+        relationshipType:
+          "http://schemas.openxmlformats.org/officeDocument/2006/relationships/" + kind,
+        target: "diagrams/" + file,
+        rId,
+      })),
+    ];
+    const ctx = new DocxWriteContext({ sections: [], passthroughRelationships });
+    ctx.charts.addChart("chart_1", {
+      key: "chart_1",
+      chartSpaceXml: "<c:chartSpace/>",
+      sourcePath: "word/charts/chart1.xml",
+    });
+    ctx.smartArts.addSmartArt("smartart_1", {
+      key: "smartart_1",
+      dataModelXml: "<dgm:dataModel/>",
+      layout: "default",
+      style: "simple1",
+      color: "accent1_2",
+      sourcePaths: {
+        data: "word/diagrams/data1.xml",
+        layout: "word/diagrams/layout1.xml",
+        quickStyle: "word/diagrams/quickStyle1.xml",
+        colors: "word/diagrams/colors1.xml",
+      },
+    });
+
+    const { Document, Relationships } = compileDocumentEntries(
+      ctx,
+      "<w:p>{chart:chart_1}{smartart:smartart_1}{smartart-lo:smartart_1}{smartart-qs:smartart_1}{smartart-cs:smartart_1}</w:p>",
+      1,
+    );
+    const body = decode(Document.data);
+    const rels = decode(Relationships.data);
+
+    for (const rId of [
+      "rIdChart",
+      "rIdDgmData",
+      "rIdDgmLayout",
+      "rIdDgmQuickStyle",
+      "rIdDgmColors",
+    ]) {
+      expect(body).toContain(rId);
+      expect(rels).toContain('Id="' + rId + '"');
+    }
+  });
 });
