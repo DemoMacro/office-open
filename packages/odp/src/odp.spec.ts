@@ -775,6 +775,44 @@ describe("ODP codec", () => {
     ]);
   });
 
+  it("round-trips formatted runs that carry no hyperlink", async () => {
+    const options: OdpPresentationOptions = {
+      slides: [
+        {
+          children: [
+            {
+              shape: {
+                textBody: {
+                  paragraphs: [
+                    {
+                      children: [
+                        { text: "Bold", bold: true, size: 24 },
+                        " and ",
+                        { text: "plain" },
+                        { text: "Red", fill: "C00000", font: "Courier New" },
+                      ],
+                    },
+                  ],
+                },
+              },
+            },
+          ],
+        },
+      ],
+    };
+    const child = (await parsePresentation(await generatePresentation(options))).slides?.[0]
+      ?.children?.[0];
+    if (!child || !("shape" in child)) throw new TypeError("Expected a shape child");
+    const [paragraph] = child.shape?.textBody?.paragraphs ?? [];
+    if (!paragraph || typeof paragraph === "string") throw new TypeError("Expected a paragraph");
+    expect(paragraph.children).toEqual([
+      expect.objectContaining({ text: "Bold", bold: true, size: 24 }),
+      " and ",
+      { text: "plain" },
+      expect.objectContaining({ text: "Red", fill: "C00000", font: "Courier New" }),
+    ]);
+  });
+
   it("restores percent and length semantics in style overlays", async () => {
     const options: OdpPresentationOptions = {
       slides: [{ notes: "Overlay" }],
