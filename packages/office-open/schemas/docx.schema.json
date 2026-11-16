@@ -29063,6 +29063,37 @@
         "runPropertiesRsid": {
           "$ref": "#/definitions/ChartOptions/properties/runPropertiesRsid"
         },
+        "sourcePaths": {
+          "$ref": "#/definitions/SmartArtSourcePaths",
+          "description": "Source package paths and diagram relationship targets; round-trip only.",
+          "readOnly": true
+        },
+        "sourceRelIds": {
+          "additionalProperties": false,
+          "description": "Source dgm:relIds relationship IDs; round-trip only.",
+          "properties": {
+            "cs": {
+              "type": "string"
+            },
+            "dm": {
+              "type": "string"
+            },
+            "lo": {
+              "type": "string"
+            },
+            "qs": {
+              "type": "string"
+            }
+          },
+          "readOnly": true,
+          "type": "object"
+        },
+        "sourceRelationships": {
+          "items": {
+            "$ref": "#/definitions/SmartArtSourceRelationship"
+          },
+          "type": "array"
+        },
         "style": {
           "anyOf": [
             {
@@ -29135,6 +29166,51 @@
           "type": "array"
         }
       },
+      "type": "object"
+    },
+    "SmartArtSourcePaths": {
+      "additionalProperties": false,
+      "description": "Source package paths preserved by round-trip; compiler-only.",
+      "properties": {
+        "colors": {
+          "type": "string"
+        },
+        "data": {
+          "type": "string"
+        },
+        "dataRels": {
+          "type": "string"
+        },
+        "drawing": {
+          "type": "string"
+        },
+        "layout": {
+          "type": "string"
+        },
+        "quickStyle": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "SmartArtSourceRelationship": {
+      "additionalProperties": false,
+      "properties": {
+        "rId": {
+          "type": "string"
+        },
+        "relationshipType": {
+          "type": "string"
+        },
+        "target": {
+          "type": "string"
+        },
+        "targetMode": {
+          "const": "External",
+          "type": "string"
+        }
+      },
+      "required": ["relationshipType", "target", "rId"],
       "type": "object"
     },
     "SolidFillOptions": {

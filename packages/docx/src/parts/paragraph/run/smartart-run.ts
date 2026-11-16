@@ -14,6 +14,8 @@ import type {
   DataModelOptions,
   LayoutDefinitionOptions,
   SmartArtRawParts,
+  SmartArtSourcePaths,
+  SmartArtSourceRelationship,
   StyleDefinitionOptions,
 } from "@office-open/core/smartart";
 import type { Floating } from "@parts/drawing";
@@ -67,4 +69,9 @@ export interface SmartArtOptions {
    * stay populated and readable).
    */
   raw?: SmartArtRawParts;
+  /** Source package paths and diagram relationship targets; round-trip only. */
+  sourcePaths?: SmartArtSourcePaths;
+  /** Source dgm:relIds relationship IDs; round-trip only. */
+  sourceRelIds?: { dm?: string; lo?: string; qs?: string; cs?: string };
+  sourceRelationships?: SmartArtSourceRelationship[];
 }

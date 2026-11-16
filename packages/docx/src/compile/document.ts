@@ -197,6 +197,7 @@ export function compileDocumentEntries(
             });
           }
           const saPrefixes = ["smartart:", "smartart-lo:", "smartart-qs:", "smartart-cs:"];
+          const saSourceRelIdKeys = ["dm", "lo", "qs", "cs"] as const;
           const saRelationshipTypes = [
             RELATIONSHIP_TYPES.diagramData,
             RELATIONSHIP_TYPES.diagramLayout,
@@ -222,7 +223,9 @@ export function compileDocumentEntries(
                 prefix: saPrefixes[p],
                 key,
                 value:
-                  sourceRel?.rId ?? formatId(smartArtOffset + p * smartArtKeys.length, i, "rId"),
+                  smartArt?.sourceRelIds?.[saSourceRelIdKeys[p]!] ??
+                  sourceRel?.rId ??
+                  formatId(smartArtOffset + p * smartArtKeys.length, i, "rId"),
               });
             }
           }
@@ -358,6 +361,11 @@ export function compileDocumentEntries(
             hasDrawing: (key) =>
               ctx.smartArts.array.find((s) => s.key === key)?.raw?.drawing !== undefined,
           },
+          new Map(
+            ctx.smartArts.array
+              .filter((smartArt) => smartArt.sourceRelIds)
+              .map((smartArt) => [smartArt.key, smartArt.sourceRelIds!]),
+          ),
         );
 
         ctx.registerFontTableRelationship();

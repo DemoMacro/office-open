@@ -17,6 +17,7 @@
  */
 /* CSpell:disable */
 export const DocumentAttributeNamespaces = {
+  a: "http://schemas.openxmlformats.org/drawingml/2006/main",
   aink: "http://schemas.microsoft.com/office/drawing/2016/ink",
   am3d: "http://schemas.microsoft.com/office/drawing/2017/model3d",
   cp: "http://schemas.openxmlformats.org/package/2006/metadata/core-properties",

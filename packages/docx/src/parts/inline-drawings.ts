@@ -632,6 +632,7 @@ export function stringifyDrawingChild(
       style: opts.style ?? "simple1",
       color: opts.color ?? "accent1_2",
       ...(takeSmartArtSourcePaths(opts) ? { sourcePaths: takeSmartArtSourcePaths(opts) } : {}),
+      ...(opts.sourceRelIds ? { sourceRelIds: opts.sourceRelIds } : {}),
       ...(takeSmartArtSourceRelationships(opts)
         ? { sourceRelationships: takeSmartArtSourceRelationships(opts) }
         : {}),

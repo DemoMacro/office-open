@@ -333,4 +333,42 @@ describe("drawing relationship identity", () => {
       expect(rels).toContain('Id="' + rId + '"');
     }
   });
+
+  it("preserves parsed descriptive SmartArt ids without passthrough relationships", () => {
+    const ctx = new DocxWriteContext({ sections: [] });
+    ctx.smartArts.addSmartArt("smartart_1", {
+      key: "smartart_1",
+      dataModelXml: "<dgm:dataModel/>",
+      layout: "default",
+      style: "simple1",
+      color: "accent1_2",
+      sourcePaths: {
+        data: "word/diagrams/data1.xml",
+        layout: "word/diagrams/layout1.xml",
+        quickStyle: "word/diagrams/quickStyle1.xml",
+        colors: "word/diagrams/colors1.xml",
+      },
+      sourceRelIds: {
+        dm: "rIdDgmData",
+        lo: "rIdDgmLayout",
+        qs: "rIdDgmQuickStyle",
+        cs: "rIdDgmColors",
+      },
+      raw: { drawingRelationship: false },
+    });
+    expect(ctx.smartArts.array[0]?.sourceRelIds?.dm).toBe("rIdDgmData");
+
+    const { Document, Relationships } = compileDocumentEntries(
+      ctx,
+      "<w:p>{smartart:smartart_1}{smartart-lo:smartart_1}{smartart-qs:smartart_1}{smartart-cs:smartart_1}</w:p>",
+      1,
+    );
+    const body = decode(Document.data);
+    const rels = decode(Relationships.data);
+
+    for (const rId of ["rIdDgmData", "rIdDgmLayout", "rIdDgmQuickStyle", "rIdDgmColors"]) {
+      expect(body).toContain(rId);
+      expect(rels).toContain(`Id="${rId}"`);
+    }
+  });
 });

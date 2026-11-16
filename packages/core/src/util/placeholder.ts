@@ -252,7 +252,12 @@ export function replaceSmartArtPlaceholders(
 
 export function addSmartArtRelationships(
   keys: string[],
-  addRel: (id: number, type: RelationshipType, target: string, targetMode?: string) => void,
+  addRel: (
+    id: number | string,
+    type: RelationshipType,
+    target: string,
+    targetMode?: string,
+  ) => void,
   baseOffset: number,
   globalStartIndex: number,
   options: SmartArtRelOptions,
@@ -263,9 +268,8 @@ export function addSmartArtRelationships(
   const loOffset = baseOffset + count;
   const qsOffset = loOffset + count;
   const csOffset = qsOffset + count;
-  const toId = (rId: string | undefined, fallback: number): number => {
-    const n = /^rId(\d+)$/.exec(rId ?? "")?.[1];
-    return n ? Number(n) : fallback;
+  const toId = (rId: string | undefined, fallback: number): number | string => {
+    return rId ?? fallback;
   };
 
   for (let i = 0; i < keys.length; i++) {

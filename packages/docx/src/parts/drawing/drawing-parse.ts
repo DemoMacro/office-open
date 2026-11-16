@@ -68,6 +68,7 @@ import {
 import type {
   SmartArtRawMediaPart,
   SmartArtRawParts,
+  SmartArtSourcePaths,
   SmartArtSourceRelationship,
 } from "@office-open/core/smartart";
 import {
@@ -139,15 +140,6 @@ function isBlipCompression(value: string): value is BlipCompression {
 
 function isBlackWhiteMode(value: string): value is BlackWhiteMode {
   return BLACK_WHITE_MODES.has(value);
-}
-
-interface SmartArtSourcePaths {
-  data?: string;
-  layout?: string;
-  quickStyle?: string;
-  colors?: string;
-  drawing?: string;
-  dataRels?: string;
 }
 
 const smartArtSourcePaths = new WeakMap<object, SmartArtSourcePaths>();
@@ -277,11 +269,13 @@ export function takeChartSourcePath(options: object) {
 }
 
 export function takeSmartArtSourcePaths(options: object) {
-  return smartArtSourcePaths.get(options);
+  return smartArtSourcePaths.get(options) ?? (options as SmartArtOptions).sourcePaths;
 }
 
 export function takeSmartArtSourceRelationships(options: object) {
-  return smartArtSourceRelationships.get(options);
+  return (
+    smartArtSourceRelationships.get(options) ?? (options as SmartArtOptions).sourceRelationships
+  );
 }
 
 export function takeUserShapesSourcePath(options: object) {
@@ -2440,8 +2434,16 @@ function parseSmartArtDrawing(
     data: dataPath,
     dataRels: partPathToRelsPath(dataPath),
   };
+  opts.sourcePaths = sourcePaths;
+  opts.sourceRelIds = {
+    dm: attr(relIds, "r:dm"),
+    lo: attr(relIds, "r:lo"),
+    qs: attr(relIds, "r:qs"),
+    cs: attr(relIds, "r:cs"),
+  };
   smartArtSourcePaths.set(opts, sourcePaths);
   const sourceRelationships = readChartSourceRelationships(dataPath, ctx);
+  if (sourceRelationships.length > 0) opts.sourceRelationships = sourceRelationships;
   if (sourceRelationships.length > 0) smartArtSourceRelationships.set(opts, sourceRelationships);
 
   // Verbatim source parts: byte-exact round-trip outranks the modeled fold.

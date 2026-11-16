@@ -432,6 +432,7 @@ const DOC_NAMESPACE_KEYS = [
   "v",
   "wp14",
   "wp",
+  "a",
   "w10",
   "w",
   "w14",
