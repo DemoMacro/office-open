@@ -4,7 +4,6 @@ import type { Element } from "@office-open/xml";
 import { describe, it, expect } from "vite-plus/test";
 
 import { parseParagraphProperties } from "../../body";
-import type { DocxReadContext } from "../../context";
 import type { ParagraphPropertiesOptions } from "./properties";
 import { stringifyParagraphProperties } from "./stringify";
 
@@ -12,16 +11,12 @@ const spec = findFieldSpec("paragraph-properties")!;
 
 const W = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
 
-// parseParagraphProperties only reaches ctx inside the w:numPr branch; the
-// probes below carry no numbering, so a stub context is safe at runtime.
-const stubCtx = {} as unknown as DocxReadContext;
-
 function parsePPr(inner: string): Record<string, unknown> {
   const xml = `<w:pPr xmlns:w="${W}">${inner}</w:pPr>`;
   const doc = parseXml(xml) as Element;
   const root = doc.elements?.find((e) => e.type === "element");
   if (!root) throw new Error("parsePPr: produced no root element");
-  return parseParagraphProperties(root, stubCtx);
+  return parseParagraphProperties(root);
 }
 
 describe("paragraph-properties field consistency", () => {
@@ -110,16 +105,11 @@ describe("paragraph-properties field consistency", () => {
   });
 
   it("keeps numPr partial forms distinct (ilvl+numId / numId-only / ilvl-only)", () => {
-    const numberingCtx = {
-      numberingCache: new Map([["0", parseXml(`<w:abstractNum xmlns:w="${W}"/>`) as Element]]),
-      numIdCache: new Map([["1", "0"]]),
-    } as unknown as DocxReadContext;
-
     const parseWith = (inner: string): Record<string, unknown> => {
       const xml = `<w:pPr xmlns:w="${W}">${inner}</w:pPr>`;
       const root = (parseXml(xml) as Element).elements?.find((e) => e.type === "element");
       if (!root) throw new Error("parseWith: produced no root element");
-      return parseParagraphProperties(root, numberingCtx);
+      return parseParagraphProperties(root);
     };
 
     // Full form → numbering with pinned level.

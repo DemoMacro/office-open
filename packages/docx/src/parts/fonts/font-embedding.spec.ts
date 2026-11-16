@@ -54,4 +54,36 @@ describe("embedded font part names", () => {
     expect(parsed.fonts?.[0]?.embedRegular?.odttfPath).toBe("word/fonts/My Font.odttf");
     expect(parsed.fonts?.[0]?.embedRegular?.data).toBeDefined();
   });
+
+  it("preserves an embedded-font reference without inventing a relationship part", async () => {
+    const files = unzipSync(await generateDocument(options("My Font")));
+    delete files["word/_rels/fontTable.xml.rels"];
+    delete files["word/fonts/My%20Font.odttf"];
+
+    const parsed = await parseDocument(zipSync(files));
+    expect(parsed.fonts?.[0]?.embedRegular?.embedRid).toBe("rId1");
+
+    const output = unzipSync(await generateDocument(parsed));
+    expect(output["word/_rels/fontTable.xml.rels"]).toBeUndefined();
+    expect(decoder.decode(output["word/fontTable.xml"])).toContain('r:id="rId1"');
+  });
+
+  it("preserves an embedded-font relationship when its binary part is missing", async () => {
+    const files = unzipSync(await generateDocument(options("My Font")));
+    delete files["word/fonts/My%20Font.odttf"];
+
+    const parsed = await parseDocument(zipSync(files));
+    expect(parsed.fonts?.[0]?.embedRegular).toMatchObject({
+      embedRid: "rId1",
+      odttfPath: "word/fonts/My Font.odttf",
+    });
+    expect(parsed.fonts?.[0]?.embedRegular?.data).toBeUndefined();
+
+    const output = unzipSync(await generateDocument(parsed));
+    expect(output["word/fonts/My%20Font.odttf"]).toBeUndefined();
+    expect(decoder.decode(output["word/_rels/fontTable.xml.rels"])).toContain(
+      'Target="fonts/My%20Font.odttf"',
+    );
+    expect(decoder.decode(output["word/fontTable.xml"])).toContain('r:id="rId1"');
+  });
 });

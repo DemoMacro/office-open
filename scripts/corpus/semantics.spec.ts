@@ -1,8 +1,12 @@
+import * as fs from "node:fs";
+import os from "node:os";
+import * as path from "node:path";
+
 import { parseArchive } from "@office-open/core/opc";
 import { zipSync } from "fflate";
 import { describe, expect, it } from "vitest";
 
-import { encryptedPassthroughMatches, isEncryptedPassthrough } from "./library";
+import { encryptedPassthroughMatches, isEncryptedPassthrough, walkLibraryFiles } from "./library";
 import {
   archiveSemanticDiffDetails,
   archiveSemanticDiffs,
@@ -28,6 +32,37 @@ function zip(files: Record<string, string | Uint8Array>): Uint8Array {
 }
 
 describe("corpus semantic comparison", () => {
+  it("ignores Office lock files when walking a corpus", () => {
+    const directory = fs.mkdtempSync(path.join(os.tmpdir(), "office-open-corpus-"));
+    try {
+      fs.writeFileSync(path.join(directory, "sample.docx"), "document");
+      fs.writeFileSync(path.join(directory, "~$sample.docx"), "lock");
+
+      expect(walkLibraryFiles(directory).map(({ path: file }) => path.basename(file))).toEqual([
+        "sample.docx",
+      ]);
+    } finally {
+      fs.rmSync(directory, { recursive: true, force: true });
+    }
+  });
+
+  it("compares repeated document bodies with their merged representation", () => {
+    const prefix =
+      '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">';
+    const source = parseCanonicalXml(
+      `${prefix}<w:body><w:p><w:r><w:t>First</w:t></w:r></w:p></w:body>` +
+        `<w:body><w:p><w:r><w:t>Second</w:t></w:r></w:p></w:body></w:document>`,
+    );
+    const output = parseCanonicalXml(
+      `${prefix}<w:body><w:p><w:r><w:t>First</w:t></w:r></w:p>` +
+        `<w:p><w:r><w:t>Second</w:t></w:r></w:p></w:body></w:document>`,
+    );
+
+    expect(canonicalXmlNodes(source, "word/document.xml")).toEqual(
+      canonicalXmlNodes(output, "word/document.xml"),
+    );
+  });
+
   it("ignores source content-type overrides for parts absent from both packages", () => {
     const primary = new TextEncoder().encode('<root xmlns="urn:example"><child/></root>');
     const contentTypes = (includeOverride: boolean): Uint8Array =>

@@ -12,6 +12,7 @@ import { runSyntheticCorpus } from "./synthetic";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT_DIR = path.resolve(__dirname, "../..");
+const CORPUS_ROOT = path.resolve(process.env.CORPUS_ROOT ?? path.join(ROOT_DIR, ".temp/corpus"));
 const BASELINE_PATH = path.join(__dirname, "baseline.json");
 const DEFAULT_REPORT_PATH = path.resolve(__dirname, "../../.temp/corpus-report.json");
 const STRICT_SEMANTIC_GATE = process.env.CORPUS_STRICT_SEMANTIC !== "0";
@@ -33,12 +34,18 @@ interface Library {
 type Baseline = Record<string, Partial<Record<Format, FormatCounts>>>;
 
 const LOCKED_SOURCES = corpusSources.sources as CorpusSource[];
+const DEFAULT_CORPUS_ROOT = path.join(ROOT_DIR, ".temp/corpus");
 const LIBRARIES = LOCKED_SOURCES.map((source) => ({
   id: source.id,
   repo: source.repository,
   dest: source.destination,
   commit: source.commit,
 }));
+
+function corpusDestination(destination: string): string {
+  const relative = path.relative(DEFAULT_CORPUS_ROOT, path.resolve(ROOT_DIR, destination));
+  return path.resolve(CORPUS_ROOT, relative);
+}
 const OOXML_ARCHIVE_EXTENSIONS = new Set([
   ".docx",
   ".docm",
@@ -84,6 +91,10 @@ function isSparseCheckout(destination: string): boolean {
   }
 }
 
+function sparseCheckoutPattern(file: string): string {
+  return `/${file.replace(/[\\*?\[\]]/g, "\\$&")}`;
+}
+
 function materializeOfficeCorpus(libraryId: string, destination: string, treeish = "HEAD"): void {
   if (!isSparseCheckout(destination)) return;
 
@@ -95,7 +106,7 @@ function materializeOfficeCorpus(libraryId: string, destination: string, treeish
   })
     .split(/\r?\n/)
     .filter((file) => OOXML_ARCHIVE_EXTENSIONS.has(path.extname(file).toLowerCase()));
-  const patterns = trackedFiles;
+  const patterns = trackedFiles.map(sparseCheckoutPattern);
 
   console.log(`[setup] ${libraryId}: materializing office corpus from sparse checkout`);
   execSync("git sparse-checkout set --no-cone --stdin", {
@@ -114,7 +125,7 @@ function materializeOfficeCorpus(libraryId: string, destination: string, treeish
 
 function setup(): void {
   for (const library of LIBRARIES) {
-    const destination = path.resolve(ROOT_DIR, library.dest);
+    const destination = corpusDestination(library.dest);
     if (fs.existsSync(path.join(destination, ".git"))) {
       let head = "";
       try {
@@ -309,7 +320,7 @@ const synthetic = await runSyntheticCorpus();
 if (synthetic.diagnostics.length > 0) failed = true;
 
 const missingLibraries = LIBRARIES.filter(
-  (library) => !isCorpusCheckoutReady(path.resolve(ROOT_DIR, library.dest)),
+  (library) => !isCorpusCheckoutReady(corpusDestination(library.dest)),
 );
 if (missingLibraries.length > 0) {
   console.warn(
@@ -324,14 +335,15 @@ const resultsByLibrary = new Map<string, LibraryRunResult[]>();
 const tasks: { libraryId: string; destination: string; files: CorpusFile[] }[] = [];
 let totalFiles = 0;
 for (const library of availableLibraries) {
-  const files = walkLibraryFiles(path.resolve(ROOT_DIR, library.dest));
+  const destination = corpusDestination(library.dest);
+  const files = walkLibraryFiles(destination);
   totalFiles += files.length;
   resultsByLibrary.set(library.id, []);
   const workerCount = Math.max(1, Math.min(maxWorkers, Math.ceil(files.length / 32)));
   const chunks = Array.from({ length: workerCount }, (): CorpusFile[] => []);
   files.forEach((file, index) => chunks[index % workerCount]!.push(file));
   for (const files of chunks) {
-    if (files.length > 0) tasks.push({ libraryId: library.id, destination: library.dest, files });
+    if (files.length > 0) tasks.push({ libraryId: library.id, destination, files });
   }
 }
 

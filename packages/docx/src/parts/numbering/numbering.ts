@@ -637,10 +637,7 @@ function stringifyLevel(opts: LevelsOptions): string {
  */
 export function parseNumberingDefinitions(
   el: Element,
-  parseParagraphProperties: (
-    el: Element,
-    ctx: DocxReadContext,
-  ) => Partial<ParagraphPropertiesOptions>,
+  parseParagraphProperties: (el: Element) => Partial<ParagraphPropertiesOptions>,
   ctx: DocxReadContext,
 ): NumberingOptions | undefined {
   // Picture bullets (w:numPicBullet — choice of w:pict | w:drawing)
@@ -708,7 +705,7 @@ export function parseNumberingDefinitions(
     const levels: LevelsOptions[] = [];
     for (const child of abstractEl.elements ?? []) {
       if (child.name !== "w:lvl") continue;
-      const levelOpts = parseLevelEl(child, parseParagraphProperties, ctx);
+      const levelOpts = parseLevelEl(child, parseParagraphProperties);
       if (levelOpts) levels.push(levelOpts);
     }
     if (levels.length === 0 && !hasStyleProperties(abstractEl)) {
@@ -761,7 +758,7 @@ export function parseNumberingDefinitions(
       }
       const lvlEl = findChild(overrideEl, "w:lvl");
       if (lvlEl) {
-        const levelOpts = parseLevelEl(lvlEl, parseParagraphProperties, ctx);
+        const levelOpts = parseLevelEl(lvlEl, parseParagraphProperties);
         if (levelOpts) override.level = levelOpts;
       }
       overrides.push(override);
@@ -853,11 +850,7 @@ function unwrapNestedContainer(el: Element | undefined, name: string): Element |
 
 function parseLevelEl(
   el: Element,
-  parseParagraphProperties: (
-    el: Element,
-    ctx: DocxReadContext,
-  ) => Partial<ParagraphPropertiesOptions>,
-  ctx: DocxReadContext,
+  parseParagraphProperties: (el: Element) => Partial<ParagraphPropertiesOptions>,
 ): LevelsOptions | undefined {
   const opts: Partial<LevelsOptions> = {};
   const sourceChildOrder: LevelChildOrder[] = [];
@@ -1013,7 +1006,7 @@ function parseLevelEl(
   }
   const pPr = findChild(el, "w:pPr");
   if (pPr) {
-    const paraOpts = parseParagraphProperties(pPr, ctx);
+    const paraOpts = parseParagraphProperties(pPr);
     if (Object.keys(paraOpts).length > 0) {
       opts.paragraph = paraOpts;
     }

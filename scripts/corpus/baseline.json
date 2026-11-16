@@ -61,12 +61,12 @@
       "malformed": 0
     },
     "xlsx": {
-      "total": 385,
+      "total": 384,
       "clean": 382,
       "diff": 0,
       "parseFail": 0,
       "genFail": 0,
-      "malformed": 3
+      "malformed": 2
     },
     "pptx": {
       "total": 0,

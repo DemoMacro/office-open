@@ -48,6 +48,35 @@ describe("generateDocument entry guards", () => {
       'Id="rId6" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/fontTable"',
     );
   });
+
+  it("preserves content from repeated body elements", () => {
+    const source = zipSync({
+      "[Content_Types].xml": new TextEncoder().encode(
+        '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+          '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>' +
+          "</Types>",
+      ),
+      "_rels/.rels": new TextEncoder().encode(
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+          '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>' +
+          "</Relationships>",
+      ),
+      "word/document.xml": new TextEncoder().encode(
+        '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+          "<w:body><w:p><w:r><w:t>First</w:t></w:r></w:p></w:body>" +
+          "<w:body><w:p><w:r><w:t>Second</w:t></w:r></w:p></w:body>" +
+          "</w:document>",
+      ),
+    });
+
+    const options = parseDocumentSync(source);
+    const output = generateDocumentSync(options);
+    const document = new TextDecoder().decode(unzipSync(output)["word/document.xml"]);
+
+    expect(document).toContain("First");
+    expect(document).toContain("Second");
+    expect(document.match(/<w:body>/g)).toHaveLength(1);
+  });
 });
 
 describe("raw cross-paragraph section hosts", () => {

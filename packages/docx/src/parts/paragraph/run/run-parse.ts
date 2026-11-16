@@ -122,7 +122,9 @@ export function parseRunProperties(el: Element): RunPropertiesOptions {
       const occurrence = elementOccurrences.get(child.name ?? "") ?? 0;
       elementOccurrences.set(child.name ?? "", occurrence + 1);
       const namespacedAttributes = Object.entries(child.attributes ?? {}).filter(
-        ([name]) => name.startsWith("w14:") || name.startsWith("w16du:"),
+        ([name]) =>
+          (name.startsWith("w14:") || name.startsWith("w16du:")) &&
+          !(name === "w16du:dateUtc" && isTypedRevisionElement(child.name)),
       );
       if (child.name?.startsWith("w:") && namespacedAttributes.length > 0) {
         (extensionAttributes ??= []).push({
@@ -397,6 +399,16 @@ export function parseRunProperties(el: Element): RunPropertiesOptions {
   if (Object.keys(opts).length === 0) opts.emptyProperties = true;
 
   return opts as RunPropertiesOptions;
+}
+
+function isTypedRevisionElement(name: string | undefined): boolean {
+  return (
+    name === "w:rPrChange" ||
+    name === "w:ins" ||
+    name === "w:del" ||
+    name === "w:moveFrom" ||
+    name === "w:moveTo"
+  );
 }
 
 /**

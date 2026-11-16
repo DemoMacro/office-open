@@ -2,12 +2,9 @@ import { parse as parseXml } from "@office-open/xml";
 import { describe, expect, it } from "vite-plus/test";
 
 import { parseParagraphProperties } from "../../../body";
-import type { DocxReadContext } from "../../../context";
 import { stringifyParagraphProperties } from "../stringify";
 
 const W_NS = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"';
-
-const readCtx = {} as unknown as DocxReadContext;
 
 function roundTripFrame(frame: Record<string, unknown>): Record<string, unknown> {
   const { xml } = stringifyParagraphProperties({ frame: frame as never });
@@ -15,7 +12,7 @@ function roundTripFrame(frame: Record<string, unknown>): Record<string, unknown>
   const doc = parseXml(xml!.replace("<w:pPr>", `<w:pPr ${W_NS}>`));
   const pPr = doc.elements?.[0];
   if (!pPr) throw new Error("parsed document has no root element");
-  const opts = parseParagraphProperties(pPr, readCtx);
+  const opts = parseParagraphProperties(pPr);
   return opts.frame as unknown as Record<string, unknown>;
 }
 

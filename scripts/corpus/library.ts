@@ -241,6 +241,7 @@ export function walkLibraryFiles(libraryRoot: string, out: CorpusFile[] = []): C
     return out;
   }
   for (const entry of entries) {
+    if (entry.name.startsWith("~$")) continue;
     const item = path.join(libraryRoot, entry.name);
     if (entry.isDirectory()) {
       if (entry.name === ".git" || entry.name === "node_modules") continue;

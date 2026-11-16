@@ -8,7 +8,7 @@ describe("stringifyParagraphProperties single-writer channels", () => {
   it("preserves an empty source paragraph border", () => {
     const element = parseXml('<w:pPr xmlns:w="urn:w"><w:pBdr/></w:pPr>').elements?.[0];
     if (!element) throw new Error("parsed pPr has no root element");
-    const parsed = parseParagraphProperties(element, {} as never);
+    const parsed = parseParagraphProperties(element);
     expect(parsed.border).toEqual({});
     expect(stringifyParagraphProperties(parsed).xml).toContain("<w:pBdr>");
   });
@@ -21,7 +21,7 @@ describe("stringifyParagraphProperties single-writer channels", () => {
       `w:themeFillTint="0" w:themeFillShade="d9"/></w:pPr>`;
     const element = parseXml(xml).elements?.[0];
     if (!element) throw new Error("parsed pPr has no root element");
-    const parsed = parseParagraphProperties(element, {} as never);
+    const parsed = parseParagraphProperties(element);
     expect(parsed.border?.bottom).toMatchObject({ color: "darkblue", colorRaw: "darkblue" });
     expect(parsed.shading).toMatchObject({
       color: "auto",
@@ -44,7 +44,7 @@ describe("stringifyParagraphProperties single-writer channels", () => {
         '<w:insideV w:val="nil"/></w:pBdr></w:pPr>',
     ).elements?.[0];
     if (!element) throw new Error("parsed pPr has no root element");
-    const parsed = parseParagraphProperties(element, {} as never);
+    const parsed = parseParagraphProperties(element);
     expect(parsed.border?.insideHorizontal).toMatchObject({ style: "single", size: 6 });
     expect(parsed.border?.insideVertical).toMatchObject({ style: "nil" });
     const { xml } = stringifyParagraphProperties(parsed);
@@ -59,7 +59,7 @@ describe("stringifyParagraphProperties single-writer channels", () => {
         "</w:pBdr></w:pPr>",
     ).elements?.[0];
     if (!element) throw new Error("parsed pPr has no root element");
-    const parsed = parseParagraphProperties(element, {} as never);
+    const parsed = parseParagraphProperties(element);
     const { xml } = stringifyParagraphProperties(parsed);
     expect(xml).toContain(
       '<w:top w:val="single"/><w:left w:val="single"/><w:bottom w:val="single"/>',
@@ -69,7 +69,7 @@ describe("stringifyParagraphProperties single-writer channels", () => {
   it("preserves an explicit empty spacing element", () => {
     const element = parseXml('<w:pPr xmlns:w="urn:w"><w:spacing/></w:pPr>').elements?.[0];
     if (!element) throw new Error("parsed pPr has no root element");
-    const parsed = parseParagraphProperties(element, {} as never);
+    const parsed = parseParagraphProperties(element);
     expect(parsed.spacing).toEqual({});
     expect(stringifyParagraphProperties(parsed).xml).toContain("<w:spacing/>");
   });
@@ -81,7 +81,7 @@ describe("stringifyParagraphProperties single-writer channels", () => {
         "</w:pPr>",
     ).elements?.[0];
     if (!element) throw new Error("parsed pPr has no root element");
-    const parsed = parseParagraphProperties(element, {} as never);
+    const parsed = parseParagraphProperties(element);
     expect(parsed.spacing).toMatchObject({
       before: "12.0pt",
       after: "6.50pt",
@@ -96,7 +96,7 @@ describe("stringifyParagraphProperties single-writer channels", () => {
     const element = parseXml('<w:pPr xmlns:w="urn:w"><w:shd w:fill="CCCCCC"/></w:pPr>')
       .elements?.[0];
     if (!element) throw new Error("parsed pPr has no root element");
-    const parsed = parseParagraphProperties(element, {} as never);
+    const parsed = parseParagraphProperties(element);
     expect(parsed.shading).toMatchObject({ type: null, fill: "CCCCCC" });
     const roundTrip = stringifyParagraphProperties(parsed);
     expect(roundTrip.xml).toContain('<w:shd w:fill="CCCCCC"/>');
@@ -114,7 +114,7 @@ describe("stringifyParagraphProperties single-writer channels", () => {
     const element = parseXml('<w:pPr xmlns:w="urn:w"><w:contextualSpacing w:val="0"/></w:pPr>')
       .elements?.[0];
     if (!element) throw new Error("parsed pPr has no root element");
-    expect(parseParagraphProperties(element, {} as never)).toMatchObject({
+    expect(parseParagraphProperties(element)).toMatchObject({
       contextualSpacing: false,
       contextualSpacingRaw: "0",
     });
@@ -170,7 +170,6 @@ describe("stringifyParagraphProperties single-writer channels", () => {
     const parsed = parseParagraphProperties(
       parseXml('<w:pPr xmlns:w="urn:w"><w:numPr><w:numId w:val="32"/></w:numPr></w:pPr>')
         .elements![0]!,
-      {} as never,
     );
     expect(parsed.numbering).toEqual({
       reference: "list_32",

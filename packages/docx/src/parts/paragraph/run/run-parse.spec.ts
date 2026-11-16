@@ -318,6 +318,23 @@ describe("parseRunProperties round-trip", () => {
     expect(stringifyRunProperties(parsed)).toContain('w16du:dateUtc="2026-01-15T09:30:00.000Z"');
   });
 
+  it("does not duplicate typed revision timestamps from extension attributes", () => {
+    const source =
+      `<w:rPr ${W_NS} xmlns:w16du="http://schemas.microsoft.com/office/word/2023/wordml/word16du">` +
+      '<w:rPrChange w:id="1" w:author="Alice" w16du:dateUtc="2026-01-15T09:30:00.000Z">' +
+      '<w:rPr><w:ins w:id="2" w:author="Bob" w16du:dateUtc="2026-01-16T09:30:00.000Z"/></w:rPr>' +
+      "</w:rPrChange></w:rPr>";
+    const parsed = parseRunProperties(parseXml(source).elements![0]!);
+    const generated = stringifyRunProperties(parsed)!;
+
+    expect(() =>
+      parseXml(
+        `<w:r ${W_NS} xmlns:w16du="http://schemas.microsoft.com/office/word/2023/wordml/word16du">${generated}</w:r>`,
+      ),
+    ).not.toThrow();
+    expect(generated.match(/w16du:dateUtc=/g)).toHaveLength(2);
+  });
+
   it("keeps extension attributes on repeated run-property elements separate", () => {
     const source =
       `<w:rPr ${W_NS} ${W14_NS}>` +

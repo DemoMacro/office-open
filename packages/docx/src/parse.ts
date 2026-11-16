@@ -204,14 +204,6 @@ function resolveEmbeddedFontData(
   fontTablePath = "word/fontTable.xml",
 ): void {
   const relsEl = doc.get(partPathToRelsPath(fontTablePath));
-  if (!relsEl && fonts.some((font) => embeddedFontParts(font).some(([, part]) => part.embedRid))) {
-    for (const font of fonts) {
-      for (const [, part] of embeddedFontParts(font)) {
-        part.embedRid = undefined;
-      }
-    }
-    return;
-  }
   if (!relsEl) return;
   const ridToPath = new Map<string, string>();
   for (const child of relsEl.elements ?? []) {
@@ -226,28 +218,14 @@ function resolveEmbeddedFontData(
     for (const [, part] of embeddedFontParts(font)) {
       if (!part.embedRid) continue;
       const odttfPath = ridToPath.get(part.embedRid);
-      if (!odttfPath) {
-        throw new DocxParseError(
-          `Embedded font relationship is missing: ${part.embedRid}`,
-          fontTablePath,
-          `/${fontTablePath}/w:fonts/w:font`,
-          "missing-package-part",
-        );
-      }
+      if (!odttfPath) continue;
       // The Target is a URI (escaped); the ZIP entry may carry the raw name.
       // Look up both forms and store the decoded path so compileDocument
       // re-escapes it exactly once.
       const decoded = decodeUriPath(odttfPath);
       part.odttfPath = decoded;
       const bytes = doc.getRaw(odttfPath) ?? doc.getRaw(decoded);
-      if (!bytes) {
-        throw new DocxParseError(
-          `Embedded font part is missing: ${part.embedRid}`,
-          fontTablePath,
-          `/${fontTablePath}/w:fonts/w:font`,
-          "missing-package-part",
-        );
-      }
+      if (!bytes) continue;
       part.data = bytes;
       part.rawOdttf = true;
       part.odttfPath = decoded;
@@ -1267,7 +1245,12 @@ function parseDocxArchive(doc: ParsedArchive): DocxDocument {
       primaryPartPath,
       "missing-primary-part",
     );
-  const body = documentEl.elements?.find((e) => e.name === "w:body");
+  const bodies = documentEl.elements?.filter((e) => e.name === "w:body") ?? [];
+  const firstBody = bodies[0];
+  const body =
+    bodies.length > 1 && firstBody
+      ? { ...firstBody, elements: bodies.flatMap((element) => element.elements ?? []) }
+      : firstBody;
   if (!body)
     throw new OpcPackageError(
       "w:body not found in word/document.xml",

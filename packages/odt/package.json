@@ -1,6 +1,6 @@
 {
   "name": "@office-open/odt",
-  "version": "0.15.1",
+  "version": "0.15.2",
   "description": "Generate and parse OpenDocument text documents as canonical DocumentOptions",
   "keywords": [
     "document",

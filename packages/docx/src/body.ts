@@ -644,10 +644,7 @@ type PermStartInlineOptions = Extract<ParagraphChild, { permStart: unknown }>["p
 /**
  * Parse w:pPr element into paragraph properties (without children).
  */
-export function parseParagraphProperties(
-  el: Element,
-  ctx: DocxReadContext,
-): Partial<ParagraphPropertiesOptions> {
+export function parseParagraphProperties(el: Element): Partial<ParagraphPropertiesOptions> {
   const opts: Partial<ParagraphPropertiesOptions> = {};
 
   // Style / heading
@@ -1135,7 +1132,7 @@ export function parseParagraphProperties(
     const revId = attrNum(pPrChange, "w:id");
     if (revId !== undefined) rev.id = revId;
     const innerPPr = findChild(pPrChange, "w:pPr");
-    if (innerPPr) Object.assign(rev, parseParagraphProperties(innerPPr, ctx));
+    if (innerPPr) Object.assign(rev, parseParagraphProperties(innerPPr));
     if (Object.keys(rev).length > 0) opts.revision = rev as ParagraphPropertiesChangeOptions;
   }
 
@@ -3122,7 +3119,7 @@ export function parseParagraph(
 
   const pPr = findChild(el, "w:pPr");
   if (pPr) {
-    Object.assign(opts, parseParagraphProperties(pPr, ctx));
+    Object.assign(opts, parseParagraphProperties(pPr));
   }
 
   const childList = parseRunLevelChildren(el.elements, ctx, options);

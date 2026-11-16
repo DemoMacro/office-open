@@ -666,6 +666,19 @@ function canonicalNode(
       }
       return node;
     });
+  if (name === "w:document") {
+    const bodies = mappedChildren.filter((child) => child.name === "w:body");
+    if (bodies.length > 1) {
+      const firstBodyIndex = mappedChildren.indexOf(bodies[0]!);
+      const mergedBody = {
+        ...bodies[0]!,
+        children: bodies.flatMap((body) => body.children),
+      };
+      const normalizedChildren = mappedChildren.filter((child) => child.name !== "w:body");
+      normalizedChildren.splice(firstBodyIndex, 0, mergedBody);
+      mappedChildren.splice(0, mappedChildren.length, ...normalizedChildren);
+    }
+  }
   // Legacy documents may carry bare text directly inside w:r. Word treats it
   // as run text and normalizes it into w:t on save, so the digest normalizes
   // it the same way instead of comparing structurally different encodings.
