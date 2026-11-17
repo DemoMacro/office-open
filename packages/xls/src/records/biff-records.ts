@@ -44,6 +44,12 @@ export const BIFF_RECORD_CLASSIFICATIONS: BiffRecordClassifications = new Map([
   canonical(0x003c, "Continue", "both", "record-reader"),
 
   canonical(0x00fc, "Shared String Table", "globals", "workbook-globals"),
+  noop(
+    0x00ff,
+    "Extended Shared String Table",
+    "globals",
+    "shared-string index cache is not projected",
+  ),
   canonical(0x0085, "Bound Sheet", "globals", "workbook-globals"),
   canonical(0x0042, "Code Page", "globals", "workbook-globals"),
   canonical(0x0022, "Date Mode", "globals", "workbook-globals"),
@@ -63,6 +69,7 @@ export const BIFF_RECORD_CLASSIFICATIONS: BiffRecordClassifications = new Map([
   canonical(0x0201, "Blank", "sheet", "worksheet"),
   canonical(0x0005, "BIFF2 Boolean Or Error", "sheet", "worksheet"),
   canonical(0x0205, "Boolean Or Error", "sheet", "worksheet"),
+  canonical(0x0207, "String", "sheet", "worksheet"),
   canonical(0x00be, "Multiple Blank", "sheet", "worksheet"),
   canonical(0x0003, "BIFF2 Number", "sheet", "worksheet"),
   canonical(0x0203, "Number", "sheet", "worksheet"),
@@ -104,6 +111,8 @@ export const BIFF_RECORD_CLASSIFICATIONS: BiffRecordClassifications = new Map([
   canonical(0x00da, "Workbook Boolean", "globals", "workbook-globals"),
 
   noop(0x005b, "File Sharing", "both", "file-sharing metadata is not projected"),
+  noop(0x0059, "CRN Count", "globals", "external link cache metadata is not projected"),
+  noop(0x005a, "CRN", "globals", "external link cached values are not projected"),
   noop(0x005c, "Write Access", "both", "author metadata is not projected"),
   noop(0x005e, "Uncalced", "both", "recalculation scope marker is not projected"),
   noop(0x000c, "Calculation Count", "both", "calculation metadata is not projected"),
@@ -117,6 +126,7 @@ export const BIFF_RECORD_CLASSIFICATIONS: BiffRecordClassifications = new Map([
   noop(0x0019, "Window Protection", "both", "protection metadata is not projected"),
   noop(0x0040, "Backup", "both", "backup metadata is not projected"),
   noop(0x008d, "Hidden Objects", "both", "legacy object visibility metadata is not projected"),
+  noop(0x0081, "Worksheet Boolean", "sheet", "legacy worksheet display metadata is not projected"),
   noop(0x003d, "Window 1", "both", "workbook window state is not projected"),
   noop(0x00c1, "Menu Set", "both", "transitional menu metadata is not projected"),
   noop(0x008c, "Country", "both", "locale metadata is not projected"),
@@ -142,6 +152,7 @@ export const BIFF_RECORD_CLASSIFICATIONS: BiffRecordClassifications = new Map([
   noop(0x001d, "Selection", "both", "editor selection state is not projected"),
   noop(0x00a4, "Sheet Properties", "both", "non-visual sheet metadata is not projected"),
   noop(0x0041, "Pane", "both", "editor split state is not projected"),
+  noop(0x020b, "Index", "sheet", "worksheet row index is not projected"),
 ]);
 
 export function biffRecordContext(
