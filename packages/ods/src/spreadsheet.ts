@@ -88,6 +88,7 @@ export function parseDrawingShape(
   column: number,
   graphicStyles: Map<string, GraphicStyle>,
   textStyles: Map<string, RichTextRunPropertiesOptions>,
+  absolute = false,
 ): ShapeOptions {
   assertElementNames(
     element,
@@ -138,14 +139,22 @@ export function parseDrawingShape(
   const paragraphs = childrenNamed(element, "text:p");
   const endAddress = parseSheetAddress(attributeString(element, "table:end-cell-address"));
   const endCell = /^([A-Z]+)([0-9]+)$/u.exec(endAddress?.address ?? "");
-  return {
+  const result: ShapeOptions = {
     col: column,
     row,
+    ...(absolute
+      ? {
+          anchorType: "absolute" as const,
+          absoluteX: x1,
+          absoluteY: y1,
+        }
+      : {
+          colOffset: x1,
+          rowOffset: y1,
+        }),
     ...(attributeString(element, "draw:control") === undefined
       ? {}
       : { controlId: attributeString(element, "draw:control") }),
-    colOffset: x1,
-    rowOffset: y1,
     extentCx: width,
     extentCy: height,
     ...(endCell
@@ -182,6 +191,7 @@ export function parseDrawingShape(
       ? { description: attributeString(element, "svg:desc") }
       : {}),
   };
+  return result;
 }
 
 export function parseDrawingGroup(

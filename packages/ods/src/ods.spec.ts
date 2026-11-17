@@ -33,9 +33,12 @@ describe("ODS codec", () => {
 
   it("round-trips grouped worksheet shapes through canonical groups", async () => {
     const source = generateOcf("application/vnd.oasis.opendocument.spreadsheet", {
-      "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:spreadsheet><table:table table:name="Sheet1"><table:shapes><draw:g draw:name="Group" svg:x="1cm" svg:y="2cm" svg:width="4cm" svg:height="3cm"><svg:title>Group title</svg:title><draw:rect draw:name="Child" svg:x="0.5cm" svg:y="0.25cm" svg:width="2cm" svg:height="1cm"><text:p>Grouped text</text:p></draw:rect><draw:g draw:name="Nested" svg:x="0.25cm" svg:y="0.5cm" svg:width="1cm" svg:height="1cm"><draw:ellipse draw:name="Nested child" svg:x="0.1cm" svg:y="0.1cm" svg:width="0.5cm" svg:height="0.5cm"/></draw:g></draw:g></table:shapes><table:table-row><table:table-cell/></table:table-row></table:table></office:spreadsheet></office:body></office:document-content>`,
+      "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:spreadsheet><table:table table:name="Sheet1"><table:shapes><draw:rect draw:name="Standalone" svg:x="5cm" svg:y="6cm" svg:width="2cm" svg:height="1cm"/><draw:g draw:name="Group" svg:x="1cm" svg:y="2cm" svg:width="4cm" svg:height="3cm"><svg:title>Group title</svg:title><draw:rect draw:name="Child" svg:x="0.5cm" svg:y="0.25cm" svg:width="2cm" svg:height="1cm"><text:p>Grouped text</text:p></draw:rect><draw:g draw:name="Nested" svg:x="0.25cm" svg:y="0.5cm" svg:width="1cm" svg:height="1cm"><draw:ellipse draw:name="Nested child" svg:x="0.1cm" svg:y="0.1cm" svg:width="0.5cm" svg:height="0.5cm"/></draw:g></draw:g></table:shapes><table:table-row><table:table-cell/></table:table-row></table:table></office:spreadsheet></office:body></office:document-content>`,
     });
     const parsed = await parseWorkbook(source);
+    expect(parsed.worksheets?.[0]?.shapes).toMatchObject([
+      { name: "Standalone", anchorType: "absolute", absoluteX: 1800000, absoluteY: 2160000 },
+    ]);
     expect(parsed.worksheets?.[0]?.groups).toMatchObject([
       {
         col: 1,

@@ -303,6 +303,7 @@ export function worksheetXml(
   for (const comment of worksheet.comments ?? []) commentsByCell.set(comment.cell, comment);
   const shapesByCell = new Map<string, NonNullable<WorksheetOptions["shapes"]>[number][]>();
   for (const shape of worksheet.shapes ?? []) {
+    if (shape.anchorType === "absolute") continue;
     const reference = `${cellAddress(shape.col, shape.row)}`;
     const cellShapes = shapesByCell.get(reference);
     if (cellShapes) cellShapes.push(shape);
@@ -480,16 +481,26 @@ export function worksheetXml(
         ],
       ),
     );
+  const topLevelShapes = (worksheet.shapes ?? [])
+    .filter((shape) => shape.anchorType === "absolute")
+    .flatMap((shape) =>
+      cellShapeXml(
+        [{ ...shape, colOffset: shape.absoluteX, rowOffset: shape.absoluteY }],
+        "A1",
+        styles,
+      ),
+    );
   const selectionXml = worksheet.selection?.length ? gnumericSelectionXml(worksheet.selection) : [];
   return xmlElement(
     "table:table",
     { "table:name": sheetName, "table:style-name": tableStyleName },
     [
       formsXml,
-      ...(frames.length || worksheet.groups?.length
+      ...(frames.length || topLevelShapes.length || worksheet.groups?.length
         ? [
             xmlElement("table:shapes", undefined, [
               ...frames,
+              ...topLevelShapes,
               ...(worksheet.groups ?? []).map((group) => drawingGroupXml(group, styles)),
             ]),
           ]
@@ -822,8 +833,26 @@ export function worksheet(
   const mergeCells: MergeCellOptions[] = [];
   const shapes: WorksheetOptions["shapes"] = [];
   const groups: WorksheetOptions["groups"] = [];
-  for (const group of childrenNamed(childNamed(table, "table:shapes"), "draw:g"))
-    groups.push(parseDrawingGroup(group, 1, 1, graphicStyles, textStyles, true));
+  const tableShapes = childNamed(table, "table:shapes");
+  for (const shape of tableShapes?.elements ?? []) {
+    if (shape.name === "draw:g") {
+      groups.push(parseDrawingGroup(shape, 1, 1, graphicStyles, textStyles, true));
+    } else if (
+      [
+        "draw:rect",
+        "draw:control",
+        "draw:ellipse",
+        "draw:circle",
+        "draw:line",
+        "draw:measure",
+        "draw:polygon",
+        "draw:polyline",
+        "draw:custom-shape",
+      ].includes(shape.name ?? "")
+    ) {
+      shapes.push(parseDrawingShape(shape, 1, 1, graphicStyles, textStyles, true));
+    }
+  }
   validateTableChildren(table);
   const columns: ColumnOptions[] = [];
   let columnNumber = 1;
