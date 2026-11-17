@@ -667,6 +667,33 @@ describe("ODS spreadsheet semantics", () => {
         "application/vnd.oasis.opendocument.spreadsheet",
       )
     ).files["content.xml"]!;
-    expect(content).toContain("<text:p>&lt; &amp; &gt;</text:p>");
+    expect(content).toContain("<text:p>&lt;<text:s/>&amp;<text:s/>&gt;</text:p>");
+  });
+
+  it("round-trips rich text inside cell-anchored shapes", async () => {
+    const source = packageWith(
+      '<table:table table:name="Sheet1"><table:table-row><table:table-cell>' +
+        '<draw:rect svg:x="0" svg:y="0" svg:width="2cm" svg:height="1cm">' +
+        '<text:p>A<text:span text:style-name="bold">bold</text:span><text:s text:c="2"/>' +
+        '<text:a xlink:href="https://example.com">link</text:a><text:line-break/>end</text:p>' +
+        "<text:p>Second paragraph</text:p></draw:rect></table:table-cell></table:table-row></table:table>",
+      '<style:style style:name="bold" style:family="text"><style:text-properties fo:font-weight="bold" fo:color="#3366ff"/></style:style>',
+    );
+    const { parsed, regenerated } = await roundTrip(source);
+    const textBody = parsed.worksheets?.[0]?.shapes?.[0]?.textBody;
+    expect(textBody?.paragraphs).toMatchObject([
+      {
+        children: [
+          { text: "A" },
+          { text: "bold", bold: true, fill: { type: "solid", color: { value: "FF3366FF" } } },
+          { text: "  " },
+          { text: "link", hyperlink: { url: "https://example.com" } },
+          { text: "\n" },
+          { text: "end" },
+        ],
+      },
+      { text: "Second paragraph" },
+    ]);
+    expect(regenerated.worksheets?.[0]?.shapes?.[0]?.textBody).toEqual(textBody);
   });
 });

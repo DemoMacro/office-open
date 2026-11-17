@@ -1,3 +1,4 @@
+import type { TextBodyOptions, TextRunOptions } from "@office-open/core";
 import {
   attributeNumber,
   attributeString,
@@ -38,12 +39,14 @@ import type {
   TableOptions,
   WorksheetOptions,
   WorkbookOptions,
+  RichTextRunPropertiesOptions,
 } from "@office-open/xlsx";
 import type { Element } from "@office-open/xml";
 
 import { OdsGenerateError } from "./error";
 import { parseNumberStyles } from "./numbering";
 import type { OdsDataPilotFunctionOptions } from "./options";
+import { addTextStyle } from "./styles";
 import { assertElementNames, unknownOdsElement } from "./workbook";
 
 const CONTENT_PATH = "/office:document-content/office:body/office:spreadsheet";
@@ -82,6 +85,7 @@ export function parseDrawingShape(
   row: number,
   column: number,
   graphicStyles: Map<string, GraphicStyle>,
+  textStyles: Map<string, RichTextRunPropertiesOptions>,
 ): ShapeOptions {
   assertElementNames(
     element,
@@ -129,9 +133,7 @@ export function parseDrawingShape(
     ? Math.abs((y2 ?? 0) - (y1 ?? 0))
     : (lengthToEmu(attributeString(element, "svg:height")) ?? 0);
   const style = graphicStyles.get(attributeString(element, "draw:style-name") ?? "");
-  const text = childrenNamed(element, "text:p")
-    .map((paragraph) => textOf(paragraph))
-    .join("\n");
+  const paragraphs = childrenNamed(element, "text:p");
   const endAddress = parseSheetAddress(attributeString(element, "table:end-cell-address"));
   const endCell = /^([A-Z]+)([0-9]+)$/u.exec(endAddress?.address ?? "");
   return {
@@ -170,7 +172,7 @@ export function parseDrawingShape(
       fill: graphicFill(style),
       outline: graphicOutline(style),
     },
-    ...(text ? { textBody: { text } } : {}),
+    ...(paragraphs.length ? { textBody: parseShapeText(paragraphs, textStyles) } : {}),
     ...(attributeString(element, "svg:title")
       ? { title: attributeString(element, "svg:title") }
       : {}),
@@ -178,6 +180,99 @@ export function parseDrawingShape(
       ? { description: attributeString(element, "svg:desc") }
       : {}),
   };
+}
+
+function parseShapeText(
+  paragraphs: Element[],
+  textStyles: Map<string, RichTextRunPropertiesOptions>,
+): TextBodyOptions {
+  if (
+    paragraphs.length === 1 &&
+    !(paragraphs[0]?.elements ?? []).some((child) => child.type === "element")
+  )
+    return { text: textOf(paragraphs[0]!) };
+  const parsedParagraphs = paragraphs.map((paragraph) => {
+    const children: TextRunOptions[] = [];
+    function pushRun(run: TextRunOptions): void {
+      const previous = children.at(-1);
+      if (
+        previous &&
+        Object.keys(previous).every((key) => key === "text") &&
+        Object.keys(run).every((key) => key === "text") &&
+        !/[\n\t]/u.test(previous.text ?? "") &&
+        !/[\n\t]/u.test(run.text ?? "")
+      ) {
+        previous.text = `${previous.text ?? ""}${run.text ?? ""}`;
+      } else {
+        children.push(run);
+      }
+    }
+    type RunStyle = Pick<
+      TextRunOptions,
+      "font" | "size" | "bold" | "italic" | "fill" | "underline" | "strike" | "hyperlink"
+    >;
+    function append(element: Element, inherited?: RunStyle): void {
+      for (const child of element.elements ?? []) {
+        if (child.type === "text") {
+          const text = String(child.text ?? "");
+          if (text) pushRun({ ...inherited, text });
+        } else if (child.name === "text:s") {
+          const count = attributeNumber(child, "text:c") ?? 1;
+          if (Number.isInteger(count) && count > 0)
+            pushRun({ ...inherited, text: " ".repeat(count) });
+        } else if (child.name === "text:tab") {
+          pushRun({ ...inherited, text: "\t" });
+        } else if (child.name === "text:line-break") {
+          pushRun({ ...inherited, text: "\n" });
+        } else if (child.name === "text:span") {
+          const style = textStyles.get(attributeString(child, "text:style-name") ?? "");
+          append(child, {
+            ...inherited,
+            ...(style?.font === undefined ? {} : { font: style.font }),
+            ...(style?.size === undefined ? {} : { size: style.size }),
+            ...(style?.bold === undefined ? {} : { bold: style.bold }),
+            ...(style?.italic === undefined ? {} : { italic: style.italic }),
+            ...(style?.color?.rgb === undefined
+              ? {}
+              : { fill: { type: "solid", color: { value: style.color.rgb } } }),
+            ...(style?.underline === "single" || style?.underline === "double"
+              ? { underline: style.underline }
+              : {}),
+            ...(style?.strike === undefined
+              ? {}
+              : { strike: style.strike ? "singleStrike" : "noStrike" }),
+          });
+        } else if (child.name === "text:a") {
+          const href = attributeString(child, "xlink:href");
+          append(child, {
+            ...inherited,
+            ...(href === undefined ? {} : { hyperlink: { url: href } }),
+          });
+        }
+      }
+    }
+    append(paragraph);
+    if (children.every((child) => Object.keys(child).every((key) => key === "text")))
+      return { text: children.map((child) => child.text ?? "").join("") };
+    return children.length === 0 ? { text: "" } : { children };
+  });
+  const onlyParagraph = parsedParagraphs[0];
+  return paragraphs.length === 1 && onlyParagraph && "text" in onlyParagraph
+    ? { text: onlyParagraph.text }
+    : { paragraphs: parsedParagraphs };
+}
+
+function shapeTextXml(text: string): string[] {
+  return text
+    .split(/(\n|\t| +)/u)
+    .filter(Boolean)
+    .map((part) => {
+      if (part === "\n") return xmlElement("text:line-break");
+      if (part === "\t") return xmlElement("text:tab");
+      if (part.startsWith(" "))
+        return xmlElement("text:s", part.length === 1 ? undefined : { "text:c": part.length });
+      return escapeText(part);
+    });
 }
 
 export function parseTableProtection(table: Element, worksheet: WorksheetOptions): void {
@@ -218,6 +313,72 @@ export function cellShapeXml(
               ? "draw:ellipse"
               : "draw:custom-shape";
       const styleName = pushShapeStyle(shape.properties.fill, shape.properties.outline, styles);
+      const textBody = shape.textBody;
+      const paragraphs = textBody?.paragraphs ?? (textBody?.text ? [textBody.text] : []);
+      const paragraphXml = paragraphs.map((paragraph) => {
+        const value = typeof paragraph === "string" ? { text: paragraph } : paragraph;
+        const runs = value.children ?? (value.text === undefined ? [] : [{ text: value.text }]);
+        return xmlElement(
+          "text:p",
+          undefined,
+          runs.flatMap((run) => {
+            if (typeof run === "string") return [escapeText(run)];
+            if ("break" in run) return [xmlElement("text:line-break")];
+            if ("type" in run)
+              throw new OdsGenerateError(
+                "ODF shape text cannot represent this DrawingML text child",
+                "content.xml",
+                "/office:document-content/office:body/office:spreadsheet/draw:rect/text:p",
+                "text child",
+                "unsupported-shape-text-child",
+              );
+            if (!("text" in run)) {
+              throw new OdsGenerateError(
+                "ODF shape text cannot represent this DrawingML text child",
+                "content.xml",
+                "/office:document-content/office:body/office:spreadsheet/draw:rect/text:p",
+                "text child",
+                "unsupported-shape-text-child",
+              );
+            }
+            const fill = run.fill;
+            const styleName = addTextStyle(
+              {
+                ...(typeof run.font === "string" ? { font: run.font } : {}),
+                ...(run.size === undefined ? {} : { size: run.size }),
+                ...(run.bold === undefined ? {} : { bold: run.bold }),
+                ...(run.italic === undefined ? {} : { italic: run.italic }),
+                ...(run.underline === undefined ? {} : { underline: run.underline }),
+                ...(run.strike === undefined ? {} : { strike: run.strike !== "noStrike" }),
+                ...(fill &&
+                typeof fill === "object" &&
+                "color" in fill &&
+                typeof fill.color === "object" &&
+                "value" in fill.color
+                  ? { color: { rgb: fill.color.value } }
+                  : {}),
+              },
+              styles,
+            );
+            const content = shapeTextXml(run.text ?? "");
+            if (run.hyperlink?.url)
+              return [
+                xmlElement(
+                  "text:a",
+                  { "xlink:href": run.hyperlink.url },
+                  styleName
+                    ? [xmlElement("text:span", { "text:style-name": styleName }, content)]
+                    : content,
+                ),
+              ];
+            return [
+              styleName
+                ? xmlElement("text:span", { "text:style-name": styleName }, content)
+                : content.join(""),
+            ];
+          }),
+        );
+      });
       return xmlElement(
         elementName,
         {
@@ -245,9 +406,7 @@ export function cellShapeXml(
                 "svg:height": emuToLength(shape.extentCy ?? 0),
               }),
         },
-        shape.textBody?.text === undefined
-          ? []
-          : [xmlElement("text:p", undefined, [escapeText(shape.textBody.text)])],
+        paragraphXml,
       );
     });
 }

@@ -1512,7 +1512,7 @@ export function parseRow(
               child.name === "draw:polyline" ||
               child.name === "draw:custom-shape"
             ) {
-              shapes?.push(parseDrawingShape(child, rowNumber, column, graphicStyles));
+              shapes?.push(parseDrawingShape(child, rowNumber, column, graphicStyles, textStyles));
             }
             if (child.name === "draw:g") {
               assertElementNames(
@@ -1537,7 +1537,13 @@ export function parseRow(
               const groupZIndex = attributeNumber(child, "draw:z-index");
               for (const nested of child.elements ?? []) {
                 if (nested.name !== "svg:title" && nested.name !== "svg:desc") {
-                  const shape = parseDrawingShape(nested, rowNumber, column, graphicStyles);
+                  const shape = parseDrawingShape(
+                    nested,
+                    rowNumber,
+                    column,
+                    graphicStyles,
+                    textStyles,
+                  );
                   if (groupTitle && shape.title === undefined) shape.title = groupTitle;
                   if (groupDescription && shape.description === undefined) {
                     shape.description = groupDescription;
