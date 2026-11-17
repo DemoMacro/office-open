@@ -1117,6 +1117,18 @@ export function dataPilotTablesXml(
   worksheets: WorksheetOptions[],
   functions: OdsDataPilotFunctionOptions[] = [],
 ): string {
+  const unsupportedPivot = worksheets
+    .flatMap((worksheet) => worksheet.pivotTables ?? [])
+    .find((pivot) => pivot.mode === "definition");
+  if (unsupportedPivot) {
+    throw new OdsGenerateError(
+      "ODS cannot represent a complete OOXML pivot-table definition",
+      "content.xml",
+      "/office:document-content/office:body/office:spreadsheet/table:data-pilot-tables",
+      "table:data-pilot-table",
+      "pivot-definition-not-representable",
+    );
+  }
   const overrides = new Map(
     functions.map((item) => [`${item.tableName ?? ""}\0${item.field}`, item.summaryFunction]),
   );

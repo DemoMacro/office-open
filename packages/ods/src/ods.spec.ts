@@ -43,6 +43,29 @@ describe("ODS codec", () => {
     });
   });
 
+  it("rejects OOXML pivot definitions that ODS cannot represent", async () => {
+    await expect(
+      generateWorkbook({
+        worksheets: [
+          {
+            name: "Sheet1",
+            rows: [],
+            pivotTables: [
+              {
+                mode: "definition",
+                cacheId: 1,
+                definition: { name: "Pivot", cacheId: 1 },
+              },
+            ],
+          },
+        ],
+      }),
+    ).rejects.toMatchObject({
+      name: "OdsGenerateError",
+      reason: "pivot-definition-not-representable",
+    });
+  });
+
   it("compresses identical adjacent rows without losing reparse positions", async () => {
     const row: WorksheetOptions["rows"] = [{ cells: [{ value: "Shared" }, { value: "Shared" }] }];
     const generated = await generateWorkbook({ worksheets: [{ rows: [...row, ...row, ...row] }] });

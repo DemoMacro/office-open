@@ -249,8 +249,17 @@ export function parseEmbeddedCharts(
       fullPath,
     );
     const body = childNamed(childNamed(contentRoot, "office:body"), "office:chart");
-    if (!childNamed(body, "chart:chart") && body?.name === "office:chart") continue;
-    const chart = parseChart(childNamed(body, "chart:chart"), context, fullPath);
+    const chartElement = childNamed(body, "chart:chart");
+    if (!chartElement && entry.mediaType !== MIME && body?.name !== "office:chart") continue;
+    if (!chartElement) {
+      throw unsupported(
+        `${fullPath}content.xml`,
+        "/office:document-content/office:body/office:chart/chart:chart",
+        "chart:chart",
+        "chart subdocument is missing its chart element",
+      );
+    }
+    const chart = parseChart(chartElement, context, fullPath);
     if (chart && entry.mediaType !== undefined && entry.mediaType !== MIME) {
       throw unsupported(
         "META-INF/manifest.xml",
@@ -260,10 +269,12 @@ export function parseEmbeddedCharts(
       );
     }
     if (!chart) {
-      if (entry.mediaType === MIME || body?.name === "office:chart") {
-        continue;
-      }
-      continue;
+      throw unsupported(
+        `${fullPath}content.xml`,
+        "/office:document-content/office:body/office:chart/chart:chart",
+        "chart:chart",
+        "chart subdocument has no representable chart model",
+      );
     }
     result.set(fullPath.replace(/\/$/, ""), { ...chart, styleResources: context.resources });
   }
