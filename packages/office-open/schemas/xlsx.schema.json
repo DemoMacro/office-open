@@ -24594,6 +24594,10 @@
           },
           "type": "array"
         },
+        "colGrandTotals": {
+          "description": "Whether column grand totals are shown (defaults to true).",
+          "type": "boolean"
+        },
         "colHeaderCaption": {
           "description": "Column header caption",
           "type": "string"
@@ -24686,6 +24690,13 @@
         },
         "gridDropZones": {
           "type": "boolean"
+        },
+        "hiddenFields": {
+          "description": "Source fields that are present but hidden from the pivot layout.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
         },
         "immersive": {
           "description": "Immersive",
@@ -24781,6 +24792,10 @@
         },
         "published": {
           "description": "Published to server",
+          "type": "boolean"
+        },
+        "rowGrandTotals": {
+          "description": "Whether row grand totals are shown (defaults to true).",
           "type": "boolean"
         },
         "rowHeaderCaption": {

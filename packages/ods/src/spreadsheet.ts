@@ -25,6 +25,8 @@ import type {
   DxfOptions,
   IconSetType,
   PivotDataField,
+  PivotPageFieldOptions,
+  SourcePivotTableOptions,
   ShapeOptions,
   SheetProtectionOptions,
   StyleOptions,
@@ -34,6 +36,7 @@ import type {
 } from "@office-open/xlsx";
 import type { Element } from "@office-open/xml";
 
+import { OdsGenerateError } from "./error";
 import { parseNumberStyles } from "./numbering";
 import type { OdsDataPilotFunctionOptions } from "./options";
 import { assertElementNames, unknownOdsElement } from "./workbook";
@@ -767,25 +770,42 @@ export function dataPilotTablesXml(
   return xmlElement(
     "table:data-pilot-tables",
     undefined,
-    tables.map(({ worksheet, pivot }, index) =>
-      xmlElement(
+    tables.map(({ worksheet, pivot }, index) => {
+      const sourceSheetName = pivot.sourceSheet ?? worksheet.name ?? `Sheet${index + 1}`;
+      const sourceWorksheet = pivot.sourceSheet
+        ? worksheets.find((item) => item.name === pivot.sourceSheet)
+        : worksheet;
+      if (!sourceWorksheet) {
+        throw new OdsGenerateError(
+          `ODS Data Pilot source sheet does not exist: ${sourceSheetName ?? ""}`,
+          "content.xml",
+          `/office:document-content/office:body/office:spreadsheet/table:data-pilot-tables/table:data-pilot-table[@table:name="${pivot.name ?? ""}"]`,
+          "table:source-cell-range",
+          "source-sheet-missing",
+        );
+      }
+      const location = pivot.location ?? "A3";
+      return xmlElement(
         "table:data-pilot-table",
         {
           "table:name": pivot.name ?? `DataPilot${index + 1}`,
           "table:target-range-address": sheetAddress(
             worksheet.name ?? `Sheet${index + 1}`,
-            `${pivot.location}:${pivot.location}`,
+            `${location}:${location}`,
           ),
-          "table:grand-total": "none",
-          "table:show-filter-button": false,
-          "table:drill-down-on-double-click": false,
+          "table:grand-total":
+            pivot.rowGrandTotals === false && pivot.colGrandTotals === false
+              ? "none"
+              : pivot.rowGrandTotals === false
+                ? "column"
+                : pivot.colGrandTotals === false
+                  ? "row"
+                  : "both",
+          "table:drill-down-on-double-click": pivot.enableDrill,
         },
         [
           xmlElement("table:source-cell-range", {
-            "table:cell-range-address": sheetAddress(
-              pivot.sourceSheet ?? worksheet.name ?? "Sheet1",
-              pivot.source,
-            ),
+            "table:cell-range-address": sheetAddress(sourceSheetName, pivot.source),
           }),
           ...pivot.rows.map((field) =>
             xmlElement("table:data-pilot-field", {
@@ -798,6 +818,11 @@ export function dataPilotTablesXml(
             xmlElement("table:data-pilot-field", {
               "table:source-field-name": field.field,
               "table:orientation": "page",
+              "table:selected-page":
+                field.item === undefined
+                  ? undefined
+                  : (pivotFieldMembers(sourceWorksheet, pivot.source, field.field)[field.item] ??
+                    invalidPageItem(pivot, field.field, field.item)),
               "table:function": "auto",
             }),
           ),
@@ -816,9 +841,63 @@ export function dataPilotTablesXml(
                 overrides.get(`${pivot.name ?? ""}\0${field.field}`) ?? field.summarize ?? "auto",
             }),
           ),
+          ...(pivot.hiddenFields ?? []).map((field) =>
+            xmlElement("table:data-pilot-field", {
+              "table:source-field-name": field,
+              "table:orientation": "hidden",
+              "table:function": "auto",
+            }),
+          ),
         ],
+      );
+    }),
+  );
+}
+
+function pivotFieldMembers(worksheet: WorksheetOptions, source: string, field: string): string[] {
+  const match = /^([A-Z]+)([0-9]+)(?::([A-Z]+)([0-9]+))?$/u.exec(source);
+  if (!match) return [];
+  const firstColumn = spreadsheetColumnNumber(match[1] ?? "A");
+  const firstRow = Number(match[2] ?? 1);
+  const lastColumn = spreadsheetColumnNumber(match[3] ?? match[1] ?? "A");
+  const lastRow = Number(match[4] ?? match[2] ?? 1);
+  const cellAt = (rowNumber: number, column: number) =>
+    worksheet.rows
+      ?.find((row, index) => (row.rowNumber ?? index + 1) === rowNumber)
+      ?.cells?.find((cell, index) => {
+        const reference = /^([A-Z]+)[0-9]+$/u.exec(cell.reference ?? "");
+        return reference
+          ? spreadsheetColumnNumber(reference[1] ?? "A") === column
+          : index + 1 === column;
+      });
+  const fieldColumn = Array.from(
+    { length: lastColumn - firstColumn + 1 },
+    (_, index) => firstColumn + index,
+  ).find((column) => pivotValueText(cellAt(firstRow, column)?.value) === field);
+  if (fieldColumn === undefined) return [];
+  return [
+    ...new Set(
+      Array.from({ length: lastRow - firstRow }, (_, index) =>
+        pivotValueText(cellAt(firstRow + index + 1, fieldColumn)?.value),
       ),
     ),
+  ];
+}
+
+function pivotValueText(value: unknown): string {
+  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean")
+    return String(value);
+  if (value instanceof Date) return value.toISOString();
+  return "";
+}
+
+function invalidPageItem(pivot: SourcePivotTableOptions, field: string, item: number): never {
+  throw new OdsGenerateError(
+    `ODS Data Pilot page field ${field} refers to missing source item ${item}`,
+    "content.xml",
+    `/office:document-content/office:body/office:spreadsheet/table:data-pilot-tables/table:data-pilot-table[@table:name="${pivot.name ?? ""}"]`,
+    "table:data-pilot-field",
+    "page-field-item-missing",
   );
 }
 
@@ -1203,21 +1282,11 @@ export function parseDataPilotTables(
       table,
       [
         "table:name",
-        "table:application-data",
         "table:target-range-address",
-        "table:buttons",
         "table:grand-total",
-        "table:show-filter-button",
         "table:drill-down-on-double-click",
-        "table:ignore-empty-rows",
-        "table:header-grid-layout",
       ],
-      [
-        "table:source-cell-range",
-        "table:database-source-query",
-        "table:data-pilot-field",
-        "tableooo:data-pilot-grand-total",
-      ],
+      ["table:source-cell-range", "table:data-pilot-field"],
     );
     const target = parseSheetAddress(attributeString(table, "table:target-range-address"));
     if (!target?.sheet) {
@@ -1233,17 +1302,93 @@ export function parseDataPilotTables(
       throw unknownOdsElement(table, CONTENT_PATH, target.sheet, "data pilot worksheet is missing");
     }
     const sourceRange = childNamed(table, "table:source-cell-range");
+    if (!sourceRange) {
+      throw unknownOdsElement(
+        table,
+        CONTENT_PATH,
+        "table:source-cell-range",
+        "data pilot source has no canonical WorkbookOptions mapping",
+      );
+    }
     const source = parseSheetAddress(attributeString(sourceRange, "table:cell-range-address"));
+    if (!source?.address) {
+      throw unknownOdsElement(
+        sourceRange,
+        CONTENT_PATH,
+        "table:cell-range-address",
+        "data pilot source range is missing",
+      );
+    }
+    const sourceWorksheet = source?.sheet
+      ? worksheets.find((entry) => entry.name === source.sheet)
+      : worksheet;
+    if (!sourceWorksheet) {
+      throw unknownOdsElement(
+        sourceRange,
+        CONTENT_PATH,
+        source?.sheet ?? "table:cell-range-address",
+        "data pilot source worksheet is missing",
+      );
+    }
+    const grandTotal = attributeString(table, "table:grand-total");
+    if (grandTotal !== undefined && !["none", "row", "column", "both"].includes(grandTotal)) {
+      throw unknownOdsElement(
+        table,
+        CONTENT_PATH,
+        "table:grand-total",
+        `invalid data pilot grand-total value: ${grandTotal}`,
+      );
+    }
+    const drillDown = parseOdsBoolean(table, "table:drill-down-on-double-click");
     const rows: string[] = [];
     const columns: string[] = [];
-    const pages: { field: string }[] = [];
+    const pages: PivotPageFieldOptions[] = [];
     const data: PivotDataField[] = [];
+    const hidden: string[] = [];
     for (const field of childrenNamed(table, "table:data-pilot-field")) {
       const name = attributeString(field, "table:source-field-name") ?? "";
       const orientation = attributeString(field, "table:orientation");
+      if (orientation === undefined) {
+        throw unknownOdsElement(
+          field,
+          CONTENT_PATH,
+          "table:orientation",
+          "data pilot field orientation is required",
+        );
+      }
+      if (
+        attributeString(field, "table:is-data-layout-field") !== undefined ||
+        attributeString(field, "table:used-hierarchy") !== undefined ||
+        (field.elements ?? []).some((child) => child.type === "element")
+      ) {
+        throw unknownOdsElement(
+          field,
+          CONTENT_PATH,
+          "table:data-pilot-field",
+          "field hierarchy, grouping, and layout metadata have no canonical pivot mapping",
+        );
+      }
       if (orientation === "row") rows.push(name);
-      else if (orientation === "page") pages.push({ field: name });
-      else if (orientation === "column") columns.push(name);
+      else if (orientation === "page") {
+        const selectedPage = attributeString(field, "table:selected-page");
+        const selectedIndex =
+          selectedPage === undefined
+            ? undefined
+            : pivotFieldMembers(sourceWorksheet, source.address, name).indexOf(selectedPage);
+        if (selectedPage !== undefined && (selectedIndex === undefined || selectedIndex < 0)) {
+          throw unknownOdsElement(
+            field,
+            CONTENT_PATH,
+            "table:selected-page",
+            "selected page member is not present in the source range",
+          );
+        }
+        pages.push({
+          field: name,
+          ...(selectedIndex === undefined ? {} : { item: selectedIndex }),
+        });
+      } else if (orientation === "column") columns.push(name);
+      else if (orientation === "hidden") hidden.push(name);
       else if (orientation === "data") {
         const functionValue = attributeString(field, "table:function");
         const summarize =
@@ -1269,15 +1414,29 @@ export function parseDataPilotTables(
       {
         mode: "source",
         name: attributeString(table, "table:name"),
-        source: source?.address ?? "",
+        source: source.address,
         sourceSheet: source?.sheet,
         location: target.address.split(":")[0],
         rows,
         ...(pages.length > 0 ? { pages } : {}),
         columns,
         data,
+        rowGrandTotals:
+          grandTotal === undefined ? undefined : grandTotal === "row" || grandTotal === "both",
+        colGrandTotals:
+          grandTotal === undefined ? undefined : grandTotal === "column" || grandTotal === "both",
+        enableDrill: drillDown,
+        ...(hidden.length > 0 ? { hiddenFields: hidden } : {}),
       },
     ];
   }
   return functions;
+}
+
+function parseOdsBoolean(element: Element, name: string): boolean | undefined {
+  const value = attributeString(element, name);
+  if (value === undefined) return undefined;
+  if (value === "true" || value === "1") return true;
+  if (value === "false" || value === "0") return false;
+  throw unknownOdsElement(element, CONTENT_PATH, name, `invalid boolean value: ${value}`);
 }

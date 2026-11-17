@@ -725,6 +725,45 @@ describe("parseWorkbook round-trip", () => {
     expect(reparsed.worksheets).toHaveLength(2);
   });
 
+  it("writes explicit pivot totals, hidden fields, and disabled drill-down", async () => {
+    const options: WorkbookOptions = {
+      worksheets: [
+        {
+          name: "Data",
+          rows: [
+            { cells: [{ value: "Region" }, { value: "Sales" }, { value: "Internal" }] },
+            { cells: [{ value: "East" }, { value: 10 }, { value: "yes" }] },
+          ],
+        },
+        {
+          name: "Pivot",
+          rows: [],
+          pivotTables: [
+            {
+              mode: "source",
+              source: "A1:C2",
+              sourceSheet: "Data",
+              rows: ["Region"],
+              data: [{ field: "Sales", summarize: "sum" }],
+              hiddenFields: ["Internal"],
+              rowGrandTotals: false,
+              colGrandTotals: true,
+              enableDrill: false,
+            },
+          ],
+        },
+      ],
+    };
+    const archive = unzipSync(
+      (await generateWorkbook(options, { type: "uint8array" })) as Uint8Array,
+    );
+    const pivotXml = new TextDecoder().decode(archive["xl/pivotTables/pivotTable1.xml"]!);
+    expect(pivotXml).toContain('rowGrandTotals="0"');
+    expect(pivotXml).toContain('colGrandTotals="1"');
+    expect(pivotXml).toContain('enableDrill="0"');
+    expect(pivotXml).toContain('<pivotField showAll="0"/>');
+  });
+
   it("reuses the pivot relationship for pivotSelection", async () => {
     const opts: WorkbookOptions = {
       worksheets: [

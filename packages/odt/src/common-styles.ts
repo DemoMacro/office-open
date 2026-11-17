@@ -11,7 +11,7 @@ import type { Element } from "@office-open/xml";
 
 import { NAMESPACES } from "./body";
 import { outlineStyleXml } from "./list";
-import { lengthToTwips, masterHeaderFooter, twipsToLength } from "./master-pages";
+import { lengthToTwips, twipsToLength } from "./master-pages";
 import { notesConfigurationXml } from "./notes";
 
 /** Docx font-table entry, indexed from the shared document model. */
@@ -67,6 +67,7 @@ export function documentStylesXml(
   settings: DocumentOptions["settings"],
   numbering: DocumentOptions["numbering"],
   styles: DocumentOptions["styles"],
+  headerFooter: string,
 ): string {
   const properties = section?.properties;
   const pageSize = typeof properties?.pageSize === "object" ? properties.pageSize : undefined;
@@ -80,7 +81,6 @@ export function documentStylesXml(
     pageMargin?.bottom !== undefined && `fo:margin-bottom="${twipsToLength(pageMargin.bottom)}"`,
     pageMargin?.left !== undefined && `fo:margin-left="${twipsToLength(pageMargin.left)}"`,
   ].filter(Boolean);
-  const headerFooter = masterHeaderFooter(section);
   const needsMaster = layoutAttributes.length > 0 || headerFooter !== "";
   const pageLayout = needsMaster
     ? `<style:page-layout style:name="pm1"><style:page-layout-properties ${layoutAttributes.join(

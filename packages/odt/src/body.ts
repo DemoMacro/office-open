@@ -86,7 +86,7 @@ import {
   parseOutlineStyle,
   type AbstractNumbering,
 } from "./list";
-import { parseMasterHeaderFooter, parsePageLayout } from "./master-pages";
+import { masterHeaderFooter, parseMasterHeaderFooter, parsePageLayout } from "./master-pages";
 import { parseNotesConfiguration } from "./notes";
 import type { OdtDocumentOptions } from "./options";
 import {
@@ -201,6 +201,10 @@ function generateOdtPackage(options: OdtDocumentOptions): Uint8Array {
     embeddedObjects ?? [],
   );
   const body = declarationsXml(options, notes) + bodyBlocks;
+  const headerFooter = masterHeaderFooter(options.sections[0], {
+    renderBlocks: (children) =>
+      blocksXml(children, styles, images, notes, options.numbering, charts, embeddedObjects ?? []),
+  });
   const files: OdfPackageFiles = {
     "content.xml": contentXml(body, styles, fontFaceDecls(options.fonts)),
     "styles.xml": documentStylesXml(
@@ -208,6 +212,7 @@ function generateOdtPackage(options: OdtDocumentOptions): Uint8Array {
       options.settings,
       options.numbering,
       options.styles,
+      headerFooter,
     ),
     "meta.xml": metaXml(options),
   };
@@ -598,7 +603,9 @@ function parseOdtPackage(data: Uint8Array): OdtDocumentOptions {
       ...result.styles,
       default: { ...result.styles?.default, document: defaultStyle },
     };
-  const masterHeaderFooter = parseMasterHeaderFooter(files);
+  const masterHeaderFooter = parseMasterHeaderFooter(files, (elements, path) =>
+    parseBlocks(elements, context, 0, undefined, path),
+  );
   const section = result.sections[0];
   if (section) {
     if (masterHeaderFooter.headers) section.headers = masterHeaderFooter.headers;

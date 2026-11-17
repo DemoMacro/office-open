@@ -273,6 +273,81 @@ describe("ODT canonical projection", () => {
     expect(styles).toContain("A&amp;B&lt;C&gt;");
   });
 
+  it("round-trips formatted master header runs through DocumentOptions", async () => {
+    const options: DocumentOptions = {
+      sections: [
+        {
+          children: [],
+          headers: {
+            default: [{ paragraph: { children: [{ text: "Header", bold: true }] } }],
+          },
+        },
+      ],
+    };
+    const parsed = await parseDocument(await generateDocument(options));
+    expect(parsed.sections[0]?.headers?.default).toMatchObject([
+      { paragraph: { children: [{ text: "Header", bold: true }] } },
+    ]);
+    expect(await generateDocument(parsed)).toBeInstanceOf(Uint8Array);
+  });
+
+  it("maps ODF first and left header regions to canonical section slots", async () => {
+    const source = generateOcf("application/vnd.oasis.opendocument.text", {
+      "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:automatic-styles/><office:body><office:text/></office:body></office:document-content>`,
+      "styles.xml": `<?xml version="1.0"?><office:document-styles ${ODF_NAMESPACES}><office:styles/><office:automatic-styles/><office:master-styles><style:master-page style:name="Standard"><style:header-first><text:p>First page</text:p></style:header-first><style:header-left><text:p>Left page</text:p></style:header-left></style:master-page></office:master-styles></office:document-styles>`,
+    });
+    const parsed = await parseDocument(source);
+    expect(parsed.sections[0]?.headers).toEqual({
+      first: [{ paragraph: { text: "First page" } }],
+      even: [{ paragraph: { text: "Left page" } }],
+    });
+    const archive = await readOcf(
+      await generateDocument(parsed),
+      "application/vnd.oasis.opendocument.text",
+    );
+    expect(archive.files["styles.xml"]).toContain("style:header-first");
+    expect(archive.files["styles.xml"]).toContain("style:header-left");
+  });
+
+  it("uses the master page's referenced page layout", async () => {
+    const source = generateOcf("application/vnd.oasis.opendocument.text", {
+      "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:automatic-styles/><office:body><office:text><text:p>Body</text:p></office:text></office:body></office:document-content>`,
+      "styles.xml": `<?xml version="1.0"?><office:document-styles ${ODF_NAMESPACES}><office:styles/><office:automatic-styles><style:page-layout style:name="Wrong"><style:page-layout-properties fo:page-width="10cm" fo:page-height="10cm"/></style:page-layout><style:page-layout style:name="Right"><style:page-layout-properties fo:page-width="20cm" fo:page-height="30cm"/></style:page-layout></office:automatic-styles><office:master-styles><style:master-page style:name="Standard" style:page-layout-name="Right"/></office:master-styles></office:document-styles>`,
+    });
+    const parsed = await parseDocument(source);
+    expect(parsed.sections[0]?.properties?.pageSize).toMatchObject({
+      width: Math.round((20 * 360000) / 635),
+      height: Math.round((30 * 360000) / 635),
+    });
+  });
+
+  it("round-trips tables inside master page headers", async () => {
+    const options: DocumentOptions = {
+      sections: [
+        {
+          children: [],
+          headers: {
+            default: [
+              {
+                table: {
+                  rows: [
+                    {
+                      cells: [{ children: [{ paragraph: { text: "Header cell" } }] }],
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        },
+      ],
+    };
+    const parsed = await parseDocument(await generateDocument(options));
+    expect(parsed.sections[0]?.headers?.default).toMatchObject([
+      { table: { rows: [{ cells: [{ children: [{ paragraph: { text: "Header cell" } }] }] }] } },
+    ]);
+  });
+
   it("round-trips ODF form-control shapes with typed references", async () => {
     const parsed = await parseDocument(
       odtPackage(

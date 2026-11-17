@@ -86,9 +86,9 @@ export function stringifyPivotTable(
     'outlineData="1"',
     'compact="1"',
     'compactData="1"',
-    'rowGrandTotals="1"',
-    'colGrandTotals="1"',
   ];
+  defAttrs.push(`rowGrandTotals="${o.rowGrandTotals === false ? 0 : 1}"`);
+  defAttrs.push(`colGrandTotals="${o.colGrandTotals === false ? 0 : 1}"`);
   if (o.dataOnRows) defAttrs.push('dataOnRows="1"');
   if (o.grandTotalCaption) defAttrs.push(`grandTotalCaption="${escapeXml(o.grandTotalCaption)}"`);
   if (o.errorCaption) defAttrs.push(`errorCaption="${escapeXml(o.errorCaption)}"`);
@@ -309,6 +309,7 @@ function buildPivotFields(
   pageIndices: number[],
 ): string {
   const fieldNames = sd.fieldNames;
+  const hiddenFieldNames = new Set(o.hiddenFields ?? []);
   const profiles = profilePivotFields(sd);
   const parts: string[] = [`<pivotFields count="${fieldNames.length}">`];
 
@@ -317,6 +318,7 @@ function buildPivotFields(
     const isCol = colIndices.includes(i);
     const isData = dataIndices.includes(i);
     const isPage = pageIndices.includes(i);
+    const isHidden = hiddenFieldNames.has(fieldNames[i] ?? "");
     const override = o.fieldOverrides?.find((fo) => fo.field === fieldNames[i]);
     const extraAttrs = override ? buildFieldOverrideAttrs(override) : "";
 
@@ -365,6 +367,8 @@ function buildPivotFields(
       for (let j = 0; j < uniqueVals.length; j++) parts.push(`<item x="${j}"/>`);
       parts.push(`<item t="default"${override?.defaultItemSd === false ? ' sd="0"' : ""}/>`);
       parts.push("</items></pivotField>");
+    } else if (isHidden) {
+      parts.push('<pivotField showAll="0"/>');
     } else {
       const nAttrs = extraAttrs ? ` showAll="0" ${extraAttrs}` : ' showAll="0"';
       parts.push(`<pivotField${nAttrs}/>`);

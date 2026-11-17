@@ -265,7 +265,7 @@ function parseOdsPackage(data: Uint8Array): OdsWorkbookOptions {
   const automaticStyles = childNamed(content, "office:automatic-styles");
   const dimensions = parseDimensionStyles(automaticStyles);
   const cellStyles = parseNumberStyles(automaticStyles);
-  const chartPool = parseEmbeddedCharts(manifest, files, binaries);
+  const chartPool = parseEmbeddedCharts(manifest, files, binaries, files["styles.xml"]);
   const usedBinaryPaths = new Set<string>();
   const calcProperties = parseOdsSemantics(body);
   const forms = parseForms(body);

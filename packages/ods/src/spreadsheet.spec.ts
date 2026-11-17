@@ -252,6 +252,98 @@ describe("ODS spreadsheet semantics", () => {
     ]);
   });
 
+  it("maps Data Pilot totals, drill-down, page selection, and hidden fields", async () => {
+    const source = {
+      worksheets: [
+        {
+          name: "Data",
+          rows: [
+            {
+              cells: [
+                { reference: "A1", value: "Region" },
+                { reference: "B1", value: "Sales" },
+                { reference: "C1", value: "Internal" },
+              ],
+            },
+            {
+              cells: [
+                { reference: "A2", value: "East" },
+                { reference: "B2", value: 10 },
+                { reference: "C2", value: "yes" },
+              ],
+            },
+            {
+              cells: [
+                { reference: "A3", value: "West" },
+                { reference: "B3", value: 20 },
+                { reference: "C3", value: "no" },
+              ],
+            },
+          ],
+          pivotTables: [
+            {
+              mode: "source" as const,
+              name: "Pivot",
+              source: "A1:C3",
+              rows: ["Region"],
+              pages: [{ field: "Region", item: 1 }],
+              data: [{ field: "Sales", summarize: "sum" as const }],
+              hiddenFields: ["Internal"],
+              rowGrandTotals: false,
+              colGrandTotals: true,
+              enableDrill: true,
+            },
+          ],
+        },
+      ],
+    };
+    const parsed = await parseWorkbook(await generateWorkbook(source));
+    expect(parsed.worksheets?.[0]?.pivotTables?.[0]).toMatchObject({
+      mode: "source",
+      pages: [{ field: "Region", item: 1 }],
+      hiddenFields: ["Internal"],
+      rowGrandTotals: false,
+      colGrandTotals: true,
+      enableDrill: true,
+    });
+  });
+
+  it("accepts XML Schema boolean forms for Data Pilot drill-down", async () => {
+    const parsed = await parseWorkbook(
+      packageWith(
+        '<table:table table:name="Data"><table:table-row><table:table-cell office:value-type="string"><text:p>Region</text:p></table:table-cell></table:table-row></table:table><table:data-pilot-tables><table:data-pilot-table table:name="Pivot" table:target-range-address="Data.A1" table:drill-down-on-double-click="1"><table:source-cell-range table:cell-range-address="Data.A1:A1"/><table:data-pilot-field table:source-field-name="Region" table:orientation="row"/></table:data-pilot-table></table:data-pilot-tables>',
+      ),
+    );
+    expect(parsed.worksheets?.[0]?.pivotTables?.[0]).toMatchObject({ enableDrill: true });
+  });
+
+  it("rejects invalid Data Pilot boolean and total values", async () => {
+    await expect(
+      parseWorkbook(
+        packageWith(
+          '<table:table table:name="Data"/><table:data-pilot-tables><table:data-pilot-table table:name="Pivot" table:target-range-address="Data.A1" table:drill-down-on-double-click="yes"><table:source-cell-range table:cell-range-address="Data.A1:A1"/><table:data-pilot-field table:source-field-name="Region" table:orientation="row"/></table:data-pilot-table></table:data-pilot-tables>',
+        ),
+      ),
+    ).rejects.toMatchObject({ reason: "invalid boolean value: yes" });
+    await expect(
+      parseWorkbook(
+        packageWith(
+          '<table:table table:name="Data"/><table:data-pilot-tables><table:data-pilot-table table:name="Pivot" table:target-range-address="Data.A1" table:grand-total="invalid"><table:source-cell-range table:cell-range-address="Data.A1:A1"/><table:data-pilot-field table:source-field-name="Region" table:orientation="row"/></table:data-pilot-table></table:data-pilot-tables>',
+        ),
+      ),
+    ).rejects.toMatchObject({ reason: "invalid data pilot grand-total value: invalid" });
+  });
+
+  it("rejects a Data Pilot source range that names a missing sheet", async () => {
+    await expect(
+      parseWorkbook(
+        packageWith(
+          '<table:table table:name="Data"/><table:data-pilot-tables><table:data-pilot-table table:name="Pivot" table:target-range-address="Data.A1"><table:source-cell-range table:cell-range-address="Missing.A1:A2"/><table:data-pilot-field table:source-field-name="Region" table:orientation="row"/></table:data-pilot-table></table:data-pilot-tables>',
+        ),
+      ),
+    ).rejects.toMatchObject({ reason: "data pilot source worksheet is missing" });
+  });
+
   it("preserves unsupported data pilot summary functions as typed overlays", async () => {
     const source = packageWith(
       '<table:table table:name="Data"><table:table-row><table:table-cell office:value-type="float" office:value="1"/></table:table-row></table:table><table:data-pilot-tables><table:data-pilot-table table:name="Pivot" table:target-range-address="Data.B1:B4"><table:source-cell-range table:cell-range-address="Data.A1:A10"/><table:data-pilot-field table:source-field-name="Sales" table:orientation="data" table:function="median"/></table:data-pilot-table></table:data-pilot-tables>',

@@ -1,106 +1,118 @@
-import type { ParagraphOptions, SectionChild, SectionOptions } from "@office-open/docx";
+import type { SectionChild, SectionOptions } from "@office-open/docx";
 import {
   attributeString,
   childNamed,
   childrenNamed,
   emuToLength,
-  escapeText,
   lengthToEmu,
   readXml,
-  textOf,
   xmlElement,
   type OdfFiles,
 } from "@office-open/odf";
 import type { Element } from "@office-open/xml";
 
-import { normalizeParagraph, spacesXml } from "./paragraph";
+import { OdtGenerateError, OdtParseError } from "./error";
+
+export interface MasterHeaderFooterContext {
+  renderBlocks: (children: SectionChild[]) => string;
+}
 
 /** Section headers/footers render as master-page style:header/style:footer. */
 export function masterHeaderFooter(
   section: Pick<SectionOptions, "headers" | "footers"> | undefined,
+  context: MasterHeaderFooterContext,
 ): string {
+  const header = section?.headers;
+  const footer = section?.footers;
+  if (
+    (header?.default !== undefined && header.odd !== undefined) ||
+    (footer?.default !== undefined && footer.odd !== undefined)
+  ) {
+    throw new OdtGenerateError(
+      "ODT has no separate odd and default master-page header/footer regions",
+      "styles.xml",
+      "/office:document-styles/office:master-styles/style:master-page",
+      "style:master-page",
+      "ambiguous-master-header-footer-slots",
+    );
+  }
   return (
-    headerFooterXml(section?.headers?.default, "style:header") +
-    headerFooterXml(section?.footers?.default, "style:footer")
+    headerFooterXml(header?.default ?? header?.odd, "style:header", context) +
+    headerFooterXml(header?.even, "style:header-left", context) +
+    headerFooterXml(header?.first, "style:header-first", context) +
+    headerFooterXml(footer?.default ?? footer?.odd, "style:footer", context) +
+    headerFooterXml(footer?.even, "style:footer-left", context) +
+    headerFooterXml(footer?.first, "style:footer-first", context)
   );
 }
 
-export function headerFooterXml(children: SectionChild[] | undefined, element: string): string {
-  const blocks = (children ?? [])
-    .filter((child) => "paragraph" in child)
-    .map((child) => headerParagraphXml(normalizeParagraph(child.paragraph)));
-  if (blocks.length === 0) return "";
-  return xmlElement(element, undefined, blocks);
+export function headerFooterXml(
+  children: SectionChild[] | undefined,
+  element: string,
+  context: MasterHeaderFooterContext,
+): string {
+  if (children === undefined) return "";
+  return xmlElement(element, undefined, [context.renderBlocks(children)]);
 }
 
-export function headerParagraphXml(options: ParagraphOptions): string {
-  if (options.text !== undefined && options.children === undefined)
-    return xmlElement("text:p", undefined, [spacesXml(options.text)]);
-  return xmlElement(
-    "text:p",
-    undefined,
-    (options.children ?? []).map((child) => {
-      if (typeof child === "string") return spacesXml(child);
-      if ("simpleField" in child)
-        return headerFieldXml(
-          (child as { simpleField: { instruction?: string; cachedValue?: string } }).simpleField,
-        );
-      if ("text" in child) return spacesXml(String((child as { text?: string }).text ?? ""));
-      return "";
-    }),
-  );
-}
-
-export function headerFieldXml(field: { instruction?: string; cachedValue?: string }): string {
-  const value = field.cachedValue ?? "1";
-  if (/NUMPAGES/i.test(field.instruction ?? ""))
-    return xmlElement("text:page-count", undefined, [escapeText(value)]);
-  return xmlElement("text:page-number", { "text:select-page": "current" }, [escapeText(value)]);
-}
-
-/** Master-page header/footer paragraphs → docx section header/footer children. */
-export function parseMasterHeaderFooter(files: OdfFiles): {
+/** Master-page header/footer regions → canonical section slots. */
+export function parseMasterHeaderFooter(
+  files: OdfFiles,
+  parseBlocks: (elements: Element[], path: string) => SectionChild[],
+): {
   headers?: SectionOptions["headers"];
-  footers?: SectionOptions["headers"];
+  footers?: SectionOptions["footers"];
 } {
   const master = childNamed(
     childNamed(readXml(files, "styles.xml"), "office:master-styles"),
     "style:master-page",
   );
-  const header = childNamed(master, "style:header");
-  const footer = childNamed(master, "style:footer");
-  const headerParagraphs = header ? parseHeaderParagraphs(header) : [];
-  const footerParagraphs = footer ? parseHeaderParagraphs(footer) : [];
-  return {
-    headers: headerParagraphs.length > 0 ? { default: headerParagraphs } : undefined,
-    footers: footerParagraphs.length > 0 ? { default: footerParagraphs } : undefined,
-  };
-}
-
-export function parseHeaderParagraphs(container: Element): SectionChild[] {
-  return childrenNamed(container, "text:p").map((paragraph) => {
-    const runs = parseHeaderRuns(paragraph);
-    const options: ParagraphOptions =
-      runs.length === 1 && typeof runs[0] === "string" ? { text: runs[0] } : { children: runs };
-    return { paragraph: options } as SectionChild;
-  });
-}
-
-export function parseHeaderRuns(paragraph: Element): NonNullable<ParagraphOptions["children"]> {
-  return (paragraph.elements ?? []).flatMap((child): NonNullable<ParagraphOptions["children"]> => {
-    if (child.type === "text") return [String(child.text ?? "")];
-    if (child.name === "text:page-number")
-      return [{ simpleField: { instruction: " PAGE ", cachedValue: textOf(child) ?? "" } }];
-    if (child.name === "text:page-count")
-      return [{ simpleField: { instruction: " NUMPAGES ", cachedValue: textOf(child) ?? "" } }];
-    return [];
-  });
+  const regions = [
+    ["style:header", "headers", "default"],
+    ["style:header-left", "headers", "even"],
+    ["style:header-first", "headers", "first"],
+    ["style:footer", "footers", "default"],
+    ["style:footer-left", "footers", "even"],
+    ["style:footer-first", "footers", "first"],
+  ] as const;
+  const result: {
+    headers?: SectionOptions["headers"];
+    footers?: SectionOptions["footers"];
+  } = {};
+  for (const [elementName, family, slot] of regions) {
+    const region = childNamed(master, elementName);
+    if (!region) continue;
+    const display = attributeString(region, "style:display");
+    if (display !== undefined && display !== "true" && display !== "1") {
+      throw new OdtParseError(
+        `styles.xml: ${elementName} display state has no canonical section mapping`,
+        "styles.xml",
+        `/office:document-styles/office:master-styles/style:master-page/${elementName}/@style:display`,
+        elementName,
+        "unsupported-master-header-footer-display",
+      );
+    }
+    const blocks = (region.elements ?? []).filter((child) => child.type === "element");
+    const parsed = parseBlocks(
+      blocks,
+      `/office:document-styles/office:master-styles/style:master-page/${elementName}`,
+    );
+    (result[family] ??= {})[slot] = parsed;
+  }
+  return result;
 }
 
 export function parsePageLayout(files: OdfFiles): SectionOptions["properties"] {
   const styles = readXml(files, "styles.xml");
+  const master = childNamed(childNamed(styles, "office:master-styles"), "style:master-page");
+  const pageLayoutName = attributeString(master, "style:page-layout-name");
+  const pageLayouts = childrenNamed(
+    childNamed(styles, "office:automatic-styles"),
+    "style:page-layout",
+  );
   const layout = childNamed(
-    childNamed(childNamed(styles, "office:automatic-styles"), "style:page-layout"),
+    pageLayouts.find((item) => attributeString(item, "style:name") === pageLayoutName) ??
+      pageLayouts[0],
     "style:page-layout-properties",
   );
   const width = lengthToTwips(attributeString(layout, "fo:page-width"));

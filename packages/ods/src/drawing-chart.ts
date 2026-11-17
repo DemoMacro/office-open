@@ -67,13 +67,17 @@ export function parseWorksheetCharts(
   return charts;
 }
 
-export function endAnchor(frame: Element): Pick<WorksheetChartOptions, "toCol" | "toRow"> {
+export function endAnchor(
+  frame: Element,
+): Pick<WorksheetChartOptions, "toCol" | "toRow" | "toColOffset" | "toRowOffset"> {
   const address = attributeString(frame, "table:end-cell-address");
   const match = /^([A-Z]+)([0-9]+)$/.exec(address ?? "");
   if (!match) return {};
   return {
     toCol: columnNumber(match[1]!),
     toRow: Number(match[2]),
+    toColOffset: lengthToEmu(attributeString(frame, "table:end-x")),
+    toRowOffset: lengthToEmu(attributeString(frame, "table:end-y")),
   };
 }
 
