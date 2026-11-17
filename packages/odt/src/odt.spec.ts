@@ -438,6 +438,28 @@ describe("ODT canonical projection", () => {
     });
   });
 
+  it("preserves the canonical table style reference", async () => {
+    const parsed = await parseDocument(
+      await generateDocument({
+        sections: [
+          {
+            children: [
+              {
+                table: {
+                  style: "FinancialTable",
+                  rows: [{ cells: [{ children: [{ paragraph: { text: "Value" } }] }] }],
+                },
+              },
+            ],
+          },
+        ],
+      }),
+    );
+    expect(parsed.sections[0]?.children?.[0]).toMatchObject({
+      table: { style: "FinancialTable" },
+    });
+  });
+
   it("round-trips ODF form-control shapes with typed references", async () => {
     const parsed = await parseDocument(
       odtPackage(
@@ -683,6 +705,44 @@ describe("ODT canonical projection", () => {
                 width: 360000,
                 height: 360000,
               },
+            },
+          },
+        ],
+      },
+    });
+  });
+
+  it("preserves picture descriptions", async () => {
+    const parsed = await parseDocument(
+      await generateDocument({
+        sections: [
+          {
+            children: [
+              {
+                paragraph: {
+                  children: [
+                    {
+                      picture: {
+                        type: "png",
+                        data: new Uint8Array([1]),
+                        altText: { name: "Diagram", description: "A <sample> diagram" },
+                        transformation: { width: 360000, height: 180000 },
+                      },
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        ],
+      }),
+    );
+    expect(parsed.sections[0]?.children?.[0]).toMatchObject({
+      paragraph: {
+        children: [
+          {
+            picture: {
+              altText: { name: "Diagram", description: "A <sample> diagram" },
             },
           },
         ],

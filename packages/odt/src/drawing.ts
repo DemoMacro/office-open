@@ -14,6 +14,7 @@ import {
   childNamed,
   childrenNamed,
   emuToLength,
+  escapeText,
   graphicFill,
   graphicOutline,
   isExternalOdfUrl,
@@ -281,6 +282,9 @@ export function pictureFrameXml(picture: PictureOptions, images: OdtImage[]): st
           ? { "xlink:type": "simple", "xlink:show": "embed" }
           : {}),
       }),
+      ...(picture.altText?.description
+        ? [xmlElement("svg:desc", undefined, [escapeText(picture.altText.description)])]
+        : []),
     ],
   );
 }

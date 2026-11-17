@@ -98,10 +98,14 @@ export function tableXml(
       : xmlElement("table:table-row", undefined, [xmlElement("table:table-cell")]);
     tableXmlById.set(
       current,
-      xmlElement("table:table", { "table:name": tableName.get(current)! }, [
-        ...columnElements,
-        bodyRows,
-      ]),
+      xmlElement(
+        "table:table",
+        {
+          "table:name": tableName.get(current)!,
+          "table:style-name": current.style,
+        },
+        [...columnElements, bodyRows],
+      ),
     );
   }
   return tableXmlById.get(table)!;
@@ -172,7 +176,15 @@ export function parseTable(
         };
       }),
     }));
-    parsedTables.set(current, { table: { columnWidths, rows } });
+    parsedTables.set(current, {
+      table: {
+        columnWidths,
+        rows,
+        ...(attributeString(current, "table:style-name") === undefined
+          ? {}
+          : { style: attributeString(current, "table:style-name") }),
+      },
+    });
   }
   return parsedTables.get(element)!;
 }
