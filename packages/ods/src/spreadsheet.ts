@@ -9,8 +9,10 @@ import {
   graphicFill,
   graphicOutline,
   lengthToEmu,
+  odfEnhancedGeometryXml,
   odfGroupTransform,
   parseOdfGroupTransform,
+  parseOdfEnhancedGeometry,
   parseGraphicStyles,
   parseGraphicStyleResources,
   odfLengthToEmu,
@@ -161,6 +163,7 @@ export function parseDrawingShape(
     ? Math.abs((y2 ?? 0) - (y1 ?? 0))
     : (lengthToEmu(attributeString(element, "svg:height")) ?? 0);
   const style = graphicStyles.get(attributeString(element, "draw:style-name") ?? "");
+  const customGeometry = parseOdfEnhancedGeometry(childNamed(element, "draw:enhanced-geometry"));
   const paragraphs = childrenNamed(element, "text:p");
   const endAddress = parseSheetAddress(attributeString(element, "table:end-cell-address"));
   const endCell = /^([A-Z]+)([0-9]+)$/u.exec(endAddress?.address ?? "");
@@ -208,6 +211,7 @@ export function parseDrawingShape(
               : null,
       fill: graphicFill(style),
       outline: graphicOutline(style),
+      ...(customGeometry ? { customGeometry } : {}),
     },
     ...(paragraphs.length ? { textBody: parseShapeText(paragraphs, textStyles) } : {}),
     ...(attributeString(element, "svg:title")
@@ -619,7 +623,12 @@ export function cellShapeXml(
             shape.toRowOffset === undefined ? undefined : emuToLength(shape.toRowOffset),
           "draw:transform": odfGroupTransform(shape.properties.rotation),
         },
-        paragraphXml,
+        [
+          ...(shape.properties.customGeometry
+            ? [odfEnhancedGeometryXml(shape.properties.customGeometry)]
+            : []),
+          ...paragraphXml,
+        ],
       );
     });
   return shapeXml;

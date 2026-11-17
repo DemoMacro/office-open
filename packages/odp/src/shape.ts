@@ -7,7 +7,9 @@ import {
   graphicFill,
   graphicOutline,
   lengthToEmu,
+  odfEnhancedGeometryXml,
   odfGroupTransform,
+  parseOdfEnhancedGeometry,
   parseOdfGroupTransform,
   presetGeometryOdf,
   pushShapeStyle,
@@ -27,8 +29,7 @@ import type {
 import type { Element } from "@office-open/xml";
 
 import { endpointConnection, parseChartFrame, parsePictureFrame } from "./drawing";
-import { OdpGenerateError, OdpParseError, unknownSlideChild } from "./error";
-import { GeometryFormulaEvaluator } from "./geometry-formulas";
+import { OdpParseError, unknownSlideChild } from "./error";
 import { parseSlideTable } from "./slide";
 import { parseSlideNode, type OdpSlideNodeOptions } from "./slide-nodes";
 import { parseParagraph, textBodyXml, type TextProperties } from "./text-run";
@@ -180,7 +181,7 @@ export function customShapeXml(shape: ShapeOptions, styles: string[]): string {
   const customGeometry = shape.properties?.customGeometry;
   if (customGeometry)
     return xmlElement(
-      "draw:path",
+      "draw:custom-shape",
       {
         "draw:id": odfShapeIdXml(shape.id),
         "draw:style-name": pushShapeStyle(
@@ -193,11 +194,12 @@ export function customShapeXml(shape: ShapeOptions, styles: string[]): string {
         "svg:width": toOdfLength(shape.width),
         "svg:height": toOdfLength(shape.height),
         "draw:transform": odfGroupTransform(shape.rotation),
-        "svg:viewBox": `0 0 ${shape.width} ${shape.height}`,
         "draw:name": shape.name,
-        "svg:d": customGeometryPath(customGeometry, shape),
       },
-      shape.textBody ? textBodyXml(shape.textBody, styles) : [],
+      [
+        odfEnhancedGeometryXml(customGeometry, shape.odfGeometryType),
+        ...(shape.textBody ? textBodyXml(shape.textBody, styles) : []),
+      ],
     );
   return xmlElement(
     "draw:custom-shape",
@@ -248,132 +250,6 @@ export function controlShapeXml(shape: ShapeOptions, styles: string[]): string {
     },
     shape.textBody ? textBodyXml(shape.textBody, styles) : [],
   );
-}
-
-function customGeometryPath(geometry: CustomGeometryOptions, shape: ShapeOptions): string {
-  const width = shape.width;
-  const height = shape.height;
-  if (width === undefined || height === undefined) {
-    throw new OdpGenerateError(
-      "Custom geometry requires explicit shape dimensions",
-      "content.xml",
-      "/draw:custom-shape",
-      "svg:width",
-      "missing-custom-geometry-dimensions",
-    );
-  }
-  const widthEmu =
-    typeof width === "number" ? width : throwOdpGeometryDimension(lengthToEmu(width), "svg:width");
-  const heightEmu =
-    typeof height === "number"
-      ? height
-      : throwOdpGeometryDimension(lengthToEmu(height), "svg:height");
-  let currentX = 0;
-  let currentY = 0;
-  const formulas = new GeometryFormulaEvaluator(geometry, widthEmu, heightEmu);
-  const coordinate = (value: string): string => {
-    let emu: number;
-    try {
-      emu = formulas.coordinate(value);
-    } catch (error) {
-      if (error instanceof RangeError) {
-        throw new OdpGenerateError(
-          error.message,
-          "content.xml",
-          "/draw:path",
-          "svg:d",
-          "unsupported-geometry-formula",
-        );
-      }
-      throw error;
-    }
-    if (!Number.isFinite(emu)) {
-      throw new OdpParseError(
-        "Invalid custom geometry coordinate",
-        "content.xml",
-        "/draw:path",
-        "svg:d",
-        "invalid-custom-geometry-coordinate",
-      );
-    }
-    return String(Math.round(emu));
-  };
-  const point = (point: { x: string; y: string }): string =>
-    `${coordinate(point.x)} ${coordinate(point.y)}`;
-  const commands = (geometry.pathList ?? []).flatMap((path) => path.commands ?? []);
-  return commands
-    .map((command): string => {
-      if (command.command === "moveTo") {
-        currentX = formulas.coordinate(command.point.x) / 360000;
-        currentY = formulas.coordinate(command.point.y) / 360000;
-        return `M ${point(command.point)}`;
-      }
-      if (command.command === "lineTo") {
-        currentX = formulas.coordinate(command.point.x) / 360000;
-        currentY = formulas.coordinate(command.point.y) / 360000;
-        return `L ${point(command.point)}`;
-      }
-      if (command.command === "close") return "Z";
-      if (command.command === "quadBezTo") {
-        const [control, end] = command.points;
-        currentX = formulas.coordinate(end!.x) / 360000;
-        currentY = formulas.coordinate(end!.y) / 360000;
-        return `Q ${point(control!)} ${point(end!)}`;
-      }
-      if (command.command === "cubicBezTo") {
-        const [first, second, end] = command.points;
-        currentX = formulas.coordinate(end!.x) / 360000;
-        currentY = formulas.coordinate(end!.y) / 360000;
-        return `C ${point(first!)} ${point(second!)} ${point(end!)}`;
-      }
-      if (command.command === "arcTo") {
-        const widthRadius = formulas.coordinate(command.widthRadius) / 360000;
-        const heightRadius = formulas.coordinate(command.heightRadius) / 360000;
-        const startAngle = formulas.coordinate(command.startAngle) / 60000;
-        const sweepAngle = formulas.coordinate(command.sweepAngle) / 60000;
-        const angle = (startAngle * Math.PI) / 180;
-        const centerX = currentX - widthRadius * Math.cos(angle);
-        const centerY = currentY - heightRadius * Math.sin(angle);
-        const endAngle = ((startAngle + sweepAngle) * Math.PI) / 180;
-        const endX = centerX + widthRadius * Math.cos(endAngle);
-        const endY = centerY + heightRadius * Math.sin(endAngle);
-        const largeArc = Math.abs(sweepAngle) > 180 ? 1 : 0;
-        const sweep = sweepAngle > 0 ? 1 : 0;
-        currentX = endX;
-        currentY = endY;
-        return [
-          "A",
-          widthRadius,
-          heightRadius,
-          0,
-          largeArc,
-          sweep,
-          Math.round(endX * 1000) / 1000,
-          Math.round(endY * 1000) / 1000,
-        ].join(" ");
-      }
-      throw new OdpParseError(
-        "Unsupported custom geometry path command",
-        "content.xml",
-        "/draw:page/draw:path",
-        "svg:d",
-        "unsupported-path-command",
-      );
-    })
-    .join(" ");
-}
-
-function throwOdpGeometryDimension(value: number | undefined, name: string): number {
-  if (value === undefined || !Number.isFinite(value) || value < 0) {
-    throw new OdpGenerateError(
-      "Custom geometry dimensions must resolve to finite EMU values",
-      "content.xml",
-      "/draw:custom-shape",
-      name,
-      "invalid-custom-geometry-dimension",
-    );
-  }
-  return value;
 }
 
 export function shapeXml(shape: ShapeOptions, styles: string[]): string {
@@ -553,6 +429,7 @@ export function parseCustomSlideShape(
     presetType && resolvedGeometry
       ? resolveOdfDrawGeometryOverlay(presetType, resolvedGeometry)
       : undefined;
+  const customGeometry = parseOdfEnhancedGeometry(enhanced);
   const paragraphs = childrenNamed(element, "text:p");
   const transform = parseShapeTransform(element);
   const fill = graphicFill(graphic);
@@ -572,12 +449,13 @@ export function parseCustomSlideShape(
           },
         }
       : {}),
-    ...(preset || fill || outline
+    ...(preset || fill || outline || customGeometry
       ? {
           properties: {
             ...(preset ? { geometry: preset } : {}),
             ...(fill ? { fill } : {}),
             ...(outline ? { outline } : {}),
+            ...(customGeometry ? { customGeometry } : {}),
           },
         }
       : {}),

@@ -20,7 +20,9 @@ import {
   graphicOutline,
   isExternalOdfUrl,
   lengthToEmu,
+  odfEnhancedGeometryXml,
   odfGroupTransform,
+  parseOdfEnhancedGeometry,
   parseOdfGroupTransform,
   presetGeometryOdf,
   pushShapeStyle,
@@ -224,15 +226,17 @@ export function wpsShapeFrameXml(
       "draw:name": shape.nonVisualProperties?.name ?? shape.altText?.name,
     },
     [
-      xmlElement(
-        "draw:enhanced-geometry",
-        {
-          "draw:type":
+      shape.customGeometry
+        ? odfEnhancedGeometryXml(
+            shape.customGeometry,
             shape.odfGeometryType ??
-            (geometry?.preset ? presetGeometryOdf(geometry.preset) : undefined),
-        },
-        [],
-      ),
+              (geometry?.preset ? presetGeometryOdf(geometry.preset) : undefined),
+          )
+        : xmlElement("draw:enhanced-geometry", {
+            "draw:type":
+              shape.odfGeometryType ??
+              (geometry?.preset ? presetGeometryOdf(geometry.preset) : undefined),
+          }),
       ...(shape.altText?.title || shape.nonVisualProperties?.title
         ? [
             xmlElement("svg:title", undefined, [
@@ -425,6 +429,7 @@ export function parseShapeElement(
     presetType && resolvedGeometry
       ? resolveOdfDrawGeometryOverlay(presetType, resolvedGeometry)
       : undefined;
+  const customGeometry = parseOdfEnhancedGeometry(enhanced);
   const geometry = shapeGeometry(element.name, preset);
   const fill = graphic ? graphicFill(graphic) : undefined;
   const outline = graphic ? graphicOutline(graphic) : undefined;
@@ -443,6 +448,7 @@ export function parseShapeElement(
     ...(controlId === undefined ? {} : { controlId }),
     ...(geometry ? { geometry } : {}),
     ...(geometryOverlay ? { odfGeometryType: geometryOverlay } : {}),
+    ...(customGeometry ? { customGeometry } : {}),
     ...(name
       ? {
           altText: {
@@ -772,6 +778,7 @@ export function parseCustomShape(
     presetType && resolvedGeometry
       ? resolveOdfDrawGeometryOverlay(presetType, resolvedGeometry)
       : undefined;
+  const customGeometry = parseOdfEnhancedGeometry(enhanced);
   const transform = parseDrawingTransform(element, "custom-shape");
   const x = (lengthToEmu(attributeString(element, "svg:x")) ?? 0) + (transform.x ?? 0);
   const y = (lengthToEmu(attributeString(element, "svg:y")) ?? 0) + (transform.y ?? 0);
@@ -824,6 +831,7 @@ export function parseCustomShape(
         : {}),
       ...(preset ? { geometry: preset } : {}),
       ...(geometryOverlay ? { odfGeometryType: geometryOverlay } : {}),
+      ...(customGeometry ? { customGeometry } : {}),
       ...(fill ? { fill } : {}),
       ...(outline ? { outline } : {}),
       ...(textWarp ? { bodyProperties: { prstTxWarp: { preset: textWarp } } } : {}),

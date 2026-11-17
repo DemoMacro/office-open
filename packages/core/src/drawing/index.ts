@@ -105,6 +105,8 @@ export type { GeometryGuide } from "./geometry/adjustment-values";
 export { createCustomGeometry } from "./geometry/custom-geometry";
 export { MSO_SHAPE_TYPE_PRESETS } from "./geometry/mso-shape-types";
 export type {
+  AdjustHandle,
+  AdjustPoint,
   CustomGeometryOptions,
   PathOptions,
   PathCommand,

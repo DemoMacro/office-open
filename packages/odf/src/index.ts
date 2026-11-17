@@ -144,6 +144,7 @@ export {
   parseOdfGroupTransform,
   type OdfGroupTransform,
 } from "./drawing/group-transform";
+export { odfEnhancedGeometryXml, parseOdfEnhancedGeometry } from "./drawing/enhanced-geometry";
 
 export {
   chartPropertiesXml,
