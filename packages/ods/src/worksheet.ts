@@ -503,7 +503,9 @@ export function cellXml(
     ...decorations,
     ...(cell.detective ? [tableDetectiveXml(cell.detective)] : []),
     ...(cached.type === "string"
-      ? [xmlElement("text:p", undefined, [escapeText(String(cached.value ?? ""))])]
+      ? String(cached.value ?? "")
+          .split("\n")
+          .map((paragraph) => xmlElement("text:p", undefined, [escapeText(paragraph)]))
       : []),
     ...(cell.graphics ?? []).map((graphic) => cellGraphicXml(graphic)),
   ];
@@ -619,10 +621,10 @@ function styleWithNumFmt(style: CellOptions["style"], numFmt: string): CellOptio
   return { ...style, numFmt: style?.numFmt ?? numFmt };
 }
 
-function durationToSerial(value: string | undefined): number {
-  if (value === undefined) return 0;
+function durationToSerial(value: string | undefined): number | undefined {
+  if (value === undefined) return undefined;
   const match = /^(-?)P(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?(?:([\d.]+)S)?)?$/u.exec(value);
-  if (!match) return 0;
+  if (!match) return undefined;
   const sign = match[1] === "-" ? -1 : 1;
   const days = Number(match[2] ?? 0);
   const hours = Number(match[3] ?? 0);
@@ -1466,20 +1468,43 @@ export function parseCell(
     }
   }
   const valueType = attributeString(cell, "office:value-type");
-  if (valueType === "float") result.value = attributeNumber(cell, "office:value");
-  else if (valueType === "percentage") {
-    result.value = attributeNumber(cell, "office:value");
+  if (valueType === "float") {
+    const value = attributeNumber(cell, "office:value");
+    if (value === undefined) throw invalidCellValue(cell, row, column, "office:value");
+    result.value = value;
+  } else if (valueType === "percentage") {
+    const value = attributeNumber(cell, "office:value");
+    if (value === undefined) throw invalidCellValue(cell, row, column, "office:value");
+    result.value = value;
     result.style = styleWithNumFmt(result.style, "0%");
   } else if (valueType === "currency") {
-    result.value = attributeNumber(cell, "office:value");
+    const value = attributeNumber(cell, "office:value");
+    if (value === undefined) throw invalidCellValue(cell, row, column, "office:value");
+    result.value = value;
     const currency = attributeString(cell, "office:currency");
     if (currency) result.style = styleWithNumFmt(result.style, `[$${currency}] #,##0.00`);
   } else if (valueType === "time") {
-    result.value = durationToSerial(attributeString(cell, "office:time-value"));
+    const value = durationToSerial(attributeString(cell, "office:time-value"));
+    if (value === undefined)
+      throw unknownOdsElement(
+        cell,
+        `/office:document-content/office:body/office:spreadsheet/table:table/table:table-row[${row}]/table:table-cell[${column}]`,
+        "office:time-value",
+        "invalid time duration",
+      );
+    result.value = value;
     result.style = styleWithNumFmt(result.style, "[hh]:mm:ss");
-  } else if (valueType === "boolean")
-    result.value = attributeString(cell, "office:boolean-value") === "true";
-  else if (valueType === "date") {
+  } else if (valueType === "boolean") {
+    const value = attributeString(cell, "office:boolean-value");
+    if (value !== "true" && value !== "false" && value !== "1" && value !== "0")
+      throw unknownOdsElement(
+        cell,
+        `/office:document-content/office:body/office:spreadsheet/table:table/table:table-row[${row}]/table:table-cell[${column}]`,
+        "office:boolean-value",
+        "invalid boolean value",
+      );
+    result.value = value === "true" || value === "1";
+  } else if (valueType === "date") {
     const source = attributeString(cell, "office:date-value");
     const normalized =
       source === undefined || /(?:Z|[+-]\d{2}:\d{2})$/u.test(source) ? source : `${source}Z`;
@@ -1492,8 +1517,26 @@ export function parseCell(
         "invalid date value",
       );
     result.value = date;
-  } else if (valueType === "string") result.value = textOf(childNamed(cell, "text:p"));
+  } else if (valueType === "string") {
+    result.value = childrenNamed(cell, "text:p").map(textOf).join("\n");
+  } else if (valueType !== undefined) {
+    throw unknownOdsElement(
+      cell,
+      `/office:document-content/office:body/office:spreadsheet/table:table/table:table-row[${row}]/table:table-cell[${column}]`,
+      "office:value-type",
+      `unsupported value type: ${valueType}`,
+    );
+  }
   return result;
+}
+
+function invalidCellValue(cell: Element, row: number, column: number, name: string): OdsParseError {
+  return unknownOdsElement(
+    cell,
+    `/office:document-content/office:body/office:spreadsheet/table:table/table:table-row[${row}]/table:table-cell[${column}]`,
+    name,
+    "required cell value is missing or invalid",
+  );
 }
 
 function parseCellRangeSource(source: Element): CellRangeSourceOptions {

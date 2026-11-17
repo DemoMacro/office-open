@@ -252,6 +252,98 @@ describe("ODS spreadsheet semantics", () => {
     ]);
   });
 
+  it("maps database filters and sort state to canonical table fields", async () => {
+    const source = packageWith(
+      `<table:table table:name="Data"><table:table-row><table:table-cell office:value-type="string"><text:p>Region</text:p></table:table-cell><table:table-cell office:value-type="string"><text:p>Sales</text:p></table:table-cell></table:table-row></table:table><table:database-ranges><table:database-range table:name="Database" table:target-range-address="Data.A1:B10"><table:filter table:target-range-address="Data.A1:B10"><table:filter-or><table:filter-condition table:field-number="0" table:value="East" table:operator="="/><table:filter-condition table:field-number="0" table:value="West" table:operator="="/></table:filter-or></table:filter><table:sort table:target-range-address="Data.A1:B10" table:case-sensitive="true"><table:sort-by table:field-number="1" table:order="descending"/><table:sort-by table:field-number="0" table:order="ascending"/></table:sort></table:database-range></table:database-ranges>`,
+    );
+    const { parsed, regenerated } = await roundTrip(source);
+    expect(parsed.worksheets?.[0]?.tables?.[0]).toMatchObject({
+      autoFilter: {
+        ref: "A1:B10",
+        columns: [{ colId: 0, filters: { values: ["East", "West"] } }],
+      },
+      sortState: {
+        ref: "A1:B10",
+        caseSensitive: true,
+        conditions: [
+          { ref: "B1", descending: true },
+          { ref: "A1", descending: false },
+        ],
+      },
+    });
+    expect(regenerated.worksheets?.[0]?.tables?.[0]?.autoFilter).toEqual(
+      parsed.worksheets?.[0]?.tables?.[0]?.autoFilter,
+    );
+    expect(regenerated.worksheets?.[0]?.tables?.[0]?.sortState).toEqual(
+      parsed.worksheets?.[0]?.tables?.[0]?.sortState,
+    );
+  });
+
+  it("rejects database range attributes without a canonical mapping", async () => {
+    await expect(
+      parseWorkbook(
+        packageWith(
+          '<table:table table:name="Data"/><table:database-ranges><table:database-range table:name="Database" table:target-range-address="Data.A1:A2" table:is-selection="true"/></table:database-ranges>',
+        ),
+      ),
+    ).rejects.toMatchObject({
+      elementName: "table:is-selection",
+      reason: "database range attribute has no canonical TableOptions mapping",
+    });
+  });
+
+  it("writes canonical multi-column and custom database filters", async () => {
+    const parsed = await parseWorkbook(
+      await generateWorkbook({
+        worksheets: [
+          {
+            name: "Data",
+            rows: [],
+            tables: [
+              {
+                displayName: "Database",
+                ref: "A1:C10",
+                columns: [],
+                autoFilter: {
+                  ref: "A1:C10",
+                  columns: [
+                    { colId: 0, filters: { values: ["East", "West"] } },
+                    {
+                      colId: 2,
+                      customFilters: {
+                        and: true,
+                        entries: [
+                          { operator: "greaterThan", val: "1" },
+                          { operator: "lessThan", val: "10" },
+                        ],
+                      },
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        ],
+      }),
+    );
+    expect(parsed.worksheets?.[0]?.tables?.[0]?.autoFilter).toEqual({
+      ref: "A1:C10",
+      columns: [
+        { colId: 0, filters: { values: ["East", "West"] } },
+        {
+          colId: 2,
+          customFilters: {
+            and: true,
+            entries: [
+              { operator: "greaterThan", val: "1" },
+              { operator: "lessThan", val: "10" },
+            ],
+          },
+        },
+      ],
+    });
+  });
+
   it("maps Data Pilot totals, drill-down, page selection, and hidden fields", async () => {
     const source = {
       worksheets: [

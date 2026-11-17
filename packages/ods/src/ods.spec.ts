@@ -205,6 +205,29 @@ describe("ODS codec", () => {
     ).toBe(-1 / 24);
   });
 
+  it("rejects invalid scalar cell values instead of coercing them", async () => {
+    const packageFor = (cell: string) =>
+      generateOcf("application/vnd.oasis.opendocument.spreadsheet", {
+        "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:spreadsheet><table:table table:name="Sheet1"><table:table-row><table:table-cell ${cell}/></table:table-row></table:table></office:spreadsheet></office:body></office:document-content>`,
+      });
+    await expect(
+      parseWorkbook(packageFor('office:value-type="time" office:time-value="invalid"')),
+    ).rejects.toMatchObject({
+      elementName: "office:time-value",
+      reason: "invalid time duration",
+    });
+    await expect(
+      parseWorkbook(packageFor('office:value-type="boolean" office:boolean-value="yes"')),
+    ).rejects.toMatchObject({
+      elementName: "office:boolean-value",
+      reason: "invalid boolean value",
+    });
+    await expect(parseWorkbook(packageFor('office:value-type="future"'))).rejects.toMatchObject({
+      elementName: "office:value-type",
+      reason: "unsupported value type: future",
+    });
+  });
+
   it("expands column, row, and cell repeats", async () => {
     const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:spreadsheet><table:table table:name="Sheet1"><table:table-column table:number-columns-repeated="3"/><table:table-row table:number-rows-repeated="2"><table:table-cell table:number-columns-repeated="3"/><table:table-cell office:value-type="float" office:value="1"/></table:table-row></table:table></office:spreadsheet></office:body></office:document-content>`;
     const worksheet = (

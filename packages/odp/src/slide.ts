@@ -627,17 +627,17 @@ function compatibilityPage(page: Element): Element {
       ...branches.filter((branch) => branch.name === "mc:Choice"),
       ...branches.filter((branch) => branch.name === "mc:Fallback"),
     ];
-    const known = candidates.flatMap((branch) =>
-      (branch.elements ?? []).filter((content) => isKnownCompatibilityChild(content.name)),
+    const selectedBranch = candidates.find((branch) =>
+      (branch.elements ?? []).some((content) => isKnownCompatibilityChild(content.name)),
     );
-    const selected = (known[0] ?? candidates[0]?.elements?.[0]) as Element | undefined;
-    if (selected === undefined) {
+    const selected = selectedBranch?.elements ?? candidates[0]?.elements ?? [];
+    if (selected.length === 0) {
       throw unknownSlideChild(
         child,
         "/office:document-content/office:body/office:presentation/draw:page/mc:AlternateContent",
       );
     }
-    return [selected];
+    return selected;
   });
   return { ...page, elements: children };
 }

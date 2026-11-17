@@ -315,11 +315,20 @@ function parseOdpPackage(data: Uint8Array): OdpPresentationOptions {
   const usedBinaryPaths = new Set<string>();
   validateEmbeddedObjectBodies(body, binaries, chartPool, embeddedObjects);
   const nextEmbeddedShapeId = { value: 1 };
-  const styleResources = parseStyleResources(childNamed(content, "office:automatic-styles"));
   const masterStyles = childNamed(stylesDocument, "office:master-styles");
   const contentAutomaticStyles = childNamed(content, "office:automatic-styles");
   const stylesAutomaticStyles = childNamed(stylesDocument, "office:automatic-styles");
   const commonStyles = childNamed(stylesDocument, "office:styles");
+  const styleResources = [
+    ...parseStyleResources(contentAutomaticStyles),
+    ...parseStyleResources(stylesAutomaticStyles),
+    ...parseStyleResources(commonStyles),
+  ].filter(
+    (resource, index, resources) =>
+      resources.findIndex(
+        (candidate) => candidate.name === resource.name && candidate.family === resource.family,
+      ) === index,
+  );
   const masterGraphicStyles = new Map([
     ...parseGraphicStyles(contentAutomaticStyles),
     ...parseGraphicStyles(stylesAutomaticStyles),

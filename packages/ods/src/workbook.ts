@@ -673,10 +673,12 @@ export function parseDefinedNames(body: Element | undefined): WorkbookOptions["d
     ...childrenNamed(expressions, "table:named-range").map((range) => ({
       name: attributeString(range, "table:name") ?? "",
       value: attributeString(range, "table:cell-range-address") ?? "",
+      hidden: attributeString(range, "loext:hidden") === "true" || undefined,
     })),
     ...childrenNamed(expressions, "table:named-expression").map((expression) => ({
       name: attributeString(expression, "table:name") ?? "",
       value: attributeString(expression, "table:expression") ?? "",
+      hidden: attributeString(expression, "loext:hidden") === "true" || undefined,
     })),
   ];
 }

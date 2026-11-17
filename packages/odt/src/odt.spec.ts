@@ -348,6 +348,40 @@ describe("ODT canonical projection", () => {
     ]);
   });
 
+  it("round-trips row-spanned table cells", async () => {
+    const options: DocumentOptions = {
+      sections: [
+        {
+          children: [
+            {
+              table: {
+                rows: [
+                  {
+                    cells: [
+                      { rowSpan: 2, children: [{ paragraph: { text: "Merged" } }] },
+                      { children: [{ paragraph: { text: "Top" } }] },
+                    ],
+                  },
+                  { cells: [{ children: [{ paragraph: { text: "Bottom" } }] }] },
+                ],
+              },
+            },
+          ],
+        },
+      ],
+    };
+    const parsed = await parseDocument(await generateDocument(options));
+    const table = parsed.sections[0]?.children[0];
+    expect(table).toMatchObject({
+      table: {
+        rows: [
+          { cells: [{ rowSpan: 2 }, { children: [{ paragraph: { text: "Top" } }] }] },
+          { cells: [{ children: [{ paragraph: { text: "Bottom" } }] }] },
+        ],
+      },
+    });
+  });
+
   it("round-trips ODF form-control shapes with typed references", async () => {
     const parsed = await parseDocument(
       odtPackage(

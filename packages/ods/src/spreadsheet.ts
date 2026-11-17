@@ -21,14 +21,19 @@ import type {
   ConditionalFormatOptions,
   ConditionalFormatRule,
   CfvoOptions,
+  AutoFilterOptions,
+  CustomFilterOperator,
   DataValidationOptions,
   DxfOptions,
+  FilterColumnOptions,
   IconSetType,
   PivotDataField,
   PivotPageFieldOptions,
   SourcePivotTableOptions,
   ShapeOptions,
   SheetProtectionOptions,
+  SortCondition,
+  SortStateOptions,
   StyleOptions,
   TableOptions,
   WorksheetOptions,
@@ -482,6 +487,16 @@ export function parseContentValidations(
     if (help) assertElementNames(help, ["table:display", "table:title"], ["text:p"]);
     if (error)
       assertElementNames(error, ["table:display", "table:title", "table:message-type"], ["text:p"]);
+    for (const name of ["table:error-macro", "office:event-listeners"]) {
+      if (childNamed(validation, name)) {
+        throw unknownOdsElement(
+          validation,
+          CONTENT_PATH,
+          name,
+          "content validation behavior has no canonical DataValidationOptions mapping",
+        );
+      }
+    }
     const condition = attributeString(validation, "table:condition");
     const displayList = attributeString(validation, "table:display-list");
     result.set(attributeString(validation, "table:name") ?? "", {
@@ -696,6 +711,20 @@ export function parseDatabaseRanges(
         "table:subtotal-rules",
       ],
     );
+    const sourceNames = [
+      "table:database-source-sql",
+      "table:database-source-table",
+      "table:database-source-query",
+    ];
+    const source = sourceNames.find((name) => childNamed(range, name) !== undefined);
+    if (source) {
+      throw unknownOdsElement(
+        range,
+        CONTENT_PATH,
+        source,
+        "database source has no canonical TableOptions mapping",
+      );
+    }
     const target = parseSheetAddress(attributeString(range, "table:target-range-address"));
     if (!target?.sheet || !target.address) {
       throw unknownOdsElement(
@@ -714,19 +743,331 @@ export function parseDatabaseRanges(
         "database range worksheet is missing",
       );
     }
-    worksheet.tables = [
-      ...(worksheet.tables ?? []),
-      {
-        displayName:
-          attributeString(range, "table:name") ??
-          `DatabaseRange${worksheet.tables?.length ?? 0 + 1}`,
-        name: attributeString(range, "table:name"),
-        ref: target.address,
-        columns: [],
-        headerRowCount: attributeString(range, "table:contains-header") === "false" ? 0 : undefined,
-      },
-    ];
+    const filter = childNamed(range, "table:filter");
+    const sort = childNamed(range, "table:sort");
+    const table: TableOptions = {
+      displayName:
+        attributeString(range, "table:name") ??
+        `DatabaseRange${(worksheet.tables?.length ?? 0) + 1}`,
+      name: attributeString(range, "table:name"),
+      ref: target.address,
+      columns: [],
+      headerRowCount: parseOdsBoolean(range, "table:contains-header") === false ? 0 : undefined,
+      ...(filter ? { autoFilter: parseDatabaseFilter(filter, target.address) } : {}),
+      ...(sort ? { sortState: parseDatabaseSort(sort, range, target.address) } : {}),
+    };
+    const displayFilterButtons = parseOdsBoolean(range, "table:display-filter-buttons");
+    if (displayFilterButtons === true && filter === undefined) {
+      table.autoFilter = { ref: target.address };
+    }
+    const unsupportedAttributes = [
+      "table:is-selection",
+      "table:on-update-keep-styles",
+      "table:on-update-keep-size",
+      "table:has-persistent-data",
+      "table:orientation",
+      "calcext:contains-footer",
+    ].filter((name) => attributeString(range, name) !== undefined);
+    if (unsupportedAttributes.length > 0) {
+      throw unknownOdsElement(
+        range,
+        CONTENT_PATH,
+        unsupportedAttributes[0]!,
+        "database range attribute has no canonical TableOptions mapping",
+      );
+    }
+    if (childNamed(range, "table:subtotal-rules")) {
+      throw unknownOdsElement(
+        range,
+        CONTENT_PATH,
+        "table:subtotal-rules",
+        "subtotal rules have no canonical TableOptions mapping",
+      );
+    }
+    worksheet.tables = [...(worksheet.tables ?? []), table];
   }
+}
+
+function parseDatabaseFilter(filter: Element, rangeReference: string): AutoFilterOptions {
+  assertElementNames(
+    filter,
+    [
+      "table:target-range-address",
+      "table:condition-source",
+      "table:condition-source-range-address",
+      "table:display-duplicates",
+    ],
+    ["table:filter-condition", "table:filter-and", "table:filter-or"],
+  );
+  if (
+    attributeString(filter, "table:condition-source") !== undefined &&
+    attributeString(filter, "table:condition-source") !== "self"
+  ) {
+    throw unknownOdsElement(
+      filter,
+      CONTENT_PATH,
+      "table:condition-source",
+      "external filter condition sources have no canonical autoFilter mapping",
+    );
+  }
+  for (const name of ["table:condition-source-range-address", "table:display-duplicates"]) {
+    if (attributeString(filter, name) !== undefined) {
+      throw unknownOdsElement(
+        filter,
+        CONTENT_PATH,
+        name,
+        "filter attribute has no canonical autoFilter mapping",
+      );
+    }
+  }
+  const children = (filter.elements ?? []).filter((child) => child.type === "element");
+  const topLevelOr = children.length === 1 && children[0]?.name === "table:filter-or";
+  const conditionNodes: { element: Element; group?: "and" | "or" }[] = [];
+  const appendGroup = (element: Element, group?: "and" | "or"): void => {
+    for (const child of (element.elements ?? []).filter(
+      (entry): entry is Element => entry.type === "element",
+    )) {
+      if (child.name === "table:filter-condition") conditionNodes.push({ element: child, group });
+      else if (child.name === "table:filter-or" || child.name === "table:filter-and") {
+        appendGroup(child, child.name === "table:filter-or" ? "or" : "and");
+      } else {
+        throw unknownOdsElement(
+          child,
+          CONTENT_PATH,
+          child.name ?? "table:filter-condition",
+          "nested filter logic has no canonical autoFilter mapping",
+        );
+      }
+    }
+  };
+  for (const child of children) {
+    if (child.name === "table:filter-condition") conditionNodes.push({ element: child });
+    else if (child.name === "table:filter-or" || child.name === "table:filter-and") {
+      appendGroup(child, child.name === "table:filter-or" ? "or" : undefined);
+    } else {
+      throw unknownOdsElement(
+        child,
+        CONTENT_PATH,
+        child.name ?? "table:filter-condition",
+        "nested filter logic has no canonical autoFilter mapping",
+      );
+    }
+  }
+  const conditions = conditionNodes.map(({ element: condition, group }) => {
+    if (condition.name !== "table:filter-condition") {
+      throw unknownOdsElement(
+        condition,
+        CONTENT_PATH,
+        condition.name ?? "table:filter-condition",
+        "nested filter logic has no canonical autoFilter mapping",
+      );
+    }
+    assertElementNames(
+      condition,
+      [
+        "table:field-number",
+        "table:value",
+        "table:operator",
+        "table:case-sensitive",
+        "table:data-type",
+      ],
+      ["table:filter-set-item"],
+    );
+    const field = attributeNumber(condition, "table:field-number");
+    const operator = attributeString(condition, "table:operator");
+    const values = childrenNamed(condition, "table:filter-set-item").map((item) => {
+      assertElementNames(item, ["table:value"]);
+      return attributeString(item, "table:value") ?? "";
+    });
+    const value = attributeString(condition, "table:value");
+    if (field === undefined || operator === undefined || value === undefined) {
+      throw unknownOdsElement(
+        condition,
+        CONTENT_PATH,
+        "table:filter-condition",
+        "required filter data is missing",
+      );
+    }
+    if (values.length > 0 && operator !== "=" && operator !== "equal") {
+      throw unknownOdsElement(
+        condition,
+        CONTENT_PATH,
+        "table:filter-set-item",
+        "filter set only supports equality",
+      );
+    }
+    return { field, operator, values: values.length > 0 ? values : [value], group };
+  });
+  const byField = new Map<number, typeof conditions>();
+  for (const condition of conditions) {
+    const values = byField.get(condition.field) ?? [];
+    values.push(condition);
+    byField.set(condition.field, values);
+  }
+  if (topLevelOr && byField.size !== 1) {
+    throw unknownOdsElement(
+      filter,
+      CONTENT_PATH,
+      "table:filter-or",
+      "OR filters across fields have no canonical autoFilter mapping",
+    );
+  }
+  if (
+    [...byField.values()].some(
+      (entries) => entries.length > 1 && entries.some((entry) => entry.group === undefined),
+    )
+  ) {
+    throw unknownOdsElement(
+      filter,
+      CONTENT_PATH,
+      "table:filter-condition",
+      "multiple AND comparisons for one field have no canonical mapping",
+    );
+  }
+  const columns: FilterColumnOptions[] = [...byField].map(([colId, entries]) => {
+    const equality = entries.every((entry) => entry.operator === "=" || entry.operator === "equal");
+    if (equality) {
+      if (entries.some((entry) => entry.group === "and")) {
+        return {
+          colId,
+          customFilters: {
+            and: true,
+            entries: entries.map((entry) => ({ operator: "equal", val: entry.values[0]! })),
+          },
+        };
+      }
+      return { colId, filters: { values: entries.flatMap((entry) => entry.values) } };
+    }
+    const mapped: Record<string, CustomFilterOperator> = {
+      "!=": "notEqual",
+      "<>": "notEqual",
+      "not-equal": "notEqual",
+      ">": "greaterThan",
+      ">=": "greaterThanOrEqual",
+      "<": "lessThan",
+      "<=": "lessThanOrEqual",
+    };
+    const customEntries: {
+      operator: CustomFilterOperator;
+      value: string;
+      group: "and" | "or" | undefined;
+    }[] = [];
+    for (const entry of entries) {
+      const canonicalOperator = mapped[entry.operator];
+      const value = entry.values[0];
+      if (canonicalOperator === undefined || value === undefined || entry.group === undefined) {
+        throw unknownOdsElement(
+          filter,
+          CONTENT_PATH,
+          "table:filter-condition",
+          `unsupported filter operator: ${entry.operator}`,
+        );
+      }
+      customEntries.push({ operator: canonicalOperator, value, group: entry.group });
+    }
+    return {
+      colId,
+      customFilters: {
+        ...(customEntries.every((entry) => entry.group === "and") ? { and: true } : {}),
+        entries: customEntries.map((entry) => ({ operator: entry.operator, val: entry.value })),
+      },
+    };
+  });
+  return {
+    ref:
+      parseSheetAddress(attributeString(filter, "table:target-range-address"))?.address ??
+      rangeReference,
+    columns,
+  };
+}
+
+function parseDatabaseSort(
+  sort: Element,
+  range: Element,
+  rangeReference: string,
+): SortStateOptions {
+  assertElementNames(
+    sort,
+    [
+      "table:bind-styles-to-content",
+      "table:target-range-address",
+      "table:case-sensitive",
+      "table:language",
+      "table:country",
+      "table:script",
+      "table:rfc-language-tag",
+      "table:algorithm",
+      "table:embedded-number-behavior",
+    ],
+    ["table:sort-by"],
+  );
+  for (const name of [
+    "table:bind-styles-to-content",
+    "table:language",
+    "table:country",
+    "table:script",
+    "table:rfc-language-tag",
+    "table:algorithm",
+    "table:embedded-number-behavior",
+  ]) {
+    if (attributeString(sort, name) !== undefined) {
+      throw unknownOdsElement(
+        sort,
+        CONTENT_PATH,
+        name,
+        "sort attribute has no canonical sortState mapping",
+      );
+    }
+  }
+  const reference =
+    parseSheetAddress(attributeString(sort, "table:target-range-address"))?.address ??
+    rangeReference;
+  const rangeStart = /^\$?([A-Z]+)\$?(\d+)/u.exec(reference.split(":")[0] ?? "");
+  if (!rangeStart) {
+    throw unknownOdsElement(
+      range,
+      CONTENT_PATH,
+      "table:target-range-address",
+      "database range has an invalid sort reference",
+    );
+  }
+  const firstColumn = spreadsheetColumnNumber(rangeStart[1]!);
+  const firstRow = Number(rangeStart[2]);
+  const conditions: SortCondition[] = childrenNamed(sort, "table:sort-by").map((entry) => {
+    assertElementNames(entry, ["table:field-number", "table:data-type", "table:order"]);
+    const field = attributeNumber(entry, "table:field-number");
+    if (field === undefined) {
+      throw unknownOdsElement(
+        entry,
+        CONTENT_PATH,
+        "table:field-number",
+        "sort field number is missing",
+      );
+    }
+    if (attributeString(entry, "table:data-type") !== undefined) {
+      throw unknownOdsElement(
+        entry,
+        CONTENT_PATH,
+        "table:data-type",
+        "sort data type has no canonical sortState mapping",
+      );
+    }
+    const order = attributeString(entry, "table:order");
+    if (order !== undefined && order !== "ascending" && order !== "descending") {
+      throw unknownOdsElement(entry, CONTENT_PATH, "table:order", `invalid sort order: ${order}`);
+    }
+    return {
+      ref: `${spreadsheetColumnName(firstColumn + field)}${firstRow}`,
+      ...(order === undefined ? {} : { descending: order === "descending" }),
+    };
+  });
+  return {
+    ref: reference,
+    ...(attributeString(sort, "table:case-sensitive") === undefined
+      ? {}
+      : { caseSensitive: parseOdsBoolean(sort, "table:case-sensitive") }),
+    conditions,
+  };
 }
 
 export function databaseRangesXml(worksheets: WorksheetOptions[]): string {
@@ -746,9 +1087,12 @@ export function databaseRangesXml(worksheets: WorksheetOptions[]): string {
           "table:contains-header": table.headerRowCount === 0 ? "false" : undefined,
           "table:display-filter-buttons": table.autoFilter === undefined ? undefined : true,
         },
-        table.autoFilter === undefined || typeof table.autoFilter === "string"
-          ? []
-          : [filterXml(table)],
+        [
+          ...(table.autoFilter === undefined || typeof table.autoFilter === "string"
+            ? []
+            : [filterXml(table, worksheet.name ?? "Sheet1")]),
+          ...(table.sortState === undefined ? [] : [sortXml(table, worksheet.name ?? "Sheet1")]),
+        ],
       ),
     ),
   );
@@ -901,27 +1245,130 @@ function invalidPageItem(pivot: SourcePivotTableOptions, field: string, item: nu
   );
 }
 
-function filterXml(table: TableOptions): string {
+function filterXml(table: TableOptions, worksheetName: string): string {
   const autoFilter = typeof table.autoFilter === "string" ? undefined : table.autoFilter;
   const conditions = autoFilter?.columns ?? [];
   if (!conditions.length) return "";
-  const group = conditions.length > 1 ? "table:filter-or" : undefined;
-  const children = conditions.map((column) => {
+  const groups = conditions.map((column) => {
+    if (column.hiddenButton || column.showButton === false) {
+      throw new OdsGenerateError(
+        "ODS database filters cannot represent per-column button visibility",
+        "content.xml",
+        "/office:document-content/office:body/office:spreadsheet/table:database-ranges/table:database-range/table:filter",
+        "table:filter-column",
+        "filter-button-visibility-unsupported",
+      );
+    }
     const values = column.filters?.values ?? [];
-    return xmlElement(
-      "table:filter-condition",
-      {
-        "table:field-number": column.colId,
-        "table:value": values[0] ?? "",
-        "table:operator": "=",
-      },
-      values.map((value) => xmlElement("table:filter-set-item", { "table:value": value })),
-    );
+    const customFilters = column.customFilters?.entries ?? [];
+    if (column.filters && column.customFilters) {
+      throw new OdsGenerateError(
+        "ODS database filters cannot combine value and custom filters for one column",
+        "content.xml",
+        "/office:document-content/office:body/office:spreadsheet/table:database-ranges/table:database-range/table:filter",
+        "table:filter-column",
+        "filter-variants-conflict",
+      );
+    }
+    if (customFilters.length > 0) {
+      const entries = customFilters.map((entry) =>
+        xmlElement("table:filter-condition", {
+          "table:field-number": column.colId,
+          "table:value": entry.val,
+          "table:operator": odsFilterOperator(entry.operator),
+        }),
+      );
+      const group = column.customFilters?.and ? "table:filter-and" : "table:filter-or";
+      return entries.length === 1 ? entries : [xmlElement(group, undefined, entries)];
+    }
+    if (values.length === 0 && !column.filters?.blank) {
+      throw new OdsGenerateError(
+        "ODS database filter column has no filter values",
+        "content.xml",
+        "/office:document-content/office:body/office:spreadsheet/table:database-ranges/table:database-range/table:filter",
+        "table:filter-column",
+        "filter-values-missing",
+      );
+    }
+    const entries = values.length
+      ? values.map((value) =>
+          xmlElement("table:filter-condition", {
+            "table:field-number": column.colId,
+            "table:value": value,
+            "table:operator": "=",
+          }),
+        )
+      : [
+          xmlElement("table:filter-condition", {
+            "table:field-number": column.colId,
+            "table:value": "",
+            "table:operator": "=",
+          }),
+        ];
+    return entries.length === 1 ? entries : [xmlElement("table:filter-or", undefined, entries)];
   });
+  const children = groups.flat();
   return xmlElement(
     "table:filter",
-    undefined,
-    group ? [xmlElement(group, undefined, children)] : children,
+    { "table:target-range-address": sheetAddress(worksheetName, autoFilter?.ref ?? table.ref) },
+    children.length === 1 ? children : [xmlElement("table:filter-and", undefined, children)],
+  );
+}
+
+function odsFilterOperator(operator: CustomFilterOperator | undefined): string {
+  switch (operator) {
+    case "notEqual":
+      return "<>";
+    case "greaterThan":
+      return ">";
+    case "greaterThanOrEqual":
+      return ">=";
+    case "lessThan":
+      return "<";
+    case "lessThanOrEqual":
+      return "<=";
+    case "equal":
+    case undefined:
+      return "=";
+  }
+}
+
+function sortXml(table: TableOptions, worksheetName: string): string {
+  const sortState = table.sortState!;
+  const rangeStart = /^([A-Z]+)\d+/u.exec(sortState.ref || table.ref);
+  if (!rangeStart) {
+    throw new OdsGenerateError(
+      "ODS database sort range is invalid",
+      "content.xml",
+      "/office:document-content/office:body/office:spreadsheet/table:database-ranges/table:database-range/table:sort",
+      "table:target-range-address",
+      "sort-range-invalid",
+    );
+  }
+  const firstColumn = spreadsheetColumnNumber(rangeStart[1]!);
+  const sortStart = /^([A-Z]+)\d+/u;
+  return xmlElement(
+    "table:sort",
+    {
+      "table:target-range-address": sheetAddress(worksheetName, sortState.ref),
+      "table:case-sensitive": sortState.caseSensitive,
+    },
+    sortState.conditions.map((condition) => {
+      const match = sortStart.exec(condition.ref);
+      if (!match) {
+        throw new OdsGenerateError(
+          "ODS database sort condition reference is invalid",
+          "content.xml",
+          "/office:document-content/office:body/office:spreadsheet/table:database-ranges/table:database-range/table:sort/table:sort-by",
+          "table:sort-by",
+          "sort-condition-invalid",
+        );
+      }
+      return xmlElement("table:sort-by", {
+        "table:field-number": spreadsheetColumnNumber(match[1]!) - firstColumn,
+        "table:order": condition.descending ? "descending" : "ascending",
+      });
+    }),
   );
 }
 

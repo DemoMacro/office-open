@@ -17,7 +17,7 @@ export function tableXml(
   const tables = collectTableTree(table);
   const columnXml = new Map<TableOptions, string[]>();
   const tableName = new Map<TableOptions, string>();
-  const rowSpanCount = new Map<TableOptions, number[]>();
+  const tableXmlById = new Map<TableOptions, string>();
   for (const current of tables) {
     const explicitColumns = (current.columnWidths ?? []).map((width) => {
       const twips = typeof width === "number" ? width : Math.round(lengthToEmu(width)! / 635);
@@ -33,51 +33,64 @@ export function tableXml(
     });
     columnXml.set(current, explicitColumns);
     tableName.set(current, `Table${styles.length + 1}`);
-    rowSpanCount.set(
-      current,
-      current.rows.map((row) =>
-        ("cells" in row ? row.cells : []).reduce(
-          (total, cell) => total + ("columnSpan" in cell ? (cell.columnSpan ?? 1) : 1),
-          0,
-        ),
-      ),
-    );
-  }
-  const tableXmlById = new Map<TableOptions, string>();
-  for (const current of tables) {
-    const rows = current.rows.map((row) => {
-      const cells = ("cells" in row ? row.cells : [])
-        .map((cell) => {
-          const span = "columnSpan" in cell ? cell.columnSpan : undefined;
-          const children =
-            "children" in cell
-              ? cell.children.map((child) =>
-                  "table" in child
-                    ? (tableXmlById.get(child.table) ?? renderBlock(child))
-                    : renderBlock(child),
-                )
-              : [];
-          const xml = xmlElement(
+    const occupied = new Set<string>();
+    let maximumColumns = explicitColumns.length;
+    const rows = current.rows.map((row, rowIndex) => {
+      const cells: string[] = [];
+      let column = 0;
+      const isOccupied = (columnIndex: number): boolean =>
+        occupied.has(`${rowIndex}:${columnIndex}`);
+      const addCovered = (columnIndex: number): void => {
+        cells.push(xmlElement("table:covered-table-cell"));
+        occupied.delete(`${rowIndex}:${columnIndex}`);
+      };
+      for (const cell of "cells" in row ? row.cells : []) {
+        while (isOccupied(column)) {
+          addCovered(column);
+          column += 1;
+        }
+        const columnSpan = "columnSpan" in cell ? Math.max(1, cell.columnSpan ?? 1) : 1;
+        const rowSpan = "rowSpan" in cell ? Math.max(1, cell.rowSpan ?? 1) : 1;
+        const children =
+          "children" in cell
+            ? cell.children.map((child) =>
+                "table" in child
+                  ? (tableXmlById.get(child.table) ?? renderBlock(child))
+                  : renderBlock(child),
+              )
+            : [];
+        cells.push(
+          xmlElement(
             "table:table-cell",
             {
               "office:value-type": "string",
-              "table:number-columns-spanned": span,
+              "table:number-columns-spanned": columnSpan > 1 ? columnSpan : undefined,
+              "table:number-rows-spanned": rowSpan > 1 ? rowSpan : undefined,
             },
             children,
-          );
-          const covered = Array.from({ length: Math.max(0, (span ?? 1) - 1) }, () =>
-            xmlElement("table:covered-table-cell"),
-          );
-          return xml + covered.join("");
-        })
-        .join("");
-      return xmlElement("table:table-row", undefined, [cells]);
+          ),
+        );
+        for (let offset = 1; offset < columnSpan; offset += 1) {
+          cells.push(xmlElement("table:covered-table-cell"));
+        }
+        for (let rowOffset = 1; rowOffset < rowSpan; rowOffset += 1) {
+          for (let columnOffset = 0; columnOffset < columnSpan; columnOffset += 1) {
+            occupied.add(`${rowIndex + rowOffset}:${column + columnOffset}`);
+          }
+        }
+        column += columnSpan;
+        maximumColumns = Math.max(maximumColumns, column);
+      }
+      while (isOccupied(column)) {
+        addCovered(column);
+        column += 1;
+      }
+      maximumColumns = Math.max(maximumColumns, column);
+      return xmlElement("table:table-row", undefined, [cells.join("")]);
     });
-    const spans = rowSpanCount.get(current)!;
-    const explicitColumns = columnXml.get(current)!;
-    const columnCount = Math.max(explicitColumns.length, ...spans, 1);
-    const columns = Array.from(
-      { length: columnCount },
+    const columns = Math.max(maximumColumns, 1);
+    const columnElements = Array.from(
+      { length: Math.max(columns, 1) },
       (_, index) => explicitColumns[index] ?? xmlElement("table:table-column"),
     );
     const bodyRows = rows.length
@@ -85,7 +98,10 @@ export function tableXml(
       : xmlElement("table:table-row", undefined, [xmlElement("table:table-cell")]);
     tableXmlById.set(
       current,
-      xmlElement("table:table", { "table:name": tableName.get(current)! }, [...columns, bodyRows]),
+      xmlElement("table:table", { "table:name": tableName.get(current)! }, [
+        ...columnElements,
+        bodyRows,
+      ]),
     );
   }
   return tableXmlById.get(table)!;
@@ -147,7 +163,12 @@ export function parseTable(
             ) ?? [];
         return {
           children: cellChildren,
-          columnSpan: attributeNumber(cell, "table:number-columns-spanned"),
+          ...(attributeNumber(cell, "table:number-columns-spanned") === undefined
+            ? {}
+            : { columnSpan: attributeNumber(cell, "table:number-columns-spanned") }),
+          ...(attributeNumber(cell, "table:number-rows-spanned") === undefined
+            ? {}
+            : { rowSpan: attributeNumber(cell, "table:number-rows-spanned") }),
         };
       }),
     }));
