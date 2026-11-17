@@ -140,6 +140,7 @@ export function parseNumberStyles(container: Element | undefined): Map<string, S
     const size = attributeString(text, "fo:font-size");
     const fontColor = odfColor(attributeString(text, "fo:color"));
     const font: FontOptions = {
+      font: attributeString(text, "fo:font-family")?.replace(/^(['"])(.*)\1$/u, "$2"),
       color: fontColor ? { rgb: `FF${fontColor}` } : undefined,
       size: size?.endsWith("pt") ? Number(size.slice(0, -2)) : undefined,
       bold: attributeString(text, "fo:font-weight") === "bold" || undefined,
@@ -172,6 +173,8 @@ export function parseNumberStyles(container: Element | undefined): Map<string, S
     const vertical =
       verticalValue === "automatic" || verticalValue === "auto" ? undefined : verticalValue;
     const wrapText = attributeString(cellProps, "fo:wrap-option") === "wrap";
+    const textRotation = parseOdfRotation(attributeString(cellProps, "style:rotation-angle"));
+    const shrinkToFit = parseOdfBoolean(attributeString(cellProps, "style:shrink-to-fit"));
     const horizontal = attributeString(
       childNamed(style, "style:paragraph-properties"),
       "fo:text-align",
@@ -194,6 +197,8 @@ export function parseNumberStyles(container: Element | undefined): Map<string, S
             ? "center"
             : (["top", "bottom"] as const).find((value) => value === vertical),
       wrapText: wrapText || undefined,
+      textRotation,
+      shrinkToFit,
     };
     if (
       (horizontal !== undefined && !alignment.horizontal) ||
@@ -213,6 +218,44 @@ export function parseNumberStyles(container: Element | undefined): Map<string, S
     }
   }
   return cellStyles;
+}
+
+function parseOdfBoolean(value: string | undefined): boolean | undefined {
+  if (value === undefined) return undefined;
+  if (value === "true" || value === "1") return true;
+  if (value === "false" || value === "0") return false;
+  throw new OdsParseError(
+    "Invalid ODF boolean style value",
+    "content.xml",
+    "/office:document-content/office:automatic-styles/style:style",
+    "style:shrink-to-fit",
+    "invalid-boolean",
+  );
+}
+
+function parseOdfRotation(value: string | undefined): number | undefined {
+  if (value === undefined) return undefined;
+  const match = /^(-?\d+(?:\.\d+)?)(?:deg)?$/u.exec(value.trim());
+  if (!match) {
+    throw new OdsParseError(
+      "Invalid ODF cell rotation angle",
+      "content.xml",
+      "/office:document-content/office:automatic-styles/style:style",
+      "style:rotation-angle",
+      "invalid-rotation-angle",
+    );
+  }
+  const rotation = Number(match[1]);
+  if (!Number.isFinite(rotation)) {
+    throw new OdsParseError(
+      "Invalid ODF cell rotation angle",
+      "content.xml",
+      "/office:document-content/office:automatic-styles/style:style",
+      "style:rotation-angle",
+      "invalid-rotation-angle",
+    );
+  }
+  return rotation;
 }
 
 /** Reconstructs an Excel numFmt code from ODF number:* style children. */

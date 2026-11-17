@@ -115,6 +115,7 @@ export function cellStyleChildren(style: StyleOptions): string[] {
   const fill = style.fill;
   const alignment = style.alignment;
   const textAttributes = {
+    "fo:font-family": font?.font,
     "fo:color": odfHex(font?.color?.rgb),
     "fo:font-size": font?.size !== undefined ? `${font.size}pt` : undefined,
     "fo:font-weight": font?.bold ? "bold" : undefined,
@@ -126,6 +127,8 @@ export function cellStyleChildren(style: StyleOptions): string[] {
     "fo:background-color": odfHex(solidFillColor(fill)),
     "style:vertical-align": odfVertical(alignment?.vertical),
     "fo:wrap-option": alignment?.wrapText ? "wrap" : undefined,
+    "style:rotation-angle": alignment?.textRotation,
+    "style:shrink-to-fit": alignment?.shrinkToFit,
     ...borderAttributes(style.border),
   };
   const paragraphAttributes = { "fo:text-align": odfHorizontal(alignment?.horizontal) };

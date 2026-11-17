@@ -491,6 +491,36 @@ describe("ODS codec", () => {
     expect(regenerated.worksheets?.[0]?.columns?.[0]?.width).toBeUndefined();
   });
 
+  it("round-trips canonical cell font and alignment properties", async () => {
+    const workbook = {
+      worksheets: [
+        {
+          name: "Sheet1",
+          rows: [
+            {
+              cells: [
+                {
+                  reference: "A1",
+                  value: "Styled",
+                  style: {
+                    font: { font: "Liberation Sans" },
+                    alignment: { textRotation: 45, shrinkToFit: true },
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    } satisfies OdsWorkbookOptions;
+
+    const parsed = await parseWorkbook(await generateWorkbook(workbook));
+    expect(parsed.worksheets?.[0]?.rows?.[0]?.cells?.[0]?.style).toMatchObject({
+      font: { font: "Liberation Sans" },
+      alignment: { textRotation: 45, shrinkToFit: true },
+    });
+  });
+
   it("projects cell hyperlinks into the canonical worksheet model", async () => {
     const source = generateOcf("application/vnd.oasis.opendocument.spreadsheet", {
       "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:automatic-styles/><office:body><office:spreadsheet><table:table table:name="Sheet1"><table:table-row><table:table-cell office:value-type="string"><text:p><text:a xlink:type="simple" xlink:href="https://example.com">Open</text:a></text:p></table:table-cell></table:table-row></table:table></office:spreadsheet></office:body></office:document-content>`,
