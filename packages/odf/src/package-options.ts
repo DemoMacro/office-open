@@ -2153,14 +2153,13 @@ function parseStyleChildValue(
 }
 
 function childAttributesXml(
-  attributes: Record<string, StylePropertyValue>,
+  attributes: Partial<Record<string, StylePropertyValue>>,
   scale: StylePropertyScale,
 ): XmlAttributes {
   return Object.fromEntries(
-    Object.entries(attributes).map(([name, value]) => [
-      name,
-      childAttributeXml(name, value, scale),
-    ]),
+    Object.entries(attributes).flatMap(([name, value]) =>
+      value === undefined ? [] : [[name, childAttributeXml(name, value, scale)]],
+    ),
   );
 }
 
@@ -2278,8 +2277,11 @@ function isAngleStyleAttribute(name: string): boolean {
 }
 
 function isLengthStyleAttribute(name: string): boolean {
-  return /(?:^|[-:])(?:width|height|margin|spacing|distance|indent|padding|position|x|y|depth|radius)(?:$|[-0-9])/.test(
-    name,
+  return (
+    name === "fo:column-gap" ||
+    /(?:^|[-:])(?:width|height|margin|spacing|distance|indent|padding|position|x|y|depth|radius)(?:$|[-0-9])/.test(
+      name,
+    )
   );
 }
 

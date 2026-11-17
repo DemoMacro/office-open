@@ -11,6 +11,30 @@ import {
 } from "./index";
 
 describe("ODS codec", () => {
+  it("projects primitive polygon geometry into WorkbookOptions", async () => {
+    const parsed = await parseWorkbook(
+      generateOcf("application/vnd.oasis.opendocument.spreadsheet", {
+        "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:spreadsheet><table:table table:name="Sheet1"><table:shapes><draw:polygon svg:x="1cm" svg:y="1cm" svg:width="2cm" svg:height="1cm" svg:viewBox="0 0 2 1" draw:points="0,0 2,0 1,1"/></table:shapes><table:table-row><table:table-cell/></table:table-row></table:table></office:spreadsheet></office:body></office:document-content>`,
+      }),
+    );
+    expect(parsed.worksheets?.[0]?.shapes?.[0]?.properties?.customGeometry).toMatchObject({
+      pathList: [
+        {
+          commands: [
+            { command: "moveTo", point: { x: "0", y: "0" } },
+            { command: "lineTo", point: { x: "720000", y: "0" } },
+            { command: "lineTo", point: { x: "360000", y: "360000" } },
+            { command: "close" },
+          ],
+        },
+      ],
+    });
+    const reread = await parseWorkbook(await generateWorkbook(parsed));
+    expect(reread.worksheets?.[0]?.shapes?.[0]?.properties?.customGeometry).toEqual(
+      parsed.worksheets?.[0]?.shapes?.[0]?.properties?.customGeometry,
+    );
+  });
+
   it("projects and regenerates graphic gradient fills", async () => {
     const source = generateOcf("application/vnd.oasis.opendocument.spreadsheet", {
       "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:automatic-styles><style:style style:name="Gradient" style:family="graphic"><style:graphic-properties draw:fill="gradient" draw:fill-gradient-name="Blue"/></style:style></office:automatic-styles><office:body><office:spreadsheet><table:table table:name="Sheet1"><table:shapes><draw:rect draw:style-name="Gradient" svg:x="1cm" svg:y="1cm" svg:width="4cm" svg:height="2cm"/></table:shapes><table:table-row><table:table-cell/></table:table-row></table:table></office:spreadsheet></office:body></office:document-content>`,

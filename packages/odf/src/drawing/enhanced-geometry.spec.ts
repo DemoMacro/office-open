@@ -4,6 +4,7 @@ import { describe, expect, it } from "vite-plus/test";
 
 import { OdfSchemaError } from "../errors";
 import { odfEnhancedGeometryXml, parseOdfEnhancedGeometry } from "./enhanced-geometry";
+import { parseOdfPrimitiveGeometry } from "./primitive-geometry";
 
 function parseGeometry(xml: string): CustomGeometryOptions | undefined {
   const element = parse(xml, { ignoreDeclaration: true }).elements?.find(
@@ -13,6 +14,50 @@ function parseGeometry(xml: string): CustomGeometryOptions | undefined {
 }
 
 describe("ODF enhanced geometry", () => {
+  it("projects primitive paths and point lists into canonical geometry", () => {
+    const path = parse(
+      '<draw:path svg:viewBox="0 0 100 50" svg:d="M 0 0 C 25 0 75 50 100 50 Z"/>',
+      { ignoreDeclaration: true },
+    ).elements?.find((item) => item.type === "element");
+    const polygon = parse('<draw:polygon svg:viewBox="0 0 10 10" draw:points="0,0 10,0 5,10"/>', {
+      ignoreDeclaration: true,
+    }).elements?.find((item) => item.type === "element");
+    const polyline = parse('<draw:polyline svg:viewBox="0 0 10 10" svg:points="0 0 10 10"/>', {
+      ignoreDeclaration: true,
+    }).elements?.find((item) => item.type === "element");
+
+    expect(parseOdfPrimitiveGeometry(path!, 1000, 500)).toEqual({
+      pathList: [
+        {
+          w: 1000,
+          h: 500,
+          commands: [
+            { command: "moveTo", point: { x: "0", y: "0" } },
+            {
+              command: "cubicBezTo",
+              points: [
+                { x: "250", y: "0" },
+                { x: "750", y: "500" },
+                { x: "1000", y: "500" },
+              ],
+            },
+            { command: "close" },
+          ],
+        },
+      ],
+    });
+    expect(parseOdfPrimitiveGeometry(polygon!, 1000, 1000)?.pathList?.[0]?.commands).toEqual([
+      { command: "moveTo", point: { x: "0", y: "0" } },
+      { command: "lineTo", point: { x: "1000", y: "0" } },
+      { command: "lineTo", point: { x: "500", y: "1000" } },
+      { command: "close" },
+    ]);
+    expect(parseOdfPrimitiveGeometry(polyline!, 1000, 1000)?.pathList?.[0]?.commands).toEqual([
+      { command: "moveTo", point: { x: "0", y: "0" } },
+      { command: "lineTo", point: { x: "1000", y: "1000" } },
+    ]);
+  });
+
   it("round-trips guides, handles, connection sites, text rectangles, and multiple paths", () => {
     const geometry: CustomGeometryOptions = {
       adjustmentValues: [{ name: "modifier0", formula: "val 25" }],

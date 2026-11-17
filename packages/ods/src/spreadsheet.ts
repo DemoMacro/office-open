@@ -13,6 +13,7 @@ import {
   odfGroupTransform,
   parseOdfGroupTransform,
   parseOdfEnhancedGeometry,
+  parseOdfPrimitiveGeometry,
   parseGraphicStyles,
   parseGraphicStyleResources,
   odfLengthToEmu,
@@ -164,6 +165,7 @@ export function parseDrawingShape(
     : (lengthToEmu(attributeString(element, "svg:height")) ?? 0);
   const style = graphicStyles.get(attributeString(element, "draw:style-name") ?? "");
   const customGeometry = parseOdfEnhancedGeometry(childNamed(element, "draw:enhanced-geometry"));
+  const primitiveGeometry = parseOdfPrimitiveGeometry(element, width, height);
   const paragraphs = childrenNamed(element, "text:p");
   const endAddress = parseSheetAddress(attributeString(element, "table:end-cell-address"));
   const endCell = /^([A-Z]+)([0-9]+)$/u.exec(endAddress?.address ?? "");
@@ -211,7 +213,9 @@ export function parseDrawingShape(
               : null,
       fill: graphicFill(style),
       outline: graphicOutline(style),
-      ...(customGeometry ? { customGeometry } : {}),
+      ...((customGeometry ?? primitiveGeometry)
+        ? { customGeometry: customGeometry ?? primitiveGeometry }
+        : {}),
     },
     ...(paragraphs.length ? { textBody: parseShapeText(paragraphs, textStyles) } : {}),
     ...(attributeString(element, "svg:title")

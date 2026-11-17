@@ -67,6 +67,33 @@ async function parseBodyError(body: string, name: string, reason?: string): Prom
 }
 
 describe("ODT canonical projection", () => {
+  it("projects primitive path geometry into DocumentOptions", async () => {
+    const parsed = await parseDocument(
+      odtPackage(
+        '<text:p><draw:path svg:x="1cm" svg:y="1cm" svg:width="2cm" svg:height="1cm" svg:viewBox="0 0 2 1" svg:d="M 0 0 L 2 0 L 2 1 Z"/></text:p>',
+      ),
+    );
+    const shape = sectionParagraph(parsed.sections[0]?.children?.[0])?.children?.[0];
+    expect(shape).toMatchObject({
+      wpsShape: {
+        customGeometry: {
+          pathList: [
+            {
+              commands: [
+                { command: "moveTo", point: { x: "0", y: "0" } },
+                { command: "lineTo", point: { x: "720000", y: "0" } },
+                { command: "lineTo", point: { x: "720000", y: "360000" } },
+                { command: "close" },
+              ],
+            },
+          ],
+        },
+      },
+    });
+    const reread = await parseDocument(await generateDocument(parsed));
+    expect(reread.sections[0]?.children).toEqual(parsed.sections[0]?.children);
+  });
+
   it("projects and regenerates graphic gradient fills", async () => {
     const source = generateOcf("application/vnd.oasis.opendocument.text", {
       "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES} ${FORM_NAMESPACE}><office:automatic-styles><style:style style:name="Gradient" style:family="graphic"><style:graphic-properties draw:fill="gradient" draw:fill-gradient-name="Blue"/></style:style></office:automatic-styles><office:body><office:text><text:p><draw:rect draw:style-name="Gradient" svg:x="1cm" svg:y="1cm" svg:width="4cm" svg:height="2cm"/></text:p></office:text></office:body></office:document-content>`,
@@ -593,6 +620,43 @@ describe("ODT canonical projection", () => {
     expect(parsed.sections[0]?.properties?.pageSize).toMatchObject({
       width: Math.round((20 * 360000) / 635),
       height: Math.round((30 * 360000) / 635),
+    });
+  });
+
+  it("projects ODF page columns and writing mode into section properties", async () => {
+    const source = generateOcf("application/vnd.oasis.opendocument.text", {
+      "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:automatic-styles/><office:body><office:text><text:p>Body</text:p></office:text></office:body></office:document-content>`,
+      "styles.xml": `<?xml version="1.0"?><office:document-styles ${ODF_NAMESPACES}><office:styles/><office:automatic-styles><style:page-layout style:name="Columns"><style:page-layout-properties fo:page-width="21cm" fo:page-height="29.7cm" style:writing-mode="tb-rl"><style:columns fo:column-count="2" fo:column-gap="0.5cm"><style:column style:rel-width="1*"/><style:column style:rel-width="2*"/><style:column-sep style:style="solid" style:width="0.02cm" style:color="#112233"/></style:columns></style:page-layout-properties></style:page-layout></office:automatic-styles><office:master-styles><style:master-page style:name="Default" style:page-layout-name="Columns"/></office:master-styles></office:document-styles>`,
+    });
+
+    const parsed = await parseDocument(source);
+    expect(parsed.sections[0]?.properties?.columns).toMatchObject({
+      count: 2,
+      space: expect.any(Number),
+      separate: true,
+    });
+    expect(parsed.sections[0]?.properties?.textDirection).toBe("tbRl");
+    expect(parsed.pageLayouts?.[0]?.columns).toMatchObject({
+      attributes: { "fo:column-count": 2 },
+      columns: [
+        { attributes: { "style:rel-width": "1*" } },
+        { attributes: { "style:rel-width": "2*" } },
+      ],
+      separator: { attributes: { "style:color": "#112233" } },
+    });
+
+    const regenerated = await parseDocument(await generateDocument(parsed));
+    expect(regenerated.sections[0]?.properties?.columns).toMatchObject({
+      count: 2,
+      separate: true,
+    });
+    expect(regenerated.sections[0]?.properties?.textDirection).toBe("tbRl");
+    expect(regenerated.pageLayouts?.[0]?.columns).toMatchObject({
+      columns: [
+        { attributes: { "style:rel-width": "1*" } },
+        { attributes: { "style:rel-width": "2*" } },
+      ],
+      separator: { attributes: { "style:color": "#112233" } },
     });
   });
 

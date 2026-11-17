@@ -24,6 +24,7 @@ import {
   odfGroupTransform,
   parseOdfEnhancedGeometry,
   parseOdfGroupTransform,
+  parseOdfPrimitiveGeometry,
   presetGeometryOdf,
   pushShapeStyle,
   resolveEmbeddedChart,
@@ -430,6 +431,7 @@ export function parseShapeElement(
       ? resolveOdfDrawGeometryOverlay(presetType, resolvedGeometry)
       : undefined;
   const customGeometry = parseOdfEnhancedGeometry(enhanced);
+  const primitiveGeometry = parseOdfPrimitiveGeometry(element, width, height);
   const geometry = shapeGeometry(element.name, preset);
   const fill = graphic ? graphicFill(graphic) : undefined;
   const outline = graphic ? graphicOutline(graphic) : undefined;
@@ -448,7 +450,9 @@ export function parseShapeElement(
     ...(controlId === undefined ? {} : { controlId }),
     ...(geometry ? { geometry } : {}),
     ...(geometryOverlay ? { odfGeometryType: geometryOverlay } : {}),
-    ...(customGeometry ? { customGeometry } : {}),
+    ...((customGeometry ?? primitiveGeometry)
+      ? { customGeometry: customGeometry ?? primitiveGeometry }
+      : {}),
     ...(name
       ? {
           altText: {
@@ -478,13 +482,7 @@ function shapeGeometry(
   if (preset) return preset;
   if (name === "draw:rect" || name === "draw:frame" || name === "draw:control") return "rect";
   if (name === "draw:ellipse" || name === "draw:circle") return "ellipse";
-  if (
-    name === "draw:line" ||
-    name === "draw:connector" ||
-    name === "draw:measure" ||
-    name === "draw:polyline"
-  )
-    return "line";
+  if (name === "draw:line" || name === "draw:connector" || name === "draw:measure") return "line";
   return undefined;
 }
 

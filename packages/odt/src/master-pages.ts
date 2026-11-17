@@ -9,6 +9,8 @@ import {
   xmlElement,
   type OdfFiles,
 } from "@office-open/odf";
+import type { StyleColumnsOptions } from "@office-open/odf";
+import type { XmlAttributes } from "@office-open/odf";
 import type { Element } from "@office-open/xml";
 
 import { OdtGenerateError, OdtParseError } from "./error";
@@ -145,7 +147,7 @@ export function parsePageLayouts(files: OdfFiles): OdtPageLayoutOptions[] {
       return [
         {
           name,
-          properties: parsePageLayoutProperties(childNamed(layout, "style:page-layout-properties")),
+          ...parsePageLayoutDefinition(childNamed(layout, "style:page-layout-properties")),
         },
       ];
     },
@@ -165,13 +167,27 @@ export function parsePageLayout(files: OdfFiles): SectionOptions["properties"] {
       pageLayouts[0],
     "style:page-layout-properties",
   );
-  return parsePageLayoutProperties(layout);
+  const definition = parsePageLayoutDefinition(layout);
+  return definition.properties;
 }
 
-function parsePageLayoutProperties(layout: Element | undefined): SectionOptions["properties"] {
+function parsePageLayoutDefinition(
+  layout: Element | undefined,
+): Pick<OdtPageLayoutOptions, "properties" | "columns"> {
   const width = lengthToTwips(attributeString(layout, "fo:page-width"));
   const height = lengthToTwips(attributeString(layout, "fo:page-height"));
   const orientation = attributeString(layout, "style:print-orientation");
+  if (orientation !== undefined && orientation !== "portrait" && orientation !== "landscape") {
+    throw new OdtParseError(
+      `styles.xml: unsupported page orientation "${orientation}"`,
+      "styles.xml",
+      "/office:document-styles/office:automatic-styles/style:page-layout/style:page-layout-properties/@style:print-orientation",
+      "style:print-orientation",
+      "unsupported-page-orientation",
+    );
+  }
+  const writingMode = attributeString(layout, "style:writing-mode");
+  const writingProperties = writingModeProperties(writingMode);
   const margin = {
     top: lengthToTwips(attributeString(layout, "fo:margin-top")),
     right: lengthToTwips(attributeString(layout, "fo:margin-right")),
@@ -179,14 +195,169 @@ function parsePageLayoutProperties(layout: Element | undefined): SectionOptions[
     left: lengthToTwips(attributeString(layout, "fo:margin-left")),
   };
   const hasMargin = Object.values(margin).some((value) => value !== undefined);
-  if (width === undefined && height === undefined && !hasMargin && !orientation) return undefined;
+  const columns = parseColumns(childNamed(layout, "style:columns"));
+  const properties: SectionOptions["properties"] =
+    width === undefined &&
+    height === undefined &&
+    !hasMargin &&
+    !orientation &&
+    columns === undefined
+      ? undefined
+      : {
+          pageSize:
+            width !== undefined || height !== undefined || orientation
+              ? {
+                  width,
+                  height,
+                  orientation: orientation as "portrait" | "landscape" | undefined,
+                }
+              : false,
+          pageMargin: hasMargin ? margin : undefined,
+          ...writingProperties,
+          ...columnsSectionProperties(columns),
+        };
   return {
-    pageSize:
-      width !== undefined || height !== undefined || orientation
-        ? { width, height, orientation: orientation as "portrait" | "landscape" | undefined }
-        : false,
-    pageMargin: hasMargin ? margin : undefined,
+    properties,
+    ...(columns === undefined ? {} : { columns }),
   };
+}
+
+function writingModeProperties(
+  value: string | undefined,
+): Pick<NonNullable<SectionOptions["properties"]>, "bidi" | "textDirection"> {
+  if (value === undefined || value === "lr-tb" || value === "lr")
+    return value === undefined ? {} : { textDirection: "lrTb" };
+  if (value === "tb-rl") return { textDirection: "tbRl" };
+  if (value === "rl-tb") return { bidi: true };
+  throw new OdtParseError(
+    `styles.xml: writing mode "${value}" has no canonical section mapping`,
+    "styles.xml",
+    "/office:document-styles/office:automatic-styles/style:page-layout/style:page-layout-properties/@style:writing-mode",
+    "style:writing-mode",
+    "unsupported-writing-mode",
+  );
+}
+
+function parseColumns(element: Element | undefined): StyleColumnsOptions | undefined {
+  if (element === undefined) return undefined;
+  const attributes: StyleColumnsOptions["attributes"] = {};
+  const count = attributeString(element, "fo:column-count");
+  if (count !== undefined) {
+    const value = Number(count);
+    if (!Number.isInteger(value) || value < 1) {
+      throw new OdtParseError(
+        `styles.xml: invalid column count "${count}"`,
+        "styles.xml",
+        "/office:document-styles/office:automatic-styles/style:page-layout/style:page-layout-properties/style:columns/@fo:column-count",
+        "fo:column-count",
+        "invalid-column-count",
+      );
+    }
+    attributes["fo:column-count"] = value;
+  }
+  const gap = attributeString(element, "fo:column-gap");
+  if (gap !== undefined) {
+    const value = lengthToTwips(gap);
+    if (value === undefined) throw invalidColumnAttribute("fo:column-gap", gap);
+    attributes["fo:column-gap"] = value;
+  }
+  if (attributes["fo:column-count"] === undefined)
+    throw invalidColumnAttribute("fo:column-count", "missing");
+  const columns = (element.elements ?? [])
+    .filter((child) => child.type === "element" && child.name === "style:column")
+    .map((child) => ({
+      attributes: Object.fromEntries(
+        Object.entries(child.attributes ?? {}).map(([name, value]) => [name, String(value)]),
+      ) as StyleColumnsOptions["columns"][number]["attributes"],
+    }));
+  const separator = childNamed(element, "style:column-sep");
+  return {
+    name: "style:columns",
+    attributes,
+    columns,
+    ...(separator
+      ? {
+          separator: {
+            attributes: Object.fromEntries(
+              Object.entries(separator.attributes ?? {}).map(([name, value]) => [
+                name,
+                String(value),
+              ]),
+            ) as NonNullable<StyleColumnsOptions["separator"]>["attributes"],
+          },
+        }
+      : {}),
+  };
+}
+
+function columnsSectionProperties(
+  columns: StyleColumnsOptions | undefined,
+): Pick<NonNullable<SectionOptions["properties"]>, "columns"> {
+  if (columns === undefined) return {};
+  const count = columns.attributes["fo:column-count"];
+  const gap = columns.attributes["fo:column-gap"];
+  const separator = columns.separator?.attributes["style:style"];
+  return {
+    columns: {
+      ...(typeof count === "number" ? { count } : {}),
+      ...(typeof gap === "number" ? { space: gap } : {}),
+      ...(separator === undefined ? {} : { separate: separator !== "none" }),
+    },
+  };
+}
+
+function invalidColumnAttribute(name: string, value: string): OdtParseError {
+  return new OdtParseError(
+    `styles.xml: invalid column attribute ${name}="${value}"`,
+    "styles.xml",
+    "/office:document-styles/office:automatic-styles/style:page-layout/style:page-layout-properties/style:columns",
+    name,
+    "invalid-column-attribute",
+  );
+}
+
+export function pageLayoutColumnsXml(
+  properties: SectionOptions["properties"],
+  preserved?: StyleColumnsOptions,
+): string {
+  const canonical = properties?.columns;
+  if (canonical === undefined && preserved === undefined) return "";
+  const columns = preserved ?? { name: "style:columns" as const, attributes: {}, columns: [] };
+  const attributes = { ...columns.attributes };
+  if (canonical?.count !== undefined) attributes["fo:column-count"] = canonical.count;
+  if (canonical?.space !== undefined) attributes["fo:column-gap"] = canonical.space;
+  let separator = columns.separator;
+  if (canonical?.separate !== undefined) {
+    separator = canonical.separate
+      ? (separator ?? { attributes: { "style:style": "solid", "style:width": 1 } })
+      : undefined;
+  }
+  const columnOptions = { ...columns, attributes };
+  return xmlElement("style:columns", columnAttributes(columnOptions.attributes), [
+    ...(separator === undefined
+      ? []
+      : [xmlElement("style:column-sep", columnAttributes(separator.attributes))]),
+    ...columns.columns.map((column) =>
+      xmlElement("style:column", columnAttributes(column.attributes)),
+    ),
+  ]);
+}
+
+function columnAttributes(
+  attributes: Partial<Record<string, string | number | boolean>>,
+): XmlAttributes {
+  return Object.fromEntries(
+    Object.entries(attributes).map(([name, value]) => [
+      name,
+      typeof value !== "number"
+        ? value
+        : name === "style:height"
+          ? `${value}%`
+          : name === "fo:column-count"
+            ? value
+            : twipsToLength(value),
+    ]),
+  );
 }
 
 export function twipsToLength(value: number | string): string {
