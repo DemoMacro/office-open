@@ -397,6 +397,25 @@ describe("ODT canonical projection", () => {
     expect(archive.files["styles.xml"]).toContain("Landscape footer");
   });
 
+  it("uses edited canonical section page and header values over parsed ODF overlays", async () => {
+    const source = generateOcf("application/vnd.oasis.opendocument.text", {
+      "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:automatic-styles/><office:body><office:text><text:p>Body</text:p></office:text></office:body></office:document-content>`,
+      "styles.xml": `<?xml version="1.0"?><office:document-styles ${ODF_NAMESPACES}><office:styles/><office:automatic-styles><style:page-layout style:name="Portrait"><style:page-layout-properties fo:page-width="21cm" fo:page-height="29.7cm"/></style:page-layout></office:automatic-styles><office:master-styles><style:master-page style:name="Default" style:page-layout-name="Portrait"><style:header><text:p>Original header</text:p></style:header></style:master-page></office:master-styles></office:document-styles>`,
+    });
+    const parsed = await parseDocument(source);
+    parsed.sections[0]!.properties!.pageSize = { width: 12000, height: 16000 };
+    parsed.sections[0]!.headers = { default: [{ paragraph: "Edited header" }] };
+
+    const regenerated = await parseDocument(await generateDocument(parsed));
+    expect(regenerated.sections[0]?.properties?.pageSize).toMatchObject({
+      width: 12000,
+      height: 16000,
+    });
+    expect(regenerated.sections[0]?.headers?.default).toEqual([
+      { paragraph: { text: "Edited header" } },
+    ]);
+  });
+
   it("round-trips tables inside master page headers", async () => {
     const options: DocumentOptions = {
       sections: [

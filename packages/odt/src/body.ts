@@ -206,11 +206,41 @@ function generateOdtPackage(options: OdtDocumentOptions): Uint8Array {
     embeddedObjects ?? [],
   );
   const body = declarationsXml(options, notes) + bodyBlocks;
+  const section = options.sections[0];
+  const sectionProperties = section?.properties;
+  const pageLayouts = options.pageLayouts?.map((layout, index) =>
+    index !== 0 || sectionProperties === undefined
+      ? layout
+      : {
+          ...layout,
+          properties: {
+            ...layout.properties,
+            ...sectionProperties,
+            ...(layout.properties?.pageSize || sectionProperties.pageSize
+              ? { pageSize: { ...layout.properties?.pageSize, ...sectionProperties.pageSize } }
+              : {}),
+            ...(layout.properties?.pageMargin || sectionProperties.pageMargin
+              ? {
+                  pageMargin: { ...layout.properties?.pageMargin, ...sectionProperties.pageMargin },
+                }
+              : {}),
+          },
+        },
+  );
+  const masterPages = options.masterPages?.map((master, index) =>
+    index !== 0 || section === undefined
+      ? master
+      : {
+          ...master,
+          ...(section.headers === undefined ? {} : { headers: section.headers }),
+          ...(section.footers === undefined ? {} : { footers: section.footers }),
+        },
+  );
   const headerFooter = masterHeaderFooter(options.sections[0], {
     renderBlocks: (children) =>
       blocksXml(children, styles, images, notes, options.numbering, charts, embeddedObjects ?? []),
   });
-  const masterPageXml = options.masterPages?.map((master) => {
+  const masterPageXml = masterPages?.map((master) => {
     const content = masterHeaderFooter(master, {
       renderBlocks: (children) =>
         blocksXml(
@@ -240,8 +270,8 @@ function generateOdtPackage(options: OdtDocumentOptions): Uint8Array {
       options.numbering,
       options.styles,
       headerFooter,
-      options.pageLayouts,
-      options.masterPages,
+      pageLayouts,
+      masterPages,
       masterPageXml,
     ),
     "meta.xml": metaXml(options),
