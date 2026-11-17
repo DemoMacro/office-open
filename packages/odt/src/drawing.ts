@@ -240,6 +240,13 @@ function lengthAttributeXml(value: number | string | undefined): string | undefi
   return typeof value === "number" ? emuToLength(value) : value;
 }
 
+function frameOffset(frame: Element): DrawingTransformation["offset"] | undefined {
+  const x = lengthToEmu(attributeString(frame, "svg:x"));
+  const y = lengthToEmu(attributeString(frame, "svg:y"));
+  if (x === undefined && y === undefined) return undefined;
+  return { ...(x === undefined ? {} : { x }), ...(y === undefined ? {} : { y }) };
+}
+
 /** Shape fill and outline land in a reusable graphic style. */
 export function addShapeStyle(shape: ShapeOptions, styles: string[]): string | undefined {
   return pushShapeStyle(shape.fill, shape.outline, styles);
@@ -261,6 +268,8 @@ export function pictureFrameXml(picture: PictureOptions, images: OdtImage[]): st
     "draw:frame",
     {
       "text:anchor-type": "as-char",
+      "svg:x": lengthAttributeXml(picture.transformation.offset?.x),
+      "svg:y": lengthAttributeXml(picture.transformation.offset?.y),
       "svg:width": transformationWidth(picture.transformation),
       "svg:height": transformationHeight(picture.transformation),
       "draw:name": picture.altText?.name,
@@ -384,6 +393,7 @@ export function isShapeElement(name: string | undefined): boolean {
 
 /** draw:frame + draw:image maps back to an inline picture run. */
 export function parsePictureFrame(frame: Element, context: ParseContext): ParagraphChild[] {
+  const offset = frameOffset(frame);
   const images: ParsedImage[] = childrenNamed(frame, "draw:image").flatMap((image) => {
     const href = attributeString(image, "xlink:href");
     const path = href ? packagePathFromReference(href) : undefined;
@@ -410,6 +420,7 @@ export function parsePictureFrame(frame: Element, context: ParseContext): Paragr
             type: pictureTypeFromUrl(href),
             sourceUrl: href,
             transformation: {
+              ...(offset ? { offset } : {}),
               width: lengthToEmu(attributeString(frame, "svg:width")) ?? 0,
               height: lengthToEmu(attributeString(frame, "svg:height")) ?? 0,
             },
@@ -448,6 +459,7 @@ export function parsePictureFrame(frame: Element, context: ParseContext): Paragr
           description: textOf(childNamed(frame, "svg:desc")) || undefined,
         },
         transformation: {
+          ...(offset ? { offset } : {}),
           width: lengthToEmu(attributeString(frame, "svg:width")) ?? 0,
           height: lengthToEmu(attributeString(frame, "svg:height")) ?? 0,
         },
@@ -502,6 +514,7 @@ function pictureTypeFromUrl(value: string): RasterPictureType {
 
 /** draw:frame + draw:object resolves a typed embedded-object subdocument. */
 export function parseChartFrame(frame: Element, context: ParseContext): ParagraphChild[] {
+  const offset = frameOffset(frame);
   const href = attributeString(childNamed(frame, "draw:object"), "xlink:href")
     ?.replace(/^\.\//, "")
     .replace(/^\//, "");
@@ -524,6 +537,7 @@ export function parseChartFrame(frame: Element, context: ParseContext): Paragrap
         chart: {
           ...chart,
           transformation: {
+            ...(offset ? { offset } : {}),
             width: lengthToEmu(attributeString(frame, "svg:width")) ?? 0,
             height: lengthToEmu(attributeString(frame, "svg:height")) ?? 0,
           },

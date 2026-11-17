@@ -656,7 +656,11 @@ describe("ODT canonical projection", () => {
                     picture: {
                       type: "png",
                       sourceUrl: "../images/logo.png",
-                      transformation: { width: 360000, height: 360000 },
+                      transformation: {
+                        offset: { x: 180000, y: 90000 },
+                        width: 360000,
+                        height: 360000,
+                      },
                     },
                   },
                 ],
@@ -674,7 +678,11 @@ describe("ODT canonical projection", () => {
             picture: {
               type: "png",
               sourceUrl: "../images/logo.png",
-              transformation: { width: 360000, height: 360000 },
+              transformation: {
+                offset: { x: 180000, y: 90000 },
+                width: 360000,
+                height: 360000,
+              },
             },
           },
         ],
