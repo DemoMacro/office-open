@@ -213,6 +213,7 @@ export type {
   FileRecoveryPropertiesOptions,
   WebPublishingOptions,
   FileSharingOptions,
+  CalculationPropertiesOptions,
   DefinedNameOptions,
 } from "./workbook";
 export type {

@@ -1848,14 +1848,83 @@ describe("parseWorkbook", () => {
   });
 
   it("skips registered structural no-op records", () => {
+    const data = workbook(8, [{ name: "Sheet", cells: [] }], [], [], [record(0x005e)]);
+    expect(parseWorkbook(xls(data)).worksheets).toHaveLength(1);
+  });
+
+  it("maps BIFF workbook calculation and protection records", () => {
+    const delta = float64Bytes(0.25);
     const data = workbook(
       8,
       [{ name: "Sheet", cells: [] }],
       [],
       [],
-      [record(0x005c, new TextEncoder().encode("office-open"))],
+      [
+        record(0x000c, uint16Body([25])),
+        record(0x000d, uint16Body([0xffff])),
+        record(0x000e, uint16Body([0])),
+        record(0x000f, uint16Body([0])),
+        record(0x0010, delta),
+        record(0x0011, uint16Body([1])),
+        record(0x0012, uint16Body([1])),
+        record(0x0013, uint16Body([0x1234])),
+        record(0x0019, uint16Body([1])),
+        record(0x0040, uint16Body([1])),
+        record(0x01af, uint16Body([1])),
+        record(0x01bc, uint16Body([0xabcd])),
+      ],
     );
-    expect(parseWorkbook(xls(data)).worksheets).toHaveLength(1);
+
+    const parsed = parseWorkbook(xls(data));
+    expect(parsed.calculation).toEqual({
+      iterateCount: 25,
+      calcMode: "autoNoTable",
+      fullPrecision: false,
+      refMode: "R1C1",
+      iterateDelta: 0.25,
+      iterate: true,
+    });
+    expect(parsed.workbookProtection).toEqual({
+      lockStructure: true,
+      workbookPasswordHashRaw: "1234",
+      lockWindows: true,
+      lockRevision: true,
+      revisionsPasswordHashRaw: "ABCD",
+    });
+    expect(parsed.properties?.backupFile).toBe(true);
+  });
+
+  it("maps BIFF8 file-sharing and write-access records", () => {
+    const fileSharing = concat([uint16Body([1, 0xabcd]), biff8String("Owner")]);
+    const writeAccess = new Uint8Array(112);
+    new DataView(writeAccess.buffer).setUint16(0, 6, true);
+    writeAccess[2] = 1;
+    for (const [index, character] of Array.from("Editor").entries())
+      new DataView(writeAccess.buffer).setUint16(3 + index * 2, character.charCodeAt(0), true);
+    const data = workbook(
+      8,
+      [{ name: "Sheet", cells: [] }],
+      [],
+      [],
+      [record(0x005b, fileSharing), record(0x005c, writeAccess)],
+    );
+
+    const parsed = parseWorkbook(xls(data));
+    expect(parsed.fileSharing).toEqual({
+      readOnlyRecommended: true,
+      reservationPasswordHashRaw: "ABCD",
+      userName: "Owner",
+    });
+    expect(parsed.lastModifiedBy).toBe("Editor");
+  });
+
+  it("maps the legacy padded write-access layout", () => {
+    const writeAccess = new Uint8Array(32);
+    writeAccess.set(new TextEncoder().encode("Legacy User"));
+    writeAccess.fill(0x20, "Legacy User".length);
+    const data = workbook(8, [{ name: "Sheet", cells: [] }], [], [], [record(0x005c, writeAccess)]);
+
+    expect(parseWorkbook(xls(data)).lastModifiedBy).toBe("Legacy User");
   });
 
   it("parses HLINK hyperlinks", () => {

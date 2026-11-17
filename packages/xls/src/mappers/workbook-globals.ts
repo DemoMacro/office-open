@@ -1,11 +1,14 @@
 import type {
   DefinedNameOptions,
   ExternalLinkOptions,
+  FileSharingOptions,
   FontOptions,
+  CalculationPropertiesOptions,
   HyperlinkOptions,
   RichTextOptions,
   CellStyleXfOptions,
   CustomCellStyleOptions,
+  WorkbookProtectionOptions,
 } from "@office-open/xlsx";
 
 import { XlsParseError } from "../errors";
@@ -26,6 +29,7 @@ import {
   detectBiffVersion,
   encodingForCodepage,
   readBiff5String,
+  readBiff8String,
   richTextValue,
   readNoCchBiff8String,
   readNoCchBiff5String,
@@ -67,6 +71,11 @@ export function readWorkbookGlobals(stream: Uint8Array): WorkbookState {
   let refreshAllConnections: boolean | undefined;
   let builtInGroupCount: number | undefined;
   let codeName: string | undefined;
+  let calculation: CalculationPropertiesOptions | undefined;
+  let workbookProtection: WorkbookProtectionOptions | undefined;
+  let fileSharing: FileSharingOptions | undefined;
+  let lastModifiedBy: string | undefined;
+  let backupFile: boolean | undefined;
   const pendingSupbooks: Supbook[] = [];
   const pendingExternSheetReferences:
     | ReturnType<typeof parseExternSheet>
@@ -176,6 +185,115 @@ export function readWorkbookGlobals(stream: Uint8Array): WorkbookState {
             record.body.byteOffset,
             record.body.byteLength,
           ).getUint16(0, true) === 1;
+        break;
+      }
+      case RecordCode.CalculationCount: {
+        const value = readGlobalUint16(record, "calculation count");
+        if (value < 1 || value > 32767)
+          throw invalidGlobalValue(record, "calculation count", "invalid-calculation-count");
+        calculation = { ...calculation, iterateCount: value };
+        break;
+      }
+      case RecordCode.CalculationMode: {
+        const value = readGlobalUint16(record, "calculation mode");
+        const calcMode: CalculationPropertiesOptions["calcMode"] =
+          value === 0
+            ? "manual"
+            : value === 1
+              ? "auto"
+              : value === 0xffff
+                ? "autoNoTable"
+                : undefined;
+        if (calcMode === undefined)
+          throw invalidGlobalValue(record, "calculation mode", "invalid-calculation-mode");
+        calculation = { ...calculation, calcMode };
+        break;
+      }
+      case RecordCode.CalculationPrecision: {
+        const value = readGlobalBoolean(record, "calculation precision");
+        calculation = { ...calculation, fullPrecision: value };
+        break;
+      }
+      case RecordCode.CalculationReferenceMode: {
+        const value = readGlobalBoolean(record, "calculation reference mode");
+        calculation = { ...calculation, refMode: value ? "A1" : "R1C1" };
+        break;
+      }
+      case RecordCode.CalculationDelta: {
+        if (record.body.byteLength !== 8)
+          throw invalidGlobalLength(record, "calculation delta", "invalid-calculation-delta");
+        const value = new DataView(
+          record.body.buffer,
+          record.body.byteOffset,
+          record.body.byteLength,
+        ).getFloat64(0, true);
+        if (!Number.isFinite(value) || value < 0)
+          throw invalidGlobalValue(record, "calculation delta", "invalid-calculation-delta");
+        calculation = { ...calculation, iterateDelta: value };
+        break;
+      }
+      case RecordCode.Iteration: {
+        calculation = { ...calculation, iterate: readGlobalBoolean(record, "iteration") };
+        break;
+      }
+      case RecordCode.CalculationSaveRecalc: {
+        calculation = {
+          ...calculation,
+          calcOnSave: readGlobalBoolean(record, "calculation save recalc"),
+        };
+        break;
+      }
+      case RecordCode.Protect: {
+        workbookProtection = {
+          ...workbookProtection,
+          lockStructure: readGlobalBoolean(record, "workbook protection"),
+        };
+        break;
+      }
+      case RecordCode.Password: {
+        const value = readGlobalUint16(record, "workbook password");
+        workbookProtection = {
+          ...workbookProtection,
+          workbookPasswordHashRaw: value.toString(16).padStart(4, "0").toUpperCase(),
+        };
+        break;
+      }
+      case RecordCode.WindowProtect: {
+        workbookProtection = {
+          ...workbookProtection,
+          lockWindows: readGlobalBoolean(record, "window protection"),
+        };
+        break;
+      }
+      case RecordCode.RevisionProtection: {
+        workbookProtection = {
+          ...workbookProtection,
+          lockRevision: readGlobalBoolean(record, "revision protection"),
+        };
+        break;
+      }
+      case RecordCode.RevisionProtectionPassword: {
+        const value = readGlobalUint16(record, "revision password");
+        workbookProtection = {
+          ...workbookProtection,
+          revisionsPasswordHashRaw: value.toString(16).padStart(4, "0").toUpperCase(),
+        };
+        break;
+      }
+      case RecordCode.Backup: {
+        backupFile = readGlobalBoolean(record, "backup");
+        break;
+      }
+      case RecordCode.FileSharing: {
+        fileSharing = parseFileSharing(
+          record,
+          encodingForCodepage(codepage),
+          workbookVersion === 8,
+        );
+        break;
+      }
+      case RecordCode.WriteAccess: {
+        lastModifiedBy = parseWriteAccess(record, encodingForCodepage(codepage));
         break;
       }
       case RecordCode.CodeName: {
@@ -451,8 +569,101 @@ export function readWorkbookGlobals(stream: Uint8Array): WorkbookState {
     refreshAllConnections,
     builtInGroupCount,
     codeName,
+    calculation,
+    workbookProtection,
+    fileSharing,
+    lastModifiedBy,
+    backupFile,
     stream,
   };
+}
+
+function readGlobalUint16(record: BiffRecord, name: string): number {
+  if (record.body.byteLength !== 2)
+    throw invalidGlobalLength(record, name, "invalid-global-length");
+  return new DataView(record.body.buffer, record.body.byteOffset, 2).getUint16(0, true);
+}
+
+function readGlobalBoolean(record: BiffRecord, name: string): boolean {
+  const value = readGlobalUint16(record, name);
+  if (value !== 0 && value !== 1) throw invalidGlobalValue(record, name, "invalid-global-boolean");
+  return value === 1;
+}
+
+function invalidGlobalLength(record: BiffRecord, name: string, reason: string): XlsParseError {
+  return new XlsParseError(`Invalid legacy XLS file: invalid ${name} record length`, {
+    ...biffRecordContext(record, reason),
+  });
+}
+
+function invalidGlobalValue(record: BiffRecord, name: string, reason: string): XlsParseError {
+  return new XlsParseError(`Invalid legacy XLS file: invalid ${name} value`, {
+    ...biffRecordContext(record, reason),
+  });
+}
+
+function parseFileSharing(
+  record: BiffRecord,
+  encoding: string,
+  isBiff8: boolean,
+): FileSharingOptions {
+  if (record.body.byteLength < 6)
+    throw invalidGlobalLength(record, "file sharing", "truncated-file-sharing");
+  const view = new DataView(record.body.buffer, record.body.byteOffset, record.body.byteLength);
+  const readOnly = view.getUint16(0, true);
+  if (readOnly !== 0 && readOnly !== 1)
+    throw invalidGlobalValue(record, "file sharing read-only flag", "invalid-file-sharing-flag");
+  const options: FileSharingOptions = {
+    readOnlyRecommended: readOnly === 1,
+    reservationPasswordHashRaw: view.getUint16(2, true).toString(16).padStart(4, "0").toUpperCase(),
+  };
+  const characterCount = view.getUint16(4, true);
+  if (characterCount === 0) return options;
+  try {
+    const decoded = isBiff8
+      ? readBiff8String(record.body, 4, encoding)
+      : readNoCchBiff5String(record.body, 6, characterCount, encoding);
+    if (decoded.offset > record.body.byteLength)
+      throw new Error("file sharing username exceeds record");
+    if (decoded.value.length > 0) options.userName = decoded.value;
+  } catch (error) {
+    throw new XlsParseError("Invalid legacy XLS file: malformed file sharing username", {
+      ...biffRecordContext(record, "malformed-file-sharing-username"),
+      cause: error,
+    });
+  }
+  return options;
+}
+
+function parseWriteAccess(record: BiffRecord, encoding: string): string {
+  if (record.body.byteLength < 3 || record.body.byteLength > 112)
+    throw invalidGlobalLength(record, "write access", "invalid-write-access-length");
+  const view = new DataView(record.body.buffer, record.body.byteOffset, record.body.byteLength);
+  const characterCount = view.getUint16(0, true);
+  const flags = record.body[2]!;
+  if ((flags & 0xfe) !== 0 || characterCount > 109) {
+    if (record.body.byteLength !== 32 && record.body.byteLength !== 112)
+      throw invalidGlobalValue(record, "write access", "invalid-write-access-header");
+    const highByte = record.body[1] === 0;
+    const fallbackEncoding = encoding === "utf-16le" ? "windows-1252" : encoding;
+    return trimWriteAccess(
+      new TextDecoder(highByte ? "utf-16le" : fallbackEncoding).decode(record.body),
+    );
+  }
+  const highByte = (flags & 1) !== 0;
+  const byteLength = characterCount * (highByte ? 2 : 1);
+  if (3 + byteLength > record.body.byteLength)
+    throw invalidGlobalLength(record, "write access", "truncated-write-access");
+  const value = new TextDecoder(highByte ? "utf-16le" : encoding).decode(
+    record.body.subarray(3, 3 + byteLength),
+  );
+  return trimWriteAccess(value);
+}
+
+function trimWriteAccess(value: string): string {
+  let end = value.length;
+  while (end > 0 && (value.charCodeAt(end - 1) === 0 || value[end - 1] === " ")) end--;
+  return value.slice(0, end);
 }
 
 export function readLegacyWorkbookGlobals(

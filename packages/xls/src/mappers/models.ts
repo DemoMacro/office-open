@@ -10,8 +10,11 @@ import type {
   CellOptions,
   CellStyleXfOptions,
   CustomCellStyleOptions,
+  CalculationPropertiesOptions,
+  FileSharingOptions,
   RowOptions,
   StyleOptions,
+  WorkbookProtectionOptions,
   WorksheetOptions,
 } from "@office-open/xlsx";
 
@@ -52,6 +55,11 @@ export interface WorkbookState {
   refreshAllConnections?: boolean;
   builtInGroupCount?: number;
   codeName?: string;
+  calculation?: CalculationPropertiesOptions;
+  workbookProtection?: WorkbookProtectionOptions;
+  fileSharing?: FileSharingOptions;
+  lastModifiedBy?: string;
+  backupFile?: boolean;
 }
 
 export interface XfStyle {

@@ -94,6 +94,9 @@ export function parseWorkbook(data: Uint8Array, options?: LegacyParseOptions): W
   return {
     worksheets,
     ...metadata,
+    ...(metadata.lastModifiedBy !== undefined || state.lastModifiedBy === undefined
+      ? {}
+      : { lastModifiedBy: state.lastModifiedBy }),
     cellXfs: legacyCellXfs(worksheets),
     cellStyles: state.cellStyles.length > 0 ? state.cellStyles : undefined,
     cellStyleXfs: state.cellStyleXfs.length > 0 ? state.cellStyleXfs : undefined,
@@ -120,7 +123,13 @@ export function parseWorkbook(data: Uint8Array, options?: LegacyParseOptions): W
         ? {}
         : { builtInGroupCount: state.builtInGroupCount }),
       ...(state.codeName === undefined ? {} : { codeName: state.codeName }),
+      ...(state.backupFile === undefined ? {} : { backupFile: state.backupFile }),
     },
+    ...(state.calculation === undefined ? {} : { calculation: state.calculation }),
+    ...(state.workbookProtection === undefined
+      ? {}
+      : { workbookProtection: state.workbookProtection }),
+    ...(state.fileSharing === undefined ? {} : { fileSharing: state.fileSharing }),
   };
 }
 
