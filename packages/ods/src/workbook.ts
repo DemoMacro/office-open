@@ -105,18 +105,20 @@ function generateOdsPackage(options: OdsWorkbookOptions): Uint8Array {
     (worksheet.charts ?? []).map((chart) => {
       chartIndex += 1;
       const name = chart.name || `Object ${chartIndex}`;
-      if (chartNames.has(name)) {
+      const path = (chart.sourcePath ?? name).replace(/^\.\//u, "").replace(/\/$/u, "");
+      if (chartNames.has(path)) {
         throw new OdsGenerateError(
-          `ODS chart subdocument path is duplicated: ${name}`,
+          `ODS chart subdocument path is duplicated: ${path}`,
           "content.xml",
           "/office:document-content/office:body/office:spreadsheet/table:table/table:shapes/draw:frame/draw:object",
           "draw:object",
           "duplicate-chart-path",
         );
       }
-      chartNames.add(name);
+      chartNames.add(path);
       return {
         name,
+        path,
         worksheet: worksheet.name ?? `Sheet${worksheetIndex + 1}`,
         chart,
       };
@@ -144,7 +146,7 @@ function generateOdsPackage(options: OdsWorkbookOptions): Uint8Array {
   };
   for (const member of packageMembers ?? []) addPackageFile(files, member);
   for (const entry of chartFrames)
-    Object.assign(files, chartSubdocumentFiles(`${entry.name}/`, entry.chart));
+    Object.assign(files, chartSubdocumentFiles(`${entry.path}/`, entry.chart));
   for (const worksheet of options.worksheets ?? []) {
     for (const row of worksheet.rows ?? []) {
       for (const cell of row.cells ?? []) {
@@ -170,7 +172,7 @@ function generateOdsPackage(options: OdsWorkbookOptions): Uint8Array {
     mimeType,
     files,
     Object.fromEntries([
-      ...chartFrames.map((entry) => [`${entry.name}/`, CHART_MIME]),
+      ...chartFrames.map((entry) => [`${entry.path}/`, CHART_MIME]),
       ...(options.worksheets ?? []).flatMap((worksheet) =>
         (worksheet.rows ?? []).flatMap((row) =>
           (row.cells ?? []).flatMap((cell) =>

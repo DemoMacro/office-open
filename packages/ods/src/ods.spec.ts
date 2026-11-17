@@ -566,6 +566,35 @@ describe("ODS codec", () => {
     ]);
   });
 
+  it("preserves chart frame names separately from chart subdocument paths", async () => {
+    const generated = await generateWorkbook({
+      worksheets: [
+        {
+          name: "Sheet1",
+          charts: [
+            {
+              name: "Visible chart",
+              sourcePath: "Charts/Original chart",
+              type: "line",
+              series: [{ values: [1] }],
+              col: 1,
+              row: 1,
+            },
+          ],
+        },
+      ],
+    });
+    const parsed = await parseWorkbook(generated);
+    expect(parsed.worksheets?.[0]?.charts?.[0]).toMatchObject({
+      name: "Visible chart",
+      sourcePath: "Charts/Original chart",
+    });
+    const { files } = await readOcf(generated, "application/vnd.oasis.opendocument.spreadsheet");
+    expect(files["Charts/Original chart/content.xml"]).toBeDefined();
+    expect(files["content.xml"]).toContain('draw:name="Visible chart"');
+    expect(files["content.xml"]).toContain('xlink:href="Charts/Original chart"');
+  });
+
   it("rejects duplicate explicit chart subdocument paths", async () => {
     await expect(
       generateWorkbook({

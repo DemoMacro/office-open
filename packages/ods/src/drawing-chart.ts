@@ -18,6 +18,7 @@ import { columnNumber } from "./worksheet";
 /** A worksheet chart frame collected while serializing an ODS body. */
 export interface OdsChartFrame {
   name: string;
+  path?: string;
   worksheet: string;
   chart: OdsParsedChartOptions;
 }
@@ -55,12 +56,14 @@ export function parseWorksheetCharts(
           "missing-chart-subdocument",
         );
       }
+      const name = attributeString(frame, "draw:name") ?? href;
       charts.push({
-        name: href,
+        name,
         worksheet: worksheet ?? "",
         chart: {
           ...chart,
-          name: href,
+          name,
+          sourcePath: href,
           anchorType: "absolute",
           col: 1,
           row: 1,

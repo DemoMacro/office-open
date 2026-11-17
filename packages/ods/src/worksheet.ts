@@ -439,7 +439,7 @@ export function worksheetXml(
         },
         [
           xmlElement("draw:object", {
-            "xlink:href": entry.name,
+            "xlink:href": entry.path ?? entry.name,
             "xlink:type": "simple",
             "xlink:show": "embed",
             "xlink:actuate": "onLoad",
