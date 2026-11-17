@@ -5,11 +5,12 @@ import {
   childrenNamed,
   emuToLength,
   lengthToEmu,
+  parseStyleProperty,
   readXml,
   xmlElement,
   type OdfFiles,
 } from "@office-open/odf";
-import type { StyleColumnsOptions } from "@office-open/odf";
+import type { StyleColumnsOptions, StylePropertyOptions } from "@office-open/odf";
 import type { XmlAttributes } from "@office-open/odf";
 import type { Element } from "@office-open/xml";
 
@@ -173,7 +174,7 @@ export function parsePageLayout(files: OdfFiles): SectionOptions["properties"] {
 
 function parsePageLayoutDefinition(
   layout: Element | undefined,
-): Pick<OdtPageLayoutOptions, "properties" | "columns"> {
+): Pick<OdtPageLayoutOptions, "properties" | "columns" | "pageLayoutProperties"> {
   const width = lengthToTwips(attributeString(layout, "fo:page-width"));
   const height = lengthToTwips(attributeString(layout, "fo:page-height"));
   const orientation = attributeString(layout, "style:print-orientation");
@@ -196,6 +197,7 @@ function parsePageLayoutDefinition(
   };
   const hasMargin = Object.values(margin).some((value) => value !== undefined);
   const columns = parseColumns(childNamed(layout, "style:columns"));
+  const pageLayoutProperties = parsePageLayoutProperties(layout);
   const properties: SectionOptions["properties"] =
     width === undefined &&
     height === undefined &&
@@ -219,7 +221,43 @@ function parsePageLayoutDefinition(
   return {
     properties,
     ...(columns === undefined ? {} : { columns }),
+    ...(pageLayoutProperties === undefined ? {} : { pageLayoutProperties }),
   };
+}
+
+function parsePageLayoutProperties(
+  element: Element | undefined,
+): OdtPageLayoutOptions["pageLayoutProperties"] {
+  if (element === undefined) return undefined;
+  const parsed = parseStyleProperty(element, {
+    family: "page-layout",
+    scale: "hundredth-millimeter",
+  });
+  if (!parsed.ok) {
+    throw new OdtParseError(
+      `styles.xml: ${parsed.reason}`,
+      "styles.xml",
+      "/office:document-styles/office:automatic-styles/style:page-layout/style:page-layout-properties",
+      parsed.attributeName ?? parsed.elementName,
+      "invalid-page-layout-properties",
+    );
+  }
+  return pageLayoutProperty(parsed.value);
+}
+
+function pageLayoutProperty(
+  property: StylePropertyOptions,
+): OdtPageLayoutOptions["pageLayoutProperties"] {
+  if (property.name !== "style:page-layout-properties") {
+    throw new OdtParseError(
+      "styles.xml: page layout property has the wrong element name",
+      "styles.xml",
+      "/office:document-styles/office:automatic-styles/style:page-layout/style:page-layout-properties",
+      property.name,
+      "invalid-page-layout-properties",
+    );
+  }
+  return property;
 }
 
 function writingModeProperties(
@@ -320,8 +358,24 @@ export function pageLayoutColumnsXml(
   properties: SectionOptions["properties"],
   preserved?: StyleColumnsOptions,
 ): string {
+  const columns = pageLayoutColumnsOptions(properties, preserved);
+  if (columns === undefined) return "";
+  return xmlElement("style:columns", columnAttributes(columns.attributes), [
+    ...(columns.separator === undefined
+      ? []
+      : [xmlElement("style:column-sep", columnAttributes(columns.separator.attributes))]),
+    ...columns.columns.map((column) =>
+      xmlElement("style:column", columnAttributes(column.attributes)),
+    ),
+  ]);
+}
+
+export function pageLayoutColumnsOptions(
+  properties: SectionOptions["properties"],
+  preserved?: StyleColumnsOptions,
+): StyleColumnsOptions | undefined {
   const canonical = properties?.columns;
-  if (canonical === undefined && preserved === undefined) return "";
+  if (canonical === undefined && preserved === undefined) return undefined;
   const columns = preserved ?? { name: "style:columns" as const, attributes: {}, columns: [] };
   const attributes = { ...columns.attributes };
   if (canonical?.count !== undefined) attributes["fo:column-count"] = canonical.count;
@@ -332,15 +386,7 @@ export function pageLayoutColumnsXml(
       ? (separator ?? { attributes: { "style:style": "solid", "style:width": 1 } })
       : undefined;
   }
-  const columnOptions = { ...columns, attributes };
-  return xmlElement("style:columns", columnAttributes(columnOptions.attributes), [
-    ...(separator === undefined
-      ? []
-      : [xmlElement("style:column-sep", columnAttributes(separator.attributes))]),
-    ...columns.columns.map((column) =>
-      xmlElement("style:column", columnAttributes(column.attributes)),
-    ),
-  ]);
+  return { ...columns, attributes, ...(separator === undefined ? {} : { separator }) };
 }
 
 function columnAttributes(

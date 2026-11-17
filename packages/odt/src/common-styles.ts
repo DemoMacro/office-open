@@ -9,10 +9,13 @@ import {
   childNamed,
   childrenNamed,
   readXml,
+  stylePropertyXml,
   type GraphicStyleResources,
   graphicStyleResourcesXml,
   xmlElement,
   type StyleColumnsOptions,
+  type StylePropertyChildOptions,
+  type StylePropertyOptions,
   type OdfFiles,
 } from "@office-open/odf";
 import type { Element } from "@office-open/xml";
@@ -20,7 +23,12 @@ import type { Element } from "@office-open/xml";
 import { NAMESPACES } from "./body";
 import { OdtParseError } from "./error";
 import { outlineStyleXml } from "./list";
-import { lengthToTwips, pageLayoutColumnsXml, twipsToLength } from "./master-pages";
+import {
+  lengthToTwips,
+  pageLayoutColumnsOptions,
+  pageLayoutColumnsXml,
+  twipsToLength,
+} from "./master-pages";
 import { notesConfigurationXml } from "./notes";
 import type { OdtMasterPageOptions, OdtPageLayoutOptions } from "./options";
 
@@ -110,6 +118,7 @@ export function documentStylesXml(
         `<style:page-layout style:name="${layout.name}">${pageLayoutPropertiesXml(
           layout.properties,
           layout.columns,
+          layout.pageLayoutProperties,
         )}</style:page-layout>`,
     )
     .join("");
@@ -139,6 +148,7 @@ export function documentStylesXml(
 function pageLayoutPropertiesXml(
   properties: SectionOptions["properties"],
   preservedColumns?: StyleColumnsOptions,
+  preservedProperties?: Extract<StylePropertyOptions, { name: "style:page-layout-properties" }>,
 ): string {
   const pageSize = typeof properties?.pageSize === "object" ? properties.pageSize : undefined;
   const pageMargin = typeof properties?.pageMargin === "object" ? properties.pageMargin : undefined;
@@ -155,7 +165,46 @@ function pageLayoutPropertiesXml(
     properties?.textDirection === "tbRl" && `style:writing-mode="tb-rl"`,
   ].filter(Boolean);
   const columns = pageLayoutColumnsXml(properties, preservedColumns);
+  if (preservedProperties !== undefined) {
+    const children: StylePropertyChildOptions[] = (preservedProperties.children ?? []).filter(
+      (child) => child.name !== "style:columns",
+    );
+    const columnOptions = pageLayoutColumnsOptions(properties, preservedColumns);
+    if (columnOptions !== undefined) children.push(columnOptions);
+    return stylePropertyXml(
+      {
+        ...preservedProperties,
+        attributes: {
+          ...preservedProperties.attributes,
+          ...pageLayoutCanonicalAttributes(properties),
+        },
+        children,
+      },
+      "hundredth-millimeter",
+    );
+  }
   return `<style:page-layout-properties${attributes.length ? ` ${attributes.join(" ")}` : ""}>${columns}</style:page-layout-properties>`;
+}
+
+function pageLayoutCanonicalAttributes(
+  properties: SectionOptions["properties"],
+): Partial<Record<string, string | number | boolean>> {
+  const pageSize = typeof properties?.pageSize === "object" ? properties.pageSize : undefined;
+  const pageMargin = typeof properties?.pageMargin === "object" ? properties.pageMargin : undefined;
+  return {
+    ...(pageSize?.width === undefined ? {} : { "fo:page-width": pageSize.width }),
+    ...(pageSize?.height === undefined ? {} : { "fo:page-height": pageSize.height }),
+    ...(pageSize?.orientation === undefined
+      ? {}
+      : { "style:print-orientation": pageSize.orientation }),
+    ...(pageMargin?.top === undefined ? {} : { "fo:margin-top": pageMargin.top }),
+    ...(pageMargin?.right === undefined ? {} : { "fo:margin-right": pageMargin.right }),
+    ...(pageMargin?.bottom === undefined ? {} : { "fo:margin-bottom": pageMargin.bottom }),
+    ...(pageMargin?.left === undefined ? {} : { "fo:margin-left": pageMargin.left }),
+    ...(properties?.bidi ? { "style:writing-mode": "rl-tb" } : {}),
+    ...(properties?.textDirection === "lrTb" ? { "style:writing-mode": "lr-tb" } : {}),
+    ...(properties?.textDirection === "tbRl" ? { "style:writing-mode": "tb-rl" } : {}),
+  };
 }
 
 export function commonStylesXml(styles: DocumentOptions["styles"]): string {

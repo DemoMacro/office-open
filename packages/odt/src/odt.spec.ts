@@ -663,12 +663,16 @@ describe("ODT canonical projection", () => {
   it("preserves all page layouts and master-page bindings", async () => {
     const source = generateOcf("application/vnd.oasis.opendocument.text", {
       "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:automatic-styles/><office:body><office:text><text:p>Body</text:p></office:text></office:body></office:document-content>`,
-      "styles.xml": `<?xml version="1.0"?><office:document-styles ${ODF_NAMESPACES}><office:styles/><office:automatic-styles><style:page-layout style:name="Portrait"><style:page-layout-properties fo:page-width="21cm" fo:page-height="29.7cm"/></style:page-layout><style:page-layout style:name="Landscape"><style:page-layout-properties fo:page-width="29.7cm" fo:page-height="21cm" style:print-orientation="landscape"/></style:page-layout></office:automatic-styles><office:master-styles><style:master-page style:name="Default" style:page-layout-name="Portrait"><style:header><text:p>Portrait header</text:p></style:header></style:master-page><style:master-page style:name="Wide" style:page-layout-name="Landscape"><style:footer><text:p>Landscape footer</text:p></style:footer></style:master-page></office:master-styles></office:document-styles>`,
+      "styles.xml": `<?xml version="1.0"?><office:document-styles ${ODF_NAMESPACES}><office:styles/><office:automatic-styles><style:page-layout style:name="Portrait"><style:page-layout-properties fo:page-width="21cm" fo:page-height="29.7cm" style:print-page-order="ltr"/></style:page-layout><style:page-layout style:name="Landscape"><style:page-layout-properties fo:page-width="29.7cm" fo:page-height="21cm" style:print-orientation="landscape"/></style:page-layout></office:automatic-styles><office:master-styles><style:master-page style:name="Default" style:page-layout-name="Portrait"><style:header><text:p>Portrait header</text:p></style:header></style:master-page><style:master-page style:name="Wide" style:page-layout-name="Landscape"><style:footer><text:p>Landscape footer</text:p></style:footer></style:master-page></office:master-styles></office:document-styles>`,
     });
 
     const parsed = await parseDocument(source);
     expect(parsed.pageLayouts).toMatchObject([
-      { name: "Portrait", properties: { pageSize: { width: expect.any(Number) } } },
+      {
+        name: "Portrait",
+        properties: { pageSize: { width: expect.any(Number) } },
+        pageLayoutProperties: { attributes: { "style:print-page-order": "ltr" } },
+      },
       { name: "Landscape", properties: { pageSize: { orientation: "landscape" } } },
     ]);
     expect(parsed.masterPages).toMatchObject([
@@ -685,6 +689,7 @@ describe("ODT canonical projection", () => {
     );
     expect(archive.files["styles.xml"]).toContain('style:name="Landscape"');
     expect(archive.files["styles.xml"]).toContain('style:page-layout-name="Landscape"');
+    expect(archive.files["styles.xml"]).toContain('style:print-page-order="ltr"');
     expect(archive.files["styles.xml"]).toContain("Landscape footer");
   });
 

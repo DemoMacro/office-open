@@ -1,5 +1,5 @@
 import type { DocumentOptions, SectionOptions } from "@office-open/docx";
-import type { PackageOptions, StyleColumnsOptions } from "@office-open/odf";
+import type { PackageOptions, StyleColumnsOptions, StylePropertyOptions } from "@office-open/odf";
 
 import type { OdtCalculationSettingsOptions } from "./calculation-settings";
 import type { OdtEmbeddedObjectOptions } from "./embedded-objects";
@@ -22,6 +22,8 @@ export interface OdtPageLayoutOptions {
   properties?: SectionOptions["properties"];
   /** Exact ODF column descriptor; canonical section columns are projected from it. */
   columns?: StyleColumnsOptions;
+  /** Typed ODF page-layout properties without a canonical section equivalent. */
+  pageLayoutProperties?: Extract<StylePropertyOptions, { name: "style:page-layout-properties" }>;
 }
 
 /** ODF master page expressed with canonical section header/footer regions. */
