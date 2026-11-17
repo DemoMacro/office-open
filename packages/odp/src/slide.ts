@@ -78,7 +78,6 @@ import { addColumnStyle } from "./styles";
 import { parseParagraph, textBodyXml, type TextProperties } from "./text-run";
 import {
   applyTransitionToStyleResource,
-  hasTransitionOverlay,
   parseTransition,
   requiresTransitionStyle,
   transitionDrawingPageXml,
@@ -460,20 +459,7 @@ export function parseSlide(
     packageMembers,
     binaries,
   );
-  const transitionEntry = parsedAnimationRoots.map(findTransitionFilter).find(Boolean);
-  const hasOtherAnimations =
-    parsedAnimationRoots.length > 1 ||
-    parsedAnimationRoots.some(
-      (entry) => entry !== transitionEntry && containsTransitionFilter(entry),
-    );
-  const animationRoots = parsedAnimationRoots.filter(
-    (entry) =>
-      !(
-        transition !== undefined &&
-        containsTransitionFilter(entry) &&
-        (!hasOtherAnimations || hasTransitionOverlay(transitionEntry))
-      ),
-  );
+  const animationRoots = parsedAnimationRoots;
   const shapeReferences = collectOdfShapeIds(normalizedPage);
   const notes = parseNotes(childNamed(page, "presentation:notes"), textStyles, graphicStyles);
   const comments = childrenNamed(page, "officeooo:annotation").map(parseAnnotation);
@@ -775,15 +761,6 @@ function isKnownCompatibilityChild(name: string | undefined): boolean {
     name === "office:forms" ||
     name === "officeooo:annotation"
   );
-}
-
-function findTransitionFilter(entry: AnimationEntry): AnimationEntry | undefined {
-  if (entry.behavior === "transitionFilter") return entry;
-  for (const child of entry.children ?? []) {
-    const transition = findTransitionFilter(child);
-    if (transition !== undefined) return transition;
-  }
-  return undefined;
 }
 
 function containsTransitionFilter(entry: AnimationEntry): boolean {

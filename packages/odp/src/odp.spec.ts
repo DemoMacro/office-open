@@ -651,6 +651,25 @@ describe("ODP codec", () => {
     }
   });
 
+  it("preserves transition animation timing alongside the transition projection", async () => {
+    const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:presentation><draw:page><anim:par smil:begin="2s" smil:end="8s" smil:fill="freeze" smil:repeatCount="2"><anim:transitionFilter smil:type="fade" smil:dur="1s" smil:repeatDur="3s"/></anim:par></draw:page></office:presentation></office:body></office:document-content>`;
+    const parsed = await parsePresentation(
+      generateOcf("application/vnd.oasis.opendocument.presentation", { "content.xml": content }),
+    );
+    expect(parsed.slides?.[0]?.transition).toMatchObject({ type: "fade", duration: 1000 });
+    expect(parsed.slides?.[0]?.animations).toMatchObject([
+      {
+        begin: "2s",
+        end: "8s",
+        timeFill: "freeze",
+        repeatCount: 2,
+        children: [{ duration: 1000, repeatDuration: 3000 }],
+      },
+    ]);
+    const regenerated = await parsePresentation(await generatePresentation(parsed));
+    expect(regenerated.slides?.[0]?.animations).toEqual(parsed.slides?.[0]?.animations);
+  });
+
   it("preserves unmapped SMIL transition types in typed animations", async () => {
     const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:presentation><draw:page><anim:par><anim:transitionFilter smil:type="barnDoorWipe"/></anim:par></draw:page></office:presentation></office:body></office:document-content>`;
     const parsed = await parsePresentation(
