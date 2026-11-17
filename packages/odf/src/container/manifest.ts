@@ -63,9 +63,9 @@ const MANIFEST_ELEMENT_ATTRIBUTES: Record<string, readonly string[]> = {
 
 export interface OcfEncryptedKeyOptions {
   algorithm?: string;
-  keyId?: string;
+  keyId: string;
   keyPacket?: string;
-  cipherValue?: string;
+  cipherValue: string;
 }
 
 export interface OcfAlgorithmOptions {
@@ -436,12 +436,12 @@ function encryptedKeyXml(key: OcfEncryptedKeyOptions): string {
       : []),
     xmlElement("manifest:keyinfo", undefined, [
       xmlElement("manifest:PGPData", undefined, [
-        ...(key.keyId ? [xmlElement("manifest:PGPKeyID", undefined, [key.keyId])] : []),
+        xmlElement("manifest:PGPKeyID", undefined, [key.keyId]),
         ...(key.keyPacket ? [xmlElement("manifest:PGPKeyPacket", undefined, [key.keyPacket])] : []),
       ]),
     ]),
     xmlElement("manifest:CipherData", undefined, [
-      xmlElement("manifest:CipherValue", undefined, [key.cipherValue ?? ""]),
+      xmlElement("manifest:CipherValue", undefined, [key.cipherValue]),
     ]),
   ]);
 }

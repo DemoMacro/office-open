@@ -817,6 +817,21 @@ describe("ODP codec", () => {
     ).toEqual(parsed.slides?.[0]?.children?.[0]);
   });
 
+  it("projects an embedded SVG picture into canonical slide children", async () => {
+    const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:presentation><draw:page><draw:frame svg:x="1cm" svg:y="1cm" svg:width="4cm" svg:height="3cm"><draw:image xlink:href="Pictures/logo.svg" xlink:type="simple" xlink:show="embed"/></draw:frame></draw:page></office:presentation></office:body></office:document-content>`;
+    const parsed = await parsePresentation(
+      generateOcf("application/vnd.oasis.opendocument.presentation", {
+        "content.xml": content,
+        "Pictures/logo.svg": '<svg xmlns="http://www.w3.org/2000/svg"/>\n',
+      }),
+    );
+    expect(parsed.slides?.[0]?.children?.[0]).toMatchObject({
+      picture: { type: "svg", data: expect.any(Uint8Array) },
+    });
+    const regenerated = await parsePresentation(await generatePresentation(parsed));
+    expect(regenerated.slides?.[0]?.children?.[0]).toMatchObject({ picture: { type: "svg" } });
+  });
+
   it("projects compatibility legacy drawings as positioned frames", async () => {
     const parsed = await parsePresentation(
       await generatePresentation({

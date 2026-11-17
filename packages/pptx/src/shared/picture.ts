@@ -43,7 +43,7 @@ export interface PictureOptions extends BasePictureOptions, NvPrPlaceholderOptio
   rotation?: number;
   /** Rotate image fill with the shape frame (p:blipFill @rotWithShape). */
   rotWithShape?: boolean;
-  type: "png" | "jpg" | "gif" | "bmp" | "tif" | "ico" | "emf" | "wmf";
+  type: "png" | "jpg" | "gif" | "bmp" | "tif" | "ico" | "emf" | "wmf" | "svg";
   /**
    * Media file name inside the package (ppt/media/<fileName>). Round-trip
    * keeps the source name; fresh generation derives it from the shape name.

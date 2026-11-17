@@ -1,5 +1,12 @@
 import type { DataType } from "@office-open/core";
-import { ParsedArchive, strFromU8, strToU8, toUint8ArrayAsync, zipSync } from "@office-open/core";
+import {
+  DEFAULT_ARCHIVE_READ_LIMITS,
+  ParsedArchive,
+  strFromU8,
+  strToU8,
+  toUint8ArrayAsync,
+  zipSync,
+} from "@office-open/core";
 import { parse } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 
@@ -20,12 +27,6 @@ export interface OdfFiles {
 export interface OdfPackageFiles {
   [path: string]: OdfFileContent;
 }
-
-const ODF_ZIP_READ_LIMITS = {
-  maxEntries: 20_000,
-  maxEntryUncompressedSize: 256 * 1024 * 1024,
-  maxTotalUncompressedSize: 1024 * 1024 * 1024,
-} as const;
 
 const ODF_CANONICAL_PREFIXES: Readonly<Record<string, string>> = {
   "http://openoffice.org/2009/office": "officeooo",
@@ -213,7 +214,7 @@ export function readOcfSync(
   const expectedMimeTypes = Array.isArray(expectedMimeType) ? expectedMimeType : [expectedMimeType];
   let entries: Record<string, Uint8Array>;
   try {
-    const archive = new ParsedArchive(data, undefined, ODF_ZIP_READ_LIMITS);
+    const archive = new ParsedArchive(data, undefined, DEFAULT_ARCHIVE_READ_LIMITS);
     entries = Object.fromEntries(archive.keys().map((path) => [path, archive.getRaw(path)!]));
   } catch (cause) {
     throw new OcfError("Invalid ODF ZIP package", { cause });

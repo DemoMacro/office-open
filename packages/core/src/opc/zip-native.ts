@@ -489,9 +489,15 @@ export function inflateRawWindow(
   }
   if (_nativeInflate) {
     const dec = _nativeInflate(raw);
-    return verifyCrc32(dec, entry);
+    return verifyCrc32(asUint8Array(dec), entry);
   }
   return verifyCrc32(inflateSync(raw), entry);
+}
+
+function asUint8Array(data: Uint8Array): Uint8Array {
+  return data.constructor === Uint8Array
+    ? data
+    : new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
 }
 
 /**

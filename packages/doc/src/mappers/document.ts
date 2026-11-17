@@ -289,6 +289,12 @@ export function parseInternal(data: Uint8Array, password?: string): DocumentOpti
   const endnoteStart = commentStart + fib.ccpComments;
   const textboxStart = endnoteStart + fib.ccpEndnotes;
   const headerTextboxStart = textboxStart + fib.ccpTextboxes;
+  const commentRanges =
+    fib.ccpComments === 0 || fib.comments.length === 0
+      ? []
+      : parseRequired({ part: "table", path: "PlcfandRef", recordName: "fcPlcfandRef" }, () =>
+          parseCommentRanges(table, fib.comments),
+        );
 
   const sectionChildGroups = sectionModels.map((sectionModel, index) => {
     const start = sectionModel.mainStart ?? sectionModels[index - 1]?.mainEnd ?? 0;
@@ -452,19 +458,17 @@ export function parseInternal(data: Uint8Array, password?: string): DocumentOpti
           })),
         }
       : {}),
-    ...(fib.ccpComments > 0
+    ...(commentRanges.length > 0
       ? {
-          comments: [
-            {
-              id: 1,
-              children: projectCommentStory(
-                characters,
-                characterRanges,
-                commentStart,
-                endnoteStart,
-              ),
-            },
-          ],
+          comments: commentRanges.map((range, index) => ({
+            id: index,
+            children: projectCommentStory(
+              characters,
+              characterRanges,
+              commentStart + range.start,
+              commentStart + range.end,
+            ),
+          })),
         }
       : {}),
     ...(fib.ccpEndnotes > 0

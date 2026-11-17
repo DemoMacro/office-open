@@ -77,6 +77,7 @@ export {
   compareOcfSemantic,
   ocfSemanticDigest,
   type OcfEntrySemanticDigest,
+  type OcfMemberSemanticDigest,
   type OcfSemanticDigest,
 } from "./container/digest";
 export { metaXml, ODF_NAMESPACES, parseMeta } from "./meta";

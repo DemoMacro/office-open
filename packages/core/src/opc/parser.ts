@@ -33,6 +33,13 @@ export interface ArchiveReadLimits {
   maxTotalUncompressedSize?: number;
 }
 
+/** Conservative defaults for public OOXML/ODF archive readers. */
+export const DEFAULT_ARCHIVE_READ_LIMITS: Required<ArchiveReadLimits> = {
+  maxEntries: 20_000,
+  maxEntryUncompressedSize: 256 * 1024 * 1024,
+  maxTotalUncompressedSize: 1024 * 1024 * 1024,
+};
+
 /**
  * Parsed OOXML archive backed by a lazily-inflated ZIP.
  *
@@ -68,7 +75,7 @@ export class ParsedArchive {
   public constructor(
     source: Uint8Array | ByteSource,
     entries?: readonly ZipEntryMeta[],
-    readLimits?: ArchiveReadLimits,
+    readLimits: ArchiveReadLimits = DEFAULT_ARCHIVE_READ_LIMITS,
   ) {
     this.source = source;
     this.readLimits = readLimits;
@@ -125,8 +132,11 @@ export class ParsedArchive {
    * pipeline), so the returned archive serves the same synchronous
    * `get`/`getRaw` API as a bytes-backed one.
    */
-  public static async open(data: Uint8Array | Blob): Promise<ParsedArchive> {
-    if (!(data instanceof Blob)) return new ParsedArchive(data);
+  public static async open(
+    data: Uint8Array | Blob,
+    readLimits: ArchiveReadLimits = DEFAULT_ARCHIVE_READ_LIMITS,
+  ): Promise<ParsedArchive> {
+    if (!(data instanceof Blob)) return new ParsedArchive(data, undefined, readLimits);
     const source = blobSource(data);
     let entries: ZipEntryMeta[];
     try {
@@ -134,9 +144,9 @@ export class ParsedArchive {
     } catch {
       // zip64 or an exotic layout — the eager full read is the reference
       // behavior (it throws on unreadable input, as before).
-      return new ParsedArchive(await toUint8ArrayAsync(data));
+      return new ParsedArchive(await toUint8ArrayAsync(data), undefined, readLimits);
     }
-    const archive = new ParsedArchive(source, entries);
+    const archive = new ParsedArchive(source, entries, readLimits);
     await archive.hydrate(source);
     return archive;
   }
@@ -363,6 +373,9 @@ export class ParsedArchive {
 }
 
 /** Parse an OOXML archive (.docx, .pptx, .xlsx) into a ParsedArchive. */
-export function parseArchive(data: Uint8Array): ParsedArchive {
-  return new ParsedArchive(data);
+export function parseArchive(
+  data: Uint8Array,
+  readLimits: ArchiveReadLimits = DEFAULT_ARCHIVE_READ_LIMITS,
+): ParsedArchive {
+  return new ParsedArchive(data, undefined, readLimits);
 }

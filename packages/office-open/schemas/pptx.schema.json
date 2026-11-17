@@ -13914,7 +13914,7 @@
         },
         "type": {
           "description": "Image format. Loose string here; each package narrows to its supported union.",
-          "enum": ["png", "jpg", "gif", "bmp", "tif", "ico", "emf", "wmf"],
+          "enum": ["png", "jpg", "gif", "bmp", "tif", "ico", "emf", "wmf", "svg"],
           "type": "string"
         },
         "useLocalDpi": {

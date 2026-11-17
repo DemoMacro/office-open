@@ -69,7 +69,11 @@ export function detectOffice(input: Uint8Array | string): OfficeFormatInfo {
     return detectZipFormat(input);
   }
 
-  const text = new TextDecoder("latin1", { fatal: false }).decode(input.subarray(0, 64));
+  const text = new TextDecoder("latin1", { fatal: false }).decode(
+    input[0] === 0xef && input[1] === 0xbb && input[2] === 0xbf
+      ? input.subarray(3, 67)
+      : input.subarray(0, 64),
+  );
   if (
     text
       .replace(/^\uFEFF\s*/, "")

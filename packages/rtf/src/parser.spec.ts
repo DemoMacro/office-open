@@ -8,6 +8,7 @@ import type {
 import { describe, expect, it } from "vite-plus/test";
 
 import { parseDocument } from ".";
+import { RtfParseError } from "./errors";
 import { generateDocument } from "./generate";
 
 function roundTrip(source: string): ReturnType<typeof parseDocument> {
@@ -46,6 +47,14 @@ describe("parseDocument RTF text and formatting", () => {
     expect(parseDocument("{\\rtf1 Hello, RTF!}")).toEqual({
       sections: [{ children: [{ paragraph: { children: [{ text: "Hello, RTF!" }] } }] }],
     });
+  });
+
+  it("accepts Unicode and UTF-8 BOM prefixes", () => {
+    const source = String.raw`{\rtf1 Hello}`;
+    expect(parseDocument(`\uFEFF${source}`)).toEqual(parseDocument(source));
+    expect(
+      parseDocument(new Uint8Array([0xef, 0xbb, 0xbf, ...new TextEncoder().encode(source)])),
+    ).toEqual(parseDocument(source));
   });
 
   it("scopes bold formatting to its group and maps paragraph alignment", () => {
@@ -236,6 +245,24 @@ describe("parseDocument RTF rich destinations", () => {
     expect(document.sections[0]?.children?.[0]).toEqual({
       paragraph: { children: [{ footnoteReference: 0 }, { text: "Body" }] },
     });
+  });
+
+  it("preserves meaningful header and footer edge spaces", () => {
+    const document = parseDocument(String.raw`{\rtf1{\header  leading and trailing  }Body}`);
+    expect(document.sections[0]?.headers?.default?.[0]).toEqual({
+      paragraph: { children: [{ text: " leading and trailing  " }] },
+    });
+  });
+
+  it("reports unsupported font encodings as RtfParseError", () => {
+    let error: unknown;
+    try {
+      parseDocument(String.raw`{\rtf1\ansicpg999{\fonttbl{\f0\fcharset255 Foo;}}Text}`);
+    } catch (cause) {
+      error = cause;
+    }
+    expect(error).toBeInstanceOf(RtfParseError);
+    expect(error).toMatchObject({ context: { part: "RTF font table", name: "fonttbl" } });
   });
 
   it("separates left and right header and footer slots", () => {

@@ -530,6 +530,16 @@ describe("OCF runtime", () => {
     expect(compareOcfSemantic(createPackage("before"), createPackage("after"))).not.toEqual([]);
   });
 
+  it("detects unmanifested package members in the semantic digest", () => {
+    const mimeType = "application/vnd.oasis.opendocument.text";
+    const source = generateOcf(mimeType, { "content.xml": "<text:p/>" });
+    const changed = generateOcf(mimeType, {
+      "content.xml": "<text:p/>",
+      "unmanifested.bin": new Uint8Array([1, 2, 3]),
+    });
+    expect(compareOcfSemantic(source, changed)).toContainEqual(expect.stringContaining("member["));
+  });
+
   it("keeps supplied manifest entries and reports duplicate paths structurally", () => {
     const files = { "content.xml": "<a/>", "Extra/data.bin": new Uint8Array([1]) };
     const packageManifest = {

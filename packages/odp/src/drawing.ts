@@ -258,11 +258,10 @@ export function parsePictureFrame(
 
 function pictureTypeFromUrl(value: string): PictureOptions["type"] | undefined {
   const extension = value.split(/[?#]/, 1)[0]?.split("/").pop()?.split(".").pop()?.toLowerCase();
-  if (extension === "svg") return undefined;
   const type =
     extension === "jpeg"
       ? "jpg"
-      : (["png", "jpg", "gif", "bmp", "tif", "ico", "emf", "wmf"] as const).find(
+      : (["png", "jpg", "gif", "bmp", "tif", "ico", "emf", "wmf", "svg"] as const).find(
           (candidate) => candidate === extension,
         );
   return type;
@@ -270,11 +269,10 @@ function pictureTypeFromUrl(value: string): PictureOptions["type"] | undefined {
 
 function embeddedPictureType(path: string): PictureOptions["type"] | undefined {
   const extension = path.split(/[?#]/, 1)[0]?.split("/").pop()?.split(".").pop()?.toLowerCase();
-  if (extension === "svg") return undefined;
   const type =
     extension === "jpeg"
       ? "jpg"
-      : (["png", "jpg", "gif", "bmp", "tif", "ico", "emf", "wmf"] as const).find(
+      : (["png", "jpg", "gif", "bmp", "tif", "ico", "emf", "wmf", "svg"] as const).find(
           (value) => value === extension,
         );
   if (!type)

@@ -97,7 +97,12 @@ export { strFromU8, strToU8, unzipSync, zipSync } from "./packer";
 export { decodeBase64, encodeBase64 } from "../util/base64";
 
 // Archive parser
-export { parseArchive, ParsedArchive, type ArchiveReadLimits } from "./parser";
+export {
+  DEFAULT_ARCHIVE_READ_LIMITS,
+  parseArchive,
+  ParsedArchive,
+  type ArchiveReadLimits,
+} from "./parser";
 export { OpcPackageError } from "./package-error";
 export { OOXML_CANONICAL_PREFIXES } from "./namespaces";
 
