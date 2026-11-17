@@ -63,7 +63,12 @@ import {
   parseWorksheetGraphicStyles,
   parseWorksheetNamedExpressions,
 } from "./spreadsheet";
-import { parseDimensionStyles, parseStyleResources, styleResourcesXml } from "./styles";
+import {
+  parseDimensionStyles,
+  parseStyleResources,
+  parseTextStyles,
+  styleResourcesXml,
+} from "./styles";
 import { worksheet, worksheetXml } from "./worksheet";
 
 export const MIME = "application/vnd.oasis.opendocument.spreadsheet";
@@ -275,10 +280,15 @@ function parseOdsPackage(data: Uint8Array): OdsWorkbookOptions {
   const dataMappings = parseDataMappings(body);
   const commonCellStyles = parseCommonCellStyles(stylesDocument);
   const graphicStyles = parseWorksheetGraphicStyles(automaticStyles, stylesDocument);
+  const textStyles = parseTextStyles([
+    automaticStyles,
+    childNamed(stylesDocument, "office:automatic-styles"),
+    childNamed(stylesDocument, "office:styles"),
+  ]);
   const dxfs: DxfOptions[] = [];
   const localDefinedNames: NonNullable<WorkbookOptions["definedNames"]> = [];
   const worksheets = childrenNamed(body, "table:table").map((table, index) => {
-    const parsed = worksheet(table, index + 1, dimensions, cellStyles, graphicStyles);
+    const parsed = worksheet(table, index + 1, dimensions, cellStyles, graphicStyles, textStyles);
     const name = attributeString(table, "table:name");
     const charts = embeddedCharts
       .filter((entry) => entry.worksheet === (name ?? `Sheet${index + 1}`))

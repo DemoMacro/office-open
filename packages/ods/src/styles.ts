@@ -18,6 +18,7 @@ import type {
   BorderOptions,
   BorderSideOptions,
   CellFillOptions,
+  RichTextRunPropertiesOptions,
   StyleOptions,
   FontOptions,
 } from "@office-open/xlsx";
@@ -143,6 +144,123 @@ export function cellStyleChildren(style: StyleOptions): string[] {
   if (Object.values(textAttributes).some((value) => value !== undefined))
     children.push(xmlElement("style:text-properties", textAttributes));
   return children;
+}
+
+/** Registers one rich-text run style in the ODF automatic styles section. */
+export function addTextStyle(
+  properties: RichTextRunPropertiesOptions,
+  styles: string[],
+): string | undefined {
+  if (Object.values(properties).every((value) => value === undefined)) return undefined;
+  const name = `tx${styles.length + 1}`;
+  styles.push(
+    xmlElement("style:style", { "style:name": name, "style:family": "text" }, [
+      xmlElement("style:text-properties", {
+        "fo:font-family": properties.font,
+        "fo:font-size": properties.size === undefined ? undefined : `${properties.size}pt`,
+        "fo:font-weight": properties.bold ? "bold" : undefined,
+        "fo:font-style": properties.italic ? "italic" : undefined,
+        "fo:color": properties.color?.rgb ? odfHex(properties.color.rgb) : undefined,
+        ...richUnderlineAttributes(properties.underline),
+        "style:text-line-through-style": properties.strike ? "solid" : undefined,
+      }),
+    ]),
+  );
+  return name;
+}
+
+function richUnderlineAttributes(
+  underline: RichTextRunPropertiesOptions["underline"],
+): XmlAttributes {
+  if (!underline || underline === "none") return {};
+  if (underline === "singleAccounting" || underline === "doubleAccounting") {
+    throw new OdsGenerateError(
+      `ODF cannot represent underline mode: ${underline}`,
+      "content.xml",
+      "/office:document-content/office:automatic-styles/style:style/style:text-properties",
+      "style:text-underline-style",
+      underline,
+    );
+  }
+  return {
+    "style:text-underline-style": "solid",
+    "style:text-underline-type": underline === "double" ? "double" : "single",
+  };
+}
+
+/** Parses ODF character styles into the shared XLSX rich-text run shape. */
+export function parseTextStyles(
+  containers: readonly (Element | undefined)[],
+): Map<string, RichTextRunPropertiesOptions> {
+  const source = new Map<string, { element: Element; parent?: string }>();
+  for (const container of containers) {
+    for (const style of childrenNamed(container, "style:style")) {
+      if (attributeString(style, "style:family") !== "text") continue;
+      const name = attributeString(style, "style:name");
+      if (name) {
+        source.set(name, {
+          element: style,
+          parent: attributeString(style, "style:parent-style-name"),
+        });
+      }
+    }
+  }
+  const resolved = new Map<string, RichTextRunPropertiesOptions>();
+  const visiting = new Set<string>();
+  function resolve(name: string): RichTextRunPropertiesOptions {
+    const existing = resolved.get(name);
+    if (existing) return existing;
+    if (visiting.has(name)) {
+      throw new OdsParseError(
+        `styles.xml: cyclic text style inheritance: ${name}`,
+        "styles.xml",
+        `/office:automatic-styles/style:style[@style:name="${name}"]`,
+        "style:parent-style-name",
+        "cyclic-style-inheritance",
+      );
+    }
+    const entry = source.get(name);
+    if (!entry) return {};
+    visiting.add(name);
+    const parent = entry.parent ? resolve(entry.parent) : {};
+    const text = childNamed(entry.element, "style:text-properties");
+    const size = attributeString(text, "fo:font-size");
+    const color = attributeString(text, "fo:color");
+    const underline = attributeString(text, "style:text-underline-style");
+    const underlineType = attributeString(text, "style:text-underline-type");
+    const strike = attributeString(text, "style:text-line-through-style");
+    const own: RichTextRunPropertiesOptions = {
+      ...parent,
+      ...(attributeString(text, "fo:font-family")
+        ? { font: attributeString(text, "fo:font-family")!.replace(/^(['"])(.*)\1$/u, "$2") }
+        : {}),
+      ...(size?.endsWith("pt") ? { size: Number(size.slice(0, -2)) } : {}),
+      ...(attributeString(text, "fo:font-weight") === undefined
+        ? {}
+        : { bold: attributeString(text, "fo:font-weight") === "bold" }),
+      ...(attributeString(text, "fo:font-style") === undefined
+        ? {}
+        : { italic: attributeString(text, "fo:font-style") === "italic" }),
+      ...(color && /^#[0-9a-f]{6}$/iu.test(color)
+        ? { color: { rgb: `FF${color.slice(1).toUpperCase()}` } }
+        : {}),
+      ...(underline && underline !== "none"
+        ? { underline: underlineType === "double" ? "double" : "single" }
+        : underline === "none"
+          ? { underline: "none" }
+          : {}),
+      ...(strike && strike !== "none"
+        ? { strike: true }
+        : strike === "none"
+          ? { strike: false }
+          : {}),
+    };
+    visiting.delete(name);
+    resolved.set(name, own);
+    return own;
+  }
+  for (const name of source.keys()) resolve(name);
+  return resolved;
 }
 
 /** Maps canonical font underlines to ODF attributes, rejecting ODF-incompatible modes. */

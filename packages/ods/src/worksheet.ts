@@ -23,6 +23,9 @@ import type {
   DxfOptions,
   MergeCellOptions,
   RowOptions,
+  RichTextOptions,
+  RichTextRunOptions,
+  RichTextRunPropertiesOptions,
   SelectionOptions,
   StyleOptions,
   TableDetectiveOptions,
@@ -40,7 +43,13 @@ import {
   parseDrawingShape,
   tableProtectionXml,
 } from "./spreadsheet";
-import { addCellStyle, addDimensionStyle, addTableStyle, type DimensionStyle } from "./styles";
+import {
+  addCellStyle,
+  addDimensionStyle,
+  addTableStyle,
+  addTextStyle,
+  type DimensionStyle,
+} from "./styles";
 import { assertElementNames, unknownOdsElement } from "./workbook";
 
 export const COLUMN_CONTAINERS = new Set([
@@ -496,16 +505,20 @@ export function cellXml(
   const styleOptions = typeof cell.style === "object" ? cell.style : undefined;
   const valueKind = numFmtKind(styleOptions?.numFmt);
   let type = cell.error === undefined ? cached.type : "error";
-  if (valueKind === "time") type = "time";
-  else if (valueKind === "currency") type = "currency";
+  if (cell.error === undefined) {
+    if (valueKind === "time") type = "time";
+    else if (valueKind === "currency") type = "currency";
+  }
   const children = [
     ...(cell.cellRangeSource ? [cellRangeSourceXml(cell.cellRangeSource)] : []),
     ...decorations,
     ...(cell.detective ? [tableDetectiveXml(cell.detective)] : []),
     ...(cached.type === "string"
-      ? String(cached.value ?? "")
-          .split("\n")
-          .map((paragraph) => xmlElement("text:p", undefined, [escapeText(paragraph)]))
+      ? isRichText(cell.value)
+        ? richTextXml(cell.value, styles)
+        : String(cached.value ?? "")
+            .split("\n")
+            .map((paragraph) => xmlElement("text:p", undefined, odfTextNodes(paragraph)))
       : []),
     ...(cell.graphics ?? []).map((graphic) => cellGraphicXml(graphic)),
   ];
@@ -614,7 +627,45 @@ export function cacheAttributes(value: CellOptions["value"]): {
   if (typeof value === "boolean") return { type: "boolean", value };
   if (value instanceof Date) return { type: "date", value: odfDateValue(value) };
   if (typeof value === "string") return { type: "string", value };
+  if (isRichText(value)) {
+    return {
+      type: "string",
+      value: value.text ?? value.runs?.map((run) => run.text).join("") ?? "",
+    };
+  }
   return {};
+}
+
+function isRichText(value: CellOptions["value"]): value is RichTextOptions {
+  return typeof value === "object" && value !== null && !(value instanceof Date);
+}
+
+function richTextXml(value: RichTextOptions, styles: string[]): string[] {
+  const runs = value.runs ?? (value.text === undefined ? [] : [{ text: value.text }]);
+  const paragraphs: string[][] = [[]];
+  for (const run of runs) {
+    const parts = run.text.split("\n");
+    for (const [index, part] of parts.entries()) {
+      if (part.length > 0) paragraphs[paragraphs.length - 1]!.push(richRunXml(run, part, styles));
+      if (index < parts.length - 1) paragraphs.push([]);
+    }
+  }
+  return paragraphs.map((paragraph) => xmlElement("text:p", undefined, paragraph));
+}
+
+function richRunXml(run: RichTextRunOptions, text: string, styles: string[]): string {
+  const styleName = run.properties ? addTextStyle(run.properties, styles) : undefined;
+  return styleName
+    ? xmlElement("text:span", { "text:style-name": styleName }, odfTextNodes(text))
+    : odfTextNodes(text).join("");
+}
+
+function odfTextNodes(text: string): string[] {
+  return text.split(/( +)/u).flatMap((part) => {
+    if (!part) return [];
+    if (!/^ +$/u.test(part)) return [escapeText(part)];
+    return [xmlElement("text:s", part.length === 1 ? undefined : { "text:c": part.length })];
+  });
 }
 
 function styleWithNumFmt(style: CellOptions["style"], numFmt: string): CellOptions["style"] {
@@ -658,6 +709,7 @@ export function worksheet(
   dimensions: Map<string, DimensionStyle>,
   cellStyles: Map<string, StyleOptions>,
   graphicStyles: Map<string, GraphicStyle> = new Map(),
+  textStyles: Map<string, RichTextRunPropertiesOptions> = new Map(),
 ): WorksheetOptions {
   const comments: CommentOptions[] = [];
   const mergeCells: MergeCellOptions[] = [];
@@ -694,6 +746,7 @@ export function worksheet(
     comments,
     mergeCells,
     shapes,
+    textStyles,
   );
   const tableStyle = dimensions.get(attributeString(table, "table:style-name") ?? "");
   const sheetView =
@@ -950,6 +1003,7 @@ function parseRows(
   comments: CommentOptions[],
   mergeCells: MergeCellOptions[],
   shapes: WorksheetOptions["shapes"],
+  textStyles: Map<string, RichTextRunPropertiesOptions>,
 ): { rows: RowOptions[]; defaultRowHeight?: number } {
   const rows: RowOptions[] = [];
   let defaultRowHeight: number | undefined;
@@ -966,6 +1020,7 @@ function parseRows(
       comments,
       mergeCells,
       shapes,
+      textStyles,
     );
     const hasRowData = (parsed.cells ?? []).some(hasCellContent) || parsed.hidden === true;
     if (repeat > MAX_ROWS && hasRowData) {
@@ -1058,6 +1113,7 @@ export function parseRow(
   comments: CommentOptions[],
   mergeCells: MergeCellOptions[] = [],
   shapes: WorksheetOptions["shapes"] = [],
+  textStyles: Map<string, RichTextRunPropertiesOptions> = new Map(),
 ): RowOptions {
   const style = dimensions.get(attributeString(row, "table:style-name") ?? "");
   const cellStartColumns: number[] = [];
@@ -1157,7 +1213,7 @@ export function parseRow(
             "element has no canonical CellOptions mapping",
           );
         }
-        const firstCell = parseCell(cell, rowNumber, startColumn, cellStyles, []);
+        const firstCell = parseCell(cell, rowNumber, startColumn, cellStyles, [], textStyles);
         const hasMergeSpan =
           (attributeNumber(cell, "table:number-columns-spanned") ?? 1) > 1 ||
           (attributeNumber(cell, "table:number-rows-spanned") ?? 1) > 1;
@@ -1177,7 +1233,7 @@ export function parseRow(
         if (isLargeEmptyRepeat(repeat, hasCellSurface)) return [];
         return Array.from({ length: repeat }, (_, repeatedIndex) => {
           const column = startColumn + repeatedIndex;
-          const parsed = parseCell(cell, rowNumber, column, cellStyles, mergeCells);
+          const parsed = parseCell(cell, rowNumber, column, cellStyles, mergeCells, textStyles);
           for (const child of cell.elements ?? []) {
             if (child.name === "office:annotation") {
               comments.push({
@@ -1408,6 +1464,7 @@ export function parseCell(
   column: number,
   cellStyles: Map<string, StyleOptions>,
   mergeCells: MergeCellOptions[] = [],
+  textStyles: Map<string, RichTextRunPropertiesOptions> = new Map(),
 ): CellOptions {
   const result: CellOptions = { reference: `${columnName(column)}${row}` };
   const columnSpan = attributeNumber(cell, "table:number-columns-spanned") ?? 1;
@@ -1536,7 +1593,7 @@ export function parseCell(
       );
     result.value = date;
   } else if (valueType === "string") {
-    result.value = childrenNamed(cell, "text:p").map(textOf).join("\n");
+    result.value = parseCellText(cell, textStyles);
   } else if (valueType === "error") {
     const error =
       attributeString(cell, "office:string-value") ?? attributeString(cell, "office:value");
@@ -1551,6 +1608,81 @@ export function parseCell(
     );
   }
   return result;
+}
+
+function parseCellText(
+  cell: Element,
+  textStyles: Map<string, RichTextRunPropertiesOptions>,
+): string | RichTextOptions {
+  const paragraphs = childrenNamed(cell, "text:p");
+  const hasStyledText = paragraphs.some((paragraph) =>
+    (paragraph.elements ?? []).some(
+      (child) => child.type === "element" && child.name === "text:span",
+    ),
+  );
+  const hasStructuredText = paragraphs.some((paragraph) =>
+    (paragraph.elements ?? []).some(
+      (child) =>
+        child.type === "element" &&
+        ["text:span", "text:s", "text:tab", "text:line-break"].includes(child.name ?? ""),
+    ),
+  );
+  if (!hasStructuredText) return paragraphs.map(textOf).join("\n");
+  const runs: RichTextRunOptions[] = [];
+  for (const [paragraphIndex, paragraph] of paragraphs.entries()) {
+    if (paragraphIndex > 0) runs.push({ text: "\n" });
+    appendTextRuns(paragraph, textStyles, runs);
+  }
+  if (!hasStyledText) return runs.map((run) => run.text).join("");
+  return { runs };
+}
+
+function appendTextRuns(
+  element: Element,
+  textStyles: Map<string, RichTextRunPropertiesOptions>,
+  runs: RichTextRunOptions[],
+  inherited?: RichTextRunPropertiesOptions,
+): void {
+  for (const child of element.elements ?? []) {
+    if (child.type === "text") {
+      const text = String(child.text ?? "");
+      if (text.length > 0) pushTextRun(runs, text, inherited);
+      continue;
+    }
+    if (child.name === "text:s") {
+      const count = attributeNumber(child, "text:c") ?? 1;
+      if (!Number.isInteger(count) || count < 1)
+        throw unknownOdsElement(child, "/table:table-cell/text:p", "text:c", "invalid space count");
+      pushTextRun(runs, " ".repeat(count), inherited);
+      continue;
+    }
+    if (child.name === "text:tab") {
+      pushTextRun(runs, "\t", inherited);
+      continue;
+    }
+    if (child.name === "text:line-break") {
+      pushTextRun(runs, "\n", inherited);
+      continue;
+    }
+    if (child.name === "text:span") {
+      const styleName = attributeString(child, "text:style-name");
+      const properties = styleName ? { ...inherited, ...textStyles.get(styleName) } : inherited;
+      appendTextRuns(child, textStyles, runs, properties);
+    }
+  }
+}
+
+function pushTextRun(
+  runs: RichTextRunOptions[],
+  text: string,
+  properties: RichTextRunPropertiesOptions | undefined,
+): void {
+  const previous = runs[runs.length - 1];
+  if (previous && JSON.stringify(previous.properties) === JSON.stringify(properties)) {
+    previous.text += text;
+    return;
+  }
+  runs.push({ text, ...(properties ? { properties } : {}) });
 }
 
 function invalidCellValue(cell: Element, row: number, column: number, name: string): OdsParseError {

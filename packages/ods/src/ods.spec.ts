@@ -98,6 +98,44 @@ describe("ODS codec", () => {
     });
   });
 
+  it("round-trips rich cell text through the canonical rich-text model", async () => {
+    const parsed = await parseWorkbook(
+      await generateWorkbook({
+        worksheets: [
+          {
+            rows: [
+              {
+                cells: [
+                  {
+                    value: {
+                      runs: [
+                        { text: "Plain " },
+                        {
+                          text: "bold",
+                          properties: { bold: true, font: "Aptos", size: 12 },
+                        },
+                        { text: " and " },
+                        { text: "red", properties: { color: { rgb: "FFFF0000" } } },
+                      ],
+                    },
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      }),
+    );
+    expect(parsed.worksheets?.[0]?.rows?.[0]?.cells?.[0]?.value).toEqual({
+      runs: [
+        { text: "Plain " },
+        { text: "bold", properties: { bold: true, font: "Aptos", size: 12 } },
+        { text: " and " },
+        { text: "red", properties: { color: { rgb: "FFFF0000" } } },
+      ],
+    });
+  });
+
   it("round-trips cell range sources and detective metadata", async () => {
     const parsed = await parseWorkbook(
       await generateWorkbook({
@@ -820,6 +858,31 @@ describe("ODS codec", () => {
       }),
     );
     expect(parsed.worksheets?.[0]?.rows?.[0]?.cells?.[0]?.error).toBe("#DIV/0!");
+  });
+
+  it("keeps error cells typed as errors when a number format is present", async () => {
+    const parsed = await parseWorkbook(
+      await generateWorkbook({
+        worksheets: [
+          {
+            rows: [
+              {
+                cells: [
+                  {
+                    reference: "A1",
+                    error: "#VALUE!",
+                    style: { numFmt: "$#,##0.00" },
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      }),
+    );
+    expect(parsed.worksheets?.[0]?.rows?.[0]?.cells?.[0]).toMatchObject({
+      error: "#VALUE!",
+    });
   });
 
   it("rejects malformed office forms with structured ODS errors", async () => {
