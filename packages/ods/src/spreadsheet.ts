@@ -218,8 +218,14 @@ function parseShapeText(
           if (text) pushRun({ ...inherited, text });
         } else if (child.name === "text:s") {
           const count = attributeNumber(child, "text:c") ?? 1;
-          if (Number.isInteger(count) && count > 0)
-            pushRun({ ...inherited, text: " ".repeat(count) });
+          if (!Number.isInteger(count) || count < 1)
+            throw unknownOdsElement(
+              child,
+              "/office:document-content/office:body/office:spreadsheet/draw:rect/text:p",
+              "text:c",
+              "invalid space count",
+            );
+          pushRun({ ...inherited, text: " ".repeat(count) });
         } else if (child.name === "text:tab") {
           pushRun({ ...inherited, text: "\t" });
         } else if (child.name === "text:line-break") {
@@ -244,11 +250,24 @@ function parseShapeText(
           });
         } else if (child.name === "text:a") {
           const href = attributeString(child, "xlink:href");
+          if (href === undefined)
+            throw unknownOdsElement(
+              child,
+              "/office:document-content/office:body/office:spreadsheet/draw:rect/text:p",
+              "xlink:href",
+              "hyperlink target is required",
+            );
           append(child, {
             ...inherited,
-            ...(href === undefined ? {} : { hyperlink: { url: href } }),
+            hyperlink: { url: href },
           });
-        }
+        } else
+          throw unknownOdsElement(
+            child,
+            "/office:document-content/office:body/office:spreadsheet/draw:rect/text:p",
+            child.name ?? "unknown",
+            "unsupported shape text element",
+          );
       }
     }
     append(paragraph);

@@ -696,4 +696,17 @@ describe("ODS spreadsheet semantics", () => {
     ]);
     expect(regenerated.worksheets?.[0]?.shapes?.[0]?.textBody).toEqual(textBody);
   });
+
+  it("rejects unknown shape text elements instead of dropping them", async () => {
+    await expect(
+      parseWorkbook(
+        packageWith(
+          '<table:table table:name="Sheet1"><table:table-row><table:table-cell>' +
+            '<draw:rect svg:x="0" svg:y="0" svg:width="2cm" svg:height="1cm">' +
+            "<text:p><text:unknown>Lost text</text:unknown></text:p></draw:rect>" +
+            "</table:table-cell></table:table-row></table:table>",
+        ),
+      ),
+    ).rejects.toThrow("unsupported shape text element");
+  });
 });
