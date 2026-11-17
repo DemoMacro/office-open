@@ -113,6 +113,30 @@ describe("ODS spreadsheet semantics", () => {
     expect(regenerated.worksheets?.[0]?.rows?.[0]?.cells?.[0]?.formula).toEqual(formula);
   });
 
+  it("rejects formula metadata without an ODF equivalent", async () => {
+    await expect(
+      generateWorkbook({
+        worksheets: [
+          {
+            rows: [
+              {
+                cells: [
+                  {
+                    reference: "A1",
+                    formula: { formula: "SUM(B1:B2)", type: "shared", sharedIndex: 1 },
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      }),
+    ).rejects.toMatchObject({
+      name: "OdsGenerateError",
+      reason: "unsupported-formula-type",
+    });
+  });
+
   it("preserves exact underline and strike patterns", async () => {
     const parsed = await parseWorkbook(
       await generateWorkbook({

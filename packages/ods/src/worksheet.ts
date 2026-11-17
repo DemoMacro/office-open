@@ -21,6 +21,7 @@ import type {
   DetectiveHighlightedRangeOptions,
   DetectiveOperationOptions,
   DxfOptions,
+  FormulaOptions,
   MergeCellOptions,
   RowOptions,
   RichTextOptions,
@@ -35,7 +36,7 @@ import type { Element } from "@office-open/xml";
 
 import { cellDecorationXml } from "./comments";
 import { cellGraphicXml, type OdsChartFrame } from "./drawing-chart";
-import { OdsParseError } from "./error";
+import { OdsGenerateError, OdsParseError } from "./error";
 import { odfDateValue } from "./numbering";
 import {
   cellShapeXml,
@@ -500,7 +501,9 @@ export function cellXml(
       children,
     );
   }
-  const formula = typeof cell.formula === "string" ? { formula: cell.formula } : cell.formula;
+  const formula: FormulaOptions | undefined =
+    typeof cell.formula === "string" ? { formula: cell.formula } : cell.formula;
+  if (formula !== undefined) assertFormulaRepresentable(formula, cell.reference);
   const cached = cacheAttributes(cell.value);
   const styleOptions = typeof cell.style === "object" ? cell.style : undefined;
   const valueKind = numFmtKind(styleOptions?.numFmt);
@@ -547,6 +550,49 @@ export function cellXml(
     },
     children,
   );
+}
+
+function assertFormulaRepresentable(formula: FormulaOptions, reference: string | undefined): void {
+  if (formula.type === "array" && formula.reference === undefined) {
+    throw new OdsGenerateError(
+      "ODS array formulas require a reference range",
+      "content.xml",
+      `/office:document-content/office:body/office:spreadsheet/table:table/table:table-row/table:table-cell${reference ? `[@table:address="${reference}"]` : ""}`,
+      "table:formula",
+      "array-formula-reference-missing",
+    );
+  }
+  if (formula.type !== undefined && formula.type !== "normal" && formula.type !== "array") {
+    throw new OdsGenerateError(
+      `ODS cannot represent formula type: ${formula.type}`,
+      "content.xml",
+      "/office:document-content/office:body/office:spreadsheet/table:table/table:table-cell",
+      "table:formula",
+      "unsupported-formula-type",
+    );
+  }
+  const unsupported = [
+    "sharedIndex",
+    "aca",
+    "dt2D",
+    "dtr",
+    "del1",
+    "del2",
+    "inputCell1",
+    "inputCell2",
+    "calculateCell",
+    "arrayContext",
+  ] as const;
+  const property = unsupported.find((name) => formula[name] !== undefined);
+  if (property !== undefined) {
+    throw new OdsGenerateError(
+      `ODS cannot represent formula property: ${property}`,
+      "content.xml",
+      "/office:document-content/office:body/office:spreadsheet/table:table/table:table-cell",
+      "table:formula",
+      "unsupported-formula-property",
+    );
+  }
 }
 
 function matrixSpanAttributes(reference: string): {
