@@ -4,7 +4,6 @@ import { fileURLToPath } from "node:url";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const PACKAGES = path.join(ROOT, "packages");
-const CHECKED_PACKAGES = new Set(["odf", "odt", "ods", "odp", "doc", "xls", "ppt", "rtf"]);
 const OOXML_PEERS: Record<string, string> = {
   odt: "@office-open/docx",
   ods: "@office-open/xlsx",
@@ -20,7 +19,12 @@ interface PackageConfig {
 function packageDirectories(): string[] {
   return fs
     .readdirSync(PACKAGES, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory() && CHECKED_PACKAGES.has(entry.name))
+    .filter(
+      (entry) =>
+        entry.isDirectory() &&
+        fs.existsSync(path.join(PACKAGES, entry.name, "package.json")) &&
+        fs.existsSync(path.join(PACKAGES, entry.name, "vite.config.ts")),
+    )
     .map((entry) => path.join(PACKAGES, entry.name));
 }
 
@@ -49,7 +53,7 @@ function outputFiles(directory: string): string[] {
   return fs.readdirSync(dist, { withFileTypes: true }).flatMap((entry) => {
     const full = path.join(dist, entry.name);
     if (entry.isDirectory()) return outputFiles(full);
-    return entry.name.endsWith(".mjs") ? [full] : [];
+    return entry.name.endsWith(".mjs") || entry.name.endsWith(".d.mts") ? [full] : [];
   });
 }
 
@@ -84,7 +88,11 @@ for (const directory of packageDirectories()) {
       if (!isDeclaration && config.devDependencies.has(imported)) {
         problems.push(`${relativeFile}: runtime JS imports devDependency ${imported}`);
       }
-      if (isDeclaration && config.alwaysBundle.has(imported)) {
+      if (
+        isDeclaration &&
+        config.devDependencies.has(imported) &&
+        config.alwaysBundle.has(imported)
+      ) {
         problems.push(`${relativeFile}: declaration retains inlined dependency ${imported}`);
       }
       if (!isDeclaration && imported === OOXML_PEERS[path.basename(directory)]) {
@@ -100,4 +108,4 @@ if (problems.length > 0) {
   process.exit(1);
 }
 
-console.log(`package outputs: OK (${CHECKED_PACKAGES.size} packages)`);
+console.log(`package outputs: OK (${packageDirectories().length} packages)`);
