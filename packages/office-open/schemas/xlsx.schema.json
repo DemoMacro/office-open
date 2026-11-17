@@ -14014,7 +14014,7 @@
           "type": "boolean"
         },
         "properties": {
-          "$ref": "#/definitions/GroupTransform2DOptions",
+          "$ref": "#/definitions/GroupShapePropertiesOptions",
           "description": "Group shape properties (a:: group xfrm + fill/ln)."
         },
         "row": {
@@ -14320,52 +14320,6 @@
         "scene3d": {
           "$ref": "#/definitions/Scene3DOptions",
           "description": "a:scene3d."
-        },
-        "width": {
-          "$ref": "#/definitions/Transform2DOptions/properties/width"
-        },
-        "x": {
-          "$ref": "#/definitions/Transform2DOptions/properties/x"
-        },
-        "y": {
-          "$ref": "#/definitions/Transform2DOptions/properties/y"
-        }
-      },
-      "type": "object"
-    },
-    "GroupTransform2DOptions": {
-      "additionalProperties": false,
-      "properties": {
-        "childExtentHeight": {
-          "$ref": "#/definitions/GroupShapePropertiesOptions/properties/childExtentHeight"
-        },
-        "childExtentPresent": {
-          "$ref": "#/definitions/GroupShapePropertiesOptions/properties/childExtentPresent"
-        },
-        "childExtentWidth": {
-          "$ref": "#/definitions/GroupShapePropertiesOptions/properties/childExtentWidth"
-        },
-        "childOffsetPresent": {
-          "$ref": "#/definitions/GroupShapePropertiesOptions/properties/childOffsetPresent"
-        },
-        "childOffsetX": {
-          "$ref": "#/definitions/GroupShapePropertiesOptions/properties/childOffsetX"
-        },
-        "childOffsetY": {
-          "$ref": "#/definitions/GroupShapePropertiesOptions/properties/childOffsetY"
-        },
-        "flipHorizontal": {
-          "type": "boolean"
-        },
-        "flipVertical": {
-          "type": "boolean"
-        },
-        "height": {
-          "$ref": "#/definitions/Transform2DOptions/properties/height"
-        },
-        "rotation": {
-          "description": "Rotation angle in degrees (e.g., 45 = 45°).",
-          "type": "number"
         },
         "width": {
           "$ref": "#/definitions/Transform2DOptions/properties/width"
