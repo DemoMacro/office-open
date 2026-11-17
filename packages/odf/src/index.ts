@@ -130,6 +130,11 @@ export {
   resolveOdfDrawGeometryOverlay,
   type OdfDrawGeometry,
 } from "./drawing/preset-geometry";
+export {
+  odfGroupTransform,
+  parseOdfGroupTransform,
+  type OdfGroupTransform,
+} from "./drawing/group-transform";
 
 export {
   chartPropertiesXml,

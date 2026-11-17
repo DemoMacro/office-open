@@ -7,6 +7,7 @@ import {
   graphicFill,
   graphicOutline,
   lengthToEmu,
+  parseOdfGroupTransform,
   presetGeometryOdf,
   pushShapeStyle,
   resolveOdfDrawGeometry,
@@ -788,27 +789,8 @@ interface GroupTransform {
 }
 
 function parseGroupTransform(value: string | undefined): GroupTransform {
-  if (value === undefined) return {};
-  const expressions = [...value.matchAll(/(translate|rotate)\s*\(([^)]*)\)/gu)];
-  const remainder = value.replace(/(translate|rotate)\s*\(([^)]*)\)/gu, "").trim();
-  if (expressions.length === 0 || remainder.length > 0) throw unsupportedGroupTransform(value);
-  const result: GroupTransform = {};
-  for (const expression of expressions) {
-    const values = (expression[2] ?? "").trim().split(/[ ,]+/u).filter(Boolean);
-    if (expression[1] === "translate") {
-      if (values.length !== 1 && values.length !== 2) throw unsupportedGroupTransform(value);
-      const x = lengthToEmu(values[0]);
-      const y = lengthToEmu(values[1] ?? "0cm");
-      if (x === undefined || y === undefined) throw unsupportedGroupTransform(value);
-      result.x = (result.x ?? 0) + x;
-      result.y = (result.y ?? 0) + y;
-      continue;
-    }
-    if (values.length !== 1) throw unsupportedGroupTransform(value);
-    const rotation = Number((values[0] ?? "").replace(/deg$/u, ""));
-    if (!Number.isFinite(rotation)) throw unsupportedGroupTransform(value);
-    result.rotation = (result.rotation ?? 0) + rotation;
-  }
+  const result = parseOdfGroupTransform(value);
+  if (result === null) throw unsupportedGroupTransform(value ?? "");
   return result;
 }
 

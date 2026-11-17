@@ -26,6 +26,7 @@ import {
   childrenNamed,
   emuToLength,
   escapeText,
+  odfGroupTransform,
   textOf,
   officeFormsXml,
   pushShapeStyle,
@@ -923,6 +924,7 @@ function odfGroupXml(
     {
       "draw:name": name,
       "draw:style-name": pushShapeStyle(fill, undefined, styles),
+      "draw:transform": odfGroupTransform(transformation.rotation),
       "svg:x": emuToLength(transformation.offset?.x),
       "svg:y": emuToLength(transformation.offset?.y),
       "svg:width": emuToLength(transformation.width),

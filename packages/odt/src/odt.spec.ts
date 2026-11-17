@@ -104,6 +104,30 @@ describe("ODT canonical projection", () => {
     expect(regenerated.sections[0]?.children).toEqual(parsed.sections[0]?.children);
   });
 
+  it("projects simple group transforms into the canonical group model", async () => {
+    const source = odtPackage(
+      '<text:p><draw:g draw:transform="translate(1cm 2cm) rotate(15deg)" svg:x="1cm" svg:y="1cm" svg:width="2cm" svg:height="2cm"><draw:rect svg:x="0cm" svg:y="0cm" svg:width="1cm" svg:height="1cm"/></draw:g></text:p>',
+    );
+
+    const parsed = await parseDocument(source);
+    expect(parsed.sections[0]?.children?.[0]).toMatchObject({
+      paragraph: {
+        children: [
+          {
+            wpgGroup: {
+              transformation: {
+                offset: { x: 720000, y: 1080000 },
+                rotation: 15,
+              },
+            },
+          },
+        ],
+      },
+    });
+    const regenerated = await parseDocument(await generateDocument(parsed));
+    expect(regenerated.sections[0]?.children).toEqual(parsed.sections[0]?.children);
+  });
+
   it("generates textbox section children instead of dropping them", async () => {
     const generated = await generateDocument({
       sections: [

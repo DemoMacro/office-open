@@ -19,6 +19,7 @@ import {
   graphicOutline,
   isExternalOdfUrl,
   lengthToEmu,
+  parseOdfGroupTransform,
   presetGeometryOdf,
   pushShapeStyle,
   resolveEmbeddedChart,
@@ -756,9 +757,11 @@ export function parseGroup(element: Element, context: ParseContext): ParagraphCh
     if (isShapeElement(child.name) || child.name === "draw:g") return true;
     throw unknownOdtElement(child);
   });
-  if (attributeString(element, "draw:transform") !== undefined)
+  const transformValue = attributeString(element, "draw:transform");
+  const groupTransform = parseOdfGroupTransform(transformValue);
+  if (groupTransform === null)
     throw new OdtParseError(
-      "ODT group transform has no equivalent in the canonical group model",
+      "ODT group transform cannot be projected to the canonical group model",
       "content.xml",
       "/office:document-content/office:body/draw:g",
       "draw:transform",
@@ -833,9 +836,13 @@ export function parseGroup(element: Element, context: ParseContext): ParagraphCh
     wpgGroup: {
       children,
       transformation: {
-        offset: { x: x ?? left, y: y ?? top },
+        offset: {
+          x: (x ?? left) + (groupTransform?.x ?? 0),
+          y: (y ?? top) + (groupTransform?.y ?? 0),
+        },
         width: width ?? right - left,
         height: height ?? bottom - top,
+        ...(groupTransform?.rotation === undefined ? {} : { rotation: groupTransform.rotation }),
       },
       childOffsetX: left,
       childOffsetY: top,
