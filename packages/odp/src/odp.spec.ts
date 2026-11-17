@@ -1536,16 +1536,17 @@ describe("ODP codec", () => {
     expect(regenerated.slides?.[0]?.children).toEqual(parsed.slides?.[0]?.children);
   });
 
-  it("rejects group transforms that the canonical model cannot preserve", async () => {
+  it("projects simple group transforms into the canonical group model", async () => {
     const source = generateOcf("application/vnd.oasis.opendocument.presentation", {
       "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:presentation><draw:page><draw:g draw:transform="rotate(15)" svg:x="1cm" svg:y="1cm" svg:width="2cm" svg:height="2cm"><draw:rect svg:x="0cm" svg:y="0cm" svg:width="1cm" svg:height="1cm"/></draw:g></draw:page></office:presentation></office:body></office:document-content>`,
     });
 
-    await expect(parsePresentation(source)).rejects.toMatchObject({
-      name: "OdpParseError",
-      elementName: "draw:transform",
-      reason: "unsupported-group-transform",
+    const parsed = await parsePresentation(source);
+    expect(parsed.slides?.[0]?.children?.[0]).toMatchObject({
+      group: { rotation: 15, x: 360000, y: 360000 },
     });
+    const regenerated = await parsePresentation(await generatePresentation(parsed));
+    expect(regenerated.slides?.[0]?.children).toEqual(parsed.slides?.[0]?.children);
   });
 
   it("round-trips ODF form-control shapes with typed references", async () => {

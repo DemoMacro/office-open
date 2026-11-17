@@ -661,14 +661,7 @@ export function parseGroup(
   const groupY = lengthToEmu(attributeString(element, "svg:y"));
   const groupWidth = lengthToEmu(attributeString(element, "svg:width"));
   const groupHeight = lengthToEmu(attributeString(element, "svg:height"));
-  if (attributeString(element, "draw:transform") !== undefined)
-    throw new OdpParseError(
-      "ODP group transform has no equivalent in the canonical group model",
-      "content.xml",
-      "/office:document-content/office:body/office:presentation/draw:page/draw:g",
-      "draw:transform",
-      "unsupported-group-transform",
-    );
+  const groupTransform = parseGroupTransform(attributeString(element, "draw:transform"));
   if (graphicOutline(groupStyle))
     throw new OdpParseError(
       "ODP group outline has no equivalent in the canonical group model",
@@ -768,21 +761,65 @@ export function parseGroup(
           : {}),
         children,
         ...(groupX === undefined &&
+        groupTransform.x === undefined &&
         groupY === undefined &&
+        groupTransform.y === undefined &&
         groupWidth === undefined &&
         groupHeight === undefined
           ? {}
           : {
-              x: groupX,
-              y: groupY,
+              x: groupX === undefined ? groupTransform.x : groupX + (groupTransform.x ?? 0),
+              y: groupY === undefined ? groupTransform.y : groupY + (groupTransform.y ?? 0),
               width: groupWidth,
               height: groupHeight,
             }),
+        ...(groupTransform.rotation === undefined ? {} : { rotation: groupTransform.rotation }),
         ...(graphicFill(groupStyle) ? { fill: graphicFill(groupStyle) } : {}),
         ...(odpNodes.length > 0 ? { odpNodes } : {}),
       },
     },
   ];
+}
+
+interface GroupTransform {
+  x?: number;
+  y?: number;
+  rotation?: number;
+}
+
+function parseGroupTransform(value: string | undefined): GroupTransform {
+  if (value === undefined) return {};
+  const expressions = [...value.matchAll(/(translate|rotate)\s*\(([^)]*)\)/gu)];
+  const remainder = value.replace(/(translate|rotate)\s*\(([^)]*)\)/gu, "").trim();
+  if (expressions.length === 0 || remainder.length > 0) throw unsupportedGroupTransform(value);
+  const result: GroupTransform = {};
+  for (const expression of expressions) {
+    const values = (expression[2] ?? "").trim().split(/[ ,]+/u).filter(Boolean);
+    if (expression[1] === "translate") {
+      if (values.length !== 1 && values.length !== 2) throw unsupportedGroupTransform(value);
+      const x = lengthToEmu(values[0]);
+      const y = lengthToEmu(values[1] ?? "0cm");
+      if (x === undefined || y === undefined) throw unsupportedGroupTransform(value);
+      result.x = (result.x ?? 0) + x;
+      result.y = (result.y ?? 0) + y;
+      continue;
+    }
+    if (values.length !== 1) throw unsupportedGroupTransform(value);
+    const rotation = Number((values[0] ?? "").replace(/deg$/u, ""));
+    if (!Number.isFinite(rotation)) throw unsupportedGroupTransform(value);
+    result.rotation = (result.rotation ?? 0) + rotation;
+  }
+  return result;
+}
+
+function unsupportedGroupTransform(value: string): never {
+  throw new OdpParseError(
+    `ODP group transform cannot be projected to the canonical group model: ${value}`,
+    "content.xml",
+    "/office:document-content/office:body/office:presentation/draw:g",
+    "draw:transform",
+    "unsupported-group-transform",
+  );
 }
 
 function visibleChildIndex(container: Element, child: Element): number {

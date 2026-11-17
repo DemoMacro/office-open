@@ -347,6 +347,8 @@ export function slideChildXml(
         "draw:id": odfShapeIdXml(child.group.id),
         "draw:name": child.group.name,
         "draw:style-name": pushShapeStyle(child.group.fill, undefined, styles),
+        "draw:transform":
+          child.group.rotation === undefined ? undefined : `rotate(${child.group.rotation}deg)`,
         "svg:x": toOdfLength(child.group.x),
         "svg:y": toOdfLength(child.group.y),
         "svg:width": toOdfLength(child.group.width),
