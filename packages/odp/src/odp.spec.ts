@@ -1487,7 +1487,7 @@ describe("ODP codec", () => {
   });
 
   it("maps primitive ODF shapes to canonical pptx shapes", async () => {
-    const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:automatic-styles><style:style style:name="GroupStyle" style:family="graphic"><style:graphic-properties draw:fill="solid" draw:fill-color="#112233"/></style:style></office:automatic-styles><office:body><office:presentation><draw:page><draw:rect svg:x="1cm" svg:y="1cm" svg:width="2cm" svg:height="1cm" draw:name="Box"><text:p>Box</text:p></draw:rect><draw:path svg:x="4cm" svg:y="1cm" svg:width="2cm" svg:height="1cm" svg:viewBox="0 0 2 1" svg:d="M 0 0 L 2 0 L 2 1 Z"/><draw:g draw:style-name="GroupStyle" svg:x="2cm" svg:y="1cm" svg:width="4cm" svg:height="3cm"><draw:custom-shape svg:x="1cm" svg:y="3cm" svg:width="1cm" svg:height="1cm" draw:name="Grouped"/></draw:g></draw:page></office:presentation></office:body></office:document-content>`;
+    const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:automatic-styles><style:style style:name="GroupStyle" style:family="graphic"><style:graphic-properties draw:fill="solid" draw:fill-color="#112233"/></style:style></office:automatic-styles><office:body><office:presentation><draw:page><draw:rect svg:x="1cm" svg:y="1cm" svg:width="2cm" svg:height="1cm" draw:name="Box"><text:p>Box</text:p></draw:rect><draw:path svg:x="4cm" svg:y="1cm" svg:width="2cm" svg:height="1cm" svg:viewBox="0 0 2 1" svg:d="M 0 0 L 2 0 L 2 1 Z"/><draw:g draw:style-name="GroupStyle" svg:x="2cm" svg:y="1cm" svg:width="4cm" svg:height="3cm"><svg:title>Group title</svg:title><svg:desc>Group description</svg:desc><draw:custom-shape svg:x="1cm" svg:y="3cm" svg:width="1cm" svg:height="1cm" draw:name="Grouped"/></draw:g></draw:page></office:presentation></office:body></office:document-content>`;
     const parsed = await parsePresentation(
       generateOcf("application/vnd.oasis.opendocument.presentation", { "content.xml": content }),
     );
@@ -1527,11 +1527,25 @@ describe("ODP codec", () => {
         width: 1440000,
         height: 1080000,
         fill: { type: "solid", color: "112233" },
+        title: "Group title",
+        description: "Group description",
         children: [{ shape: { name: "Grouped" } }],
       },
     });
     const regenerated = await parsePresentation(await generatePresentation(parsed));
     expect(regenerated.slides?.[0]?.children).toEqual(parsed.slides?.[0]?.children);
+  });
+
+  it("rejects group transforms that the canonical model cannot preserve", async () => {
+    const source = generateOcf("application/vnd.oasis.opendocument.presentation", {
+      "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:presentation><draw:page><draw:g draw:transform="rotate(15)" svg:x="1cm" svg:y="1cm" svg:width="2cm" svg:height="2cm"><draw:rect svg:x="0cm" svg:y="0cm" svg:width="1cm" svg:height="1cm"/></draw:g></draw:page></office:presentation></office:body></office:document-content>`,
+    });
+
+    await expect(parsePresentation(source)).rejects.toMatchObject({
+      name: "OdpParseError",
+      elementName: "draw:transform",
+      reason: "unsupported-group-transform",
+    });
   });
 
   it("round-trips ODF form-control shapes with typed references", async () => {

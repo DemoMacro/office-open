@@ -12,6 +12,7 @@ import {
   resolveOdfDrawGeometry,
   resolveOdfDrawGeometryOverlay,
   xmlElement,
+  textOf,
   type GraphicStyle,
 } from "@office-open/odf";
 import type {
@@ -660,7 +661,24 @@ export function parseGroup(
   const groupY = lengthToEmu(attributeString(element, "svg:y"));
   const groupWidth = lengthToEmu(attributeString(element, "svg:width"));
   const groupHeight = lengthToEmu(attributeString(element, "svg:height"));
+  if (attributeString(element, "draw:transform") !== undefined)
+    throw new OdpParseError(
+      "ODP group transform has no equivalent in the canonical group model",
+      "content.xml",
+      "/office:document-content/office:body/office:presentation/draw:page/draw:g",
+      "draw:transform",
+      "unsupported-group-transform",
+    );
+  if (graphicOutline(groupStyle))
+    throw new OdpParseError(
+      "ODP group outline has no equivalent in the canonical group model",
+      "content.xml",
+      "/office:document-content/office:body/office:presentation/draw:page/draw:g",
+      "draw:style-name",
+      "unsupported-group-outline",
+    );
   const children = (element.elements ?? []).flatMap((child): SlideChild[] => {
+    if (child.name === "svg:title" || child.name === "svg:desc") return [];
     if (child.name === "draw:frame") {
       const chart = parseChartFrame(child, chartPool);
       if (chart) return [chart];
@@ -742,6 +760,12 @@ export function parseGroup(
       group: {
         ...(odfShapeId(element) === undefined ? {} : { id: odfShapeId(element) }),
         name: attributeString(element, "draw:name"),
+        ...(childNamed(element, "svg:title")
+          ? { title: textOf(childNamed(element, "svg:title")) }
+          : {}),
+        ...(childNamed(element, "svg:desc")
+          ? { description: textOf(childNamed(element, "svg:desc")) }
+          : {}),
         children,
         ...(groupX === undefined &&
         groupY === undefined &&

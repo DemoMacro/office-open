@@ -353,9 +353,17 @@ export function slideChildXml(
         "svg:height": toOdfLength(child.group.height),
       },
       (() => {
-        const children = child.group.children.map((nested) =>
-          slideChildXml(nested, styles, images, mediaFiles, embeddedObjects, charts),
-        );
+        const children = [
+          ...(child.group.title === undefined
+            ? []
+            : [xmlElement("svg:title", undefined, [escapeText(child.group.title)])]),
+          ...(child.group.description === undefined
+            ? []
+            : [xmlElement("svg:desc", undefined, [escapeText(child.group.description)])]),
+          ...child.group.children.map((nested) =>
+            slideChildXml(nested, styles, images, mediaFiles, embeddedObjects, charts),
+          ),
+        ];
         const odpNodes = "odpNodes" in child.group ? child.group.odpNodes : [];
         for (const node of [...(odpNodes ?? [])].sort(
           (left, right) => left.position - right.position,
