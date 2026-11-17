@@ -85,6 +85,12 @@ describe("ODT canonical projection", () => {
     const content = strFromU8(unzipSync(generated)["content.xml"]!);
     expect(content).toContain("<draw:text-box>");
     expect(content).toContain("Nested paragraph");
+    const parsed = await parseDocument(generated);
+    expect(parsed.sections[0]?.children?.[0]).toMatchObject({
+      paragraph: {
+        children: [{ wpsShape: { children: [{ paragraph: { text: "Nested paragraph" } }] } }],
+      },
+    });
   });
 
   it("rejects a content document without its required text body", async () => {

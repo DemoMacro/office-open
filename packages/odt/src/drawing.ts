@@ -38,6 +38,7 @@ import type {
   OdtFrameAnchorType,
 } from "./embedded-objects";
 import { OdtParseError } from "./error";
+import { parseParagraph } from "./paragraph";
 
 export type PictureType = NonNullable<PictureOptions["type"]>;
 
@@ -677,7 +678,7 @@ export function parseTextBoxFrame(frame: Element, context: ParseContext): Paragr
     wpsShape: {
       ...parseShapeElement(frame, context),
       children: childrenNamed(textBox, "text:p").map((paragraph) => ({
-        paragraph: { text: textOf(paragraph) },
+        paragraph: parseParagraph(paragraph, context),
       })),
       bodyPropertiesPresent: true,
     },
