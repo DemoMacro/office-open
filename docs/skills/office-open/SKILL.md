@@ -65,7 +65,7 @@ Read existing files back into options objects for modification or round-trip:
 
 ```ts
 import { parseDocument, generateDocument } from "@office-open/docx";
-const opts = parseDocument(readFileSync("input.docx")); // Uint8Array, ArrayBuffer, typed-array view, base64 string
+const opts = await parseDocument(readFileSync("input.docx")); // Uint8Array, ArrayBuffer, typed-array view, base64 string
 const buffer = await generateDocument(opts);
 ```
 
