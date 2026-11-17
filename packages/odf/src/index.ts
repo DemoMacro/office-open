@@ -115,13 +115,22 @@ export {
 } from "./forms";
 export type { FormEventListenerOptions } from "@office-open/core";
 export {
+  bindGraphicStyleResources,
+  createGraphicStyleResources,
   graphicFill,
   graphicOutline,
+  graphicStyleFiles,
+  graphicStyleResources,
+  graphicStyleResourcesXml,
   hexColorValue,
   odfColor,
+  parseGraphicStyleResources,
   parseGraphicStyles,
   pushShapeStyle,
+  type GraphicFillImageResource,
   type GraphicStyle,
+  type GraphicStyleResource,
+  type GraphicStyleResources,
 } from "./drawing/graphic-style";
 export {
   PRESET_GEOMETRY_DOCX,
