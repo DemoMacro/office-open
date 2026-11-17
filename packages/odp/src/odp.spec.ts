@@ -8,6 +8,93 @@ import type { OdpPresentationOptions } from "./options";
 import type { OdpTransitionOptions } from "./transition";
 
 describe("ODP codec", () => {
+  it("projects and regenerates graphic gradient fills", async () => {
+    const source = generateOcf("application/vnd.oasis.opendocument.presentation", {
+      "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:automatic-styles><style:style style:name="Gradient" style:family="graphic"><style:graphic-properties draw:fill="gradient" draw:fill-gradient-name="Blue"/></style:style></office:automatic-styles><office:body><office:presentation><draw:page><draw:rect draw:style-name="Gradient" svg:x="1cm" svg:y="1cm" svg:width="4cm" svg:height="2cm"/></draw:page></office:presentation></office:body></office:document-content>`,
+      "styles.xml": `<?xml version="1.0"?><office:document-styles ${ODF_NAMESPACES}><office:styles><draw:gradient draw:name="Blue" draw:style="linear" draw:start-color="#112233" draw:end-color="#AABBCC"/></office:styles><office:automatic-styles/></office:document-styles>`,
+    });
+    const parsed = await parsePresentation(source);
+    expect(parsed.slides?.[0]?.children?.[0]).toMatchObject({
+      shape: {
+        properties: {
+          fill: {
+            type: "gradient",
+            stops: [
+              { position: 0, color: "112233" },
+              { position: 100, color: "AABBCC" },
+            ],
+          },
+        },
+      },
+    });
+    const generated = await generatePresentation(parsed);
+    const files = (await readOcf(generated, "application/vnd.oasis.opendocument.presentation"))
+      .files;
+    expect(files["styles.xml"]).toContain('draw:gradient draw:name="gradient-1"');
+    const reread = await parsePresentation(generated);
+    expect(reread.slides?.[0]?.children?.[0]).toMatchObject({
+      shape: { properties: { fill: { type: "gradient" } } },
+    });
+  });
+
+  it("projects picture frame graphic styles into canonical picture options", async () => {
+    const source = generateOcf("application/vnd.oasis.opendocument.presentation", {
+      "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:automatic-styles><style:style style:name="Picture" style:family="graphic"><style:graphic-properties draw:fill="solid" draw:fill-color="#112233" draw:stroke="solid" svg:stroke-width="0.5pt" svg:stroke-color="#445566"/></style:style></office:automatic-styles><office:body><office:presentation><draw:page><draw:frame draw:style-name="Picture" svg:x="1cm" svg:y="2cm" svg:width="4cm" svg:height="3cm"><draw:image xlink:href="Pictures/logo.png"/></draw:frame></draw:page></office:presentation></office:body></office:document-content>`,
+      "styles.xml": `<?xml version="1.0"?><office:document-styles ${ODF_NAMESPACES}><office:styles/></office:document-styles>`,
+      "Pictures/logo.png": new Uint8Array([1, 2, 3]),
+    });
+    const parsed = await parsePresentation(source);
+    expect(parsed.slides?.[0]?.children?.[0]).toMatchObject({
+      picture: {
+        fill: { type: "solid", color: "112233" },
+        outline: { type: "solidFill", color: "445566", width: 6350 },
+      },
+    });
+
+    const generated = await generatePresentation(parsed);
+    const files = (await readOcf(generated, "application/vnd.oasis.opendocument.presentation"))
+      .files;
+    expect(files["content.xml"]).toContain('draw:style-name="gr1"');
+    const reread = await parsePresentation(generated);
+    expect(reread.slides?.[0]?.children?.[0]).toMatchObject({
+      picture: { fill: { type: "solid", color: "112233" } },
+    });
+  });
+
+  it("round-trips canonical drawing rotations", async () => {
+    const parsed = await parsePresentation(
+      await generatePresentation({
+        slides: [
+          {
+            children: [
+              {
+                shape: {
+                  x: 360000,
+                  y: 360000,
+                  width: 720000,
+                  height: 720000,
+                  rotation: 15,
+                  properties: { geometry: "rect" },
+                },
+              },
+              { line: { x1: 0, y1: 0, x2: 720000, y2: 0, rotation: 30 } },
+              { connector: { x1: 0, y1: 0, x2: 720000, y2: 0, rotation: 45 } },
+              { picture: { type: "png", data: new Uint8Array([1, 2, 3]), rotation: 60 } },
+            ],
+          },
+        ],
+      }),
+    );
+    expect(parsed.slides?.[0]?.children).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ shape: expect.objectContaining({ rotation: 15 }) }),
+        expect.objectContaining({ line: expect.objectContaining({ rotation: 30 }) }),
+        expect.objectContaining({ connector: expect.objectContaining({ rotation: 45 }) }),
+        expect.objectContaining({ picture: expect.objectContaining({ rotation: 60 }) }),
+      ]),
+    );
+  });
+
   it("rejects a content document without its required presentation body", async () => {
     const source = generateOcf("application/vnd.oasis.opendocument.presentation", {
       "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body/></office:document-content>`,

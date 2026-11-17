@@ -12,13 +12,17 @@ import {
 } from "@office-open/core";
 import {
   attributeString,
+  bindGraphicStyleResources,
   CHART_MIME,
   chartSubdocumentFiles,
   childNamed,
   childrenNamed,
+  createGraphicStyleResources,
   emuToLength,
   descendantElements,
   generateOcf,
+  graphicStyleFiles,
+  graphicStyleResourcesXml,
   hexColorValue,
   hasOcfManifestOptions,
   isExternalOdfUrl,
@@ -29,6 +33,7 @@ import {
   officeFormsXml,
   parseOfficeForms,
   parseGraphicStyles,
+  parseGraphicStyleResources,
   parseMeta,
   readOcfSync,
   readXml,
@@ -220,6 +225,8 @@ function generateOdpPackage(options: OdpPresentationOptions): Uint8Array {
       transitionSounds,
     ),
   );
+  const graphicResources = createGraphicStyleResources();
+  bindGraphicStyleResources(styles, graphicResources);
   const masterNames = [
     ...(options.masters ?? []).flatMap((master) => (master.name ? [master.name] : [])),
     ...slides.flatMap((slide) => (slide.master ? [slide.master] : [])),
@@ -260,7 +267,7 @@ function generateOdpPackage(options: OdpPresentationOptions): Uint8Array {
   );
   const files: OdfPackageFiles = {
     "content.xml": contentXml(pages.join(""), styles),
-    "styles.xml": stylesXml(pageLayout, masterPages),
+    "styles.xml": stylesXml(pageLayout, masterPages, graphicStyleResourcesXml(graphicResources)),
     "meta.xml": metaXml(options),
   };
   const mediaTypes: Record<string, string> = Object.fromEntries(
@@ -278,6 +285,7 @@ function generateOdpPackage(options: OdpPresentationOptions): Uint8Array {
   }
   for (const member of packageMembers ?? []) addPackageFile(files, member);
   for (const image of images) files[image.path] = image.data;
+  for (const file of graphicStyleFiles(graphicResources)) files[file.path] = file.data;
   for (const media of mediaFiles) files[media.path] = media.data;
   for (const chart of charts)
     Object.assign(files, chartSubdocumentFiles(`${chart.path}/`, chart.chart));
@@ -420,20 +428,38 @@ function parseOdpPackage(data: Uint8Array): OdpPresentationOptions {
   const contentAutomaticStyles = childNamed(content, "office:automatic-styles");
   const stylesAutomaticStyles = childNamed(stylesDocument, "office:automatic-styles");
   const commonStyles = childNamed(stylesDocument, "office:styles");
+  const graphicResources = parseGraphicStyleResources(
+    [contentAutomaticStyles, stylesAutomaticStyles, commonStyles],
+    binaries,
+  );
   const styleResources = [
     ...parseStyleResources(contentAutomaticStyles),
     ...parseStyleResources(stylesAutomaticStyles),
     ...parseStyleResources(commonStyles),
-  ].filter(
-    (resource, index, resources) =>
-      resources.findIndex(
-        (candidate) => candidate.name === resource.name && candidate.family === resource.family,
-      ) === index,
+  ]
+    .filter(
+      (resource, index, resources) =>
+        resources.findIndex(
+          (candidate) => candidate.name === resource.name && candidate.family === resource.family,
+        ) === index,
+    )
+    .filter((resource) => resource.family !== "graphic");
+  const commonGraphicStyles = parseGraphicStyles(commonStyles, "graphic", graphicResources);
+  const stylesGraphicStyles = parseGraphicStyles(
+    stylesAutomaticStyles,
+    "graphic",
+    graphicResources,
+    commonGraphicStyles,
   );
   const graphicStyles = new Map([
-    ...parseGraphicStyles(contentAutomaticStyles),
-    ...parseGraphicStyles(stylesAutomaticStyles),
-    ...parseGraphicStyles(commonStyles),
+    ...commonGraphicStyles,
+    ...stylesGraphicStyles,
+    ...parseGraphicStyles(
+      contentAutomaticStyles,
+      "graphic",
+      graphicResources,
+      new Map([...commonGraphicStyles, ...stylesGraphicStyles]),
+    ),
   ]);
   const textStyles = new Map([
     ...parseTextStyles(contentAutomaticStyles),
@@ -643,8 +669,9 @@ export function stylesXml(
   masterPages: readonly string[] = [
     '<style:master-page style:name="Default" style:page-layout-name="PM1"/>',
   ],
+  graphicResources: readonly string[] = [],
 ): string {
-  return `<?xml version="1.0" encoding="UTF-8"?><office:document-styles ${NAMESPACES} office:version="1.3"><office:styles/><office:automatic-styles>${pageLayout}</office:automatic-styles><office:master-styles>${masterPages.join("")}</office:master-styles></office:document-styles>`;
+  return `<?xml version="1.0" encoding="UTF-8"?><office:document-styles ${NAMESPACES} office:version="1.3"><office:styles>${graphicResources.join("")}</office:styles><office:automatic-styles>${pageLayout}</office:automatic-styles><office:master-styles>${masterPages.join("")}</office:master-styles></office:document-styles>`;
 }
 
 function pageLayoutXml(

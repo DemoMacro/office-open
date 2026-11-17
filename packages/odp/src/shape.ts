@@ -7,6 +7,7 @@ import {
   graphicFill,
   graphicOutline,
   lengthToEmu,
+  odfGroupTransform,
   parseOdfGroupTransform,
   presetGeometryOdf,
   pushShapeStyle,
@@ -191,6 +192,7 @@ export function customShapeXml(shape: ShapeOptions, styles: string[]): string {
         "svg:y": toOdfLength(shape.y),
         "svg:width": toOdfLength(shape.width),
         "svg:height": toOdfLength(shape.height),
+        "draw:transform": odfGroupTransform(shape.rotation),
         "svg:viewBox": `0 0 ${shape.width} ${shape.height}`,
         "draw:name": shape.name,
         "svg:d": customGeometryPath(customGeometry, shape),
@@ -210,6 +212,7 @@ export function customShapeXml(shape: ShapeOptions, styles: string[]): string {
       "svg:y": toOdfLength(shape.y),
       "svg:width": toOdfLength(shape.width),
       "svg:height": toOdfLength(shape.height),
+      "draw:transform": odfGroupTransform(shape.rotation),
       "draw:name": shape.name,
     },
     [
@@ -240,6 +243,7 @@ export function controlShapeXml(shape: ShapeOptions, styles: string[]): string {
       "svg:y": toOdfLength(shape.y),
       "svg:width": toOdfLength(shape.width),
       "svg:height": toOdfLength(shape.height),
+      "draw:transform": odfGroupTransform(shape.rotation),
       "draw:name": shape.name,
     },
     shape.textBody ? textBodyXml(shape.textBody, styles) : [],
@@ -383,6 +387,7 @@ export function shapeXml(shape: ShapeOptions, styles: string[]): string {
       "svg:y": emuToLength(shape.y),
       "svg:width": emuToLength(shape.width),
       "svg:height": emuToLength(shape.height),
+      "draw:transform": odfGroupTransform(shape.rotation),
     },
     [
       xmlElement(
@@ -409,6 +414,7 @@ export function connectorXml(connector: ConnectorOptions, styles: string[]): str
     "svg:y1": toOdfLength(connector.y1),
     "svg:x2": toOdfLength(connector.x2),
     "svg:y2": toOdfLength(connector.y2),
+    "draw:transform": odfGroupTransform(connector.rotation),
     "draw:start-shape": connector.startConnection
       ? String(connector.startConnection.id)
       : undefined,
@@ -428,6 +434,7 @@ export function lineXml(line: LineShapeOptions, styles: string[]): string {
     "svg:y1": toOdfLength(line.y1),
     "svg:x2": toOdfLength(line.x2),
     "svg:y2": toOdfLength(line.y2),
+    "draw:transform": odfGroupTransform(line.rotation),
   });
 }
 
@@ -435,6 +442,34 @@ export function lineXml(line: LineShapeOptions, styles: string[]): string {
 export function toOdfLength(value: number | string | undefined): string | undefined {
   if (value === undefined) return undefined;
   return emuToLength(typeof value === "number" ? value : (lengthToEmu(value) ?? 0));
+}
+
+function parseShapeTransform(element: Element): GroupTransform {
+  const transform = parseOdfGroupTransform(attributeString(element, "draw:transform"));
+  if (transform === null)
+    throw new OdpParseError(
+      `ODP ${element.name ?? "shape"} transform cannot be projected to the canonical shape model`,
+      "content.xml",
+      `/office:document-content/office:body/office:presentation/${element.name ?? "shape"}`,
+      "draw:transform",
+      "unsupported-shape-transform",
+    );
+  return transform;
+}
+
+function transformedLength(
+  value: string | undefined,
+  offset: number | undefined,
+): number | undefined {
+  return transformedLengthValue(lengthToEmu(value), offset);
+}
+
+function transformedLengthValue(
+  value: number | undefined,
+  offset: number | undefined,
+): number | undefined {
+  if (value === undefined) return offset;
+  return value + (offset ?? 0);
 }
 
 export function parseShape(
@@ -446,15 +481,17 @@ export function parseShape(
   const textBox = childNamed(frame, "draw:text-box");
   const paragraphs = childrenNamed(textBox, "text:p");
   const shapeId = id ?? odfShapeId(frame);
+  const transform = parseShapeTransform(frame);
   const graphic = graphicStyles.get(attributeString(frame, "draw:style-name") ?? "");
   const fill = graphicFill(graphic);
   const outline = graphicOutline(graphic);
   return {
     name: attributeString(frame, "draw:name"),
-    x: lengthToEmu(attributeString(frame, "svg:x")),
-    y: lengthToEmu(attributeString(frame, "svg:y")),
+    x: transformedLength(attributeString(frame, "svg:x"), transform.x),
+    y: transformedLength(attributeString(frame, "svg:y"), transform.y),
     width: lengthToEmu(attributeString(frame, "svg:width")),
     height: lengthToEmu(attributeString(frame, "svg:height")),
+    ...(transform.rotation === undefined ? {} : { rotation: transform.rotation }),
     ...(shapeId === undefined ? {} : { id: shapeId }),
     ...(fill || outline ? { properties: { fill, outline } } : {}),
     ...(paragraphs.length > 0
@@ -474,15 +511,17 @@ export function parseControlSlideShape(
   graphicStyles: Map<string, GraphicStyle>,
 ): ShapeOptions {
   const graphic = graphicStyles.get(attributeString(element, "draw:style-name") ?? "");
+  const transform = parseShapeTransform(element);
   const paragraphs = childrenNamed(element, "text:p");
   return {
     controlId: attributeString(element, "draw:control"),
     ...(odfShapeId(element) === undefined ? {} : { id: odfShapeId(element) }),
     name: attributeString(element, "draw:name"),
-    x: lengthToEmu(attributeString(element, "svg:x")),
-    y: lengthToEmu(attributeString(element, "svg:y")),
+    x: transformedLength(attributeString(element, "svg:x"), transform.x),
+    y: transformedLength(attributeString(element, "svg:y"), transform.y),
     width: lengthToEmu(attributeString(element, "svg:width")),
     height: lengthToEmu(attributeString(element, "svg:height")),
+    ...(transform.rotation === undefined ? {} : { rotation: transform.rotation }),
     properties: {
       geometry: "rect",
       fill: graphicFill(graphic),
@@ -515,15 +554,17 @@ export function parseCustomSlideShape(
       ? resolveOdfDrawGeometryOverlay(presetType, resolvedGeometry)
       : undefined;
   const paragraphs = childrenNamed(element, "text:p");
+  const transform = parseShapeTransform(element);
   const fill = graphicFill(graphic);
   const outline = graphicOutline(graphic);
   return {
     ...(odfShapeId(element) === undefined ? {} : { id: odfShapeId(element) }),
     name: attributeString(element, "draw:name"),
-    x: lengthToEmu(attributeString(element, "svg:x")),
-    y: lengthToEmu(attributeString(element, "svg:y")),
+    x: transformedLength(attributeString(element, "svg:x"), transform.x),
+    y: transformedLength(attributeString(element, "svg:y"), transform.y),
     width: lengthToEmu(attributeString(element, "svg:width")),
     height: lengthToEmu(attributeString(element, "svg:height")),
+    ...(transform.rotation === undefined ? {} : { rotation: transform.rotation }),
     ...(paragraphs.length > 0
       ? {
           textBody: {
@@ -568,6 +609,7 @@ export function parsePrimitiveSlideShape(
   const y = lengthToEmu(attributeString(element, "svg:y"));
   const width = lengthToEmu(attributeString(element, "svg:width"));
   const height = lengthToEmu(attributeString(element, "svg:height"));
+  const transform = parseShapeTransform(element);
   const customGeometry = primitiveGeometry(element, width ?? 0, height ?? 0);
   const geometry =
     element.name === "draw:rect"
@@ -578,10 +620,11 @@ export function parsePrimitiveSlideShape(
   return {
     ...(odfShapeId(element) === undefined ? {} : { id: odfShapeId(element) }),
     name: attributeString(element, "draw:name"),
-    x,
-    y,
+    x: transformedLengthValue(x, transform.x),
+    y: transformedLengthValue(y, transform.y),
     width,
     height,
+    ...(transform.rotation === undefined ? {} : { rotation: transform.rotation }),
     ...(paragraphs.length > 0
       ? {
           textBody: {
@@ -608,14 +651,16 @@ export function parseConnector(
   graphicStyles: Map<string, GraphicStyle>,
 ): { connector: ConnectorOptions } {
   const graphic = graphicStyles.get(attributeString(element, "draw:style-name") ?? "");
+  const transform = parseShapeTransform(element);
   return {
     connector: {
       ...(odfShapeId(element) === undefined ? {} : { id: odfShapeId(element) }),
       name: attributeString(element, "draw:name"),
-      x1: lengthToEmu(attributeString(element, "svg:x1")),
-      y1: lengthToEmu(attributeString(element, "svg:y1")),
-      x2: lengthToEmu(attributeString(element, "svg:x2")),
-      y2: lengthToEmu(attributeString(element, "svg:y2")),
+      x1: transformedLength(attributeString(element, "svg:x1"), transform.x),
+      y1: transformedLength(attributeString(element, "svg:y1"), transform.y),
+      x2: transformedLength(attributeString(element, "svg:x2"), transform.x),
+      y2: transformedLength(attributeString(element, "svg:y2"), transform.y),
+      ...(transform.rotation === undefined ? {} : { rotation: transform.rotation }),
       startConnection: endpointConnection(element, "start"),
       endConnection: endpointConnection(element, "end"),
       ...(graphicFill(graphic) || graphicOutline(graphic)
@@ -631,14 +676,16 @@ export function parseLine(
   graphicStyles: Map<string, GraphicStyle>,
 ): { line: LineShapeOptions } {
   const graphic = graphicStyles.get(attributeString(element, "draw:style-name") ?? "");
+  const transform = parseShapeTransform(element);
   return {
     line: {
       ...(odfShapeId(element) === undefined ? {} : { id: odfShapeId(element) }),
       name: attributeString(element, "draw:name"),
-      x1: lengthToEmu(attributeString(element, "svg:x1")),
-      y1: lengthToEmu(attributeString(element, "svg:y1")),
-      x2: lengthToEmu(attributeString(element, "svg:x2")),
-      y2: lengthToEmu(attributeString(element, "svg:y2")),
+      x1: transformedLength(attributeString(element, "svg:x1"), transform.x),
+      y1: transformedLength(attributeString(element, "svg:y1"), transform.y),
+      x2: transformedLength(attributeString(element, "svg:x2"), transform.x),
+      y2: transformedLength(attributeString(element, "svg:y2"), transform.y),
+      ...(transform.rotation === undefined ? {} : { rotation: transform.rotation }),
       ...(graphicFill(graphic) || graphicOutline(graphic)
         ? { properties: { fill: graphicFill(graphic), outline: graphicOutline(graphic) } }
         : {}),
@@ -711,7 +758,7 @@ export function parseGroup(
         }
         return [];
       }
-      const picture = parsePictureFrame(child, binaries, usedBinaryPaths);
+      const picture = parsePictureFrame(child, binaries, usedBinaryPaths, graphicStyles);
       if (picture) return [picture];
       if (childNamed(child, "draw:text-box"))
         return [{ shape: parseShape(child, textStyles, graphicStyles) }];

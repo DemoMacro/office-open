@@ -10,9 +10,15 @@ import {
   isExternalOdfUrl,
   textOf,
   lengthToEmu,
+  odfGroupTransform,
+  parseOdfGroupTransform,
+  graphicFill,
+  graphicOutline,
+  pushShapeStyle,
   resolveEmbeddedChart,
   xmlElement,
 } from "@office-open/odf";
+import type { GraphicStyle } from "@office-open/odf";
 import type {
   AudioType,
   AudioFrameOptions,
@@ -40,7 +46,11 @@ export interface OdpChart {
 }
 
 /** Slide picture renders as a positioned draw:frame + draw:image. */
-export function pictureFrameXml(picture: PictureOptions, images: OdpImage[]): string {
+export function pictureFrameXml(
+  picture: PictureOptions,
+  images: OdpImage[],
+  styles: string[],
+): string {
   let path: string;
   if (picture.data === undefined) {
     if (!picture.sourceUrl) return "";
@@ -54,10 +64,12 @@ export function pictureFrameXml(picture: PictureOptions, images: OdpImage[]): st
     "draw:frame",
     {
       "draw:name": picture.name,
+      "draw:style-name": pushShapeStyle(picture.fill, picture.outline, styles),
       "svg:x": toOdfLength(picture.x),
       "svg:y": toOdfLength(picture.y),
       "svg:width": toOdfLength(picture.width),
       "svg:height": toOdfLength(picture.height),
+      "draw:transform": odfGroupTransform(picture.rotation),
     },
     [
       xmlElement("draw:image", {
@@ -216,6 +228,7 @@ export function parsePictureFrame(
   frame: Element,
   binaries: Record<string, Uint8Array>,
   usedBinaryPaths: Set<string>,
+  graphicStyles: Map<string, GraphicStyle> = new Map(),
 ): { picture: PictureOptions } | undefined {
   const image = childNamed(frame, "draw:image");
   if (!image) return undefined;
@@ -227,6 +240,12 @@ export function parsePictureFrame(
       : pictureTypeFromUrl(attributeString(image, "xlink:href") ?? "")
     : undefined;
   if (type === undefined) return undefined;
+  const graphic = graphicStyles.get(attributeString(frame, "draw:style-name") ?? "");
+  const fill = graphicFill(graphic);
+  const outline = graphicOutline(graphic);
+  const transform = parsePictureTransform(frame);
+  const x = transformedLength(attributeString(frame, "svg:x"), transform.x);
+  const y = transformedLength(attributeString(frame, "svg:y"), transform.y);
   if (data && path) usedBinaryPaths.add(path);
   if (!data || !path) {
     const href = attributeString(image, "xlink:href");
@@ -235,10 +254,13 @@ export function parsePictureFrame(
       picture: {
         type,
         sourceUrl: href,
-        x: lengthToEmu(attributeString(frame, "svg:x")),
-        y: lengthToEmu(attributeString(frame, "svg:y")),
+        x,
+        y,
         width: lengthToEmu(attributeString(frame, "svg:width")),
         height: lengthToEmu(attributeString(frame, "svg:height")),
+        ...(transform.rotation === undefined ? {} : { rotation: transform.rotation }),
+        ...(fill ? { fill } : {}),
+        ...(outline ? { outline } : {}),
         ...parseFrameMetadata(frame),
       },
     };
@@ -247,13 +269,37 @@ export function parsePictureFrame(
     picture: {
       type,
       data,
-      x: lengthToEmu(attributeString(frame, "svg:x")),
-      y: lengthToEmu(attributeString(frame, "svg:y")),
+      x,
+      y,
       width: lengthToEmu(attributeString(frame, "svg:width")),
       height: lengthToEmu(attributeString(frame, "svg:height")),
+      ...(transform.rotation === undefined ? {} : { rotation: transform.rotation }),
+      ...(fill ? { fill } : {}),
+      ...(outline ? { outline } : {}),
       ...parseFrameMetadata(frame),
     },
   };
+}
+
+function parsePictureTransform(element: Element): { x?: number; y?: number; rotation?: number } {
+  const transform = parseOdfGroupTransform(attributeString(element, "draw:transform"));
+  if (transform !== null) return transform;
+  throw new OdpParseError(
+    "ODP picture transform cannot be projected to the canonical picture model",
+    "content.xml",
+    "/office:document-content/office:body/office:presentation/draw:page/draw:frame",
+    "draw:transform",
+    "unsupported-picture-transform",
+  );
+}
+
+function transformedLength(
+  value: string | undefined,
+  offset: number | undefined,
+): number | undefined {
+  const length = lengthToEmu(value);
+  if (length === undefined) return offset;
+  return length + (offset ?? 0);
 }
 
 function pictureTypeFromUrl(value: string): PictureOptions["type"] | undefined {

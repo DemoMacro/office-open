@@ -336,7 +336,7 @@ export function slideChildXml(
   if ("table" in child) return slideTableXml(child.table, styles);
   if ("connector" in child) return connectorXml(child.connector, styles);
   if ("line" in child) return lineXml(child.line, styles);
-  if ("picture" in child) return pictureFrameXml(child.picture, images);
+  if ("picture" in child) return pictureFrameXml(child.picture, images, styles);
   if ("video" in child) return mediaFrameXml(child.video, mediaFiles, images);
   if ("audio" in child) return mediaFrameXml(child.audio, mediaFiles, images);
   if ("chart" in child) return chartFrameXml(child.chart, charts);
@@ -545,7 +545,7 @@ export function parseSlide(
         children.push(media);
         continue;
       }
-      const picture = parsePictureFrame(child, binaries, usedBinaryPaths);
+      const picture = parsePictureFrame(child, binaries, usedBinaryPaths, graphicStyles);
       if (picture) {
         children.push(picture);
         continue;
