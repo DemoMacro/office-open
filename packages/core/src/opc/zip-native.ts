@@ -472,7 +472,21 @@ export function readCentralDirectory(buf: Uint8Array): ZipEntryMeta[] {
  * (Node/Bun), fflate `inflateSync` (check-free) elsewhere — the per-entry
  * work shared by the sync and source-backed inflate paths.
  */
-export function inflateRawWindow(raw: Uint8Array, entry: ZipEntryMeta): Uint8Array {
+export function inflateRawWindow(
+  raw: Uint8Array,
+  entry: ZipEntryMeta,
+  maxOutputSize?: number,
+): Uint8Array {
+  if (maxOutputSize !== undefined) {
+    if (entry.uncompSize > maxOutputSize) {
+      throw new OpcPackageError(
+        `ZIP uncompressed size exceeds limit: ${entry.name}`,
+        entry.name,
+        "size-limit",
+      );
+    }
+    return verifyCrc32(inflateSync(raw, { out: new Uint8Array(entry.uncompSize) }), entry);
+  }
   if (_nativeInflate) {
     const dec = _nativeInflate(raw);
     return verifyCrc32(dec, entry);
@@ -487,9 +501,20 @@ export function inflateRawWindow(raw: Uint8Array, entry: ZipEntryMeta): Uint8Arr
  * (Node/Bun), fflate `inflateSync` elsewhere (no CRC check — fflate parity).
  * STORE entries are copied out of the source buffer.
  */
-export function inflateZipEntry(buf: Uint8Array, entry: ZipEntryMeta): Uint8Array {
+export function inflateZipEntry(
+  buf: Uint8Array,
+  entry: ZipEntryMeta,
+  maxOutputSize?: number,
+): Uint8Array {
+  if (maxOutputSize !== undefined && entry.uncompSize > maxOutputSize) {
+    throw new OpcPackageError(
+      `ZIP uncompressed size exceeds limit: ${entry.name}`,
+      entry.name,
+      "size-limit",
+    );
+  }
   const raw = buf.subarray(entry.dataStart, entry.dataStart + entry.compSize);
-  const data = entry.method === 0 ? raw.slice() : inflateRawWindow(raw, entry);
+  const data = entry.method === 0 ? raw.slice() : inflateRawWindow(raw, entry, maxOutputSize);
   return entry.method === 0 ? verifyCrc32(data, entry) : data;
 }
 

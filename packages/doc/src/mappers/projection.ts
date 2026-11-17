@@ -1,16 +1,8 @@
-import type {
-  ParagraphChild,
-  ParagraphOptions,
-  SectionChild,
-  TrackChangeChild,
-} from "@office-open/docx";
+import type { ParagraphChild, ParagraphOptions, SectionChild } from "@office-open/docx";
 
 import { DocParseError } from "../errors";
 import type { CharacterRange, ParagraphRange, TextCharacter } from "./models";
 import { paragraphPropertiesFor } from "./paragraph-projection";
-
-const LEGACY_REVISION_AUTHOR = "Unknown";
-const LEGACY_REVISION_DATE = "1970-01-01T00:00:00Z";
 
 export function projectChildren(
   characters: TextCharacter[],
@@ -37,12 +29,6 @@ export function projectChildren(
         if (cp === range.cpStart) boundaries.add(index);
       }
       if (index > 0 && paragraph[index]!.hyperlink !== paragraph[index - 1]!.hyperlink) {
-        boundaries.add(index);
-      }
-      if (
-        index > 0 &&
-        paragraph[index]!.revision?.inserted !== paragraph[index - 1]!.revision?.inserted
-      ) {
         boundaries.add(index);
       }
       if (paragraph[index]!.complexField) boundaries.add(index);
@@ -97,7 +83,6 @@ export function projectChildren(
       }
       const range = ranges.find((candidate) => candidate.cpStart <= cp && cp < candidate.cpEnd);
       const hyperlink = paragraph[start]!.hyperlink;
-      const revision = paragraph[start]!.revision;
       const breakCount = text.split("\n").length - 1;
       const visibleText = text.replaceAll("\n", "");
       if (breakCount > 0) revisionChildren.push({ break: breakCount });
@@ -109,19 +94,7 @@ export function projectChildren(
       } else if (visibleText.length > 0) {
         revisionChildren.push({ text: visibleText, ...range?.properties });
       }
-      if (revision) {
-        const children = revisionChildren.flatMap((child): TrackChangeChild[] =>
-          "text" in child ? [child] : [],
-        );
-        const change = {
-          author: LEGACY_REVISION_AUTHOR,
-          date: LEGACY_REVISION_DATE,
-          children,
-        };
-        runs.push(revision.inserted ? { insertion: change } : { deletion: change });
-      } else {
-        runs.push(...revisionChildren);
-      }
+      runs.push(...revisionChildren);
     }
     const plainText = sanitizeLegacyText(
       paragraph
@@ -181,6 +154,7 @@ export function applyHyperlinkFields(
   fields: readonly { start: number; end: number; instruction: string }[],
   rawCharacters: readonly string[],
 ): void {
+  const charactersByCp = new Map(characters.map((character) => [character.cp, character]));
   for (const field of fields) {
     const match = /^HYPERLINK\s+(?:"([^"]*)"|(\S+))/i.exec(field.instruction.trim());
     if (!match) continue;
@@ -192,7 +166,7 @@ export function applyHyperlinkFields(
       cp < rawCharacters.length && rawCharacters[cp] !== "\x15";
       cp += 1
     ) {
-      const character = characters.find((candidate) => candidate.cp === cp);
+      const character = charactersByCp.get(cp);
       if (character) character.hyperlink = hyperlink;
     }
   }

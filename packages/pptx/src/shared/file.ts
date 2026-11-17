@@ -306,6 +306,8 @@ export interface ShowOptions {
 
 /** Root options for a .pptx package — maps to presentation.xml plus its satellite parts. */
 export interface PresentationOptions extends CorePropertiesOptions {
+  /** Source path of the primary presentation part; round-trip only. */
+  presentationPath?: string;
   size?: SlideSize;
   /** Slide size class (`p:sldSz/@type`); cx/cy decide actual size. */
   slideSizeType?: SlideSizeType;

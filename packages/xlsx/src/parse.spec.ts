@@ -1,4 +1,5 @@
-import { unzipSync, zipSync } from "@office-open/core/opc";
+import { resolveRelationshipTarget, unzipSync, zipSync } from "@office-open/core/opc";
+import { parse } from "@office-open/xml";
 import type { WorkbookOptions } from "@parts/file";
 import { describe, expect, it } from "vite-plus/test";
 
@@ -14,6 +15,162 @@ async function roundTrip(opts: WorkbookOptions): Promise<WorkbookOptions> {
 }
 
 describe("parseWorkbook round-trip", () => {
+  it("does not duplicate shared-strings relationships when target casing differs", async () => {
+    const source = (await generateWorkbook(
+      {
+        worksheets: [{ name: "Strings", rows: [{ cells: [{ value: "one" }, { value: "two" }] }] }],
+      },
+      { type: "uint8array" },
+    )) as Uint8Array;
+    const archive = unzipSync(source);
+    archive["xl/SharedStrings.xml"] = archive["xl/sharedStrings.xml"]!;
+    delete archive["xl/sharedStrings.xml"];
+
+    const parsed = parseWorkbookSync(zipSync(archive));
+    const regenerated = unzipSync(
+      (await generateWorkbook(parsed, { type: "uint8array" })) as Uint8Array,
+    );
+    const relationships =
+      parse(new TextDecoder().decode(regenerated["xl/_rels/workbook.xml.rels"]!)).elements?.[0]
+        ?.elements ?? [];
+
+    expect(
+      relationships.filter((element) =>
+        String(element.attributes?.Type).endsWith("/sharedStrings"),
+      ),
+    ).toHaveLength(1);
+  });
+
+  it("resolves workbook relationships from a nonstandard workbook path", async () => {
+    const source = (await generateWorkbook(
+      { worksheets: [{ name: "Relocated", rows: [{ cells: [{ value: 17 }] }] }] },
+      { type: "uint8array" },
+    )) as Uint8Array;
+    const archive = unzipSync(source);
+    archive["custom/workbook.xml"] = archive["xl/workbook.xml"]!;
+    archive["custom/_rels/workbook.xml.rels"] = new TextEncoder().encode(
+      new TextDecoder()
+        .decode(archive["xl/_rels/workbook.xml.rels"]!)
+        .replaceAll('Target="worksheets/', 'Target="../xl/worksheets/')
+        .replaceAll('Target="styles.xml"', 'Target="../xl/styles.xml"')
+        .replaceAll('Target="theme/', 'Target="../xl/theme/'),
+    );
+    archive["_rels/.rels"] = new TextEncoder().encode(
+      new TextDecoder()
+        .decode(archive["_rels/.rels"]!)
+        .replace('Target="xl/workbook.xml"', 'Target="custom/workbook.xml"'),
+    );
+    delete archive["xl/workbook.xml"];
+    delete archive["xl/_rels/workbook.xml.rels"];
+
+    const parsed = parseWorkbookSync(zipSync(archive));
+
+    expect(parsed.worksheets?.[0]?.name).toBe("Relocated");
+    expect(parsed.worksheets?.[0]?.rows?.[0]?.cells?.[0]?.value).toBe(17);
+
+    const regenerated = unzipSync(
+      (await generateWorkbook(parsed, { type: "uint8array" })) as Uint8Array,
+    );
+    const workbookRelsPath = "custom/_rels/workbook.xml.rels";
+    const workbookRels = (
+      parse(new TextDecoder().decode(regenerated[workbookRelsPath]!)).elements?.[0]?.elements ?? []
+    )
+      .filter((element) => element.name === "Relationship")
+      .map((relationship) => ({
+        type: String(relationship.attributes?.Type ?? ""),
+        target: String(relationship.attributes?.Target ?? ""),
+        targetMode: relationship.attributes?.TargetMode,
+      }));
+    const worksheetRelationships = workbookRels.filter((relationship) =>
+      relationship.type.endsWith("/worksheet"),
+    );
+    expect(worksheetRelationships).toHaveLength(1);
+    for (const relationship of workbookRels) {
+      if (relationship.targetMode === "External") continue;
+      const target = resolveRelationshipTarget("custom/workbook.xml", relationship.target);
+      expect(regenerated[target], `Missing relationship target ${target}`).toBeDefined();
+    }
+    const reparsed = parseWorkbookSync(zipSync(regenerated));
+    expect(reparsed.worksheets?.[0]?.name).toBe("Relocated");
+    expect(reparsed.worksheets?.[0]?.rows?.[0]?.cells?.[0]?.value).toBe(17);
+  });
+
+  it("preserves the source calc-chain content type", async () => {
+    const source = (await generateWorkbook(
+      {
+        worksheets: [{ name: "Sheet", rows: [{ cells: [{ reference: "A1", formula: "1+1" }] }] }],
+        connections: [{ id: 1, name: "Connection", type: 2 }],
+        metadata: {
+          types: [{ name: "XLDAPROPERTY", minSupportedVersion: 1 }],
+          strings: [{ value: "meta" }],
+        },
+      },
+      { type: "uint8array" },
+    )) as Uint8Array;
+    const archive = unzipSync(source);
+    const contentTypes = new TextDecoder().decode(archive["[Content_Types].xml"]!);
+    archive["[Content_Types].xml"] = new TextEncoder().encode(
+      contentTypes
+        .replace(
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.calcChain+xml",
+          "application/vnd.ms-excel.calcChain+xml",
+        )
+        .replace(
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.connections+xml",
+          "application/vnd.ms-excel.connections+xml",
+        )
+        .replace(
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheetMetadata+xml",
+          "application/vnd.ms-excel.sheetMetadata+xml",
+        ),
+    );
+
+    const parsed = parseWorkbookSync(zipSync(archive));
+    const regenerated = unzipSync(
+      (await generateWorkbook(parsed, { type: "uint8array" })) as Uint8Array,
+    );
+
+    expect(new TextDecoder().decode(regenerated["[Content_Types].xml"])).toContain(
+      'ContentType="application/vnd.ms-excel.calcChain+xml"',
+    );
+    expect(new TextDecoder().decode(regenerated["[Content_Types].xml"])).toContain(
+      'ContentType="application/vnd.ms-excel.connections+xml"',
+    );
+    expect(new TextDecoder().decode(regenerated["[Content_Types].xml"])).toContain(
+      'ContentType="application/vnd.ms-excel.sheetMetadata+xml"',
+    );
+  });
+
+  it("normalizes dot segments in the root workbook relationship", async () => {
+    const source = (await generateWorkbook(
+      { worksheets: [{ name: "DotPath", rows: [{ cells: [{ value: 23 }] }] }] },
+      { type: "uint8array" },
+    )) as Uint8Array;
+    const archive = unzipSync(source);
+    archive["_rels/.rels"] = new TextEncoder().encode(
+      new TextDecoder()
+        .decode(archive["_rels/.rels"]!)
+        .replace('Target="xl/workbook.xml"', 'Target="./xl/workbook.xml"'),
+    );
+
+    const parsed = parseWorkbookSync(zipSync(archive));
+
+    expect(parsed.worksheets?.[0]?.rows?.[0]?.cells?.[0]?.value).toBe(23);
+  });
+
+  it("rejects a package whose root relationship points to a missing workbook", async () => {
+    const source = (await generateWorkbook(
+      { worksheets: [{ name: "Sheet" }] },
+      { type: "uint8array" },
+    )) as Uint8Array;
+    const archive = unzipSync(source);
+    delete archive["xl/workbook.xml"];
+
+    expect(() => parseWorkbookSync(zipSync(archive))).toThrow(
+      "primary workbook part referenced by the package is missing",
+    );
+  });
+
   it("preserves a sharedStrings part after its workbook relationship is removed", async () => {
     const source = await roundTrip({
       worksheets: [{ name: "Sheet", rows: [{ cells: [{ value: "shared" }] }] }],
@@ -214,6 +371,83 @@ describe("parseWorkbook round-trip", () => {
     expect(parsed.lastModifiedBy).toBe("Editor");
     expect(parsed.appProperties?.application).toBe("Spreadsheet");
     expect(parsed.appProperties?.docSecurity).toBe(0);
+  });
+
+  it("resolves dot segments in root metadata relationship targets", async () => {
+    const source = (await generateWorkbook(
+      { creator: "Owner", worksheets: [{ name: "Sheet" }] },
+      { type: "uint8array" },
+    )) as Uint8Array;
+    const archive = unzipSync(source);
+    archive["_rels/.rels"] = new TextEncoder().encode(
+      new TextDecoder()
+        .decode(archive["_rels/.rels"]!)
+        .replaceAll('Target="docProps/', 'Target="./docProps/'),
+    );
+
+    const parsed = parseWorkbookSync(zipSync(archive));
+
+    expect(parsed.creator).toBe("Owner");
+  });
+
+  it("round-trips workbook parts from their relationship paths", async () => {
+    const source = (await generateWorkbook(
+      {
+        worksheets: [
+          { name: "Sheet", rows: [{ cells: [{ reference: "A1", formula: "1+1", value: 2 }] }] },
+        ],
+        connections: [
+          { id: 1, name: "DB", type: 2, database: { connection: "Provider=SQLOLEDB" } },
+        ],
+        metadata: {
+          types: [{ name: "XLDAPROPERTY", minSupportedVersion: 1 }],
+          strings: [{ value: "s1" }],
+        },
+        xmlMaps: {
+          selectionNamespaces: 'xmlns:m="http://example.com"',
+          schemas: [{ id: "S1", namespace: "http://example.com" }],
+          maps: [{ id: 1, name: "M1", rootElement: "root", schemaId: "S1" }],
+        },
+      },
+      { type: "uint8array" },
+    )) as Uint8Array;
+    const archive = unzipSync(source);
+    const workbookRelsPath = "xl/_rels/workbook.xml.rels";
+    let workbookRels = new TextDecoder().decode(archive[workbookRelsPath]!);
+    for (const part of ["calcChain", "connections", "metadata", "xmlMaps"]) {
+      const path = `xl/${part}.xml`;
+      archive[`custom/${part}.xml`] = archive[path]!;
+      delete archive[path];
+      workbookRels = workbookRels.replace(`Target="${part}.xml"`, `Target="../custom/${part}.xml"`);
+    }
+    archive[workbookRelsPath] = new TextEncoder().encode(workbookRels);
+
+    const parsed = parseWorkbookSync(zipSync(archive));
+    expect(parsed.calcChainPath).toBe("custom/calcChain.xml");
+    expect(parsed.connectionsPath).toBe("custom/connections.xml");
+    expect(parsed.metadataPath).toBe("custom/metadata.xml");
+    expect(parsed.xmlMapsPath).toBe("custom/xmlMaps.xml");
+    const regenerated = unzipSync(
+      (await generateWorkbook(parsed, { type: "uint8array" })) as Uint8Array,
+    );
+    const contentTypes = new TextDecoder().decode(regenerated["[Content_Types].xml"]);
+    const partTypes = {
+      calcChain: "application/vnd.openxmlformats-officedocument.spreadsheetml.calcChain+xml",
+      connections: "application/vnd.openxmlformats-officedocument.spreadsheetml.connections+xml",
+      metadata: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheetMetadata+xml",
+    };
+    for (const part of ["calcChain", "connections", "metadata", "xmlMaps"]) {
+      expect(regenerated[`custom/${part}.xml`]).toBeDefined();
+      expect(new TextDecoder().decode(regenerated[workbookRelsPath])).toContain(
+        `Target="../custom/${part}.xml"`,
+      );
+      const contentType = partTypes[part as keyof typeof partTypes];
+      if (contentType) {
+        expect(contentTypes).toContain(
+          `PartName="/custom/${part}.xml" ContentType="${contentType}"`,
+        );
+      }
+    }
   });
 
   it("preserves an empty shared-strings part", async () => {
@@ -857,6 +1091,32 @@ describe("xml mapping round-trip", () => {
 });
 
 describe("dialogsheet round-trip", () => {
+  it("resolves a dialog sheet from its workbook relationship target", async () => {
+    const source = (await generateWorkbook({
+      worksheets: [{ name: "Data" }],
+      dialogsheets: [{ name: "Dialog", sheetId: 2 }],
+    })) as Uint8Array;
+    const archive = unzipSync(source);
+    const workbookRelationships = new TextDecoder().decode(archive["xl/_rels/workbook.xml.rels"]!);
+    archive["xl/_rels/workbook.xml.rels"] = new TextEncoder().encode(
+      workbookRelationships.replace("dialogSheets/sheet1.xml", "custom/dialog.xml"),
+    );
+    const contentTypes = new TextDecoder().decode(archive["[Content_Types].xml"]!);
+    archive["[Content_Types].xml"] = new TextEncoder().encode(
+      contentTypes.replace("/xl/dialogSheets/sheet1.xml", "/xl/custom/dialog.xml"),
+    );
+    archive["xl/custom/dialog.xml"] = archive["xl/dialogSheets/sheet1.xml"]!;
+    delete archive["xl/dialogSheets/sheet1.xml"];
+
+    const parsed = parseWorkbookSync(zipSync(archive));
+
+    expect(parsed.dialogsheets?.[0]).toMatchObject({
+      name: "Dialog",
+      sheetId: 2,
+      sourcePath: "xl/custom/dialog.xml",
+    });
+  });
+
   it("round-trips a legacy dialog sheet with protection and page setup", async () => {
     const opts: WorkbookOptions = {
       worksheets: [{ name: "S", rows: [{ cells: [{ value: 1 }] }] }],

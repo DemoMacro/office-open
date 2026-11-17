@@ -174,7 +174,13 @@ function animationType(effect: number): AnimationEntry["type"] {
   if (effect === 0x0b) return "fly";
   if (effect === 0x0d) return "split";
   if (effect === 0x1a) return "wheel";
-  return "appear";
+  throw new PptParseError(`Unsupported legacy animation effect: ${effect}`, {
+    part: "record",
+    path: "PowerPoint Document",
+    recordType: RecordType.animationInfoAtom,
+    recordName: "AnimationInfoAtom",
+    reason: "unsupported-animation-effect",
+  });
 }
 
 export function readMaster(

@@ -187,15 +187,67 @@ function reconcileSheetDefinitions(
   originalDefinitions: readonly SheetDefinition[],
 ): void {
   const worksheets = options.worksheets ?? [];
-  const usedSheetIds = new Set<number>([
-    ...originalDefinitions.map((definition) => definition.sheetId ?? 0),
-    ...(options.chartsheets ?? []).flatMap((sheet) => (sheet.sheetId ? [sheet.sheetId] : [])),
-    ...(options.dialogsheets ?? []).flatMap((sheet) => (sheet.sheetId ? [sheet.sheetId] : [])),
-    ...(options.macrosheets ?? []).flatMap((sheet) => (sheet.sheetId ? [sheet.sheetId] : [])),
-  ]);
   const paths = originalWorksheets.map(
     (worksheet, index) => worksheet.sourcePath ?? `xl/worksheets/sheet${index + 1}.xml`,
   );
+  const originalByName = new Map(
+    originalWorksheets.map((worksheet) => [worksheet.name, worksheet]),
+  );
+  const originalDefinitionByPath = new Map<string, SheetDefinition>();
+  for (const definition of originalDefinitions) {
+    const original = originalByName.get(definition.name);
+    if (!original) continue;
+    const originalIndex = originalWorksheets.indexOf(original);
+    const sourcePath = original.sourcePath ?? `xl/worksheets/sheet${originalIndex + 1}.xml`;
+    originalDefinitionByPath.set(sourcePath.toLowerCase(), definition);
+  }
+  const originalPaths = new Set(paths.map((path) => path.toLowerCase()));
+  const currentWorksheetByPath = new Map(
+    worksheets.map((worksheet, index) => [
+      (worksheet.sourcePath ?? `xl/worksheets/sheet${index + 1}.xml`).toLowerCase(),
+      worksheet,
+    ]),
+  );
+  const worksheetDefinitions = worksheets.map((worksheet, index): SheetDefinition => {
+    const sourcePath = worksheet.sourcePath ?? `xl/worksheets/sheet${index + 1}.xml`;
+    const definition = originalDefinitionByPath.get(sourcePath.toLowerCase());
+    if (definition) {
+      return {
+        ...definition,
+        name: worksheet.name ?? definition.name,
+        state: worksheet.state ?? definition.state,
+      };
+    }
+    return {
+      name: worksheet.name ?? `Sheet${index + 1}`,
+      sheetId: worksheet.sheetId,
+      rId: "",
+      state: worksheet.state,
+    };
+  });
+  const existingWorksheetDefinitions = worksheets.flatMap((worksheet, index) => {
+    const path = worksheet.sourcePath ?? `xl/worksheets/sheet${index + 1}.xml`;
+    return originalPaths.has(path.toLowerCase()) ? [worksheetDefinitions[index]!] : [];
+  });
+  const newWorksheetDefinitions = worksheets.flatMap((worksheet, index) => {
+    const path = worksheet.sourcePath ?? `xl/worksheets/sheet${index + 1}.xml`;
+    return originalPaths.has(path.toLowerCase()) ? [] : [worksheetDefinitions[index]!];
+  });
+  let worksheetDefinitionIndex = 0;
+  const sheetDefinitions: SheetDefinition[] = originalDefinitions.flatMap((definition) => {
+    const original = originalByName.get(definition.name);
+    if (!original) return [definition];
+    const originalIndex = originalWorksheets.indexOf(original);
+    const path = (
+      original.sourcePath ?? `xl/worksheets/sheet${originalIndex + 1}.xml`
+    ).toLowerCase();
+    if (!currentWorksheetByPath.has(path)) return [];
+    const replacement = existingWorksheetDefinitions[worksheetDefinitionIndex];
+    worksheetDefinitionIndex += 1;
+    return replacement ? [replacement] : [];
+  });
+  sheetDefinitions.push(...newWorksheetDefinitions);
+  const usedSheetIds = new Set<number>();
   let nextSheetId = Math.max(
     0,
     ...originalDefinitions.map((definition) => definition.sheetId ?? 0),
@@ -205,32 +257,33 @@ function reconcileSheetDefinitions(
     ...originalDefinitions.map((definition) => Number(definition.rId.replace(/\D/g, "") || 0)),
   );
 
-  options.sheetDefinitions = worksheets.map((worksheet, worksheetIndex): SheetDefinition => {
+  for (const definition of sheetDefinitions) {
+    if (definition.sheetId === undefined) continue;
+    if (usedSheetIds.has(definition.sheetId))
+      throw new Error("Duplicate workbook sheet ID: " + definition.sheetId);
+    usedSheetIds.add(definition.sheetId);
+  }
+
+  for (const [worksheetIndex, worksheet] of worksheets.entries()) {
     const sourcePath = worksheet.sourcePath ?? `xl/worksheets/sheet${worksheetIndex + 1}.xml`;
-    const originalIndex = paths.indexOf(sourcePath);
-    if (originalIndex >= 0) {
-      const definition = originalDefinitions[originalIndex];
-      if (definition) {
-        return {
-          ...definition,
-          name: worksheet.name ?? definition.name,
-          state: worksheet.state ?? definition.state,
-        };
-      }
-    }
+    if (originalPaths.has(sourcePath.toLowerCase())) continue;
+    const definition = worksheetDefinitions[worksheetIndex]!;
+    const existingId = definition.sheetId;
     const sheetId =
-      worksheet.sheetId ??
+      existingId ??
       (() => {
         while (usedSheetIds.has(nextSheetId)) nextSheetId += 1;
         return nextSheetId;
       })();
     usedSheetIds.add(sheetId);
     nextRelationship += 1;
-    return {
-      name: worksheet.name ?? `Sheet${nextSheetId}`,
+    const position = sheetDefinitions.indexOf(definition);
+    sheetDefinitions[position] = {
+      ...definition,
       sheetId,
       rId: `rId${nextRelationship}`,
-      state: worksheet.state,
     };
-  });
+  }
+
+  options.sheetDefinitions = sheetDefinitions;
 }

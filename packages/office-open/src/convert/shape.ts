@@ -116,20 +116,19 @@ export function docxToTextBody(
       paragraphs.push(
         typeof child.paragraph === "string" ? child.paragraph : toDrawingParagraph(child.paragraph),
       );
+    } else if ("table" in child || "toc" in child || "textbox" in child) {
+      throw new Error("DOCX text-box block content cannot be converted to DrawingML text");
     } else if (
-      !(
-        "table" in child ||
-        "toc" in child ||
-        "textbox" in child ||
-        "sdt" in child ||
-        "altChunk" in child ||
-        "subDoc" in child ||
-        "customXml" in child ||
-        "bookmarkStart" in child ||
-        "bookmarkEnd" in child ||
-        "rawXml" in child
-      )
+      "sdt" in child ||
+      "altChunk" in child ||
+      "subDoc" in child ||
+      "customXml" in child ||
+      "bookmarkStart" in child ||
+      "bookmarkEnd" in child ||
+      "rawXml" in child
     ) {
+      throw new Error("DOCX text-box block content cannot be converted to DrawingML text");
+    } else {
       paragraphs.push(toDrawingParagraph(child));
     }
   }
@@ -191,6 +190,7 @@ export function toDocxShapeParts(source: PptxShapeOptions | XlsxShapeOptions): D
     return {
       data: {
         children: source.textBody ? textBodyToDocxChildren(source.textBody) : [],
+        ...(source.blackWhiteMode !== undefined ? { blackWhiteMode: source.blackWhiteMode } : {}),
         ...pickContent(spPr),
         ...(spPr.customGeometry !== undefined ? { customGeometry: spPr.customGeometry } : {}),
         ...(preset !== undefined ? { geometry: preset } : {}),
@@ -214,6 +214,7 @@ export function toDocxShapeParts(source: PptxShapeOptions | XlsxShapeOptions): D
   return {
     data: {
       children: source.textBody ? textBodyToDocxChildren(source.textBody) : [],
+      ...(source.blackWhiteMode !== undefined ? { blackWhiteMode: source.blackWhiteMode } : {}),
       ...pickContent(spPr),
       ...(spPr.customGeometry !== undefined ? { customGeometry: spPr.customGeometry } : {}),
       ...(preset !== undefined ? { geometry: preset } : {}),
@@ -258,6 +259,7 @@ export function toPptxShape(source: DocxShapeOptions | XlsxShapeOptions): PptxSh
         ...(spPr.customGeometry !== undefined ? { customGeometry: spPr.customGeometry } : {}),
       },
       ...(source.textBody ? { textBody: source.textBody } : {}),
+      ...(source.blackWhiteMode !== undefined ? { blackWhiteMode: source.blackWhiteMode } : {}),
       ...pickNonVisualDrawingProperties(source),
     };
     return result;
@@ -276,6 +278,7 @@ export function toPptxShape(source: DocxShapeOptions | XlsxShapeOptions): PptxSh
           : {}),
     },
     ...(textBody ? { textBody } : {}),
+    ...(source.blackWhiteMode !== undefined ? { blackWhiteMode: source.blackWhiteMode } : {}),
     ...pickNonVisualDrawingProperties(source.nonVisualProperties),
   };
   return result;
@@ -312,6 +315,7 @@ export function toXlsxShape(source: DocxShapeOptions | PptxShapeOptions): XlsxSh
       ...pos.anchor,
       properties: spPr,
       ...(textBody ? { textBody } : {}),
+      ...(source.blackWhiteMode !== undefined ? { blackWhiteMode: source.blackWhiteMode } : {}),
       ...pickNonVisualDrawingProperties(source.nonVisualProperties),
     };
   }
@@ -343,6 +347,7 @@ export function toXlsxShape(source: DocxShapeOptions | PptxShapeOptions): XlsxSh
     ...pos.anchor,
     properties: spPr,
     ...(source.textBody ? { textBody: source.textBody } : {}),
+    ...(source.blackWhiteMode !== undefined ? { blackWhiteMode: source.blackWhiteMode } : {}),
     ...pickNonVisualDrawingProperties(source),
   };
 }

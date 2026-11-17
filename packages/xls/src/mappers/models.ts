@@ -6,6 +6,7 @@ import type {
   DefinedNameOptions,
   ExternalLinkOptions,
   FontOptions,
+  RichTextOptions,
   CellOptions,
   RowOptions,
   StyleOptions,
@@ -31,7 +32,7 @@ export interface WorkbookState {
   version: BiffVersion;
   workbookLayout: "standard" | "biff4w";
   stream: Uint8Array;
-  sharedStrings: string[];
+  sharedStrings: (string | RichTextOptions)[];
   sheets: readonly BoundSheet[];
   fonts: FontOptions[];
   numberFormats: Map<number, string>;

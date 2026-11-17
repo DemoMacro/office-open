@@ -73,9 +73,10 @@ function clearRemovedSlidePartPaths(options: PresentationOptions): void {
 /** Remove custom-show references whose slide no longer survives patch commands. */
 function reconcileCustomShowSlides(options: PresentationOptions): void {
   if (!options.customShows?.length) return;
+  const presentationPath = options.presentationPath ?? "ppt/presentation.xml";
   const sourceRelationships = new Map(
     (options.passthroughRelationships ?? [])
-      .filter((relationship) => relationship.source === "ppt/presentation.xml")
+      .filter((relationship) => relationship.source === presentationPath)
       .map((relationship) => [relationship.rId, relationship.target] as const),
   );
   const retainedTargets = new Set(
@@ -87,9 +88,7 @@ function reconcileCustomShowSlides(options: PresentationOptions): void {
     show.slides = show.slides.filter(({ rId }) => {
       const target = sourceRelationships.get(rId);
       const packagePath =
-        target === undefined
-          ? undefined
-          : resolveRelationshipTarget("ppt/presentation.xml", target);
+        target === undefined ? undefined : resolveRelationshipTarget(presentationPath, target);
       return packagePath !== undefined && retainedTargets.has(packagePath.toLowerCase());
     });
   }
@@ -140,6 +139,13 @@ function reconcileInsertedSlides(
     if (slide.comments?.length && slide.commentSourcePath === undefined) {
       slide.commentSourcePath = nextPackagePath("ppt/comments/comment", usedCommentPaths);
     }
+  }
+  const assignedSlideIds = new Set<number>();
+  for (const slide of options.slides ?? []) {
+    if (slide.slideId === undefined) continue;
+    if (assignedSlideIds.has(slide.slideId))
+      throw new Error(`Duplicate presentation slide ID: ${slide.slideId}`);
+    assignedSlideIds.add(slide.slideId);
   }
 }
 

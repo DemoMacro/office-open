@@ -99,7 +99,10 @@ export function parseStylesheet(table: Uint8Array, range: NumberPair): Styleshee
       throw new DocParseError("Invalid DOC stylesheet: style record is truncated");
     }
     const recordLength = readUint16(table, offset, message);
-    if (recordLength === 0) continue;
+    if (recordLength === 0) {
+      offset += 2;
+      continue;
+    }
     if (recordLength % 2 !== 0 || offset + 2 + recordLength > end) {
       throw new DocParseError("Invalid DOC stylesheet: style description is truncated");
     }

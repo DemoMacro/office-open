@@ -40,7 +40,7 @@ import type { PresentationOptions, SlideOptions } from "@office-open/pptx";
 import type { Element } from "@office-open/xml";
 
 import type { OdpChart, OdpImage } from "./drawing";
-import type { OdpEmbeddedObjectPool } from "./embedded-frames";
+import { normalizeEmbeddedObjectPath, type OdpEmbeddedObjectPool } from "./embedded-frames";
 import { OdpParseError } from "./error";
 import type { OdpPresentationOptions, OdpSlideOptions } from "./options";
 import { parseColumnWidths, parseSlide, slideXml } from "./slide";
@@ -263,6 +263,15 @@ function parseOdpPackage(data: Uint8Array): OdpPresentationOptions {
   const { files, binaries, manifest } = readOcfSync(data, [MIME, TEMPLATE_MIME]);
   const content = readXml(files, "content.xml");
   const body = childNamed(childNamed(content, "office:body"), "office:presentation");
+  if (!body) {
+    throw new OdpParseError(
+      "content.xml: /office:document-content/office:body/office:presentation: required presentation body is missing",
+      "content.xml",
+      "/office:document-content/office:body/office:presentation",
+      "office:presentation",
+      "missing-required-element",
+    );
+  }
   const stylesDocument = files["styles.xml"] ? readXml(files, "styles.xml") : undefined;
   const pageLayout = childNamed(
     childNamed(childNamed(stylesDocument, "office:automatic-styles"), "style:page-layout"),
@@ -325,9 +334,9 @@ function validateEmbeddedObjectBodies(
 ): void {
   const references = (body ? descendantElements(body) : []).flatMap((element) =>
     element.name === "draw:object-ole"
-      ? [attributeString(element, "xlink:href")?.replace(/^\.\//, "").replace(/^\//, "")]
+      ? [normalizeEmbeddedObjectPath(attributeString(element, "xlink:href") ?? "")]
       : element.name === "draw:object"
-        ? [attributeString(element, "xlink:href")?.replace(/^\.\//, "").replace(/^\//, "")]
+        ? [normalizeEmbeddedObjectPath(attributeString(element, "xlink:href") ?? "")]
         : [],
   );
   for (const href of references) {
@@ -355,14 +364,6 @@ function embeddedObjectPool(
   binaries: Record<string, Uint8Array>,
   chartPool: Map<string, ChartSpaceOptions>,
 ): OdpEmbeddedObjectPool {
-  const normalizePath = (path: string): string =>
-    decodeURIComponent(
-      path
-        .replace(/^\.\//, "")
-        .replace(/^\//, "")
-        .replace(/\/$/, "")
-        .replace(/%(?![0-9A-Fa-f]{2})/g, "%25"),
-    );
   const mediaTypes = new Map(
     manifest.entries
       .filter((entry) => entry.fullPath.endsWith("/") && entry.fullPath !== "/")
@@ -370,12 +371,12 @@ function embeddedObjectPool(
   );
   const pool: OdpEmbeddedObjectPool = new Map();
   for (const [rawPath, mediaType] of mediaTypes) {
-    const path = normalizePath(rawPath);
+    const path = normalizeEmbeddedObjectPath(rawPath, "META-INF/manifest.xml");
     if (chartPool.has(path) || files[`${rawPath}/content.xml`] === undefined) continue;
     pool.set(path, {
       path,
       ...(mediaType === undefined ? {} : { mediaType }),
-      members: objectMembers(path, files, binaries),
+      members: objectMembers(rawPath, files, binaries),
     });
   }
   return pool;

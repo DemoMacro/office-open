@@ -4,7 +4,6 @@ import type { DocumentOptions, SectionChild } from "@office-open/docx";
 import { readSummaryInformation } from "../cfb/container";
 import { decryptWordStreams } from "../cfb/encryption";
 import { DocParseError } from "../errors";
-import type { LegacyRevisionRange } from "../records/models";
 import {
   parseBookmarks,
   parseBodyPictureAnchors,
@@ -276,26 +275,6 @@ export function parseInternal(data: Uint8Array, password?: string): DocumentOpti
   for (const character of characters) {
     if (character.complexField !== undefined) {
       character.complexField = fieldInstructionsByCp.get(character.cp) ?? "";
-    }
-  }
-  const revisions: LegacyRevisionRange[] =
-    fib.comments.length === 0
-      ? []
-      : parseTolerant(
-          { part: "table", path: "PlcfandRef", recordType: 4, recordName: "fcPlcfandRef" },
-          [],
-          () =>
-            parseCommentRanges(table, fib.comments).map((comment) => ({
-              start: comment.start,
-              end: comment.end,
-              inserted: (comment.data[1]! & 0x01) === 0,
-            })),
-        );
-  for (const revision of revisions) {
-    for (const character of characters) {
-      if (character.cp >= revision.start && character.cp < revision.end) {
-        character.revision = { inserted: revision.inserted };
-      }
     }
   }
   const lists: ReturnType<typeof parseLists> | undefined =

@@ -8,6 +8,19 @@ import type { OdpPresentationOptions } from "./options";
 import type { OdpTransitionOptions } from "./transition";
 
 describe("ODP codec", () => {
+  it("rejects a content document without its required presentation body", async () => {
+    const source = generateOcf("application/vnd.oasis.opendocument.presentation", {
+      "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body/></office:document-content>`,
+    });
+
+    await expect(parsePresentation(source)).rejects.toMatchObject({
+      name: "OdpParseError",
+      part: "content.xml",
+      elementName: "office:presentation",
+      reason: "missing-required-element",
+    });
+  });
+
   it("round-trips a presentation through canonical PresentationOptions", async () => {
     const parsed = await parsePresentation(
       await generatePresentation({ slides: [{ notes: "ODP" }] }),
@@ -680,6 +693,90 @@ describe("ODP codec", () => {
     expect(regenerated.embeddedObjects).toEqual(parsed.embeddedObjects);
     expect(regenerated.slides?.[0]?.children?.[0]).toMatchObject({
       shape: { id: 1, name: "Formula", x: 360000, y: 720000, width: 1440000, height: 1080000 },
+    });
+  });
+
+  it("decodes escaped package paths for embedded replacement images", async () => {
+    const parsed = await parsePresentation(
+      generateOcf(
+        "application/vnd.oasis.opendocument.presentation",
+        {
+          "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:presentation><draw:page><draw:frame svg:x="1cm" svg:y="1cm" svg:width="2cm" svg:height="2cm"><draw:object xlink:href="./Object%201" xlink:type="simple"/><draw:image xlink:href="./ObjectReplacements/Logo%201.png" xlink:type="simple"/></draw:frame></draw:page></office:presentation></office:body></office:document-content>`,
+          "Object 1/content.xml": "<math/>",
+          "ObjectReplacements/Logo 1.png": new Uint8Array([4, 5, 6]),
+        },
+        {
+          "Object 1/": "application/vnd.oasis.opendocument.formula",
+          "ObjectReplacements/Logo 1.png": "image/png",
+        },
+      ),
+    );
+
+    expect(parsed.embeddedObjects?.[0]?.frames?.[0]?.replacementPath).toBe(
+      "ObjectReplacements/Logo 1.png",
+    );
+    expect(parsed.embeddedObjects?.[0]?.members).toContainEqual({
+      path: "ObjectReplacements/Logo 1.png",
+      mediaType: "image/png",
+      data: new Uint8Array([4, 5, 6]),
+    });
+  });
+
+  it("preserves an external embedded-object replacement image", async () => {
+    const source = generateOcf("application/vnd.oasis.opendocument.presentation", {
+      "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:presentation><draw:page><draw:frame svg:x="1cm" svg:y="1cm" svg:width="2cm" svg:height="2cm"><draw:object xlink:href="https://example.com/object" xlink:type="simple"/><draw:image xlink:href="https://example.com/preview.png" xlink:type="simple"/></draw:frame></draw:page></office:presentation></office:body></office:document-content>`,
+    });
+
+    const parsed = await parsePresentation(source);
+    expect(parsed.embeddedObjects?.[0]?.frames?.[0]?.replacementSourceUrl).toBe(
+      "https://example.com/preview.png",
+    );
+
+    const generated = await generatePresentation(parsed);
+    const output = await readOcf(generated, "application/vnd.oasis.opendocument.presentation");
+    expect(output.files["content.xml"]).toContain(
+      '<draw:image xlink:href="https://example.com/preview.png" xlink:type="simple" xlink:show="embed" xlink:actuate="onLoad"/>',
+    );
+    expect((await parsePresentation(generated)).embeddedObjects?.[0]?.frames?.[0]).toEqual(
+      parsed.embeddedObjects?.[0]?.frames?.[0],
+    );
+  });
+
+  it("preserves embedded object members whose package path contains URI escapes", async () => {
+    const source = generateOcf(
+      "application/vnd.oasis.opendocument.presentation",
+      {
+        "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:presentation><draw:page><draw:frame svg:x="1cm" svg:y="1cm" svg:width="2cm" svg:height="2cm"><draw:object xlink:href="./Object%201" xlink:type="simple"/></draw:frame></draw:page></office:presentation></office:body></office:document-content>`,
+        "Object%201/content.xml": "<math/>",
+      },
+      { "Object%201/": "application/vnd.oasis.opendocument.formula" },
+    );
+
+    const parsed = await parsePresentation(source);
+
+    expect(parsed.embeddedObjects).toMatchObject([
+      {
+        path: "Object 1",
+        members: [{ path: "Object%201/content.xml", data: "<math/>" }],
+      },
+    ]);
+    expect((await parsePresentation(await generatePresentation(parsed))).embeddedObjects).toEqual(
+      parsed.embeddedObjects,
+    );
+  });
+
+  it("reports malformed UTF-8 in embedded object hrefs as a structured parse error", async () => {
+    const source = generateOcf("application/vnd.oasis.opendocument.presentation", {
+      "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:presentation><draw:page><draw:frame><draw:object xlink:href="./Object%E0%A4%A"/></draw:frame></draw:page></office:presentation></office:body></office:document-content>`,
+    });
+
+    await expect(parsePresentation(source)).rejects.toMatchObject({
+      name: "OdpParseError",
+      part: "content.xml",
+      path: "/draw:frame/draw:object/@xlink:href",
+      elementName: "draw:object",
+      reason: "invalid-embedded-object-href",
+      cause: expect.any(URIError),
     });
   });
 

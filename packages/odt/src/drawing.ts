@@ -44,6 +44,32 @@ export type RasterPictureType = Exclude<PictureType, "svg">;
 
 type DrawingTransformation = ChartOptions["transformation"];
 
+const FRAME_PAYLOADS = [
+  "draw:text-box",
+  "draw:image",
+  "draw:object",
+  "draw:object-ole",
+  "draw:applet",
+  "draw:floating-frame",
+  "draw:plugin",
+  "table:table",
+];
+
+export function assertSingleFramePayload(frame: Element): void {
+  const payloads = (frame.elements ?? []).filter(
+    (child) => child.type === "element" && FRAME_PAYLOADS.includes(child.name ?? ""),
+  );
+  if (payloads.length <= 1) return;
+  if (
+    payloads.length === 2 &&
+    payloads.some((child) => child.name === "draw:object") &&
+    payloads.some((child) => child.name === "draw:image")
+  ) {
+    return;
+  }
+  throw unknownOdtElement(frame);
+}
+
 interface ParsedImage {
   type: PictureType;
   data: Uint8Array;
@@ -185,7 +211,27 @@ function embeddedObjectFrameXml(
       "svg:height": lengthAttributeXml(transformationHeight(shape.transformation)),
       "draw:name": name,
     },
-    [xmlElement("draw:object", { "xlink:href": `./${object.path}`, "xlink:type": "simple" })],
+    [
+      xmlElement("draw:object", { "xlink:href": `./${object.path}`, "xlink:type": "simple" }),
+      ...(frame.replacementImagePath
+        ? [
+            xmlElement("draw:image", {
+              "xlink:href": `./${frame.replacementImagePath}`,
+              "xlink:type": "simple",
+            }),
+          ]
+        : []),
+      ...(frame.replacementImageSourceUrl
+        ? [
+            xmlElement("draw:image", {
+              "xlink:href": frame.replacementImageSourceUrl,
+              "xlink:type": "simple",
+              "xlink:show": "embed",
+              "xlink:actuate": "onLoad",
+            }),
+          ]
+        : []),
+    ],
   );
 }
 
@@ -340,12 +386,13 @@ export function isShapeElement(name: string | undefined): boolean {
 export function parsePictureFrame(frame: Element, context: ParseContext): ParagraphChild[] {
   const images: ParsedImage[] = childrenNamed(frame, "draw:image").flatMap((image) => {
     const href = attributeString(image, "xlink:href");
-    const path = href?.replace(/^\//, "");
-    const data = path ? context.binaries[path] : undefined;
+    const path = href ? packagePathFromReference(href) : undefined;
+    if (!path) return [];
+    const data = context.binaries[path];
     if (data === undefined) return [];
-    context.usedBinaryPaths.add(path ?? "");
-    const extension = path?.split(".").pop() ?? "png";
-    const type = extension === "jpeg" ? "jpg" : extension;
+    context.usedBinaryPaths.add(path);
+    const mediaType = context.binaryMediaTypes.get(path);
+    const type = pictureTypeFromMediaType(mediaType) ?? pictureTypeFromPath(path);
     return isPictureType(type) ? [{ type, data }] : [];
   });
   const svg = images.find((image) => image.type === "svg");
@@ -354,11 +401,9 @@ export function parsePictureFrame(frame: Element, context: ParseContext): Paragr
       image.type !== "svg" && isRasterPictureType(image.type),
   );
   if (!svg && !raster) {
-    const href = attributeString(childNamed(frame, "draw:image"), "xlink:href");
-    const packagePath = href?.replace(/^\//, "");
-    const missingPackageImage =
-      packagePath === undefined || context.binaries[packagePath] === undefined;
-    if (href && (isExternalOdfUrl(href) || missingPackageImage))
+    const image = childNamed(frame, "draw:image");
+    const href = attributeString(image, "xlink:href");
+    if (href && isExternalOdfUrl(href))
       return [
         {
           picture: {
@@ -371,7 +416,16 @@ export function parsePictureFrame(frame: Element, context: ParseContext): Paragr
           },
         },
       ];
-    return [];
+    const path = href ? packagePathFromReference(href) : undefined;
+    throw new OdtParseError(
+      "content.xml: /office:document-content/office:body/office:text/draw:frame/draw:image: package image " +
+        (path ?? "") +
+        " is missing or unsupported",
+      "content.xml",
+      "/office:document-content/office:body/office:text/draw:frame/draw:image",
+      "draw:image",
+      "missing-package-part",
+    );
   }
   return [
     {
@@ -400,6 +454,44 @@ export function parsePictureFrame(frame: Element, context: ParseContext): Paragr
       },
     },
   ];
+}
+
+function packagePathFromReference(href: string): string | undefined {
+  let decoded: string;
+  try {
+    decoded = decodeURIComponent(href.split(/[?#]/u, 1)[0] ?? "");
+  } catch (cause) {
+    throw new OdtParseError(
+      "content.xml: draw:image has an invalid package URI",
+      "content.xml",
+      "/office:document-content/office:body/office:text/draw:frame/draw:image",
+      "draw:image",
+      "invalid-package-uri",
+      { cause },
+    );
+  }
+  const segments: string[] = [];
+  for (const segment of decoded.split("/")) {
+    if (segment === "" || segment === ".") continue;
+    if (segment === "..") {
+      if (segments.length === 0) return undefined;
+      segments.pop();
+    } else {
+      segments.push(segment);
+    }
+  }
+  return segments.join("/");
+}
+
+function pictureTypeFromMediaType(mediaType: string | undefined): string | undefined {
+  if (mediaType === "image/jpeg") return "jpg";
+  if (mediaType === "image/svg+xml") return "svg";
+  return mediaType?.startsWith("image/") ? mediaType.slice("image/".length) : undefined;
+}
+
+function pictureTypeFromPath(path: string): string {
+  const extension = path.split(".").pop()?.toLowerCase() ?? "png";
+  return extension === "jpeg" ? "jpg" : extension;
 }
 
 function pictureTypeFromUrl(value: string): RasterPictureType {
@@ -450,9 +542,31 @@ export function parseChartFrame(frame: Element, context: ParseContext): Paragrap
       shapeId,
       ...(anchorType ? { anchorType } : {}),
       ...(styleName ? { styleName } : {}),
+      ...replacementImage(frame, context),
     },
   ];
   return [{ wpsShape: embeddedObjectShape(frame, context, shapeId) }];
+}
+
+function replacementImage(
+  frame: Element,
+  context: ParseContext,
+): { replacementImagePath?: string; replacementImageSourceUrl?: string } {
+  const image = childNamed(frame, "draw:image");
+  if (!image) return {};
+  const href = attributeString(image, "xlink:href");
+  if (href && isExternalOdfUrl(href)) return { replacementImageSourceUrl: href };
+  const path = href ? packagePathFromReference(href) : undefined;
+  if (!path || context.binaries[path] === undefined) {
+    throw new OdtParseError(
+      "content.xml: embedded object replacement image is missing",
+      "content.xml",
+      "/draw:frame/draw:image/@xlink:href",
+      "draw:image",
+      "missing-package-part",
+    );
+  }
+  return { replacementImagePath: path };
 }
 
 function frameAnchorType(value: string | undefined): OdtFrameAnchorType | undefined {

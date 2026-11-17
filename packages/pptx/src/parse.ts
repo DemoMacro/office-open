@@ -32,6 +32,7 @@ import { slideMasterDesc } from "./parts/descriptors/slide-master";
 import { tableStylesDesc } from "./parts/descriptors/table-styles";
 import { tagPartDesc } from "./parts/descriptors/tags";
 import { viewPropsDesc } from "./parts/descriptors/view-properties";
+import { PptxParseError } from "./pptx-parse-error";
 
 export { parseArchive };
 
@@ -96,6 +97,8 @@ export interface PptxPartRefs {
 
 export interface PptxDocument {
   doc: ParsedArchive;
+  /** Resolved primary presentation part path. */
+  presentationPath: string;
   /** ppt/presentation.xml root element (p:presentation) */
   presentation?: Element;
   /** Root relationship Type used for the primary presentation part. */
@@ -147,6 +150,7 @@ function xmlBody(data: Uint8Array | undefined): string {
 }
 
 function parseRootRels(doc: ParsedArchive): {
+  presentationPath?: string;
   presentationType?: string;
   corePropsType?: string;
   coreProps?: string;
@@ -168,6 +172,7 @@ function parseRootRels(doc: ParsedArchive): {
   let appProps: string | undefined;
   let appPropsType: string | undefined;
   let customProps: string | undefined;
+  let presentationPath: string | undefined;
   let presentationType: string | undefined;
   let corePropsType: string | undefined;
 
@@ -177,7 +182,7 @@ function parseRootRels(doc: ParsedArchive): {
     const target = attr(child, "Target") ?? "";
     if (!target) continue;
 
-    const path = target.startsWith("/") ? target.slice(1) : target;
+    const path = resolveRelationshipTarget("", target);
 
     // Transitional packages use the oclc URI form with camelCase segments
     // (…/extendedProperties); normalize case and hyphens so both resolve.
@@ -194,12 +199,21 @@ function parseRootRels(doc: ParsedArchive): {
       }
     } else if (relType.includes("/customproperties")) {
       if (type === canonicalCustom || customProps === undefined) customProps = path;
-    } else if (path === "ppt/presentation.xml") {
+    } else if (type.endsWith("/officeDocument") && attr(child, "TargetMode") !== "External") {
+      presentationPath = path;
       presentationType = type;
     }
   }
 
-  return { presentationType, corePropsType, coreProps, appProps, appPropsType, customProps };
+  return {
+    presentationPath,
+    presentationType,
+    corePropsType,
+    coreProps,
+    appProps,
+    appPropsType,
+    customProps,
+  };
 }
 
 function parseSlideRels(doc: ParsedArchive, slidePaths: string[], refs: PptxPartRefs): void {
@@ -251,9 +265,19 @@ export function parsePptx(data: DataType): PptxDocument {
 
 /** Archive-backed core of {@link parsePptx} — shared with the Blob open path. */
 function parsePptxArchive(doc: ParsedArchive): PptxDocument {
-  const presentation = doc.get("ppt/presentation.xml");
+  const rootRels = parseRootRels(doc);
+  const presentationPath = rootRels.presentationPath ?? "ppt/presentation.xml";
+  const presentation = doc.get(presentationPath);
+  if (!presentation) {
+    throw new PptxParseError(
+      `${presentationPath}: p:presentation: primary presentation part is missing`,
+      presentationPath,
+      "/",
+      "missing-presentation-part",
+    );
+  }
 
-  const relsXml = doc.get("ppt/_rels/presentation.xml.rels");
+  const relsXml = doc.get(partPathToRelsPath(presentationPath));
   let slides: string[] = [];
   let slideMasters: string[] = [];
   const themes: string[] = [];
@@ -276,7 +300,7 @@ function parsePptxArchive(doc: ParsedArchive): PptxDocument {
       if (!target) continue;
       const relationshipKind = type.split("/").pop() ?? "";
 
-      const path = resolveRelationshipTarget("ppt/presentation.xml", target);
+      const path = resolveRelationshipTarget(presentationPath, target);
 
       if (relationshipKind === "slideMaster") {
         slideMasters.push(path);
@@ -370,11 +394,9 @@ function parsePptxArchive(doc: ParsedArchive): PptxDocument {
   sortByNumber(partRefs.charts);
   sortByNumber(partRefs.diagramData);
 
-  const { presentationType, corePropsType, coreProps, appProps, appPropsType, customProps } =
-    parseRootRels(doc);
-
   return {
     doc,
+    presentationPath,
     presentation,
     slides,
     slideMasters,
@@ -385,12 +407,12 @@ function parsePptxArchive(doc: ParsedArchive): PptxDocument {
     presProps,
     viewProps,
     tableStyles,
-    coreProps,
-    corePropsType,
-    appProps,
-    appPropsType,
-    presentationType,
-    customProps,
+    presentationType: rootRels.presentationType,
+    corePropsType: rootRels.corePropsType,
+    coreProps: rootRels.coreProps,
+    appProps: rootRels.appProps,
+    appPropsType: rootRels.appPropsType,
+    customProps: rootRels.customProps,
   };
 }
 
@@ -507,6 +529,7 @@ interface ParsedSlideSections {
 function parseSlideSections(
   presentation: Element | undefined,
   doc: ParsedArchive,
+  presentationPath: string,
 ): ParsedSlideSections {
   const empty: ParsedSlideSections = { bySlidePath: new Map(), groups: [] };
   if (!presentation) return empty;
@@ -563,13 +586,13 @@ function parseSlideSections(
   }
 
   // rId -> path (from presentation.xml.rels)
-  const relsEl = doc.get("ppt/_rels/presentation.xml.rels");
+  const relsEl = doc.get(partPathToRelsPath(presentationPath));
   const pathByRId = new Map<string, string>();
   for (const child of relsEl?.elements ?? []) {
     if (child.name !== "Relationship") continue;
     const id = attr(child, "Id");
     const target = attr(child, "Target");
-    if (id && target) pathByRId.set(id, resolveRelationshipTarget("ppt/presentation.xml", target));
+    if (id && target) pathByRId.set(id, resolveRelationshipTarget(presentationPath, target));
   }
 
   const pathToSection = new Map<string, string>();
@@ -636,6 +659,7 @@ function parsePresentationFromBytes(uint8: Uint8Array): PresentationOptions {
 
 function parsePresentationFromPptx(pptx: PptxDocument): PresentationOptions {
   const opts: Partial<PresentationOptions> = {};
+  opts.presentationPath = pptx.presentationPath;
   opts.includeAppProperties = false;
   opts.includePresentationProperties = false;
   const absorbedChartParts = new Set<string>();
@@ -653,7 +677,7 @@ function parsePresentationFromPptx(pptx: PptxDocument): PresentationOptions {
   };
 
   if (pptx.partRefs.handoutMaster) opts.includeHandoutMaster = true;
-  const parsedSections = parseSlideSections(pptx.presentation, pptx.doc);
+  const parsedSections = parseSlideSections(pptx.presentation, pptx.doc, pptx.presentationPath);
   const sectionBySlidePath = parsedSections.bySlidePath;
   // Package-level fallback context — parts parsed with it carry no rel wiring
   // (their relationship layer is resolved separately around the descriptor).
@@ -1165,7 +1189,7 @@ function parsePresentationFromPptx(pptx: PptxDocument): PresentationOptions {
   // themes beyond the first, charts, notes) may or may not be emitted, so it
   // passes through and the compiler's own output at the same path wins by
   // assembly order. Media is likewise not listed (pinned source paths).
-  const rebuilt: string[] = ["ppt/presentation.xml", "ppt/_rels/presentation.xml.rels"];
+  const rebuilt: string[] = [pptx.presentationPath, partPathToRelsPath(pptx.presentationPath)];
   if (canonicalCommentAuthors) rebuilt.push(pptx.partRefs.commentAuthors!);
   for (const commentPath of absorbedCommentParts) {
     rebuilt.push(commentPath, partPathToRelsPath(commentPath));

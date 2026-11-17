@@ -6356,6 +6356,11 @@
           "readOnly": true,
           "type": "string"
         },
+        "sourcePath": {
+          "description": "Source chartsheet part path — round-trip only.",
+          "readOnly": true,
+          "type": "string"
+        },
         "state": {
           "description": "Visibility",
           "enum": ["visible", "hidden", "veryHidden"],
@@ -30745,6 +30750,11 @@
           ],
           "description": "Calculation chain cells (xl/calcChain.xml) — set on parse; the compiler round-trips them verbatim and rebuilds from formula cells only when absent"
         },
+        "calcChainPath": {
+          "description": "Source calculation-chain part path; default xl/calcChain.xml. Round-trip only.",
+          "readOnly": true,
+          "type": "string"
+        },
         "calcChainXmlSpace": {
           "description": "Source `<calcChain/@xml:space>`; round-trip only.",
           "enum": ["default", "preserve"],
@@ -30837,6 +30847,11 @@
             "$ref": "#/definitions/ConnectionOptions"
           },
           "type": "array"
+        },
+        "connectionsPath": {
+          "description": "Source connections part path; default xl/connections.xml. Round-trip only.",
+          "readOnly": true,
+          "type": "string"
         },
         "contentStatus": {
           "description": "Document status (e.g. \"Draft\"), round-tripped from cp:contentStatus.",
@@ -31051,6 +31066,11 @@
         "metadata": {
           "$ref": "#/definitions/MetadataOptions",
           "description": "Rich metadata block (xl/metadata.xml)"
+        },
+        "metadataPath": {
+          "description": "Source metadata part path; default xl/metadata.xml. Round-trip only.",
+          "readOnly": true,
+          "type": "string"
         },
         "modified": {
           "description": "Last modified timestamp (W3CDTF); same null/undefined semantics as the created field.",
@@ -31333,6 +31353,11 @@
         "xmlMaps": {
           "$ref": "#/definitions/MapInfoOptions",
           "description": "XML mappings (xl/xmlMaps.xml)"
+        },
+        "xmlMapsPath": {
+          "description": "Source XML mappings part path; default xl/xmlMaps.xml. Round-trip only.",
+          "readOnly": true,
+          "type": "string"
         }
       },
       "type": "object"

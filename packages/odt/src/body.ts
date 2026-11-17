@@ -63,6 +63,7 @@ import {
   parseCommonStyles,
 } from "./common-styles";
 import {
+  assertSingleFramePayload,
   isShapeElement,
   parseChartFrame,
   parseGroup,
@@ -143,6 +144,7 @@ export interface ParseContext {
   listDefinitions: AbstractNumbering[];
   outline?: AbstractNumbering;
   binaries: Record<string, Uint8Array>;
+  binaryMediaTypes: Map<string, string>;
   usedBinaryPaths: Set<string>;
   notes: {
     footnotes: NoteEntry[];
@@ -457,6 +459,15 @@ function parseOdtPackage(data: Uint8Array): OdtDocumentOptions {
   const { files, binaries, manifest } = readOcfSync(data, [MIME, TEMPLATE_MIME]);
   const content = readXml(files, "content.xml");
   const body = childNamed(childNamed(content, "office:body"), "office:text");
+  if (!body) {
+    throw new OdtParseError(
+      "content.xml: /office:document-content/office:body/office:text: required document body is missing",
+      "content.xml",
+      "/office:document-content/office:body/office:text",
+      "office:text",
+      "missing-required-element",
+    );
+  }
   const styleContainer = childNamed(content, "office:automatic-styles");
   const styleMap = parseStyles(styleContainer);
   const graphicStyles = parseGraphicStyles(styleContainer);
@@ -488,6 +499,11 @@ function parseOdtPackage(data: Uint8Array): OdtDocumentOptions {
     listDefinitions: parseListNumberings(styleContainer),
     outline: parseOutlineStyle(files),
     binaries,
+    binaryMediaTypes: new Map(
+      manifest.entries.flatMap((entry) =>
+        entry.mediaType ? [[entry.fullPath, entry.mediaType] as const] : [],
+      ),
+    ),
     usedBinaryPaths: new Set(),
     notes: { footnotes: [], endnotes: [], forms: { containers: [] } },
     comments: [],
@@ -981,11 +997,19 @@ export function parseBlocks(
       continue;
     }
     if (element.name === "text:list") {
-      // A typed text:list unwraps to bullet or numbered paragraphs at the
-      // nesting depth, judged by its referenced list style; list-header
-      // content (rare) keeps the generic fall-through below.
       const name = attributeString(element, "text:style-name") ?? "";
       const state = { name, ordered: context.listStyles.get(name) ?? false };
+      for (const header of childrenNamed(element, "text:list-header")) {
+        push(
+          ...parseBlocks(
+            header.elements ?? [],
+            context,
+            listDepth,
+            undefined,
+            `${sourcePath}/text:list/text:list-header`,
+          ),
+        );
+      }
       for (const item of childrenNamed(element, "text:list-item")) {
         push(
           ...parseBlocks(
@@ -1181,7 +1205,8 @@ export function parseBlocks(
         continue;
       }
       const child = parseFrame(element, context);
-      if (child) push(child);
+      if (!child) throw unknownOdtElement(element);
+      push(child);
       continue;
     }
     if (element.name === "draw:a") {
@@ -1258,9 +1283,11 @@ export function parseBlocks(
 }
 
 function parseFrame(element: Element, context: ParseContext): SectionChild | undefined {
-  const children = childNamed(element, "draw:object")
-    ? parseChartFrame(element, context)
-    : parsePictureFrame(element, context);
+  assertSingleFramePayload(element);
+  if (childNamed(element, "draw:object"))
+    return { paragraph: { children: parseChartFrame(element, context) } };
+  if (!childNamed(element, "draw:image")) throw unknownOdtElement(element);
+  const children = parsePictureFrame(element, context);
   if (children.length === 0) return undefined;
   return { paragraph: { children } };
 }

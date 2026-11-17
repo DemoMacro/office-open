@@ -47,6 +47,13 @@ describe("parseOffice", () => {
     expect(parsed.options.sections).toHaveLength(1);
   });
 
+  it("preserves non-ASCII text in string RTF input", async () => {
+    const parsed = await parseOffice("{\\rtf1\\ansi café}");
+    if (parsed.format !== "rtf") throw new Error("Expected an RTF document");
+    expect(JSON.stringify(parsed.options)).toContain("café");
+    expect(JSON.stringify(parsed.options)).not.toContain("cafÃ©");
+  });
+
   it("parses generated ODF packages through format detection", async () => {
     const document = await parseOffice(
       await generateOffice(

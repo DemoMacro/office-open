@@ -1,6 +1,11 @@
 import { CompoundFileReader } from "@office-open/core/cfb";
-import { OOXML_PACKAGE_FORMATS } from "@office-open/core/opc";
-import { unzipSync } from "fflate";
+import {
+  OOXML_PACKAGE_FORMATS,
+  ParsedArchive,
+  resolveRelationshipTarget,
+} from "@office-open/core/opc";
+import type { OoxmlPackageFormat } from "@office-open/core/opc";
+import { parse } from "@office-open/xml";
 
 export type OfficeFormat =
   | "doc"
@@ -39,6 +44,10 @@ const ODF_MIME_TYPES: Record<string, OfficeFormat> = {
   "application/vnd.oasis.opendocument.spreadsheet": "ods",
   "application/vnd.oasis.opendocument.presentation": "odp",
 };
+const CONTENT_TYPES_NAMESPACE = "http://schemas.openxmlformats.org/package/2006/content-types";
+const LEGACY_CONTENT_TYPES_NAMESPACE = "http://schemas.microsoft.com/package/2005/06/content-types";
+const RELATIONSHIPS_NAMESPACE = "http://schemas.openxmlformats.org/package/2006/relationships";
+const LEGACY_RELATIONSHIPS_NAMESPACE = "http://schemas.microsoft.com/package/2005/06/relationships";
 
 export function detectOffice(input: Uint8Array | string): OfficeFormatInfo {
   if (typeof input === "string") {
@@ -124,14 +133,14 @@ function detectCfbFormat(data: Uint8Array): OfficeFormatInfo {
 }
 
 function detectZipFormat(data: Uint8Array): OfficeFormatInfo {
-  let files: Record<string, Uint8Array>;
+  let archive: ParsedArchive;
   try {
-    files = unzipSync(data);
+    archive = new ParsedArchive(data);
   } catch {
     throw new Error("Unable to read the ZIP office container");
   }
 
-  const mimeType = files["mimetype"];
+  const mimeType = archive.getRaw("mimetype");
   if (mimeType) {
     const format = ODF_MIME_TYPES[new TextDecoder().decode(mimeType).trim()];
     if (!format) throw new Error("Unsupported ODF mimetype");
@@ -142,14 +151,52 @@ function detectZipFormat(data: Uint8Array): OfficeFormatInfo {
     };
   }
 
-  const contentTypes = files["[Content_Types].xml"];
+  const contentTypes = archive.getRaw("[Content_Types].xml");
   if (!contentTypes) throw new Error("ZIP office container is missing [Content_Types].xml");
-  const xml = new TextDecoder().decode(contentTypes);
-  const match = Object.entries(OOXML_PACKAGE_FORMATS).find(([, info]) =>
-    xml.includes(info.mainContentType),
+  const rootRelationships = archive.getRaw("_rels/.rels");
+  if (!rootRelationships) throw new Error("OOXML package is missing root relationships");
+  const normalizeNamespaces = {
+    [CONTENT_TYPES_NAMESPACE]: "ct",
+    [LEGACY_CONTENT_TYPES_NAMESPACE]: "ct",
+    [RELATIONSHIPS_NAMESPACE]: "rel",
+    [LEGACY_RELATIONSHIPS_NAMESPACE]: "rel",
+  };
+  const types = parse(new TextDecoder().decode(contentTypes), {
+    normalizeNamespaces,
+  }).elements?.find((element) => element.type === "element");
+  if (types?.name !== "ct:Types") throw new Error("Invalid OOXML content types part");
+  const relationships = parse(new TextDecoder().decode(rootRelationships), {
+    normalizeNamespaces,
+  }).elements?.find((element) => element.type === "element");
+  if (relationships?.name !== "rel:Relationships")
+    throw new Error("Invalid OOXML root relationships part");
+  const mainPartTarget = (relationships.elements ?? []).find((relationship) => {
+    const type = relationship.attributes?.Type;
+    const targetMode = relationship.attributes?.TargetMode;
+    return (
+      relationship.name === "rel:Relationship" &&
+      typeof type === "string" &&
+      type.endsWith("/officeDocument") &&
+      (typeof targetMode !== "string" || targetMode.toLowerCase() !== "external") &&
+      typeof relationship.attributes?.Target === "string"
+    );
+  })?.attributes?.Target;
+  if (typeof mainPartTarget !== "string")
+    throw new Error("OOXML package is missing its officeDocument relationship");
+  const mainPartPath = resolveRelationshipTarget("", mainPartTarget.replaceAll("\\", "/"));
+  const mainContentType = (types.elements ?? []).find((entry) => {
+    const partName = entry.attributes?.PartName;
+    return (
+      entry.name === "ct:Override" &&
+      typeof partName === "string" &&
+      partName.toLowerCase() === `/${mainPartPath}`.toLowerCase()
+    );
+  })?.attributes?.ContentType;
+  const format = (Object.keys(OOXML_PACKAGE_FORMATS) as OoxmlPackageFormat[]).find(
+    (candidate) => OOXML_PACKAGE_FORMATS[candidate].mainContentType === mainContentType,
   );
-  if (!match) throw new Error("Unsupported OOXML package");
-  const [format, info] = match as [OfficeFormat, (typeof match)[1]];
+  if (!format) throw new Error("Unsupported OOXML package");
+  const info = OOXML_PACKAGE_FORMATS[format];
   return {
     format,
     family:

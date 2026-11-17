@@ -151,6 +151,15 @@ describe("xlsx visual table source coordinates", () => {
       paragraph: { children: [{ text: "C3" }] },
     });
   });
+
+  it("rejects sparse tables that would expand beyond the conversion limit", () => {
+    expect(() =>
+      toDocxTable({ rows: [{ cells: [{ reference: "XFD1048576", value: "far" }] }] }),
+    ).toThrow("XLSX visual table exceeds the 100000-cell conversion limit");
+    expect(() =>
+      toPptxTable({ rows: [{ cells: [{ reference: "XFD1048576", value: "far" }] }] }),
+    ).toThrow("XLSX visual table exceeds the 100000-cell conversion limit");
+  });
 });
 
 describe("round-trip docx → pptx → docx", () => {

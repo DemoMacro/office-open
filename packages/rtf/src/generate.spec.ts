@@ -250,6 +250,25 @@ describe("generateDocument RTF projections", () => {
     expect(roundTrip(decoder.decode(generateDocument(options)))).toEqual(options);
   });
 
+  it("round-trips distinct headers and footers for each section", () => {
+    const options: DocumentOptions = {
+      sections: [
+        {
+          headers: { default: [{ paragraph: { children: [{ text: "First header" }] } }] },
+          footers: { default: [{ paragraph: { children: [{ text: "First footer" }] } }] },
+          children: [{ paragraph: { children: [{ text: "First section" }] } }],
+        },
+        {
+          headers: { default: [{ paragraph: { children: [{ text: "Second header" }] } }] },
+          footers: { default: [{ paragraph: { children: [{ text: "Second footer" }] } }] },
+          children: [{ paragraph: { children: [{ text: "Second section" }] } }],
+        },
+      ],
+    };
+
+    expect(roundTrip(decoder.decode(generateDocument(options)))).toEqual(options);
+  });
+
   it("projects paragraph text shorthand with preserved spaces", () => {
     const generated = decoder.decode(
       generateDocument({

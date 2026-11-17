@@ -2,7 +2,11 @@ import { ParsedArchive, strFromU8 } from "@office-open/core";
 import { parse, type Element } from "@office-open/xml";
 
 import { OcfManifestError } from "../errors";
-import { parseManifestOptions } from "./manifest";
+import {
+  parseManifestOptions,
+  type OcfEncryptionDataOptions,
+  type OcfEncryptedKeyOptions,
+} from "./manifest";
 
 export interface OcfEntrySemanticDigest {
   fullPath: string;
@@ -10,6 +14,7 @@ export interface OcfEntrySemanticDigest {
   mediaType?: string;
   preferredViewMode?: string;
   size?: number;
+  encryptionData?: OcfEncryptionDataOptions;
   binaryDigest?: string;
   xmlDigest?: string;
 }
@@ -17,6 +22,7 @@ export interface OcfEntrySemanticDigest {
 export interface OcfSemanticDigest {
   version: string;
   entries: OcfEntrySemanticDigest[];
+  encryptedKeys?: OcfEncryptedKeyOptions[];
 }
 
 export function ocfSemanticDigest(data: Uint8Array): OcfSemanticDigest {
@@ -34,6 +40,7 @@ export function ocfSemanticDigest(data: Uint8Array): OcfSemanticDigest {
   const manifest = parseManifestOptions(strFromU8(manifestXml));
   return {
     version: manifest.version,
+    ...(manifest.encryptedKeys === undefined ? {} : { encryptedKeys: manifest.encryptedKeys }),
     entries: manifest.entries.map((entry) => {
       const bytes = archive[entry.fullPath];
       return {
@@ -44,6 +51,7 @@ export function ocfSemanticDigest(data: Uint8Array): OcfSemanticDigest {
           ? {}
           : { preferredViewMode: entry.preferredViewMode }),
         ...(entry.size === undefined ? {} : { size: entry.size }),
+        ...(entry.encryptionData === undefined ? {} : { encryptionData: entry.encryptionData }),
         ...(bytes === undefined
           ? {}
           : entry.fullPath.endsWith(".xml")
@@ -60,6 +68,8 @@ export function compareOcfSemantic(left: Uint8Array, right: Uint8Array): string[
   const rightDigest = ocfSemanticDigest(right);
   if (leftDigest.version !== rightDigest.version)
     differences.push(`manifest.version: ${leftDigest.version} != ${rightDigest.version}`);
+  if (JSON.stringify(leftDigest.encryptedKeys) !== JSON.stringify(rightDigest.encryptedKeys))
+    differences.push("manifest.encryptedKeys differ");
   const length = Math.max(leftDigest.entries.length, rightDigest.entries.length);
   for (let index = 0; index < length; index += 1) {
     const leftEntry = leftDigest.entries[index];
@@ -76,11 +86,14 @@ export function compareOcfSemantic(left: Uint8Array, right: Uint8Array): string[
       "mediaType",
       "preferredViewMode",
       "size",
+      "encryptionData",
       "binaryDigest",
       "xmlDigest",
     ] as const) {
-      if (leftEntry[key] !== rightEntry[key])
-        differences.push(`entry[${index}].${key}: ${leftEntry[key]} != ${rightEntry[key]}`);
+      const leftValue = JSON.stringify(leftEntry[key]);
+      const rightValue = JSON.stringify(rightEntry[key]);
+      if (leftValue !== rightValue)
+        differences.push(`entry[${index}].${key}: ${leftValue} != ${rightValue}`);
     }
   }
   return differences;
@@ -100,9 +113,11 @@ function elementDigest(element: Element | undefined): string {
     .join(";");
   const children = (element.elements ?? [])
     .filter((child) => child.type !== "comment")
-    .map((child) =>
-      child.type === "element" ? elementDigest(child) : String(child.text ?? "").trim(),
-    )
+    .map((child) => {
+      if (child.type === "element") return elementDigest(child);
+      if (child.type === "cdata") return String(child.cdata ?? "");
+      return String(child.text ?? "");
+    })
     .filter(Boolean)
     .join("|");
   return `<${element.name ?? ""} ${attributes}>${children}`;

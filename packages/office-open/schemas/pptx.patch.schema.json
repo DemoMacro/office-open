@@ -29,6 +29,7 @@
     "PatchField<PresentationOptions>": {
       "description": "A canonical field that accepts patch commands.",
       "enum": [
+        "presentationPath",
         "size",
         "slideSizeType",
         "notesWidth",
@@ -162,7 +163,7 @@
           "$ref": "pptx.schema.json#/definitions/CustomerDataOptions"
         },
         {
-          "$ref": "#/definitions/PresentationPatchValue/anyOf/33/anyOf/0"
+          "$ref": "#/definitions/PresentationPatchValue/anyOf/34/anyOf/0"
         },
         {
           "$ref": "pptx.schema.json#/definitions/AppPropertiesOptions"
@@ -425,6 +426,11 @@
             },
             "value": {
               "anyOf": [
+                {
+                  "description": "Source path of the primary presentation part; round-trip only.",
+                  "readOnly": true,
+                  "type": "string"
+                },
                 {
                   "$ref": "pptx.schema.json#/definitions/SlideSize"
                 },
@@ -931,6 +937,18 @@
     "PresentationPatchValue": {
       "anyOf": [
         {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Source path of the primary presentation part; round-trip only.",
+          "readOnly": true
+        },
+        {
           "$ref": "pptx.schema.json#/definitions/SlideSize"
         },
         {
@@ -1305,7 +1323,7 @@
           "anyOf": [
             {
               "items": {
-                "$ref": "#/definitions/PresentationPatchCommand/anyOf/1/properties/value/anyOf/43/items"
+                "$ref": "#/definitions/PresentationPatchCommand/anyOf/1/properties/value/anyOf/44/items"
               },
               "type": "array"
             },
@@ -1646,7 +1664,7 @@
           "anyOf": [
             {
               "items": {
-                "$ref": "#/definitions/PresentationPatchCommand/anyOf/1/properties/value/anyOf/71/items"
+                "$ref": "#/definitions/PresentationPatchCommand/anyOf/1/properties/value/anyOf/72/items"
               },
               "type": "array"
             },

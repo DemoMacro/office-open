@@ -14,6 +14,7 @@ import {
   readBiff5String,
   readBiff8String,
   readShortBiff8String,
+  richTextValue,
 } from "./biff";
 import {
   cachedFormulaResult,
@@ -470,16 +471,22 @@ export function parseWorksheetStream(
         const row = view.getUint16(0, true);
         const column = view.getUint16(2, true);
         const style = view.getUint16(4, true);
-        let text: { value: string; offset: number };
+        let text: string;
+        let richRuns: ReturnType<typeof readBiff8String>["richRuns"];
         try {
-          text =
-            state.version === 8
-              ? readBiff8String(record.body, 6)
-              : readBiff35String(record.body, 6);
+          if (state.version === 8) {
+            const decoded = readBiff8String(record.body, 6);
+            text = decoded.value;
+            richRuns = decoded.richRuns;
+          } else {
+            text = readBiff35String(record.body, 6).value;
+          }
         } catch {
           throw new XlsParseError("Invalid legacy XLS file: truncated label cell");
         }
-        ensureRow(sheet, row).cells.push(makeCell(row, column, style, text.value, state));
+        ensureRow(sheet, row).cells.push(
+          makeCell(row, column, style, richTextValue(text, richRuns, state.fonts), state),
+        );
         break;
       }
       case RecordCode.Biff2Label: {
@@ -512,13 +519,21 @@ export function parseWorksheetStream(
         const row = view.getUint16(0, true);
         const column = view.getUint16(2, true);
         const style = view.getUint16(4, true);
-        let text: { value: string; offset: number };
+        let text: ReturnType<typeof readBiff8String>;
         try {
           text = readBiff8String(record.body, 6);
         } catch {
           throw new XlsParseError("Invalid legacy XLS file: truncated rich label cell");
         }
-        ensureRow(sheet, row).cells.push(makeCell(row, column, style, text.value, state));
+        ensureRow(sheet, row).cells.push(
+          makeCell(
+            row,
+            column,
+            style,
+            richTextValue(text.value, text.richRuns, state.fonts),
+            state,
+          ),
+        );
         break;
       }
       case RecordCode.LabelSst: {
@@ -766,14 +781,31 @@ export function parseWorksheetStream(
         break;
       }
       case RecordCode.MergedCells: {
+        if (record.body.byteLength < 2) {
+          throw new XlsParseError("Invalid legacy XLS file: truncated MERGEDCELLS count", {
+            part: "stream",
+            path: "worksheet",
+            recordType: record.code,
+            offset: record.start,
+            reason: "truncated-merged-cell-count",
+          });
+        }
         const view = new DataView(
           record.body.buffer,
           record.body.byteOffset,
           record.body.byteLength,
         );
-        const available =
-          record.body.byteLength < 2 ? 0 : Math.floor((record.body.byteLength - 2) / 8);
-        const count = record.body.byteLength < 2 ? 0 : Math.min(view.getUint16(0, true), available);
+        const count = view.getUint16(0, true);
+        const available = Math.floor((record.body.byteLength - 2) / 8);
+        if (count !== available) {
+          throw new XlsParseError("Invalid legacy XLS file: truncated MERGEDCELLS ranges", {
+            part: "stream",
+            path: "worksheet",
+            recordType: record.code,
+            offset: record.start,
+            reason: "truncated-merged-cell-ranges",
+          });
+        }
         worksheetExtras.mergeCells = Array.from({ length: count }, (_, index) => {
           const offset = 2 + index * 8;
           const firstRow = view.getUint16(offset, true);

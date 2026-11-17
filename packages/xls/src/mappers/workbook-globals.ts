@@ -3,6 +3,7 @@ import type {
   ExternalLinkOptions,
   FontOptions,
   HyperlinkOptions,
+  RichTextOptions,
 } from "@office-open/xlsx";
 
 import { XlsParseError } from "../errors";
@@ -23,6 +24,7 @@ import {
   detectBiffVersion,
   encodingForCodepage,
   readBiff5String,
+  richTextValue,
   readNoCchBiff8String,
   readNoCchBiff5String,
   readShortBiff8String,
@@ -35,7 +37,7 @@ export function readWorkbookGlobals(stream: Uint8Array): WorkbookState {
   if (detected.version <= 4) return readLegacyWorkbookGlobals(stream, detected);
 
   const workbookVersion = detected.version as 5 | 8;
-  const sharedStrings: string[] = [];
+  const sharedStrings: (string | RichTextOptions)[] = [];
   const sheets: BoundSheet[] = [];
   const fonts: FontOptions[] = [];
   const numberFormats = new Map<number, string>();
@@ -90,6 +92,7 @@ export function readWorkbookGlobals(stream: Uint8Array): WorkbookState {
           sharedStringParts,
           workbookVersion === 8,
           encodingForCodepage(codepage),
+          fonts,
         ),
       );
       sharedStringParts = undefined;
@@ -251,6 +254,7 @@ export function readWorkbookGlobals(stream: Uint8Array): WorkbookState {
         sharedStringParts,
         workbookVersion === 8,
         encodingForCodepage(codepage),
+        fonts,
       ),
     );
 
@@ -462,19 +466,10 @@ export function parseSupbook(record: BiffRecord, encoding: string): Supbook {
       sheetNames.push(value.value);
       target.offset = value.offset;
     } catch (error) {
-      if (sheetNames.length === 0)
-        throw new XlsParseError("Invalid legacy XLS file: truncated SUPBOOK sheet name", {
-          ...biffRecordContext(record, "truncated-supbook-sheet-name"),
-          cause: error,
-        });
-      console.warn(
-        `xls parse diagnostic: truncated SUPBOOK sheet list (${JSON.stringify({
-          ...biffRecordContext(record, "truncated-sheet-list"),
-          expectedSheetCount: sheetCount,
-          parsedSheetCount: sheetNames.length,
-        })})`,
-      );
-      break;
+      throw new XlsParseError("Invalid legacy XLS file: truncated SUPBOOK sheet name", {
+        ...biffRecordContext(record, "truncated-supbook-sheet-name"),
+        cause: error,
+      });
     }
   }
   if (target.value.includes("|")) return { kind: "dde", target: target.value, sheetNames };
@@ -719,11 +714,12 @@ export function parseSharedStrings(
   parts: readonly Uint8Array[],
   isBiff8: boolean,
   encoding = "windows-1252",
-): string[] {
+  fonts: readonly FontOptions[] = [],
+): (string | RichTextOptions)[] {
   const first = parts[0]!;
   const firstView = new DataView(first.buffer, first.byteOffset, first.byteLength);
   const stringCount = firstView.getUint32(4, true);
-  const strings: string[] = [];
+  const strings: (string | RichTextOptions)[] = [];
   let partIndex = 0;
   let offset = 8;
   let highByte = false;
@@ -753,7 +749,7 @@ export function parseSharedStrings(
   for (let index = 0; index < stringCount; index++) {
     const currentPart = parts[partIndex];
     if (!currentPart || (offset >= currentPart.byteLength && partIndex + 1 >= parts.length)) {
-      break;
+      throw new XlsParseError("Invalid legacy XLS file: truncated shared string table");
     }
     const characterCount = takeUint16();
     const flags = takeByte();
@@ -768,10 +764,15 @@ export function parseSharedStrings(
       characterBytes.push(firstByte);
       if (highByte) characterBytes.push(secondByte);
     }
-    skipBytes(richRunCount * 4 + extensionLength);
-    strings.push(
-      new TextDecoder(highByte ? "utf-16le" : encoding).decode(new Uint8Array(characterBytes)),
+    const value = new TextDecoder(highByte ? "utf-16le" : encoding).decode(
+      new Uint8Array(characterBytes),
     );
+    const richRuns = Array.from({ length: richRunCount }, () => ({
+      characterIndex: takeUint16(),
+      fontIndex: takeUint16(),
+    }));
+    skipBytes(extensionLength);
+    strings.push(richTextValue(value, richRuns, fonts));
   }
   return strings;
 }

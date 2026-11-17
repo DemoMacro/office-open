@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import { buildSmallContainer } from "./cfb/test-container";
 import { XlsParseError, parseWorkbook } from "./index";
+import { readBiff8String } from "./mappers/biff";
 import { parseHyperlink } from "./mappers/workbook-globals";
 
 const BIFF5_TOKEN = 0x0500;
@@ -43,6 +44,27 @@ function biff8String(value: string): Uint8Array {
   characters.forEach((character, index) =>
     view.setUint16(3 + index * 2, character.charCodeAt(0), true),
   );
+  return bytes;
+}
+
+function richBiff8String(
+  value: string,
+  runs: readonly { characterIndex: number; fontIndex: number }[],
+): Uint8Array {
+  const characters = Array.from(value);
+  const bytes = new Uint8Array(5 + characters.length * 2 + runs.length * 4);
+  const view = new DataView(bytes.buffer);
+  view.setUint16(0, characters.length, true);
+  bytes[2] = 0x09;
+  view.setUint16(3, runs.length, true);
+  characters.forEach((character, index) =>
+    view.setUint16(5 + index * 2, character.charCodeAt(0), true),
+  );
+  runs.forEach(({ characterIndex, fontIndex }, index) => {
+    const offset = 5 + characters.length * 2 + index * 4;
+    view.setUint16(offset, characterIndex, true);
+    view.setUint16(offset + 2, fontIndex, true);
+  });
   return bytes;
 }
 
@@ -154,8 +176,19 @@ function labelSstCell(row: number, column: number, index: number): Uint8Array {
   return record(0x00fd, body);
 }
 
-function richLabelCell(row: number, column: number, value: string): Uint8Array {
-  return record(0x00d6, concat([uint16Body([row, column, 3]), biff8String(value)]));
+function richLabelCell(
+  row: number,
+  column: number,
+  value: string,
+  runs?: readonly { characterIndex: number; fontIndex: number }[],
+): Uint8Array {
+  return record(
+    0x00d6,
+    concat([
+      uint16Body([row, column, 3]),
+      runs ? richBiff8String(value, runs) : biff8String(value),
+    ]),
+  );
 }
 
 function rkCell(row: number, column: number, value: number, style = 2): Uint8Array {
@@ -711,6 +744,22 @@ function cell(worksheet: WorksheetOptions, reference: string): CellOptions {
 }
 
 describe("parseWorkbook", () => {
+  it("reads BIFF8 extension length before string content", () => {
+    const bytes = new Uint8Array([1, 0, 5, 2, 0, 0, 0, 0x41, 0, 0x58, 0x59]);
+
+    expect(readBiff8String(bytes)).toEqual({ value: "A", offset: bytes.byteLength });
+  });
+
+  it("reports truncated BIFF8 extension data as a parse error", () => {
+    const bytes = new Uint8Array([1, 0, 5, 2, 0, 0, 0, 0x41, 0]);
+
+    expect(() => readBiff8String(bytes)).toThrow(XlsParseError);
+  });
+
+  it("reports a truncated BIFF8 rich-run header as a parse error", () => {
+    expect(() => readBiff8String(new Uint8Array([1, 0, 8]))).toThrow(XlsParseError);
+  });
+
   it("reports structured low-level parse failures", () => {
     const malformedRecord = (code: number, declaredLength: number): Uint8Array => {
       const bytes = new Uint8Array(4);
@@ -934,14 +983,66 @@ describe("parseWorkbook", () => {
   });
 
   it("reads BIFF8 rich label cells", () => {
-    const data = workbook(8, [{ name: "Sheet", cells: [richLabelCell(0, 0, "rich")] }]);
+    const data = workbook(
+      8,
+      [
+        {
+          name: "Sheet",
+          cells: [
+            richLabelCell(0, 0, "rich", [
+              { characterIndex: 0, fontIndex: 0 },
+              { characterIndex: 2, fontIndex: 1 },
+            ]),
+          ],
+        },
+      ],
+      [],
+      [],
+      [fontRecord("Arial"), fontRecord("Courier New")],
+    );
     const options = parseWorkbook(xls(data));
     const worksheet = options.worksheets?.[0];
     if (!worksheet) throw new TypeError("Expected a worksheet");
     expect(options.cellXfs).toHaveLength(4);
     const richCell = cell(worksheet, "A1");
-    expect(richCell.value).toBe("rich");
+    expect(richCell.value).toMatchObject({
+      runs: [
+        { text: "ri", properties: { font: "Arial", bold: true } },
+        { text: "ch", properties: { font: "Courier New", bold: true } },
+      ],
+    });
     expect(richCell.style).toBe(3);
+  });
+
+  it("preserves rich runs in BIFF8 shared strings", () => {
+    const header = new Uint8Array(8);
+    const headerView = new DataView(header.buffer);
+    headerView.setUint32(0, 1, true);
+    headerView.setUint32(4, 1, true);
+    const richSst = record(
+      0x00fc,
+      concat([
+        header,
+        richBiff8String("rich", [
+          { characterIndex: 0, fontIndex: 0 },
+          { characterIndex: 2, fontIndex: 1 },
+        ]),
+      ]),
+    );
+    const data = workbook(
+      8,
+      [{ name: "Sheet", cells: [labelSstCell(0, 0, 0)] }],
+      [],
+      [richSst],
+      [fontRecord("Arial"), fontRecord("Courier New")],
+    );
+    const value = cell(parseWorkbook(xls(data)).worksheets![0]!, "A1").value;
+    expect(value).toMatchObject({
+      runs: [
+        { text: "ri", properties: { font: "Arial" } },
+        { text: "ch", properties: { font: "Courier New" } },
+      ],
+    });
   });
 
   it("reads row layout semantics", () => {
@@ -1015,15 +1116,14 @@ describe("parseWorkbook", () => {
     expect(worksheets[0]!.rows?.map((row) => row.rowNumber)).toEqual([1, 2]);
   });
 
-  it("stops a stale shared-string count at the physical table end", () => {
+  it("rejects a stale shared-string count beyond the physical table end", () => {
     const header = new Uint8Array(8);
     const headerView = new DataView(header.buffer);
     headerView.setUint32(0, 2, true);
     headerView.setUint32(4, 2, true);
     const staleSst = record(0x00fc, concat([header, biff8String("only")]));
     const data = workbook(8, [{ name: "Sheet", cells: [labelSstCell(0, 0, 0)] }], [], [staleSst]);
-    const worksheets = parseWorkbook(xls(data)).worksheets ?? [];
-    expect(cell(worksheets[0]!, "A1").value).toBe("only");
+    expect(() => parseWorkbook(xls(data))).toThrow("truncated shared string table");
   });
 
   it("ignores nested substreams before the worksheet EOF", () => {
@@ -1220,6 +1320,12 @@ describe("parseWorkbook", () => {
     ]);
   });
 
+  it("rejects MERGEDCELLS records whose declared range count is truncated", () => {
+    const malformed = record(0x00e5, uint16Body([2, 0, 0, 0, 1, 0]));
+    const data = workbook(8, [{ name: "Sheet", cells: [malformed] }], [], [], []);
+    expect(() => parseWorkbook(xls(data))).toThrow(/truncated MERGEDCELLS ranges/);
+  });
+
   it("parses NAME defined names", () => {
     const data = workbook(
       8,
@@ -1297,42 +1403,15 @@ describe("parseWorkbook", () => {
     });
   });
 
-  it("tolerates truncated SUPBOOK sheet lists", () => {
-    const warnings: string[] = [];
-    const warn = console.warn;
-    console.warn = (message: string) => warnings.push(message);
-    try {
-      const data = workbook(
-        8,
-        [{ name: "Sheet", cells: [] }],
-        [],
-        [],
-        [partialSupbookRecord("external.xlsx", "Data"), externSheetRecord()],
-      );
-      const parsed = parseWorkbook(xls(data));
-      expect(parsed.externalLinks?.[0]?.externalBook).toEqual({
-        target: "external.xlsx",
-        sheetNames: ["Data"],
-      });
-      expect(warnings.some((message) => message.includes("truncated-sheet-list"))).toBe(true);
-    } finally {
-      console.warn = warn;
-    }
-
-    const missingReference = workbook(
+  it("rejects truncated SUPBOOK sheet lists", () => {
+    const data = workbook(
       8,
       [{ name: "Sheet", cells: [] }],
       [],
       [],
-      [
-        partialSupbookRecord("external.xlsx", "Data"),
-        record(0x0017, uint16Body([1, 0, 1, 1])),
-        nameRecord("Link", externalReferenceToken(1)),
-      ],
+      [partialSupbookRecord("external.xlsx", "Data"), externSheetRecord()],
     );
-    expect(parseWorkbook(xls(missingReference)).definedNames).toEqual([
-      expect.objectContaining({ name: "Link", value: "#REF!!$A$1" }),
-    ]);
+    expect(() => parseWorkbook(xls(data))).toThrow(/truncated SUPBOOK sheet name/);
   });
 
   it("tolerates unknown records but rejects malformed auxiliary structures", () => {

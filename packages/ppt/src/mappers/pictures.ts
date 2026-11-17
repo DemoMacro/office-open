@@ -26,17 +26,20 @@ function readPictureRecords(view: DataView): readonly RecordNode[] {
 function readPictureRecordRange(view: DataView, offset: number, end: number): RecordNode[] {
   const records: RecordNode[] = [];
   let cursor = offset;
-  while (cursor + RECORD_BODY_OFFSET <= end) {
+  while (cursor < end) {
     if (isZeroPadding(view, cursor, end)) break;
-    let header: RecordHeader;
-    try {
-      header = readRecordHeader(view, cursor, end);
-    } catch (error) {
-      if (!(error instanceof PptParseError)) throw error;
-      break;
-    }
+    if (cursor + RECORD_BODY_OFFSET > end)
+      throw new PptParseError("Corrupt legacy PowerPoint record: truncated picture record header", {
+        part: "stream",
+        offset: cursor,
+        length: RECORD_BODY_OFFSET,
+        byteRange: [cursor, cursor + RECORD_BODY_OFFSET],
+        reason: "truncated-header",
+      });
+    const header = readRecordHeader(view, cursor, end);
     records.push({ ...header, children: [] });
-    if (header.end <= cursor) break;
+    if (header.end <= cursor)
+      throw new PptParseError("Corrupt legacy PowerPoint file: invalid picture record length");
     cursor = header.end;
   }
   return records;

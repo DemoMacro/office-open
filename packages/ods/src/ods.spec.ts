@@ -11,6 +11,19 @@ import {
 } from "./index";
 
 describe("ODS codec", () => {
+  it("rejects a content document without its required spreadsheet body", async () => {
+    const source = generateOcf("application/vnd.oasis.opendocument.spreadsheet", {
+      "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body/></office:document-content>`,
+    });
+
+    await expect(parseWorkbook(source)).rejects.toMatchObject({
+      name: "OdsParseError",
+      part: "content.xml",
+      elementName: "office:spreadsheet",
+      reason: "missing-required-element",
+    });
+  });
+
   it("round-trips a workbook through canonical WorkbookOptions", async () => {
     const parsed = await parseWorkbook(
       await generateWorkbook({ worksheets: [{ rows: [{ cells: [{ value: "ODS" }] }] }] }),

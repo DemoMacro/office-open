@@ -105,7 +105,7 @@ export const pptxTool: Tool<PresentationOptions, GeneratedDocumentOutput> = tool
     "The input is the presentation options directly — must include a 'slides' array. " +
     "Conventions: " +
     "shape x/y/width/height take UniversalMeasure strings ('2cm', '1in', '96px') or raw EMU numbers (914400 = 1 inch); " +
-    "fills are hex color strings or fill objects ('4472C4' or { type: 'solidFill', color: '4472C4' }); " +
+    "fills are hex color strings or fill objects ('4472C4' or { type: 'solid', color: '4472C4' }); " +
     "colors are hex WITHOUT '#': 'FF0000', not '#FF0000'. " +
     SKELETON_GUIDANCE,
   inputSchema: jsonSchema<PresentationOptions>(getSkeletonSchema("pptx")),

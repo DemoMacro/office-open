@@ -1,7 +1,7 @@
 import { parse, type Element } from "@office-open/xml";
 
 import { OcfManifestError } from "../errors";
-import { textOf, xmlElement } from "../runtime/xml";
+import { escapeText, textOf, xmlElement } from "../runtime/xml";
 
 export const MANIFEST_ELEMENTS = [
   "manifest:manifest",
@@ -102,7 +102,6 @@ export interface OcfManifestFileEntryOptions {
   /** Size in bytes. */
   size?: number;
   encryptionData?: OcfEncryptionDataOptions;
-  foreignChildrenXml?: string[];
 }
 
 export interface OcfManifestOptions {
@@ -112,7 +111,6 @@ export interface OcfManifestOptions {
   entries: OcfManifestFileEntryOptions[];
   /** Encrypted package keys, in source order. */
   encryptedKeys?: OcfEncryptedKeyOptions[];
-  foreignChildrenXml?: string[];
 }
 
 export const MANIFEST_SCHEMA_ELEMENTS = MANIFEST_ELEMENTS.map((name) => ({
@@ -121,49 +119,78 @@ export const MANIFEST_SCHEMA_ELEMENTS = MANIFEST_ELEMENTS.map((name) => ({
 }));
 
 export function parseManifestOptions(xml: string): OcfManifestOptions {
-  const root = parse(xml, {
+  const document = parse(xml, {
     ignoreDeclaration: true,
     ignoreDoctype: true,
     normalizeNamespaces: {
       "urn:oasis:names:tc:opendocument:xmlns:manifest:1.0": "manifest",
       "urn:oasis:names:tc:opendocument:xmlns:manifest:1.3": "manifest",
     },
-  }).elements?.find((element) => element.type === "element");
+  });
+  const elements = document.elements ?? [];
+  const roots = elements.filter((element) => element.type === "element");
+  if (
+    roots.length !== 1 ||
+    elements.some(
+      (element) =>
+        element.type !== "element" &&
+        element.type !== "comment" &&
+        element.type !== "instruction" &&
+        !(element.type === "text" && String(element.text ?? "").trim().length === 0),
+    )
+  ) {
+    throw new OcfManifestError("Invalid ODF manifest: expected exactly one root element");
+  }
+  const root = roots[0];
   if (root?.name !== "manifest:manifest") throw new OcfManifestError("Invalid ODF manifest");
   rejectUnknownManifestAttributes(root);
   return parseManifestModel(root);
 }
 
-function rejectUnknownManifestAttributes(element: Element): void {
+function rejectUnknownManifestAttributes(element: Element, allowForeignAttributes = false): void {
   const name = element.name ?? "";
   const allowed = MANIFEST_ELEMENT_ATTRIBUTES[name] ?? [];
   for (const attribute of Object.keys(element.attributes ?? {})) {
-    if (attribute.startsWith("manifest:") && !allowed.includes(attribute)) {
-      throw new OcfManifestError(`Unknown manifest attribute @${attribute}: ${name}`);
-    }
+    if (
+      attribute === "xmlns" ||
+      attribute.startsWith("xmlns:") ||
+      allowed.includes(attribute) ||
+      (allowForeignAttributes && !name.startsWith("manifest:"))
+    )
+      continue;
+    throw new OcfManifestError(`Unknown manifest attribute @${attribute}: ${name}`);
   }
   for (const child of element.elements ?? []) {
-    if (child.type === "element") rejectUnknownManifestAttributes(child);
+    if (child.type === "element")
+      rejectUnknownManifestAttributes(
+        child,
+        allowForeignAttributes || name === "manifest:algorithm",
+      );
   }
 }
 
 function parseManifestModel(root: Element): OcfManifestOptions {
+  const namespaces = namespaceDeclarations(root.attributes);
   const children = (root.elements ?? []).filter(
     (element) => element.type === "element",
   ) as Element[];
+  if (
+    (root.elements ?? []).some(
+      (element) => element.type === "text" && String(element.text ?? "").trim().length > 0,
+    )
+  ) {
+    throw new OcfManifestError("Invalid ODF manifest: unexpected text in manifest root");
+  }
   const encryptedKeys: OcfEncryptedKeyOptions[] = [];
   const entries: OcfManifestFileEntryOptions[] = [];
-  const foreignChildren: Element[] = [];
   let seenFileEntry = false;
   for (const child of children) {
     if (child.name === "manifest:file-entry") {
       seenFileEntry = true;
-      entries.push(parseFileEntry(child));
+      entries.push(parseFileEntry(child, namespaces));
     } else if (child.name === "manifest:encrypted-key") {
       if (seenFileEntry) throw unknownManifestChild(child);
       encryptedKeys.push(parseEncryptedKey(child));
-    } else if (!child.name?.startsWith("manifest:")) {
-      foreignChildren.push(child);
     } else {
       throw unknownManifestChild(child);
     }
@@ -176,26 +203,27 @@ function parseManifestModel(root: Element): OcfManifestOptions {
         : requiredManifestAttribute(root, "version", "/manifest:manifest"),
     entries,
     ...(encryptedKeys.length > 0 ? { encryptedKeys } : {}),
-    ...(foreignChildren.length > 0 ? { foreignChildrenXml: foreignChildren.map(foreignXml) } : {}),
   };
 }
 
-function parseFileEntry(element: Element): OcfManifestFileEntryOptions {
+function parseFileEntry(
+  element: Element,
+  namespaces: Record<string, string | number | undefined>,
+): OcfManifestFileEntryOptions {
+  const fileEntryNamespaces = namespaceDeclarations(element.attributes, namespaces);
   const path = "/manifest:manifest/manifest:file-entry";
   for (const child of element.elements ?? []) {
     if (child.type === "element" && child.name !== "manifest:encryption-data")
       throw unknownManifestChild(child);
   }
   const size = requiredOrUndefined(element, "size", path);
-  const encryption = (element.elements ?? []).find(
-    (child) => child.type === "element" && child.name === "manifest:encryption-data",
-  ) as Element | undefined;
-  const foreignChildren = (element.elements ?? []).filter(
-    (child) =>
-      child.type === "element" &&
-      child.name !== "manifest:encryption-data" &&
-      !child.name?.startsWith("manifest:"),
+  const encryptions = (element.elements ?? []).filter(
+    (child): child is Element =>
+      child.type === "element" && child.name === "manifest:encryption-data",
   );
+  if (encryptions.length > 1)
+    throw new OcfManifestError("Duplicate manifest encryption-data: " + path);
+  const encryption = encryptions[0];
   return {
     fullPath: requiredManifestAttribute(element, "full-path", path),
     ...(requiredOrUndefined(element, "version", path)
@@ -210,31 +238,61 @@ function parseFileEntry(element: Element): OcfManifestFileEntryOptions {
         }
       : {}),
     ...(size === undefined ? {} : { size: numberAttribute(size, `${path}/@manifest:size`) }),
-    ...(encryption ? { encryptionData: parseEncryptionData(encryption) } : {}),
-    ...(foreignChildren.length > 0 ? { foreignChildrenXml: foreignChildren.map(foreignXml) } : {}),
+    ...(encryption ? { encryptionData: parseEncryptionData(encryption, fileEntryNamespaces) } : {}),
   };
 }
 
-function parseEncryptionData(element: Element): OcfEncryptionDataOptions {
+function namespaceDeclarations(
+  attributes: Element["attributes"],
+  inherited: Record<string, string | number | undefined> = {},
+): Record<string, string | number | undefined> {
+  const declarations = { ...inherited };
+  for (const [name, value] of Object.entries(attributes ?? {})) {
+    if (name === "xmlns" || name.startsWith("xmlns:")) declarations[name] = value;
+  }
+  return declarations;
+}
+
+function parseEncryptionData(
+  element: Element,
+  namespaces: Record<string, string | number | undefined>,
+): OcfEncryptionDataOptions {
+  const encryptionNamespaces = namespaceDeclarations(element.attributes, namespaces);
   const path = "/manifest:manifest/manifest:file-entry/manifest:encryption-data";
   const children = (element.elements ?? []).filter(
     (child) => child.type === "element",
   ) as Element[];
-  const algorithm = children.find((child) => child.name === "manifest:algorithm");
-  const keyDerivation = children.find((child) => child.name === "manifest:key-derivation");
-  const startKey = children.find((child) => child.name === "manifest:start-key-generation");
-  if (!algorithm || !keyDerivation)
-    throw new OcfManifestError(`Invalid manifest encryption-data: ${path}`);
+  const algorithms = children.filter((child) => child.name === "manifest:algorithm");
+  const keyDerivations = children.filter((child) => child.name === "manifest:key-derivation");
+  const startKeys = children.filter((child) => child.name === "manifest:start-key-generation");
+  const expectedNames = [
+    "manifest:algorithm",
+    ...(startKeys.length === 0 ? [] : ["manifest:start-key-generation"]),
+    "manifest:key-derivation",
+  ];
+  if (
+    algorithms.length !== 1 ||
+    keyDerivations.length !== 1 ||
+    startKeys.length > 1 ||
+    children.length !== expectedNames.length ||
+    children.some((child, index) => child.name !== expectedNames[index])
+  )
+    throw new OcfManifestError("Invalid manifest encryption-data: " + path);
+  const algorithm = algorithms[0]!;
   return {
     checksumType: requiredManifestAttribute(element, "checksum-type", path),
     checksum: requiredManifestAttribute(element, "checksum", path),
-    algorithm: parseAlgorithm(algorithm),
-    ...(startKey ? { startKeyGeneration: parseStartKeyGeneration(startKey) } : {}),
-    keyDerivation: parseKeyDerivation(keyDerivation),
+    algorithm: parseAlgorithm(algorithm, encryptionNamespaces),
+    ...(startKeys[0] ? { startKeyGeneration: parseStartKeyGeneration(startKeys[0]) } : {}),
+    keyDerivation: parseKeyDerivation(keyDerivations[0]!),
   };
 }
 
-function parseAlgorithm(element: Element): OcfAlgorithmOptions {
+function parseAlgorithm(
+  element: Element,
+  namespaces: Record<string, string | number | undefined>,
+): OcfAlgorithmOptions {
+  const algorithmNamespaces = namespaceDeclarations(element.attributes, namespaces);
   const path = "/manifest:manifest/manifest:file-entry/manifest:encryption-data/manifest:algorithm";
   return {
     name: requiredManifestAttribute(element, "algorithm-name", path),
@@ -243,7 +301,7 @@ function parseAlgorithm(element: Element): OcfAlgorithmOptions {
       ? {
           foreignContentXml: (element.elements ?? [])
             .filter((child): child is Element => child.type === "element")
-            .map(foreignXml)
+            .map((child) => foreignXml(child, algorithmNamespaces))
             .join(""),
         }
       : {}),
@@ -287,26 +345,51 @@ function parseKeyDerivation(element: Element): OcfKeyDerivationOptions {
 
 function parseEncryptedKey(element: Element): OcfEncryptedKeyOptions {
   const path = "/manifest:manifest/manifest:encrypted-key";
-  const method = findDescendant(element, "manifest:encryption-method");
-  const keyId = findDescendant(element, "manifest:PGPKeyID");
-  const keyPacket = findDescendant(element, "manifest:PGPKeyPacket");
-  const cipherValue = findDescendant(element, "manifest:CipherValue");
+  const children = childElements(element);
+  const method = optionalChild(children, "manifest:encryption-method", path);
+  const keyInfo = requiredChild(children, "manifest:keyinfo", path);
+  const keyInfoChildren = childElements(keyInfo);
+  const pgpData = requiredChild(keyInfoChildren, "manifest:PGPData", path);
+  const pgpChildren = childElements(pgpData);
+  const keyId = requiredChild(pgpChildren, "manifest:PGPKeyID", path);
+  const keyPacket = optionalChild(pgpChildren, "manifest:PGPKeyPacket", path);
+  const cipherData = requiredChild(children, "manifest:CipherData", path);
+  const cipherValue = requiredChild(childElements(cipherData), "manifest:CipherValue", path);
+  if (
+    children.length !== (method ? 3 : 2) ||
+    keyInfoChildren.length !== 1 ||
+    pgpChildren.length !== (keyPacket ? 2 : 1) ||
+    childElements(cipherData).length !== 1
+  )
+    throw new OcfManifestError(`Invalid manifest encrypted-key structure: ${path}`);
   return {
     ...(method ? { algorithm: requiredManifestAttribute(method, "PGPAlgorithm", path) } : {}),
-    ...(keyId ? { keyId: textOf(keyId) } : {}),
+    keyId: textOf(keyId),
     ...(keyPacket ? { keyPacket: textOf(keyPacket) } : {}),
-    ...(cipherValue ? { cipherValue: textOf(cipherValue) } : {}),
+    cipherValue: textOf(cipherValue),
   };
 }
 
-function findDescendant(element: Element, name: string): Element | undefined {
-  for (const child of element.elements ?? []) {
-    if (child.type !== "element") continue;
-    if (child.name === name) return child;
-    const descendant = findDescendant(child, name);
-    if (descendant) return descendant;
-  }
-  return undefined;
+function childElements(element: Element): Element[] {
+  return (element.elements ?? []).filter((child): child is Element => child.type === "element");
+}
+
+function requiredChild(children: readonly Element[], name: string, path: string): Element {
+  const matches = children.filter((child) => child.name === name);
+  if (matches.length !== 1)
+    throw new OcfManifestError(`Invalid manifest encrypted-key structure: ${path}`);
+  return matches[0]!;
+}
+
+function optionalChild(
+  children: readonly Element[],
+  name: string,
+  path: string,
+): Element | undefined {
+  const matches = children.filter((child) => child.name === name);
+  if (matches.length > 1)
+    throw new OcfManifestError(`Invalid manifest encrypted-key structure: ${path}`);
+  return matches[0];
 }
 
 function requiredManifestAttribute(element: Element, name: string, path: string): string {
@@ -340,7 +423,6 @@ function manifestModelXml(options: OcfManifestOptions): string {
       "manifest:version": options.version,
     },
     [
-      ...(options.foreignChildrenXml ?? []),
       ...(options.encryptedKeys ?? []).map(encryptedKeyXml),
       ...options.entries.map(manifestFileEntryXml),
     ],
@@ -374,10 +456,7 @@ export function manifestFileEntryXml(entry: OcfManifestFileEntryOptions): string
       "manifest:preferred-view-mode": entry.preferredViewMode,
       "manifest:size": entry.size,
     },
-    [
-      ...(entry.foreignChildrenXml ?? []),
-      ...(entry.encryptionData ? [encryptionDataXml(entry.encryptionData)] : []),
-    ],
+    entry.encryptionData ? [encryptionDataXml(entry.encryptionData)] : [],
   );
 }
 
@@ -415,13 +494,28 @@ function encryptionDataXml(data: OcfEncryptionDataOptions): string {
   );
 }
 
-function foreignXml(element: Element): string {
-  return xmlElement(element.name ?? "", element.attributes, [
-    ...(textOf(element) ? [textOf(element)!] : []),
-    ...(element.elements ?? [])
-      .filter((child): child is Element => child.type === "element")
-      .map(foreignXml),
-  ]);
+function foreignXml(
+  element: Element,
+  inheritedNamespaces: Record<string, string | number | undefined> = {},
+): string {
+  const attributes = { ...element.attributes };
+  for (const [name, value] of Object.entries(inheritedNamespaces)) {
+    if (attributes[name] === undefined) attributes[name] = value;
+  }
+  const children = (element.elements ?? []).flatMap((child) => {
+    if (child.type === "element") return [foreignXml(child)];
+    if (child.type === "text") return [escapeText(String(child.text ?? ""))];
+    if (child.type === "cdata") {
+      const value = String(child.cdata ?? "").replaceAll("]]>", "]]]]><![CDATA[>");
+      return [`<![CDATA[${value}]]>`];
+    }
+    return [];
+  });
+  if (element.text !== undefined) children.unshift(escapeText(String(element.text)));
+  if (element.cdata !== undefined) {
+    children.push(`<![CDATA[${String(element.cdata).replaceAll("]]>", "]]]]><![CDATA[>")}]]>`);
+  }
+  return xmlElement(element.name ?? "", attributes, children);
 }
 
 function unknownManifestChild(element: Element): OcfManifestError {

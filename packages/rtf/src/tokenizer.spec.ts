@@ -75,4 +75,15 @@ describe("tokenizeRtf", () => {
       position: 0,
     });
   });
+
+  it("keeps string offsets aligned after supplementary Unicode characters", () => {
+    const tokens = tokenizeRtf(String.raw`😀\bin2 AB\tail`);
+    expect(tokens).toContainEqual({
+      kind: "binary",
+      byteLength: 2,
+      data: new Uint8Array([65, 66]),
+      position: 2,
+    });
+    expect(tokens.at(-1)).toMatchObject({ kind: "control", word: "tail" });
+  });
 });

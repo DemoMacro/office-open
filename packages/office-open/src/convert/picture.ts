@@ -22,7 +22,13 @@
  * @module
  */
 import { pickNonVisualDrawingProperties } from "@office-open/core";
-import type { BasePictureOptions, NonVisualDrawingPropertiesOptions } from "@office-open/core";
+import type {
+  BasePictureOptions,
+  NonVisualDrawingPropertiesOptions,
+  PictureLockingOptions,
+} from "@office-open/core";
+import type { BlipCompression, BlackWhiteMode } from "@office-open/core";
+import type { BlipEffectsOptions, SourceRectangleOptions } from "@office-open/core/drawing";
 import type { PictureOptions as DocxPictureOptions } from "@office-open/docx";
 import type { PictureOptions as PptxPictureOptions } from "@office-open/pptx";
 import type { PictureOptions as XlsxPictureOptions } from "@office-open/xlsx";
@@ -36,6 +42,68 @@ import {
   emuToCell,
   toEmu,
 } from "./position";
+
+interface PictureAppearanceOptions {
+  sourceRectangle?: SourceRectangleOptions;
+  blipEffects?: BlipEffectsOptions;
+  compression?: BlipCompression;
+  blackWhiteMode?: BlackWhiteMode;
+  rotWithShape?: boolean;
+  blipExt?: string;
+}
+
+function pickPictureAppearance(source: PictureAppearanceOptions): PictureAppearanceOptions {
+  return {
+    ...(source.sourceRectangle !== undefined ? { sourceRectangle: source.sourceRectangle } : {}),
+    ...(source.blipEffects !== undefined ? { blipEffects: source.blipEffects } : {}),
+    ...(source.compression !== undefined ? { compression: source.compression } : {}),
+    ...(source.blackWhiteMode !== undefined ? { blackWhiteMode: source.blackWhiteMode } : {}),
+    ...(source.rotWithShape !== undefined ? { rotWithShape: source.rotWithShape } : {}),
+    ...(source.blipExt !== undefined ? { blipExt: source.blipExt } : {}),
+  };
+}
+
+function pickPptxXlsxPictureOptions(source: {
+  locking?: PictureLockingOptions;
+  preferRelativeResize?: boolean;
+}): Pick<PptxPictureOptions, "locking" | "preferRelativeResize"> {
+  return {
+    ...(source.locking !== undefined ? { locking: source.locking } : {}),
+    ...(source.preferRelativeResize !== undefined
+      ? { preferRelativeResize: source.preferRelativeResize }
+      : {}),
+  };
+}
+
+function docxPictureFill(
+  fillRectangle: XlsxPictureOptions["fillRectangle"],
+): Pick<DocxPictureOptions, "fillRectangle" | "stretch"> {
+  if (fillRectangle === false) return { stretch: false };
+  if (fillRectangle === true) return { fillRectangle: false };
+  return fillRectangle === undefined ? {} : { fillRectangle };
+}
+
+function docxPictureFillFromPptx(
+  fillRectangle: PptxPictureOptions["fillRectangle"],
+): Pick<DocxPictureOptions, "fillRectangle"> {
+  return fillRectangle === undefined ? {} : { fillRectangle };
+}
+
+function xlsxPictureFill(
+  fillRectangle: DocxPictureOptions["fillRectangle"],
+  stretch?: boolean,
+): XlsxPictureOptions["fillRectangle"] {
+  if (stretch === false) return false;
+  if (fillRectangle === false) return true;
+  return fillRectangle;
+}
+
+function pptxPictureFill(
+  fillRectangle: XlsxPictureOptions["fillRectangle"],
+): PptxPictureOptions["fillRectangle"] {
+  if (fillRectangle === true) return false;
+  return fillRectangle === false ? undefined : fillRectangle;
+}
 
 // ── base readers: each package → shared BasePictureOptions ──
 
@@ -89,17 +157,35 @@ const DOCX_RASTER_TYPES: readonly DocxRasterType[] = [
 ];
 
 /** Narrow an image type to docx's raster set (pptx/xlsx sources are never svg). */
-const docxType = (type: string): DocxRasterType =>
-  (DOCX_RASTER_TYPES as readonly string[]).includes(type) ? (type as DocxRasterType) : "png";
+const docxType = (type: string): DocxRasterType => {
+  if ((DOCX_RASTER_TYPES as readonly string[]).includes(type)) return type as DocxRasterType;
+  throw new Error(`Cannot convert picture type "${type}" to DOCX without transcoding`);
+};
 
-const PPTX_TYPES = ["png", "jpg", "gif", "bmp", "emf", "wmf"] as const;
-/** Narrow an image type to pptx's supported set, falling back to png. */
-const pptxType = (type: string): PptxPictureOptions["type"] =>
-  (PPTX_TYPES as readonly string[]).includes(type) ? (type as PptxPictureOptions["type"]) : "png";
+const PPTX_TYPES: readonly PptxPictureOptions["type"][] = [
+  "png",
+  "jpg",
+  "gif",
+  "bmp",
+  "tif",
+  "ico",
+  "emf",
+  "wmf",
+];
+/** Narrow an image type to pptx's supported set without changing its bytes. */
+const pptxType = (type: string): PptxPictureOptions["type"] => {
+  if ((PPTX_TYPES as readonly string[]).includes(type)) return type as PptxPictureOptions["type"];
+  throw new Error(`Cannot convert picture type "${type}" to PPTX without transcoding`);
+};
 
-/** Narrow an image type to xlsx's png/jpg set. */
-const xlsxType = (type: string): "png" | "jpg" =>
-  type === "jpg" || type === "jpeg" ? "jpg" : "png";
+/** Narrow an image type to xlsx's supported set without changing its bytes. */
+const xlsxType = (type: string): XlsxPictureOptions["type"] => {
+  if (type === "jpeg") return "jpg";
+  if (["png", "jpg", "gif", "webp", "wmf", "emf"].includes(type)) {
+    return type as XlsxPictureOptions["type"];
+  }
+  throw new Error(`Cannot convert picture type "${type}" to XLSX without transcoding`);
+};
 
 /**
  * Build the docx altText (wp:docPr) from the shared base. Only emitted when at
@@ -130,13 +216,18 @@ export function toDocxPicture(source: PptxPictureOptions): DocxPictureOptions;
 export function toDocxPicture(source: XlsxPictureOptions): DocxPictureOptions;
 export function toDocxPicture(source: PptxPictureOptions | XlsxPictureOptions): DocxPictureOptions {
   // pptx → docx: absolute x/y → offset, width/height → transformation.
-  if ("width" in source || "height" in source) {
-    const p = source as PptxPictureOptions;
+  if (!("col" in source)) {
+    const p = source;
     const base = baseFromPptx(p);
     return {
       type: docxType(base.type),
       data: base.data,
       ...(base.sourceUrl !== undefined ? { sourceUrl: base.sourceUrl } : {}),
+      ...pickPictureAppearance(source),
+      ...docxPictureFillFromPptx(source.fillRectangle),
+      ...(source.useLocalDpi !== undefined
+        ? { useLocalDpi: source.useLocalDpi === "default" ? false : source.useLocalDpi }
+        : {}),
       transformation: boxToDocxTransformation({
         x: toEmu(p.x),
         y: toEmu(p.y),
@@ -150,12 +241,18 @@ export function toDocxPicture(source: PptxPictureOptions | XlsxPictureOptions): 
     };
   }
   // xlsx → docx: cell anchor → offset EMU; size unknown.
-  const x = source as XlsxPictureOptions;
+  const x = source;
   const base = baseFromXlsx(x);
   return {
     type: docxType(base.type),
     data: base.data,
     ...(base.sourceUrl !== undefined ? { sourceUrl: base.sourceUrl } : {}),
+    ...pickPictureAppearance(x),
+    ...(x.dpi !== undefined ? { dpi: x.dpi } : {}),
+    ...docxPictureFill(x.fillRectangle),
+    ...(x.useLocalDpi !== undefined
+      ? { useLocalDpi: x.useLocalDpi === "default" ? false : x.useLocalDpi }
+      : {}),
     transformation: boxToDocxTransformation({
       x: (x.col - 1) * DEFAULT_COL_EMU,
       y: (x.row - 1) * DEFAULT_ROW_EMU,
@@ -183,6 +280,9 @@ export function toPptxPicture(source: DocxPictureOptions | XlsxPictureOptions): 
       data: base.data,
       ...(base.sourceUrl !== undefined ? { sourceUrl: base.sourceUrl } : {}),
       ...boxToPptx(box),
+      ...pickPictureAppearance(d),
+      ...(d.fillRectangle !== undefined ? { fillRectangle: d.fillRectangle } : {}),
+      ...(d.useLocalDpi !== undefined ? { useLocalDpi: d.useLocalDpi } : {}),
       ...pickNonVisualDrawingProperties(base),
     };
   }
@@ -197,6 +297,10 @@ export function toPptxPicture(source: DocxPictureOptions | XlsxPictureOptions): 
     y: (x.row - 1) * DEFAULT_ROW_EMU,
     width: 0,
     height: 0,
+    ...pickPictureAppearance(x),
+    ...pptxPictureFill(x.fillRectangle),
+    ...pickPptxXlsxPictureOptions(x),
+    ...(x.useLocalDpi !== undefined ? { useLocalDpi: x.useLocalDpi } : {}),
     ...pickNonVisualDrawingProperties(base),
   };
 }
@@ -219,6 +323,10 @@ export function toXlsxPicture(source: DocxPictureOptions | PptxPictureOptions): 
       ...(base.sourceUrl !== undefined ? { sourceUrl: base.sourceUrl } : {}),
       col: emuToCell(anchorBox.x, DEFAULT_COL_EMU),
       row: emuToCell(anchorBox.y, DEFAULT_ROW_EMU),
+      ...pickPictureAppearance(d),
+      ...(d.dpi !== undefined ? { dpi: d.dpi } : {}),
+      fillRectangle: xlsxPictureFill(d.fillRectangle, d.stretch),
+      ...(d.useLocalDpi !== undefined ? { useLocalDpi: d.useLocalDpi } : {}),
       ...pickNonVisualDrawingProperties(base),
     };
   }
@@ -231,6 +339,10 @@ export function toXlsxPicture(source: DocxPictureOptions | PptxPictureOptions): 
     ...(base.sourceUrl !== undefined ? { sourceUrl: base.sourceUrl } : {}),
     col: emuToCell(toEmu(p.x), DEFAULT_COL_EMU),
     row: emuToCell(toEmu(p.y), DEFAULT_ROW_EMU),
+    ...pickPictureAppearance(p),
+    fillRectangle: p.fillRectangle === false ? true : p.fillRectangle,
+    ...pickPptxXlsxPictureOptions(p),
+    ...(p.useLocalDpi !== undefined ? { useLocalDpi: p.useLocalDpi } : {}),
     ...pickNonVisualDrawingProperties(base),
   };
 }

@@ -414,7 +414,7 @@ function parseRootRels(doc: ParsedArchive): {
     const type = attr(child, "Type") ?? "";
     const target = attr(child, "Target") ?? "";
     if (!target) return true;
-    const path = target.startsWith("/") ? target.slice(1) : target;
+    const path = resolveRelationshipTarget("", target);
     const relType = type.toLowerCase().replaceAll("-", "");
     if (relType.endsWith("/officedocument")) {
       if (attr(child, "TargetMode")?.toLowerCase() !== "external") {

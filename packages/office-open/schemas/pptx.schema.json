@@ -14862,6 +14862,11 @@
         "photoAlbum": {
           "$ref": "#/definitions/PhotoAlbumOptions"
         },
+        "presentationPath": {
+          "description": "Source path of the primary presentation part; round-trip only.",
+          "readOnly": true,
+          "type": "string"
+        },
         "presentationPropertiesExt": {
           "description": "Verbatim inner XML of p:presentationPr's p:extLst (presProps extensions) — round-trip channel: captured from a parsed source; do not hand-author.",
           "type": "string"

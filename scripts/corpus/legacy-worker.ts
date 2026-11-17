@@ -47,7 +47,9 @@ function classify(error: unknown): Exclude<Outcome, "pass"> {
     reason === "out-of-range" ||
     reason === "invalid-repeat-count" ||
     reason === "invalid-style-coverage-total" ||
-    reason === "malformed-formula"
+    reason === "malformed-formula" ||
+    reason === "invalid-rich-text-run-position" ||
+    reason === "missing-rich-text-font"
   ) {
     return "invalid";
   }

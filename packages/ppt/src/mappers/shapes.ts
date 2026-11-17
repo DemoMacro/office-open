@@ -619,9 +619,15 @@ function findPicture(
   context: DrawingContext,
   reference: number | undefined,
 ): DrawingContext["pictures"][number] | undefined {
-  return reference !== undefined && reference > 0 && reference < context.pictures.length
-    ? context.pictures[reference]
-    : undefined;
+  if (reference === undefined || reference === 0) return undefined;
+  if (reference < 0 || reference >= context.pictures.length || !context.pictures[reference]) {
+    throw new PptParseError("Corrupt legacy PowerPoint file: picture reference has no image data", {
+      part: "stream",
+      path: "Pictures",
+      reason: "missing-picture-data",
+    });
+  }
+  return context.pictures[reference];
 }
 
 interface ContainerText {

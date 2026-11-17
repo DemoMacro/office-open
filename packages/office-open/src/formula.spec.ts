@@ -38,6 +38,57 @@ describe("canonical workbook formula integration", () => {
     expect(options.worksheets?.[0]?.rows?.[2]?.cells?.[0]?.value).toBe(24);
   });
 
+  it("returns cached used dimensions per worksheet", () => {
+    const options: WorkbookOptions = {
+      worksheets: [
+        { rows: [{ cells: [cell("C8", 1), cell("A2", 2)] }] },
+        { rows: [{ cells: [cell("B4", 3)] }] },
+        {},
+      ],
+    };
+    const context = createWorkbookFormulaContext(options);
+
+    expect(context.getRowCount(0)).toBe(8);
+    expect(context.getColumnCount(0)).toBe(3);
+    expect(context.getRowCount(1)).toBe(4);
+    expect(context.getColumnCount(1)).toBe(2);
+    expect(context.getRowCount(2)).toBe(1_048_576);
+    expect(context.getColumnCount(2)).toBe(16_384);
+  });
+
+  it("clears stale cached values when recalculation yields an error or empty result", () => {
+    const options: WorkbookOptions = {
+      worksheets: [
+        {
+          rows: [
+            { cells: [{ reference: "A1", value: 9, formula: "1/0" }] },
+            { cells: [{ reference: "A2", value: 9, formula: "NA()" }] },
+          ],
+        },
+      ],
+    };
+
+    calculateWorkbookFormulas(options);
+
+    const [errorCell, emptyCell] =
+      options.worksheets?.[0]?.rows?.map((row) => row.cells?.[0]) ?? [];
+    expect(errorCell).toMatchObject({ error: "#DIV/0!" });
+    expect(errorCell).not.toHaveProperty("value");
+    expect(emptyCell).not.toHaveProperty("value");
+  });
+
+  it("evaluates a formula without parsing unrelated invalid formulas", () => {
+    const options: WorkbookOptions = {
+      worksheets: [
+        {
+          rows: [{ cells: [cell("A1", undefined, "INVALID(")] }, { cells: [cell("B1", 3)] }],
+        },
+      ],
+    };
+
+    expect(evaluateWorkbookFormula(options, "B1*2")).toBe(6);
+  });
+
   it("orders formulas through defined-name dependencies", () => {
     const options: WorkbookOptions = {
       worksheets: [
@@ -56,6 +107,68 @@ describe("canonical workbook formula integration", () => {
     expect(failures).toEqual([]);
     expect(options.worksheets?.[0]?.rows?.at(-1)?.cells?.[0]?.value).toBe(4);
     expect(results.at(-1)?.value).toBe(40);
+  });
+
+  it("uses implicit cell addresses when calculating formulas", () => {
+    const options: WorkbookOptions = {
+      worksheets: [
+        {
+          rows: [
+            { cells: [{ value: 3 }] },
+            { rowNumber: 4, cells: [{ formula: "A1*2" }, { formula: "A4+1" }] },
+          ],
+        },
+      ],
+    };
+
+    const { failures } = calculateWorkbookFormulas(options);
+
+    expect(failures).toEqual([]);
+    expect(options.worksheets?.[0]?.rows?.[1]?.cells?.map((cell) => cell.value)).toEqual([6, 7]);
+  });
+
+  it("uses implicit row numbers when evaluating hidden-row formulas", () => {
+    const options: WorkbookOptions = {
+      worksheets: [
+        {
+          rows: [
+            { cells: [{ value: 2 }] },
+            { hidden: true, cells: [{ value: 3 }] },
+            { cells: [{ value: 5 }] },
+            { cells: [{ formula: "SUBTOTAL(109,A1:A3)" }] },
+          ],
+        },
+      ],
+    };
+
+    calculateWorkbookFormulas(options);
+
+    expect(options.worksheets?.[0]?.rows?.[3]?.cells?.[0]?.value).toBe(7);
+  });
+
+  it("orders a local defined name ahead of a same-named global name", () => {
+    const options: WorkbookOptions = {
+      worksheets: [
+        {
+          name: "Data",
+          rows: [
+            { cells: [cell("C1", undefined, "RATE")] },
+            { cells: [cell("B1", undefined, "A1*2")] },
+            { cells: [cell("A1", 3)] },
+          ],
+        },
+      ],
+      definedNames: [
+        { name: "RATE", value: "Data!A1*10" },
+        { name: "RATE", value: "Data!B1*10", localSheetId: 0 },
+      ],
+    };
+
+    const { failures, results } = calculateWorkbookFormulas(options);
+    expect(failures).toEqual([]);
+    expect(options.worksheets?.[0]?.rows?.[1]?.cells?.[0]?.value).toBe(6);
+    expect(options.worksheets?.[0]?.rows?.[0]?.cells?.[0]?.value).toBe(60);
+    expect(results.at(-1)?.value).toBe(60);
   });
 
   it("rewrites shared formulas and distributes array caches", () => {
@@ -96,6 +209,56 @@ describe("canonical workbook formula integration", () => {
     expect(cells?.[1]?.value).toBe(7);
     expect(cells?.[2]?.value).toBe(2);
     expect(cells?.[3]?.value).toBe(12);
+  });
+
+  it("distributes array caches by cell coordinates across sparse ranges", () => {
+    const options: WorkbookOptions = {
+      worksheets: [
+        {
+          rows: [
+            {
+              cells: [
+                {
+                  reference: "A1",
+                  formula: { formula: "{1,2;3,4}", type: "array", reference: "A1:B2" },
+                },
+              ],
+            },
+            {
+              cells: [
+                { reference: "B2", formula: { formula: "", type: "array", reference: "A1:B2" } },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+
+    const { failures } = calculateWorkbookFormulas(options);
+
+    expect(failures).toEqual([]);
+    expect(options.worksheets?.[0]?.rows?.[0]?.cells?.[0]?.value).toBe(1);
+    expect(options.worksheets?.[0]?.rows?.[1]?.cells?.[0]?.value).toBe(4);
+  });
+
+  it("reports cyclic formula dependencies and blocks their dependents", () => {
+    const options: WorkbookOptions = {
+      worksheets: [
+        {
+          rows: [
+            { cells: [cell("A1", undefined, "B1+1")] },
+            { cells: [cell("B1", undefined, "A1+1")] },
+            { cells: [cell("C1", undefined, "A1+1")] },
+            { cells: [cell("D1", undefined, "2+2")] },
+          ],
+        },
+      ],
+    };
+
+    const { failures, results } = calculateWorkbookFormulas(options);
+
+    expect(failures.map(({ reference }) => reference)).toEqual(["A1", "B1", "C1"]);
+    expect(results.map(({ reference, value }) => [reference, value])).toEqual([["D1", 4]]);
   });
 
   it("uses tables, hidden-row filters, and structured errors", () => {

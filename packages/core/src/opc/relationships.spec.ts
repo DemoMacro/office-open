@@ -60,6 +60,35 @@ describe("Relationships", () => {
     expect(rels.serialize()).toContain('Target="/xl/theme/theme1.xml"');
   });
 
+  it("compares internal part targets without case sensitivity", () => {
+    const rels = new Relationships("xl/workbook.xml");
+    const sharedStrings =
+      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings";
+    rels.claimSourceRel({
+      relationshipType: sharedStrings,
+      target: "SharedStrings.xml",
+      rId: "rId4",
+    });
+
+    expect(rels.idOf(sharedStrings, "sharedStrings.xml")).toBe("rId4");
+    expect(rels.relationshipCount).toBe(1);
+    expect(rels.serialize()).toContain('Target="SharedStrings.xml"');
+  });
+
+  it("preserves case-sensitive relationship fragments", () => {
+    const rels = new Relationships("xl/workbook.xml");
+    const customXml =
+      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/customXml";
+    rels.claimSourceRel({
+      relationshipType: customXml,
+      target: "../custom/Item.XML#MyNode",
+      rId: "rId1",
+    });
+
+    expect(rels.idOf(customXml, "../CUSTOM/item.xml#MyNode")).toBe("rId1");
+    expect(rels.idOf(customXml, "../custom/item.xml#mynode")).toBeUndefined();
+  });
+
   it("claimSourceRel restores the source target spelling and mode", () => {
     const rels = new Relationships("ppt/slides/slide1.xml");
     const image = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image";

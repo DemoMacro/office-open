@@ -872,6 +872,19 @@ describe("parsePresentation", () => {
     ]);
   });
 
+  it("rejects unknown legacy animation effects instead of mapping them to appear", () => {
+    const { document, currentUser } = buildDocument(
+      [container(0xf004, [...anchoredTextShapeBody(), container(4116, [animationAtom(0xff)])])],
+      ["Slide text"],
+      { animation: true },
+    );
+    const fixture = buildCfb([
+      { name: "PowerPoint Document", data: document },
+      { name: "Current User", data: currentUser },
+    ]);
+    expect(() => parsePresentation(fixture)).toThrow(/Unsupported legacy animation effect: 255/);
+  });
+
   it("projects legacy style text paragraph and character formatting", () => {
     const { document, currentUser } = buildDocument([anchoredTextShape()], ["Styled"], {
       styleText: true,
@@ -1279,6 +1292,14 @@ describe("parsePresentation", () => {
     expect(child.picture?.id).toBe(2051);
     expect(child.picture?.type).toBe("png");
     expect(child.picture?.data).toEqual(new Uint8Array(png));
+
+    const corruptReference = buildDocument([pictureShapeWithReference(2051, 1)], ["Picture"]);
+    const corruptFixture = buildCfb([
+      { name: "PowerPoint Document", data: corruptReference.document },
+      { name: "Current User", data: corruptReference.currentUser },
+      { name: "Pictures", data: pictureStream },
+    ]);
+    expect(() => parsePresentation(corruptFixture)).toThrow("picture reference has no image data");
   });
 
   it("projects a complete grouped-text grid as a table", () => {

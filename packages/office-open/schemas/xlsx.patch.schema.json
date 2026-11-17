@@ -66,8 +66,11 @@
         "workbookProtection",
         "externalLinks",
         "connections",
+        "connectionsPath",
         "metadata",
+        "metadataPath",
         "xmlMaps",
+        "xmlMapsPath",
         "customWorkbookViews",
         "fileRecovery",
         "functionGroups",
@@ -86,6 +89,7 @@
         "oleSize",
         "properties",
         "calcChain",
+        "calcChainPath",
         "pivotCaches",
         "sharedStrings",
         "sharedStringsCount",
@@ -688,12 +692,27 @@
                   "type": "array"
                 },
                 {
+                  "description": "Source connections part path; default xl/connections.xml. Round-trip only.",
+                  "readOnly": true,
+                  "type": "string"
+                },
+                {
                   "$ref": "xlsx.schema.json#/definitions/MetadataOptions",
                   "description": "Rich metadata block (xl/metadata.xml)"
                 },
                 {
+                  "description": "Source metadata part path; default xl/metadata.xml. Round-trip only.",
+                  "readOnly": true,
+                  "type": "string"
+                },
+                {
                   "$ref": "xlsx.schema.json#/definitions/MapInfoOptions",
                   "description": "XML mappings (xl/xmlMaps.xml)"
+                },
+                {
+                  "description": "Source XML mappings part path; default xl/xmlMaps.xml. Round-trip only.",
+                  "readOnly": true,
+                  "type": "string"
                 },
                 {
                   "description": "Workbook-level custom view snapshots. Excel requires one entry per sheet-level customSheetViews guid (matched by guid).",
@@ -809,6 +828,11 @@
                     }
                   ],
                   "description": "Calculation chain cells (xl/calcChain.xml) — set on parse; the compiler round-trips them verbatim and rebuilds from formula cells only when absent"
+                },
+                {
+                  "description": "Source calculation-chain part path; default xl/calcChain.xml. Round-trip only.",
+                  "readOnly": true,
+                  "type": "string"
                 },
                 {
                   "description": "Pivot caches, either generated from source data or fully defined.",
@@ -1700,6 +1724,18 @@
         {
           "anyOf": [
             {
+              "type": "string"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Source connections part path; default xl/connections.xml. Round-trip only.",
+          "readOnly": true
+        },
+        {
+          "anyOf": [
+            {
               "$ref": "xlsx.schema.json#/definitions/MetadataOptions"
             },
             {
@@ -1711,6 +1747,18 @@
         {
           "anyOf": [
             {
+              "type": "string"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Source metadata part path; default xl/metadata.xml. Round-trip only.",
+          "readOnly": true
+        },
+        {
+          "anyOf": [
+            {
               "$ref": "xlsx.schema.json#/definitions/MapInfoOptions"
             },
             {
@@ -1718,6 +1766,18 @@
             }
           ],
           "description": "XML mappings (xl/xmlMaps.xml)"
+        },
+        {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Source XML mappings part path; default xl/xmlMaps.xml. Round-trip only.",
+          "readOnly": true
         },
         {
           "anyOf": [
@@ -1947,6 +2007,18 @@
             }
           ],
           "description": "Calculation chain cells (xl/calcChain.xml) — set on parse; the compiler round-trips them verbatim and rebuilds from formula cells only when absent"
+        },
+        {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Source calculation-chain part path; default xl/calcChain.xml. Round-trip only.",
+          "readOnly": true
         },
         {
           "anyOf": [
@@ -2238,7 +2310,7 @@
           "anyOf": [
             {
               "items": {
-                "$ref": "#/definitions/WorkbookPatchCommand/anyOf/1/properties/value/anyOf/78/items"
+                "$ref": "#/definitions/WorkbookPatchCommand/anyOf/1/properties/value/anyOf/82/items"
               },
               "type": "array"
             },
@@ -2578,7 +2650,7 @@
           "anyOf": [
             {
               "items": {
-                "$ref": "#/definitions/WorkbookPatchCommand/anyOf/1/properties/value/anyOf/106/items"
+                "$ref": "#/definitions/WorkbookPatchCommand/anyOf/1/properties/value/anyOf/110/items"
               },
               "type": "array"
             },

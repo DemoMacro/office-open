@@ -612,6 +612,31 @@ describe("package metadata presence", () => {
     expect(Object.keys(output)).toContain("docProps/core1.xml");
     expect(new TextDecoder().decode(output["_rels/.rels"]!)).toContain("docProps/core1.xml");
   });
+
+  it("resolves dot segments in root metadata relationship targets", () => {
+    const coreXml =
+      '<?xml version="1.0"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>Selected</dc:title></cp:coreProperties>';
+    const source = zipSync({
+      "[Content_Types].xml": new TextEncoder().encode(
+        '<?xml version="1.0"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+          '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>' +
+          '<Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>' +
+          "</Types>",
+      ),
+      "_rels/.rels": new TextEncoder().encode(
+        '<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+          '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>' +
+          '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="./docProps/core.xml"/>' +
+          "</Relationships>",
+      ),
+      "word/document.xml": new TextEncoder().encode(
+        '<?xml version="1.0"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body/></w:document>',
+      ),
+      "docProps/core.xml": new TextEncoder().encode(coreXml),
+    });
+
+    expect(parseDocumentSync(source).title).toBe("Selected");
+  });
 });
 
 describe("picture media dedup", () => {

@@ -900,7 +900,10 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
         return;
       case "sect": {
         if (activeTable()) return;
-        flushParagraph(true);
+        flushParagraph();
+        applyStoryBlocks(activeSection, headerBlocks, footerBlocks);
+        headerBlocks.clear();
+        footerBlocks.clear();
         const next: SectionOptions = { children: [] };
         sections.push(next);
         activeSection = next;
@@ -1594,7 +1597,7 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
   flushParagraph();
   if (shapes.length > 0) activeSection.children.push({ paragraph: { children: shapes } });
 
-  applyStoryBlocks(sections[0], headerBlocks, footerBlocks);
+  applyStoryBlocks(activeSection, headerBlocks, footerBlocks);
 
   const numbering = numberingFromParsed(listDefinitions, numberingReferences);
 

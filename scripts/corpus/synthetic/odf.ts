@@ -18,7 +18,6 @@ export async function odtMissingEmbeddedObject(): Promise<void> {
       "styles.xml": ENCODER.encode(
         `<?xml version="1.0"?><office:document-styles ${namespaces}><office:styles/></office:document-styles>`,
       ),
-      "Object 1/": new Uint8Array(),
     },
     {},
     {
@@ -52,7 +51,7 @@ const MANIFEST_NAMESPACE = `xmlns:manifest="urn:oasis:names:tc:opendocument:xmln
 
 const MINIMAL_MANIFEST = `<?xml version="1.0"?><manifest:manifest ${MANIFEST_NAMESPACE}><manifest:file-entry manifest:full-path="/" manifest:media-type="application/vnd.oasis.opendocument.text"/></manifest:manifest>`;
 
-const FULL_MANIFEST = `<?xml version="1.0"?><manifest:manifest ${MANIFEST_NAMESPACE} manifest:version="1.3"><manifest:encrypted-key><manifest:encryption-method manifest:PGPAlgorithm="RSA"/><manifest:keyinfo><manifest:PGPData><manifest:PGPKeyID>MQ==</manifest:PGPKeyID><manifest:PGPKeyPacket>Ag==</manifest:PGPKeyPacket></manifest:PGPData></manifest:keyinfo><manifest:CipherData><manifest:CipherValue>Aw==</manifest:CipherValue></manifest:CipherData></manifest:encrypted-key><manifest:file-entry manifest:full-path="/" manifest:version="1.3" manifest:media-type="application/vnd.oasis.opendocument.text"/><manifest:file-entry manifest:full-path="content.xml" manifest:media-type="text/xml" manifest:preferred-view-mode="page" manifest:size="7"><manifest:encryption-data manifest:checksum-type="SHA1/1K" manifest:checksum="aa=="><manifest:algorithm manifest:algorithm-name="Blowfish CFB" manifest:initialisation-vector="bb=="/><manifest:key-derivation manifest:key-derivation-name="PBKDF2" manifest:salt="cc==" manifest:iteration-count="1024" manifest:key-size="16"/><manifest:start-key-generation manifest:start-key-generation-name="SHA256" manifest:key-size="32"/></manifest:encryption-data></manifest:file-entry></manifest:manifest>`;
+const FULL_MANIFEST = `<?xml version="1.0"?><manifest:manifest ${MANIFEST_NAMESPACE} manifest:version="1.3"><manifest:encrypted-key><manifest:encryption-method manifest:PGPAlgorithm="RSA"/><manifest:keyinfo><manifest:PGPData><manifest:PGPKeyID>MQ==</manifest:PGPKeyID><manifest:PGPKeyPacket>Ag==</manifest:PGPKeyPacket></manifest:PGPData></manifest:keyinfo><manifest:CipherData><manifest:CipherValue>Aw==</manifest:CipherValue></manifest:CipherData></manifest:encrypted-key><manifest:file-entry manifest:full-path="/" manifest:version="1.3" manifest:media-type="application/vnd.oasis.opendocument.text"/><manifest:file-entry manifest:full-path="content.xml" manifest:media-type="text/xml" manifest:preferred-view-mode="page" manifest:size="7"><manifest:encryption-data manifest:checksum-type="SHA1/1K" manifest:checksum="aa=="><manifest:algorithm manifest:algorithm-name="Blowfish CFB" manifest:initialisation-vector="bb=="/><manifest:start-key-generation manifest:start-key-generation-name="SHA256" manifest:key-size="32"/><manifest:key-derivation manifest:key-derivation-name="PBKDF2" manifest:salt="cc==" manifest:iteration-count="1024" manifest:key-size="16"/></manifest:encryption-data></manifest:file-entry></manifest:manifest>`;
 
 export async function odfManifestMatrix(): Promise<void> {
   const part = "META-INF/manifest.xml";

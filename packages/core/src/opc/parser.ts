@@ -27,6 +27,12 @@ const XML_PARSE_OPTIONS = {
   normalizeNamespaces: OOXML_CANONICAL_PREFIXES,
 };
 
+export interface ArchiveReadLimits {
+  maxEntries?: number;
+  maxEntryUncompressedSize?: number;
+  maxTotalUncompressedSize?: number;
+}
+
 /**
  * Parsed OOXML archive backed by a lazily-inflated ZIP.
  *
@@ -42,6 +48,7 @@ const XML_PARSE_OPTIONS = {
  */
 export class ParsedArchive {
   private readonly source: Uint8Array | ByteSource;
+  private readonly readLimits?: ArchiveReadLimits;
   /** Compressed entries not yet inflated (empty on the eager fallback path). */
   private index: Map<string, ZipEntryMeta>;
   /** Inflated parts, populated on demand (and wholesale on the eager fallback). */
@@ -58,8 +65,13 @@ export class ParsedArchive {
    */
   private order: string[];
 
-  public constructor(source: Uint8Array | ByteSource, entries?: readonly ZipEntryMeta[]) {
+  public constructor(
+    source: Uint8Array | ByteSource,
+    entries?: readonly ZipEntryMeta[],
+    readLimits?: ArchiveReadLimits,
+  ) {
     this.source = source;
+    this.readLimits = readLimits;
     this.index = new Map();
     this.order = [];
     if (!entries) {
@@ -70,6 +82,13 @@ export class ParsedArchive {
       try {
         parsedEntries = readCentralDirectory(source);
       } catch {
+        if (readLimits) {
+          throw new OpcPackageError(
+            "ZIP package cannot be safely indexed within configured read limits",
+            undefined,
+            "invalid-zip",
+          );
+        }
         // Non-classic ZIP variant (zip64, exotic layouts) or not an archive at
         // all: fall back to fflate's eager full read, the reference
         // implementation — it throws on unreadable input, as before.
@@ -123,6 +142,37 @@ export class ParsedArchive {
   }
 
   private initializeIndex(entries: readonly ZipEntryMeta[]): void {
+    if (this.readLimits?.maxEntries !== undefined && entries.length > this.readLimits.maxEntries) {
+      throw new OpcPackageError(
+        "ZIP entry count exceeds configured limit",
+        undefined,
+        "size-limit",
+      );
+    }
+    let totalUncompressedSize = 0;
+    for (const entry of entries) {
+      if (
+        this.readLimits?.maxEntryUncompressedSize !== undefined &&
+        entry.uncompSize > this.readLimits.maxEntryUncompressedSize
+      ) {
+        throw new OpcPackageError(
+          `ZIP uncompressed size exceeds limit: ${entry.name}`,
+          entry.name,
+          "size-limit",
+        );
+      }
+      totalUncompressedSize += entry.uncompSize;
+      if (
+        this.readLimits?.maxTotalUncompressedSize !== undefined &&
+        totalUncompressedSize > this.readLimits.maxTotalUncompressedSize
+      ) {
+        throw new OpcPackageError(
+          "ZIP total uncompressed size exceeds limit",
+          undefined,
+          "size-limit",
+        );
+      }
+    }
     // OPC part names use forward slashes; a few producers emit backslash
     // separators, which every downstream path comparison expects normalized.
     const normalizedEntries = entries.map((entry) => ({
@@ -191,7 +241,7 @@ export class ParsedArchive {
     // The native inflate verifies CRC-32; a corrupt entry fails the package
     // instead of silently reading truncated bytes (Excel rejects these too).
     try {
-      data = inflateZipEntry(bytes, entry);
+      data = inflateZipEntry(bytes, entry, this.readLimits?.maxEntryUncompressedSize);
     } catch (cause) {
       throw new OpcPackageError(`invalid ZIP entry: ${entry.name}`, entry.name, "invalid-entry", {
         cause,

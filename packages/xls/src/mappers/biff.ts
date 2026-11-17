@@ -1,5 +1,25 @@
+import type {
+  FontOptions,
+  RichTextOptions,
+  RichTextRunOptions,
+  RichTextRunPropertiesOptions,
+} from "@office-open/xlsx";
+
 import { XlsParseError } from "../errors";
 import { RecordCode, requireBytes, type BiffVersion } from "../records";
+
+interface DecodedBiffString {
+  value: string;
+  offset: number;
+  richRuns?: { characterIndex: number; fontIndex: number }[];
+}
+
+function booleanLexicalValue(
+  value: string | undefined,
+): RichTextRunPropertiesOptions["boldValRaw"] {
+  if (value === "true" || value === "false" || value === "1" || value === "0") return value;
+  return undefined;
+}
 export function decodeBiffString(
   body: Uint8Array,
   view: DataView,
@@ -7,33 +27,107 @@ export function decodeBiffString(
   characterCount: number,
   flags: number,
   encoding = "windows-1252",
-): { value: string; offset: number } {
+): DecodedBiffString {
   let cursor = offset;
   const highByte = (flags & 0x01) !== 0;
-  const richRunCount = (flags & 0x08) !== 0 ? view.getUint16(cursor, true) : 0;
-  if ((flags & 0x08) !== 0) cursor += 2;
+  const hasRichRuns = (flags & 0x08) !== 0;
   const hasExtension = (flags & 0x04) !== 0;
+  requireBytes(body, cursor + (hasRichRuns ? 2 : 0) + (hasExtension ? 4 : 0), "string");
+  const richRunCount = hasRichRuns ? view.getUint16(cursor, true) : 0;
+  if (hasRichRuns) cursor += 2;
+  const extensionLength = hasExtension ? view.getUint32(cursor, true) : 0;
   if (hasExtension) cursor += 4;
   const byteLength = characterCount * (highByte ? 2 : 1);
-  requireBytes(body, cursor + byteLength + richRunCount * 4, "string");
+  requireBytes(body, cursor + byteLength + richRunCount * 4 + extensionLength, "string");
   const raw = body.subarray(cursor, cursor + byteLength);
   const value = highByte
     ? new TextDecoder("utf-16le").decode(raw)
     : new TextDecoder(encoding).decode(raw);
-  cursor += byteLength + richRunCount * 4;
-  if (hasExtension) {
-    if (cursor + 4 > body.byteLength)
-      throw new XlsParseError("Invalid legacy XLS file: truncated rich string");
-    cursor += view.getUint32(cursor, true);
+  cursor += byteLength;
+  let richRuns: { characterIndex: number; fontIndex: number }[] | undefined;
+  if (richRunCount > 0) {
+    richRuns = Array.from({ length: richRunCount }, () => {
+      const run = {
+        characterIndex: view.getUint16(cursor, true),
+        fontIndex: view.getUint16(cursor + 2, true),
+      };
+      cursor += 4;
+      return run;
+    });
   }
-  return { value, offset: cursor };
+  cursor += extensionLength;
+  return { value, offset: cursor, richRuns };
+}
+
+export function richTextValue(
+  value: string,
+  richRuns: readonly { characterIndex: number; fontIndex: number }[] | undefined,
+  fonts: readonly FontOptions[],
+): string | RichTextOptions {
+  if (!richRuns?.length) return value;
+  const runs: RichTextRunOptions[] = [];
+  let previousIndex = -1;
+  if (richRuns[0]!.characterIndex > 0) {
+    runs.push({ text: value.slice(0, richRuns[0]!.characterIndex) });
+  }
+  for (const [index, richRun] of richRuns.entries()) {
+    const start = richRun.characterIndex;
+    const end = richRuns[index + 1]?.characterIndex ?? value.length;
+    if (start > value.length || start <= previousIndex || end > value.length) {
+      throw new XlsParseError("Invalid legacy XLS file: invalid rich-text run position", {
+        part: "stream",
+        path: "shared-strings/rich-text",
+        reason: "invalid-rich-text-run-position",
+      });
+    }
+    if (end > start) {
+      const font = fonts[richRun.fontIndex];
+      if (!font) {
+        throw new XlsParseError("Invalid legacy XLS file: rich-text run references missing font", {
+          part: "stream",
+          path: "shared-strings/rich-text",
+          reason: "missing-rich-text-font",
+        });
+      }
+      runs.push({
+        text: value.slice(start, end),
+        properties: {
+          font: font.font,
+          charset: font.charset,
+          family: font.family,
+          bold: font.bold,
+          boldValRaw: booleanLexicalValue(font.boldRaw),
+          italic: font.italic,
+          italicValRaw: booleanLexicalValue(font.italicRaw),
+          underline: font.underline === true ? "single" : font.underline || undefined,
+          strike: font.strike,
+          strikeValRaw: booleanLexicalValue(font.strikeRaw),
+          outline: font.outline,
+          outlineValRaw: booleanLexicalValue(font.outlineRaw),
+          shadow: font.shadow,
+          shadowValRaw: booleanLexicalValue(font.shadowRaw),
+          condense: font.condense,
+          condenseValRaw: booleanLexicalValue(font.condenseRaw),
+          extend: font.extend,
+          extendValRaw: booleanLexicalValue(font.extendRaw),
+          color: font.color,
+          size: font.size,
+          sizeValRaw: font.sizeRaw,
+          vertAlign: font.vertAlign,
+          scheme: font.scheme,
+        },
+      });
+    }
+    previousIndex = start;
+  }
+  return { runs };
 }
 
 export function readBiff8String(
   body: Uint8Array,
   offset = 0,
   encoding = "windows-1252",
-): { value: string; offset: number } {
+): DecodedBiffString {
   const view = new DataView(body.buffer, body.byteOffset, body.byteLength);
   requireBytes(body, offset + 3, "string");
   const characterCount = view.getUint16(offset, true);

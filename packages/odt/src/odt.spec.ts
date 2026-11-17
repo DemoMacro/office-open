@@ -67,6 +67,34 @@ async function parseBodyError(body: string, name: string, reason?: string): Prom
 }
 
 describe("ODT canonical projection", () => {
+  it("rejects a content document without its required text body", async () => {
+    const source = generateOcf("application/vnd.oasis.opendocument.text", {
+      "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body/></office:document-content>`,
+    });
+
+    await expect(parseDocument(source)).rejects.toMatchObject({
+      name: "OdtParseError",
+      part: "content.xml",
+      elementName: "office:text",
+      reason: "missing-required-element",
+    });
+  });
+
+  it("preserves list-header paragraphs without applying list numbering", async () => {
+    const parsed = await parseDocument(
+      odtPackage(
+        "<text:list><text:list-header><text:p>Heading</text:p></text:list-header><text:list-item><text:p>Item</text:p></text:list-item></text:list>",
+      ),
+    );
+    const children = parsed.sections[0]?.children ?? [];
+
+    expect(children).toHaveLength(2);
+    expect(sectionParagraph(children[0])).toMatchObject({ text: "Heading" });
+    expect(sectionParagraph(children[0])?.bullet).toBeUndefined();
+    expect(sectionParagraph(children[0])?.numbering).toBeUndefined();
+    expect(sectionParagraph(children[1])).toMatchObject({ text: "Item" });
+  });
+
   it("writes mandatory label alignment for generated list levels", async () => {
     const options = {
       numbering: {
@@ -489,28 +517,36 @@ describe("ODT canonical projection", () => {
     });
   });
 
-  it("round-trips a missing package image as a linked-only picture", async () => {
-    const parsed = await parseDocument(
-      odtPackage(
-        '<text:p><draw:frame svg:width="4cm" svg:height="3cm" draw:name="Logo"><draw:image xlink:href="Pictures/missing.png"/></draw:frame></text:p>',
+  it("rejects an internal image reference whose package member is missing", async () => {
+    await expect(
+      parseDocument(
+        odtPackage(
+          '<text:p><draw:frame svg:width="4cm" svg:height="3cm" draw:name="Logo"><draw:image xlink:href="Pictures/missing.png"/></draw:frame></text:p>',
+        ),
       ),
-    );
-    expect(parsed.sections[0]?.children?.[0]).toMatchObject({
-      paragraph: {
-        children: [
-          {
-            picture: {
-              type: "png",
-              sourceUrl: "Pictures/missing.png",
-              transformation: { width: 1440000, height: 1080000 },
-            },
-          },
-        ],
+    ).rejects.toMatchObject({
+      name: "OdtParseError",
+      part: "content.xml",
+      elementName: "draw:image",
+      reason: "missing-package-part",
+    });
+  });
+
+  it("resolves encoded package image paths and case-insensitive file extensions", async () => {
+    const source = generateOcf("application/vnd.oasis.opendocument.text", {
+      "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:automatic-styles/><office:body><office:text><text:p><draw:frame svg:width="2cm" svg:height="1cm"><draw:image xlink:href="Pictures/My%20Logo.PNG"/></draw:frame></text:p></office:text></office:body></office:document-content>`,
+      "styles.xml": `<?xml version="1.0"?><office:document-styles ${ODF_NAMESPACES}><office:styles/></office:document-styles>`,
+      "Pictures/My Logo.PNG": new Uint8Array([1, 2, 3]),
+    });
+    const parsed = await parseDocument(source);
+
+    expect(sectionParagraph(parsed.sections[0]?.children?.[0])?.children?.[0]).toMatchObject({
+      picture: {
+        type: "png",
+        data: new Uint8Array([1, 2, 3]),
+        transformation: { width: 720000, height: 360000 },
       },
     });
-    expect(
-      (await parseDocument(await generateDocument(parsed))).sections[0]?.children?.[0],
-    ).toEqual(parsed.sections[0]?.children?.[0]);
   });
 
   it("round-trips deeply nested tables without exhausting the stack", async () => {
@@ -756,6 +792,89 @@ describe("ODT canonical projection", () => {
     expect(reread.embeddedObjects).toEqual(parsed.embeddedObjects);
     expect(projection(reread.sections[0]?.children?.[0])).toEqual(
       projection(parsed.sections[0]?.children?.[0]),
+    );
+  });
+
+  it("round-trips an embedded object replacement image", async () => {
+    const replacementImage = new Uint8Array([137, 80, 78, 71]);
+    const source = generateOcf(
+      "application/vnd.oasis.opendocument.text",
+      {
+        "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:automatic-styles/><office:body><office:text><text:p><draw:frame svg:width="4cm" svg:height="3cm"><draw:object xlink:href="./Object 1" xlink:type="simple"/><draw:image xlink:href="./ObjectReplacements/preview.png" xlink:type="simple"/></draw:frame></text:p></office:text></office:body></office:document-content>`,
+        "styles.xml": `<?xml version="1.0"?><office:document-styles ${ODF_NAMESPACES}><office:styles/></office:document-styles>`,
+        "Object 1/content.xml":
+          '<?xml version="1.0"?><office:document-content xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"/>',
+        "ObjectReplacements/preview.png": replacementImage,
+      },
+      {},
+      {
+        version: "1.3",
+        entries: [
+          { fullPath: "/", version: "1.3", mediaType: "application/vnd.oasis.opendocument.text" },
+          { fullPath: "content.xml", mediaType: "text/xml" },
+          { fullPath: "styles.xml", mediaType: "text/xml" },
+          { fullPath: "Object 1/", mediaType: "application/vnd.oasis.opendocument.formula" },
+          { fullPath: "Object 1/content.xml", mediaType: "text/xml" },
+          { fullPath: "ObjectReplacements/", mediaType: undefined },
+          { fullPath: "ObjectReplacements/preview.png", mediaType: "image/png" },
+        ],
+      },
+    );
+
+    const parsed = await parseDocument(source);
+    expect(parsed.embeddedObjects?.[0]?.frames).toEqual([
+      { shapeId: 1, replacementImagePath: "ObjectReplacements/preview.png" },
+    ]);
+    expect(parsed.packageMembers).toContainEqual({
+      path: "ObjectReplacements/preview.png",
+      mediaType: "image/png",
+      data: replacementImage,
+    });
+
+    const generated = await generateDocument(parsed);
+    const output = await readOcf(generated, "application/vnd.oasis.opendocument.text");
+    expect(output.binaries["ObjectReplacements/preview.png"]).toEqual(replacementImage);
+    expect(output.files["content.xml"]).toContain(
+      '<draw:image xlink:href="./ObjectReplacements/preview.png" xlink:type="simple"/>',
+    );
+    expect((await parseDocument(generated)).embeddedObjects?.[0]?.frames).toEqual(
+      parsed.embeddedObjects?.[0]?.frames,
+    );
+  });
+
+  it("preserves an external embedded-object replacement image", async () => {
+    const parsed = await parseDocument(
+      generateOcf(
+        "application/vnd.oasis.opendocument.text",
+        {
+          "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:automatic-styles/><office:body><office:text><text:p><draw:frame svg:width="4cm" svg:height="3cm"><draw:object xlink:href="./Object 1" xlink:type="simple"/><draw:image xlink:href="https://example.com/preview.png" xlink:type="simple"/></draw:frame></text:p></office:text></office:body></office:document-content>`,
+          "styles.xml": `<?xml version="1.0"?><office:document-styles ${ODF_NAMESPACES}><office:styles/></office:document-styles>`,
+          "Object 1/content.xml":
+            '<?xml version="1.0"?><office:document-content xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"/>',
+        },
+        {},
+        {
+          version: "1.3",
+          entries: [
+            { fullPath: "/", version: "1.3", mediaType: "application/vnd.oasis.opendocument.text" },
+            { fullPath: "content.xml", mediaType: "text/xml" },
+            { fullPath: "styles.xml", mediaType: "text/xml" },
+            { fullPath: "Object 1/", mediaType: "application/vnd.oasis.opendocument.formula" },
+            { fullPath: "Object 1/content.xml", mediaType: "text/xml" },
+          ],
+        },
+      ),
+    );
+    expect(parsed.embeddedObjects?.[0]?.frames?.[0]).toMatchObject({
+      replacementImageSourceUrl: "https://example.com/preview.png",
+    });
+
+    const generated = await generateDocument(parsed);
+    expect(
+      (await readOcf(generated, "application/vnd.oasis.opendocument.text")).files["content.xml"],
+    ).toContain('xlink:href="https://example.com/preview.png"');
+    expect((await parseDocument(generated)).embeddedObjects?.[0]?.frames?.[0]).toEqual(
+      parsed.embeddedObjects?.[0]?.frames?.[0],
     );
   });
 
@@ -1324,6 +1443,49 @@ describe("ODT canonical projection", () => {
   it("reports unknown body elements with structured errors", async () => {
     const error = await parseBodyError("<text:unknown/>", "text:unknown");
     expect(error.path).toBe("/office:document-content/office:body/office:text/text:unknown");
+    expect(error.reason).toBe("no canonical DocumentOptions mapping");
+  });
+
+  it("rejects unsupported frame payloads instead of dropping them", async () => {
+    const error = await parseBodyError(
+      '<text:p>before<draw:frame svg:width="2cm" svg:height="1cm"><draw:plugin xlink:href="plugin:example" draw:mime-type="application/example"/></draw:frame>after</text:p>',
+      "draw:frame",
+    );
+
+    expect(error.reason).toBe("no canonical DocumentOptions mapping");
+  });
+
+  it("keeps external image references as linked-only pictures", async () => {
+    const parsed = await parseDocument(
+      odtPackage(
+        '<text:p><draw:frame svg:width="4cm" svg:height="3cm"><draw:image xlink:href="https://example.com/logo.png"/></draw:frame></text:p>',
+      ),
+    );
+
+    expect(sectionParagraph(parsed.sections[0]?.children?.[0])?.children?.[0]).toMatchObject({
+      picture: {
+        type: "png",
+        sourceUrl: "https://example.com/logo.png",
+        transformation: { width: 1440000, height: 1080000 },
+      },
+    });
+  });
+
+  it("rejects a frame with an unsupported payload and no image", async () => {
+    const error = await parseBodyError(
+      '<text:p>before<draw:frame svg:width="2cm" svg:height="1cm"><draw:plugin xlink:href="plugin:example" draw:mime-type="application/example"/></draw:frame>after</text:p>',
+      "draw:frame",
+    );
+
+    expect(error.reason).toBe("no canonical DocumentOptions mapping");
+  });
+
+  it("rejects a frame containing multiple payloads", async () => {
+    const error = await parseBodyError(
+      '<text:p><draw:frame svg:width="2cm" svg:height="1cm"><draw:image xlink:href="Pictures/preview.png"/><draw:plugin xlink:href="plugin:example" draw:mime-type="application/example"/></draw:frame></text:p>',
+      "draw:frame",
+    );
+
     expect(error.reason).toBe("no canonical DocumentOptions mapping");
   });
 

@@ -49,7 +49,7 @@ describe("parseDocument RTF text and formatting", () => {
   });
 
   it("scopes bold formatting to its group and maps paragraph alignment", () => {
-    const paragraph = firstParagraph(String.raw`{\rtf1{\b Bold} plain\par}{\qc Centered\par}`);
+    const paragraph = firstParagraph(String.raw`{\rtf1{\b Bold} plain\par{\qc Centered\par}}`);
     expect(runs(paragraph)).toEqual([{ bold: true, text: "Bold" }, { text: " plain" }]);
   });
 
@@ -104,7 +104,7 @@ describe("parseDocument RTF text and formatting", () => {
   });
 
   it("maps document default language", () => {
-    expect(parseDocument(String.raw`{\rtf1\deflang1033 Body`)).toMatchObject({
+    expect(parseDocument(String.raw`{\rtf1\deflang1033 Body}`)).toMatchObject({
       language: "en-US",
     });
   });
@@ -197,11 +197,9 @@ describe("parseDocument RTF tables", () => {
     expect(rows).toHaveLength(2);
   });
 
-  it("recovers missing and extra document group braces", () => {
+  it("rejects an extra closing brace", () => {
     const source = String.raw`{\rtf1{\b Text}\par}}`;
-    expect(parseDocument(source).sections[0]?.children[0]).toEqual({
-      paragraph: { children: [{ bold: true, text: "Text" }] },
-    });
+    expect(() => parseDocument(source)).toThrow("Content appears after the RTF root group");
   });
 });
 
@@ -210,20 +208,14 @@ describe("parseDocument recovery", () => {
     expect(() => parseDocument("plain text")).toThrow('RTF must begin with "{\\rtf"');
   });
 
-  it("closes an unterminated group and table at end of input", () => {
-    const document = parseDocument(String.raw`{\rtf1 Unclosed\trowd\cellx100 Text\cell`);
-    expect(document.sections[0]?.children[0]).toEqual({
-      paragraph: { children: [{ text: "Unclosed" }] },
-    });
+  it("rejects an unterminated root group", () => {
+    const source = String.raw`{\rtf1 Unclosed\trowd\cellx100 Text\cell`;
+    expect(() => parseDocument(source)).toThrow("RTF root group is not closed");
   });
 
-  it("keeps parsing content after a premature root closing brace", () => {
+  it("rejects content after the root group", () => {
     const source = String.raw`{\rtf1 First}\par Second`;
-    const children = parseDocument(source).sections[0]?.children ?? [];
-    expect(children).toEqual([
-      { paragraph: { children: [{ text: "First" }] } },
-      { paragraph: { children: [{ text: "Second" }] } },
-    ]);
+    expect(() => parseDocument(source)).toThrow("Content appears after the RTF root group");
   });
 });
 

@@ -21,6 +21,46 @@ export interface OdfPackageFiles {
   [path: string]: OdfFileContent;
 }
 
+const ODF_ZIP_READ_LIMITS = {
+  maxEntries: 20_000,
+  maxEntryUncompressedSize: 256 * 1024 * 1024,
+  maxTotalUncompressedSize: 1024 * 1024 * 1024,
+} as const;
+
+const ODF_CANONICAL_PREFIXES: Readonly<Record<string, string>> = {
+  "http://openoffice.org/2009/office": "officeooo",
+  "http://openoffice.org/2009/table": "tableooo",
+  "http://www.gnumeric.org/odf-extension/1.0": "gnm",
+  "http://www.w3.org/1999/02/22-rdf-syntax-ns#": "rdf",
+  "http://www.w3.org/1999/xlink": "xlink",
+  "http://www.w3.org/2002/xforms": "xforms",
+  "http://www.w3.org/XML/1998/namespace": "xml",
+  "http://purl.org/dc/elements/1.1/": "dc",
+  "urn:oasis:names:tc:opendocument:xmlns:animation:1.0": "anim",
+  "urn:oasis:names:tc:opendocument:xmlns:chart:1.0": "chart",
+  "urn:oasis:names:tc:opendocument:xmlns:config:1.0": "config",
+  "urn:oasis:names:tc:opendocument:xmlns:database:1.0": "db",
+  "urn:oasis:names:tc:opendocument:xmlns:datastyle:1.0": "number",
+  "urn:oasis:names:tc:opendocument:xmlns:drawing:1.0": "draw",
+  "urn:oasis:names:tc:opendocument:xmlns:form:1.0": "form",
+  "urn:oasis:names:tc:opendocument:xmlns:manifest:1.0": "manifest",
+  "urn:oasis:names:tc:opendocument:xmlns:manifest:1.3": "manifest",
+  "urn:oasis:names:tc:opendocument:xmlns:meta:1.0": "meta",
+  "urn:oasis:names:tc:opendocument:xmlns:office:1.0": "office",
+  "urn:oasis:names:tc:opendocument:xmlns:presentation:1.0": "presentation",
+  "urn:oasis:names:tc:opendocument:xmlns:script:1.0": "script",
+  "urn:oasis:names:tc:opendocument:xmlns:smil-compatible:1.0": "smil",
+  "urn:oasis:names:tc:opendocument:xmlns:style:1.0": "style",
+  "urn:oasis:names:tc:opendocument:xmlns:table:1.0": "table",
+  "urn:oasis:names:tc:opendocument:xmlns:text:1.0": "text",
+  "urn:oasis:names:tc:opendocument:xmlns:version:1.0": "version",
+  "urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0": "fo",
+  "urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0": "svg",
+  "urn:org:documentfoundation:names:experimental:calc:xmlns:calcext:1.0": "calcext",
+  "urn:org:documentfoundation:names:experimental:chart:xmlns:loext:1.0": "chartooo",
+  "urn:org:documentfoundation:names:experimental:office:xmlns:loext:1.0": "loext",
+};
+
 export function manifestXml(
   mimeType: string,
   files: OdfPackageFiles,
@@ -43,6 +83,7 @@ function canonicalManifestEntries(
   mediaTypes: Record<string, string>,
   packageManifest?: OcfManifestOptions,
 ): OcfManifestFileEntryOptions[] {
+  assertManifestPaths(packageManifest?.entries ?? []);
   const filePaths = new Set(Object.keys(files));
   const declared = packageManifestEntries(packageManifest).filter((entry) =>
     isGeneratedManifestPath(entry.fullPath, filePaths),
@@ -131,10 +172,16 @@ export function generateOcf(
   mediaTypes: Record<string, string> = {},
   packageManifest?: OcfManifestOptions,
 ): Uint8Array {
+  assertPackagePaths(files);
+  assertManifestPaths(packageManifest?.entries ?? []);
   const declaredDirectories = new Set(
     (packageManifest?.entries ?? [])
       .map((entry) => entry.fullPath)
       .filter((path) => path.endsWith("/") && path !== "/"),
+  );
+  assertNoPackagePathConflicts(
+    ["mimetype", "META-INF/manifest.xml", ...Object.keys(files)],
+    [...declaredDirectories],
   );
   return zipSync(
     {
@@ -166,25 +213,32 @@ export function readOcfSync(
   const expectedMimeTypes = Array.isArray(expectedMimeType) ? expectedMimeType : [expectedMimeType];
   let entries: Record<string, Uint8Array>;
   try {
-    const archive = new ParsedArchive(data);
-    entries = Object.fromEntries(
-      archive.keys().map((path) => [path, new Uint8Array(archive.getRaw(path)!)]),
-    );
+    const archive = new ParsedArchive(data, undefined, ODF_ZIP_READ_LIMITS);
+    entries = Object.fromEntries(archive.keys().map((path) => [path, archive.getRaw(path)!]));
   } catch (cause) {
     throw new OcfError("Invalid ODF ZIP package", { cause });
   }
+  assertNoPackagePathConflicts(
+    Object.keys(entries).filter((path) => !path.endsWith("/")),
+    Object.keys(entries).filter((path) => path.endsWith("/")),
+  );
   const files: OdfFiles = {};
   const binaries: Record<string, Uint8Array> = {};
   for (const [path, bytes] of Object.entries(entries)) {
-    if (path === "mimetype") continue;
-    if (path.endsWith("/")) continue;
+    if (path === "mimetype" || path === "META-INF/manifest.xml" || path.endsWith("/")) continue;
     if (path.endsWith(".xml")) {
       files[path] = strFromU8(bytes);
     } else {
-      binaries[path] = bytes;
+      Object.defineProperty(binaries, path, {
+        configurable: true,
+        enumerable: true,
+        value: bytes,
+        writable: true,
+      });
     }
   }
-  const manifestXml = files["META-INF/manifest.xml"];
+  const manifestData = entries["META-INF/manifest.xml"];
+  const manifestXml = manifestData ? strFromU8(manifestData) : undefined;
   if (!manifestXml) {
     throw new OcfManifestError("ODF package is missing META-INF/manifest.xml");
   }
@@ -215,6 +269,13 @@ export function readOcfSync(
   };
   const rootEntry = manifest.entries.find((entry) => entry.fullPath === "/");
   const mimeType = entries.mimetype ? strFromU8(entries.mimetype) : rootEntry?.mediaType;
+  if (
+    rootEntry?.mediaType !== undefined &&
+    mimeType !== undefined &&
+    rootEntry.mediaType !== mimeType
+  ) {
+    throw new OcfMimeTypeError(rootEntry.mediaType, mimeType);
+  }
   if (mimeType && !expectedMimeTypes.includes(mimeType))
     throw new OcfMimeTypeError(expectedMimeTypes[0]!, mimeType);
   validateManifestPaths(
@@ -261,7 +322,7 @@ function validateManifestPaths(
   const declared = new Set<string>();
   for (const entry of manifest.entries) {
     const path = entry.fullPath;
-    if (!path || path.includes("\\") || path.split("/").includes("..")) {
+    if (!isSafePackagePath(path, true)) {
       throw new OcfManifestError(`Invalid ODF manifest path: ${path}`, { fullPath: path });
     }
     if (declared.has(path)) {
@@ -303,6 +364,67 @@ function validateManifestPaths(
   }
 }
 
+function assertPackagePaths(files: OdfPackageFiles): void {
+  for (const path of Object.keys(files)) {
+    if (
+      !isSafePackagePath(path, false) ||
+      path.endsWith("/") ||
+      path.toLowerCase() === "mimetype" ||
+      path.toLowerCase() === "meta-inf/manifest.xml"
+    ) {
+      throw new OcfManifestError(`Invalid ODF package member path: ${path}`, {
+        fullPath: path,
+      });
+    }
+  }
+}
+
+function assertManifestPaths(entries: readonly OcfManifestFileEntryOptions[]): void {
+  for (const { fullPath } of entries) {
+    if (!isSafePackagePath(fullPath, true)) {
+      throw new OcfManifestError(`Invalid ODF manifest path: ${fullPath}`, { fullPath });
+    }
+  }
+}
+
+function isSafePackagePath(path: string, allowRoot: boolean): boolean {
+  if (allowRoot && path === "/") return true;
+  if (!path || path.startsWith("/") || path.includes("\\")) return false;
+  const segments = path.endsWith("/") ? path.slice(0, -1).split("/") : path.split("/");
+  return (
+    segments.length > 0 &&
+    !/^[a-z]:/i.test(segments[0]!) &&
+    segments.every((segment) => segment !== "" && segment !== "." && segment !== "..")
+  );
+}
+
+function assertNoPackagePathConflicts(
+  filePaths: readonly string[],
+  directoryPaths: readonly string[],
+): void {
+  const files = new Set(filePaths);
+  const directories = new Set(directoryPaths.map((path) => path.slice(0, -1)));
+  for (const path of [...files, ...directories]) {
+    const segments = path.split("/");
+    while (segments.length > 1) {
+      segments.pop();
+      const parent = segments.join("/");
+      if (files.has(parent)) {
+        throw new OcfManifestError(`ODF package file/directory path conflict: ${parent}`, {
+          fullPath: parent,
+        });
+      }
+    }
+  }
+  for (const path of files) {
+    if (directories.has(path)) {
+      throw new OcfManifestError(`ODF package file/directory path conflict: ${path}`, {
+        fullPath: path,
+      });
+    }
+  }
+}
+
 function isOptionalMissingManifestPath(path: string): boolean {
   return (
     path === "Thumbnails/thumbnail.png" ||
@@ -319,8 +441,26 @@ export function readXml(files: OdfFiles, path: string): Element {
   const xml = files[path];
   if (!xml) throw new OdfXmlError(path);
   try {
-    const document = parse(xml, { ignoreDeclaration: true, ignoreDoctype: true });
-    return document.elements?.[0] ?? document;
+    const document = parse(xml, {
+      ignoreDeclaration: true,
+      ignoreDoctype: true,
+      normalizeNamespaces: ODF_CANONICAL_PREFIXES,
+    });
+    const elements = document.elements ?? [];
+    const roots = elements.filter((element) => element.type === "element");
+    if (
+      roots.length !== 1 ||
+      elements.some(
+        (element) =>
+          element.type !== "element" &&
+          element.type !== "comment" &&
+          element.type !== "instruction" &&
+          !(element.type === "text" && String(element.text ?? "").trim().length === 0),
+      )
+    ) {
+      throw new Error("XML part must contain exactly one root element");
+    }
+    return roots[0]!;
   } catch (cause) {
     throw new OdfXmlError(path, { cause });
   }

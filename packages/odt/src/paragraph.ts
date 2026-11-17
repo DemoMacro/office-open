@@ -33,6 +33,7 @@ import {
 } from "./body";
 import { calculationSettingsXml } from "./calculation-settings";
 import {
+  assertSingleFramePayload,
   chartFrameXml,
   isShapeElement,
   parseGroup,
@@ -2013,11 +2014,16 @@ export function parseRuns(
       if (child.name === "text:ruby") return [{ text: "", children: [parseRuby(child, context)] }];
       if (child.name === "text:tab") return [{ text: "", children: [{ tab: true }] }];
       if (child.name === "draw:frame") {
-        if (childNamed(child, "draw:object-ole")) return [];
+        assertSingleFramePayload(child);
+        if (childNamed(child, "draw:object-ole")) throw unknownOdtElement(child);
         if (childNamed(child, "draw:text-box")) return [parseTextBoxFrame(child, context)];
-        return childNamed(child, "draw:object")
+        if (!childNamed(child, "draw:object") && !childNamed(child, "draw:image"))
+          throw unknownOdtElement(child);
+        const parsed = childNamed(child, "draw:object")
           ? parseChartFrame(child, context)
           : parsePictureFrame(child, context);
+        if (parsed.length === 0) throw unknownOdtElement(child);
+        return parsed;
       }
       if (child.name === "draw:object") return parseChartFrame(child, context);
       if (child.name === "draw:g") return [parseGroup(child, context)];

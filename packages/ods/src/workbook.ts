@@ -253,6 +253,15 @@ function parseOdsPackage(data: Uint8Array): OdsWorkbookOptions {
   const stylesDocument =
     files["styles.xml"] === undefined ? undefined : readXml(files, "styles.xml");
   const body = childNamed(childNamed(content, "office:body"), "office:spreadsheet");
+  if (!body) {
+    throw new OdsParseError(
+      "content.xml: /office:document-content/office:body/office:spreadsheet: required spreadsheet body is missing",
+      "content.xml",
+      "/office:document-content/office:body/office:spreadsheet",
+      "office:spreadsheet",
+      "missing-required-element",
+    );
+  }
   const automaticStyles = childNamed(content, "office:automatic-styles");
   const dimensions = parseDimensionStyles(automaticStyles);
   const cellStyles = parseNumberStyles(automaticStyles);

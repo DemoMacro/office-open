@@ -452,7 +452,10 @@ export class Relationships {
 
   private semanticTarget(entry: { target: string; targetMode?: string }): string {
     if (entry.targetMode === "External" || /^[a-z]+:\/\//i.test(entry.target)) return entry.target;
-    return resolveRelationshipTarget(this.ownerPath, entry.target);
+    const target = resolveRelationshipTarget(this.ownerPath, entry.target);
+    const suffixIndex = target.search(/[?#]/);
+    const partName = suffixIndex === -1 ? target : target.slice(0, suffixIndex);
+    return `${partName.toLowerCase()}${suffixIndex === -1 ? "" : target.slice(suffixIndex)}`;
   }
 
   /** Directly builds XML string — zero intermediate tree allocation. */

@@ -93,7 +93,7 @@ export interface TextCharacter {
   cp: number;
   complexField?: string;
   paragraphEnd?: boolean;
+  cellEnd?: boolean;
   hyperlink?: { url?: string; anchor?: string };
   picture?: LegacyPictureData;
-  revision?: { inserted: boolean };
 }

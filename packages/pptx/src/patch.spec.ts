@@ -1,4 +1,5 @@
 import { PatchError } from "@office-open/core";
+import { unzipSync, zipSync } from "@office-open/core/opc";
 import { describe, expect, it } from "vite-plus/test";
 
 import { generatePresentation } from "./generate";
@@ -79,6 +80,74 @@ describe("patchPresentation commands", () => {
     expect(parsed.slides).toHaveLength(2);
     expect(JSON.stringify(parsed.slides)).toContain("C");
     expect(JSON.stringify(parsed.slides)).toContain("Replaced");
+  });
+
+  it("rejects an inserted slide with an existing slide ID", async () => {
+    const source = await generatePresentation(presentation([slide("A")]));
+    const original = parsePresentationSync(source).slides![0]!;
+
+    await expect(
+      patchPresentation({
+        data: source,
+        commands: [
+          {
+            type: "insert",
+            at: { field: "slides" },
+            position: "end",
+            value: [{ ...slide("B"), slideId: original.slideId }],
+          },
+        ],
+      }),
+    ).rejects.toThrow(`Duplicate presentation slide ID: ${original.slideId}`);
+  });
+
+  it("preserves custom-show slides when patching a relocated presentation part", async () => {
+    const slides = [slide("A"), slide("B")];
+    const initial = await generatePresentation(presentation(slides));
+    const relationships = new TextDecoder().decode(
+      unzipSync(initial)["ppt/_rels/presentation.xml.rels"]!,
+    );
+    const slideRelationshipIds = [
+      ...relationships.matchAll(
+        /<Relationship\b(?=[^>]*\bId="([^"]+)")(?=[^>]*\bType="[^"]*\/slide")(?=[^>]*\bTarget="slides\/slide\d+\.xml")[^>]*\/>/g,
+      ),
+    ].map((match) => match[1]!);
+    expect(slideRelationshipIds).toHaveLength(2);
+
+    const source = await generatePresentation({
+      ...presentation(slides),
+      customShows: [
+        {
+          name: "Keep first",
+          id: 1,
+          slides: slideRelationshipIds.map((rId) => ({ rId })),
+        },
+      ],
+    });
+    const archive = unzipSync(source);
+    archive["custom/deck.xml"] = archive["ppt/presentation.xml"]!;
+    archive["custom/_rels/deck.xml.rels"] = new TextEncoder().encode(
+      new TextDecoder()
+        .decode(archive["ppt/_rels/presentation.xml.rels"]!)
+        .replace(/Target="([^"]+)"/g, (_match, target: string) => `Target="../ppt/${target}"`),
+    );
+    archive["_rels/.rels"] = new TextEncoder().encode(
+      new TextDecoder()
+        .decode(archive["_rels/.rels"]!)
+        .replace('Target="ppt/presentation.xml"', 'Target="custom/deck.xml"'),
+    );
+    delete archive["ppt/presentation.xml"];
+    delete archive["ppt/_rels/presentation.xml.rels"];
+
+    const patched = parsePresentationSync(
+      await patchPresentation({
+        data: zipSync(archive),
+        commands: [{ type: "remove", at: { field: "slides", route: [{ index: 1 }] } }],
+      }),
+    );
+
+    expect(patched.slides).toHaveLength(1);
+    expect(patched.customShows?.[0]?.slides).toHaveLength(1);
   });
 
   it("updates canonical package metadata", async () => {

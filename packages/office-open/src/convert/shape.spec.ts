@@ -54,6 +54,17 @@ describe("toXlsxShape (pptx → xlsx)", () => {
     const x = toXlsxShape({ ...RECT_PPTX, flipVertical: true });
     expect(x.properties.flipVertical).toBe(true);
   });
+
+  it("preserves black-and-white rendering mode", () => {
+    expect(toXlsxShape({ ...RECT_PPTX, blackWhiteMode: "gray" }).blackWhiteMode).toBe("gray");
+    expect(toPptxShape({ ...toXlsxShape(RECT_PPTX), blackWhiteMode: "gray" }).blackWhiteMode).toBe(
+      "gray",
+    );
+    expect(toDocxShape({ ...RECT_PPTX, blackWhiteMode: "gray" }).blackWhiteMode).toBe("gray");
+    expect(toPptxShape(toDocxShape({ ...RECT_PPTX, blackWhiteMode: "gray" })).blackWhiteMode).toBe(
+      "gray",
+    );
+  });
 });
 
 describe("toPptxShape (xlsx → pptx)", () => {
@@ -111,7 +122,7 @@ describe("toPptxShape (docx → pptx)", () => {
     expect(back.textBody?.paragraphs?.[0]).toBe("Hello");
   });
 
-  it("converts bare and wrapped paragraphs while skipping non-text blocks", () => {
+  it("rejects DOCX block content that DrawingML text bodies cannot represent", () => {
     const d: DocxShapeOptions = {
       transformation: { width: 1219200, height: 381000 },
       children: [
@@ -122,10 +133,9 @@ describe("toPptxShape (docx → pptx)", () => {
       ],
     };
 
-    expect(toPptxShape(d).textBody?.paragraphs).toEqual([
-      { children: [{ text: "Bare" }] },
-      "Wrapped",
-    ]);
+    expect(() => toPptxShape(d)).toThrow(
+      "DOCX text-box block content cannot be converted to DrawingML text",
+    );
   });
 });
 
