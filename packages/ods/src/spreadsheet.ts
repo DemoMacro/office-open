@@ -27,6 +27,8 @@ import type {
   DataValidationOptions,
   DxfOptions,
   FilterColumnOptions,
+  GroupOptions,
+  GroupShapeChildOptions,
   IconSetType,
   PivotDataField,
   PivotPageFieldOptions,
@@ -43,7 +45,7 @@ import type {
 } from "@office-open/xlsx";
 import type { Element } from "@office-open/xml";
 
-import { OdsGenerateError } from "./error";
+import { OdsGenerateError, OdsParseError } from "./error";
 import { parseNumberStyles } from "./numbering";
 import type { OdsDataPilotFunctionOptions } from "./options";
 import { addTextStyle } from "./styles";
@@ -179,6 +181,146 @@ export function parseDrawingShape(
     ...(attributeString(element, "svg:desc")
       ? { description: attributeString(element, "svg:desc") }
       : {}),
+  };
+}
+
+export function parseDrawingGroup(
+  element: Element,
+  row: number,
+  column: number,
+  graphicStyles: Map<string, GraphicStyle>,
+  textStyles: Map<string, RichTextRunPropertiesOptions>,
+  absolute = false,
+): GroupOptions {
+  const path = "/office:document-content/office:body/office:spreadsheet/table:table/draw:g";
+  assertElementNames(
+    element,
+    [
+      "draw:name",
+      "draw:style-name",
+      "draw:z-index",
+      "draw:transform",
+      "svg:x",
+      "svg:y",
+      "svg:width",
+      "svg:height",
+      "svg:title",
+      "svg:desc",
+    ],
+    [
+      "svg:title",
+      "svg:desc",
+      "draw:rect",
+      "draw:control",
+      "draw:ellipse",
+      "draw:circle",
+      "draw:line",
+      "draw:measure",
+      "draw:polygon",
+      "draw:polyline",
+      "draw:custom-shape",
+      "draw:g",
+    ],
+  );
+  if (attributeString(element, "draw:transform") !== undefined)
+    throw new OdsParseError(
+      "ODS group transform has no equivalent in the canonical group transform model",
+      "content.xml",
+      path,
+      "draw:transform",
+      "unsupported-group-transform",
+    );
+  const style = graphicStyles.get(attributeString(element, "draw:style-name") ?? "");
+  if (graphicFill(style) || graphicOutline(style))
+    throw new OdsParseError(
+      "ODS group fill and outline have no equivalent in the canonical group model",
+      "content.xml",
+      path,
+      "draw:style-name",
+      "unsupported-group-style",
+    );
+  const x = lengthToEmu(attributeString(element, "svg:x"));
+  const y = lengthToEmu(attributeString(element, "svg:y"));
+  const width = lengthToEmu(attributeString(element, "svg:width"));
+  const height = lengthToEmu(attributeString(element, "svg:height"));
+  const title = childNamed(element, "svg:title");
+  const description = childNamed(element, "svg:desc");
+  const shapes: GroupShapeChildOptions[] = [];
+  const groups: NonNullable<GroupOptions["groups"]> = [];
+  let nestedGroupSeen = false;
+  for (const child of element.elements ?? []) {
+    if (child.name === "svg:title" || child.name === "svg:desc") continue;
+    if (child.name === "draw:g") {
+      nestedGroupSeen = true;
+      const nested = parseDrawingGroup(child, row, column, graphicStyles, textStyles);
+      const {
+        col: _column,
+        row: _row,
+        colOffset,
+        rowOffset,
+        extentCx,
+        extentCy,
+        ...nestedGroup
+      } = nested;
+      groups.push({
+        ...nestedGroup,
+        properties: {
+          ...nestedGroup.properties,
+          ...(colOffset === undefined ? {} : { x: colOffset }),
+          ...(rowOffset === undefined ? {} : { y: rowOffset }),
+          ...(extentCx === undefined ? {} : { width: extentCx }),
+          ...(extentCy === undefined ? {} : { height: extentCy }),
+        },
+      });
+      continue;
+    }
+    if (nestedGroupSeen)
+      throw new OdsParseError(
+        "ODS group child order cannot be represented by the canonical group model",
+        "content.xml",
+        path,
+        child.name ?? "",
+        "unsupported-group-child-order",
+      );
+    const shape = parseDrawingShape(child, row, column, graphicStyles, textStyles);
+    shapes.push({
+      name: shape.name,
+      title: shape.title,
+      description: shape.description,
+      hidden: shape.hidden,
+      properties: shape.properties,
+      ...(shape.textBody === undefined ? {} : { textBody: shape.textBody }),
+    });
+  }
+  return {
+    col: column,
+    row,
+    ...(absolute
+      ? {
+          anchorType: "absolute" as const,
+          absoluteX: x,
+          absoluteY: y,
+          extentCx: width,
+          extentCy: height,
+        }
+      : { colOffset: x, rowOffset: y, extentCx: width, extentCy: height }),
+    name: attributeString(element, "draw:name"),
+    title: attributeString(element, "svg:title") ?? (title ? textOf(title) : undefined),
+    description:
+      attributeString(element, "svg:desc") ?? (description ? textOf(description) : undefined),
+    zOrder: attributeNumber(element, "draw:z-index"),
+    properties: {
+      ...(x === undefined ? {} : { x }),
+      ...(y === undefined ? {} : { y }),
+      ...(width === undefined ? {} : { width, childExtentWidth: width }),
+      ...(height === undefined ? {} : { height, childExtentHeight: height }),
+      childOffsetX: 0,
+      childOffsetY: 0,
+      childOffsetPresent: true,
+      childExtentPresent: width !== undefined || height !== undefined,
+    },
+    ...(shapes.length ? { shapes } : {}),
+    ...(groups.length ? { groups } : {}),
   };
 }
 
@@ -318,7 +460,7 @@ export function cellShapeXml(
   reference: string,
   styles: string[],
 ): string[] {
-  return (shapes ?? [])
+  const shapeXml = (shapes ?? [])
     .filter((shape) => `${spreadsheetColumnName(shape.col)}${shape.row}` === reference)
     .map((shape) => {
       const geometry = shape.properties.geometry;
@@ -428,6 +570,65 @@ export function cellShapeXml(
         paragraphXml,
       );
     });
+  return shapeXml;
+}
+
+export function drawingGroupXml(group: GroupOptions, styles: string[]): string {
+  const reference = `${spreadsheetColumnName(group.col)}${group.row}`;
+  const children = [
+    ...cellShapeXml(
+      (group.shapes ?? []).map((shape) => ({
+        col: group.col,
+        row: group.row,
+        colOffset: shape.properties.x,
+        rowOffset: shape.properties.y,
+        extentCx: shape.properties.width,
+        extentCy: shape.properties.height,
+        name: shape.name,
+        title: shape.title,
+        description: shape.description,
+        hidden: shape.hidden,
+        properties: shape.properties,
+        textBody: shape.textBody,
+      })),
+      reference,
+      styles,
+    ),
+    ...(group.groups ?? []).map((nested) =>
+      drawingGroupXml(
+        {
+          ...nested,
+          col: group.col,
+          row: group.row,
+          colOffset: nested.properties.x,
+          rowOffset: nested.properties.y,
+          extentCx: nested.properties.width,
+          extentCy: nested.properties.height,
+        },
+        styles,
+      ),
+    ),
+  ];
+  return xmlElement(
+    "draw:g",
+    {
+      "draw:name": group.name,
+      "draw:z-index": group.zOrder,
+      "svg:x": emuToLength(group.absoluteX ?? group.colOffset ?? group.properties.x ?? 0),
+      "svg:y": emuToLength(group.absoluteY ?? group.rowOffset ?? group.properties.y ?? 0),
+      "svg:width": emuToLength(group.extentCx ?? group.properties.width ?? 0),
+      "svg:height": emuToLength(group.extentCy ?? group.properties.height ?? 0),
+    },
+    [
+      ...(group.title === undefined
+        ? []
+        : [xmlElement("svg:title", undefined, [escapeText(group.title)])]),
+      ...(group.description === undefined
+        ? []
+        : [xmlElement("svg:desc", undefined, [escapeText(group.description)])]),
+      ...children,
+    ],
+  );
 }
 
 export function tableProtectionXml(worksheet: WorksheetOptions): string {

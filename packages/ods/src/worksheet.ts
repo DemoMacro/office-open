@@ -42,6 +42,8 @@ import { odfDateValue } from "./numbering";
 import {
   cellShapeXml,
   conditionalFormatsXml,
+  drawingGroupXml,
+  parseDrawingGroup,
   parseDrawingShape,
   tableProtectionXml,
 } from "./spreadsheet";
@@ -484,7 +486,14 @@ export function worksheetXml(
     { "table:name": sheetName, "table:style-name": tableStyleName },
     [
       formsXml,
-      ...(frames.length ? [xmlElement("table:shapes", undefined, frames)] : []),
+      ...(frames.length || worksheet.groups?.length
+        ? [
+            xmlElement("table:shapes", undefined, [
+              ...frames,
+              ...(worksheet.groups ?? []).map((group) => drawingGroupXml(group, styles)),
+            ]),
+          ]
+        : []),
       tableProtectionXml(worksheet),
       columns,
       `${rows}${defaultRows}`,
@@ -812,6 +821,9 @@ export function worksheet(
   const hyperlinks: HyperlinkOptions[] = [];
   const mergeCells: MergeCellOptions[] = [];
   const shapes: WorksheetOptions["shapes"] = [];
+  const groups: WorksheetOptions["groups"] = [];
+  for (const group of childrenNamed(childNamed(table, "table:shapes"), "draw:g"))
+    groups.push(parseDrawingGroup(group, 1, 1, graphicStyles, textStyles, true));
   validateTableChildren(table);
   const columns: ColumnOptions[] = [];
   let columnNumber = 1;
@@ -847,6 +859,7 @@ export function worksheet(
     shapes,
     textStyles,
     hyperlinks,
+    groups,
   );
   const tableStyle = dimensions.get(attributeString(table, "table:style-name") ?? "");
   const sheetView =
@@ -877,6 +890,7 @@ export function worksheet(
     ...(comments.length ? { comments } : {}),
     ...(mergeCells.length ? { mergeCells } : {}),
     ...(shapes?.length ? { shapes } : {}),
+    ...(groups.length ? { groups } : {}),
     ...(hyperlinks.length ? { hyperlinks } : {}),
   };
 }
@@ -1105,6 +1119,7 @@ function parseRows(
   shapes: WorksheetOptions["shapes"],
   textStyles: Map<string, RichTextRunPropertiesOptions>,
   hyperlinks: HyperlinkOptions[],
+  groups: WorksheetOptions["groups"],
 ): { rows: RowOptions[]; defaultRowHeight?: number } {
   const rows: RowOptions[] = [];
   let defaultRowHeight: number | undefined;
@@ -1123,6 +1138,7 @@ function parseRows(
       shapes,
       textStyles,
       hyperlinks,
+      groups,
     );
     const hasRowData = (parsed.cells ?? []).some(hasCellContent) || parsed.hidden === true;
     if (repeat > MAX_ROWS && hasRowData) {
@@ -1224,6 +1240,7 @@ export function parseRow(
   shapes: WorksheetOptions["shapes"] = [],
   textStyles: Map<string, RichTextRunPropertiesOptions> = new Map(),
   hyperlinks: HyperlinkOptions[] = [],
+  groups: WorksheetOptions["groups"] = [],
 ): RowOptions {
   const style = dimensions.get(attributeString(row, "table:style-name") ?? "");
   const cellStartColumns: number[] = [];
@@ -1515,45 +1532,7 @@ export function parseRow(
               shapes?.push(parseDrawingShape(child, rowNumber, column, graphicStyles, textStyles));
             }
             if (child.name === "draw:g") {
-              assertElementNames(
-                child,
-                ["draw:z-index"],
-                [
-                  "svg:title",
-                  "svg:desc",
-                  "draw:rect",
-                  "draw:control",
-                  "draw:ellipse",
-                  "draw:circle",
-                  "draw:line",
-                  "draw:measure",
-                  "draw:polygon",
-                  "draw:polyline",
-                  "draw:custom-shape",
-                ],
-              );
-              const groupTitle = textOf(childNamed(child, "svg:title"));
-              const groupDescription = textOf(childNamed(child, "svg:desc"));
-              const groupZIndex = attributeNumber(child, "draw:z-index");
-              for (const nested of child.elements ?? []) {
-                if (nested.name !== "svg:title" && nested.name !== "svg:desc") {
-                  const shape = parseDrawingShape(
-                    nested,
-                    rowNumber,
-                    column,
-                    graphicStyles,
-                    textStyles,
-                  );
-                  if (groupTitle && shape.title === undefined) shape.title = groupTitle;
-                  if (groupDescription && shape.description === undefined) {
-                    shape.description = groupDescription;
-                  }
-                  if (shape.zOrder === undefined && groupZIndex !== undefined) {
-                    shape.zOrder = groupZIndex;
-                  }
-                  shapes?.push(shape);
-                }
-              }
+              groups?.push(parseDrawingGroup(child, rowNumber, column, graphicStyles, textStyles));
             }
           }
           return parsed;

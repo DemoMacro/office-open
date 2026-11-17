@@ -31,6 +31,50 @@ describe("ODS codec", () => {
     expect(parsed.worksheets?.[0]?.rows?.[0]?.cells).toEqual([{ reference: "A1", value: "ODS" }]);
   });
 
+  it("round-trips grouped worksheet shapes through canonical groups", async () => {
+    const source = generateOcf("application/vnd.oasis.opendocument.spreadsheet", {
+      "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:spreadsheet><table:table table:name="Sheet1"><table:shapes><draw:g draw:name="Group" svg:x="1cm" svg:y="2cm" svg:width="4cm" svg:height="3cm"><svg:title>Group title</svg:title><draw:rect draw:name="Child" svg:x="0.5cm" svg:y="0.25cm" svg:width="2cm" svg:height="1cm"><text:p>Grouped text</text:p></draw:rect><draw:g draw:name="Nested" svg:x="0.25cm" svg:y="0.5cm" svg:width="1cm" svg:height="1cm"><draw:ellipse draw:name="Nested child" svg:x="0.1cm" svg:y="0.1cm" svg:width="0.5cm" svg:height="0.5cm"/></draw:g></draw:g></table:shapes><table:table-row><table:table-cell/></table:table-row></table:table></office:spreadsheet></office:body></office:document-content>`,
+    });
+    const parsed = await parseWorkbook(source);
+    expect(parsed.worksheets?.[0]?.groups).toMatchObject([
+      {
+        col: 1,
+        row: 1,
+        anchorType: "absolute",
+        absoluteX: 360000,
+        absoluteY: 720000,
+        extentCx: 1440000,
+        extentCy: 1080000,
+        name: "Group",
+        title: "Group title",
+        properties: { x: 360000, y: 720000, width: 1440000, height: 1080000 },
+        shapes: [
+          {
+            name: "Child",
+            properties: { x: 180000, y: 90000, width: 720000, height: 360000 },
+            textBody: { text: "Grouped text" },
+          },
+        ],
+        groups: [
+          {
+            name: "Nested",
+            properties: { x: 90000, y: 180000, width: 360000, height: 360000 },
+            shapes: [
+              {
+                name: "Nested child",
+                properties: { x: 36000, y: 36000, width: 180000, height: 180000 },
+              },
+            ],
+          },
+        ],
+      },
+    ]);
+
+    const generated = await generateWorkbook(parsed);
+    const roundTripped = await parseWorkbook(generated);
+    expect(roundTripped.worksheets?.[0]?.groups).toEqual(parsed.worksheets?.[0]?.groups);
+  });
+
   it("rejects worksheet chart frames whose chart subdocument is missing", async () => {
     const source = generateOcf("application/vnd.oasis.opendocument.spreadsheet", {
       "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:spreadsheet><table:table table:name="Sheet1"><table:shapes><draw:frame><draw:object xlink:href="Object 1"/></draw:frame></table:shapes><table:table-row><table:table-cell/></table:table-row></table:table></office:spreadsheet></office:body></office:document-content>`,
