@@ -10,6 +10,8 @@ import type {
   ComplexFieldOptions,
   DocumentOptions,
   FormFieldOptions,
+  GroupChildMediaData,
+  GroupOptions,
   ParagraphChild,
   ParagraphOptions,
   PictureOptions,
@@ -22,9 +24,11 @@ import {
   attributeString,
   childNamed,
   childrenNamed,
+  emuToLength,
   escapeText,
   textOf,
   officeFormsXml,
+  pushShapeStyle,
   xmlElement,
 } from "@office-open/odf";
 import type { Element } from "@office-open/xml";
@@ -765,6 +769,16 @@ export function runXml(
     if ("tab" in child) return "<text:tab/>";
     if ("picture" in child)
       return pictureFrameXml((child as { picture: PictureOptions }).picture, images);
+    if ("wpgGroup" in child)
+      return wpgGroupXml(
+        (child as { wpgGroup: GroupOptions }).wpgGroup,
+        styles,
+        images,
+        notes,
+        numbering,
+        charts,
+        embeddedObjects,
+      );
     if ("wpsShape" in child) {
       const shape = (child as { wpsShape: ShapeOptions }).wpsShape;
       const shapeChildren = shape.children.map((shapeChild) => {
@@ -807,6 +821,121 @@ export function runXml(
     }
     return "";
   });
+}
+
+function wpgGroupXml(
+  group: GroupOptions,
+  styles: string[],
+  images: OdtImage[],
+  notes: NotesContext,
+  numbering: DocumentOptions["numbering"],
+  charts: OdtChart[],
+  embeddedObjects: OdtEmbeddedObjectOptions[],
+): string {
+  return odfGroupXml(
+    group.transformation,
+    group.children,
+    group.fill,
+    undefined,
+    group.altText?.name,
+    group.altText?.title,
+    group.altText?.description,
+    styles,
+    images,
+    notes,
+    numbering,
+    charts,
+    embeddedObjects,
+  );
+}
+
+function odfGroupXml(
+  transformation: GroupOptions["transformation"],
+  children: GroupChildMediaData[],
+  fill: GroupOptions["fill"],
+  outline: GroupChildMediaData["outline"],
+  name: string | undefined,
+  title: string | undefined,
+  description: string | undefined,
+  styles: string[],
+  images: OdtImage[],
+  notes: NotesContext,
+  numbering: DocumentOptions["numbering"],
+  charts: OdtChart[],
+  embeddedObjects: OdtEmbeddedObjectOptions[],
+): string {
+  if (outline !== undefined)
+    throw new OdtGenerateError(
+      "ODT groups cannot represent a DrawingML group outline",
+      "content.xml",
+      "/office:document-content/office:body/office:text/draw:g",
+      "group outline",
+      "unsupported-group-outline",
+    );
+  const childXml = children.map((child) => {
+    if (child.type === "wps")
+      return runXml(
+        {
+          children: [
+            {
+              wpsShape: {
+                ...child.data,
+                transformation: child.transformation,
+                ...(child.fill === undefined ? {} : { fill: child.fill }),
+                ...(child.outline === undefined ? {} : { outline: child.outline }),
+              },
+            },
+          ],
+        },
+        styles,
+        images,
+        notes,
+        numbering,
+        charts,
+        embeddedObjects,
+      ).join("");
+    if (child.type === "wpg")
+      return odfGroupXml(
+        child.transformation,
+        child.children,
+        child.fill,
+        child.outline,
+        child.nonVisualProperties?.name,
+        child.nonVisualProperties?.title,
+        child.nonVisualProperties?.description,
+        styles,
+        images,
+        notes,
+        numbering,
+        charts,
+        embeddedObjects,
+      );
+    throw new OdtGenerateError(
+      `ODT groups cannot represent child type "${child.type}"`,
+      "content.xml",
+      "/office:document-content/office:body/office:text/draw:g",
+      child.type,
+      "unsupported-group-child",
+    );
+  });
+  return xmlElement(
+    "draw:g",
+    {
+      "draw:name": name,
+      "draw:style-name": pushShapeStyle(fill, undefined, styles),
+      "svg:x": emuToLength(transformation.offset?.x),
+      "svg:y": emuToLength(transformation.offset?.y),
+      "svg:width": emuToLength(transformation.width),
+      "svg:height": emuToLength(transformation.height),
+    },
+    [
+      ...(title === undefined ? [] : [xmlElement("svg:title", undefined, [escapeText(title)])]),
+      ...(description === undefined
+        ? []
+        : [xmlElement("svg:desc", undefined, [escapeText(description)])]),
+      ...childXml,
+    ],
+  );
 }
 
 export function simpleFieldXml(field: CanonicalSimpleField, notes: NotesContext): string {

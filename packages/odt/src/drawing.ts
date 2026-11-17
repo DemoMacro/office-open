@@ -751,9 +751,29 @@ export function parseTextBoxFrame(frame: Element, context: ParseContext): Paragr
 }
 
 export function parseGroup(element: Element, context: ParseContext): ParagraphChild {
-  const childElements = (element.elements ?? []).filter(
-    (child) => isShapeElement(child.name) || child.name === "draw:g",
-  );
+  const childElements = (element.elements ?? []).filter((child) => {
+    if (child.name === "svg:title" || child.name === "svg:desc") return false;
+    if (isShapeElement(child.name) || child.name === "draw:g") return true;
+    throw unknownOdtElement(child);
+  });
+  if (attributeString(element, "draw:transform") !== undefined)
+    throw new OdtParseError(
+      "ODT group transform has no equivalent in the canonical group model",
+      "content.xml",
+      "/office:document-content/office:body/draw:g",
+      "draw:transform",
+      "unsupported-group-transform",
+    );
+  const styleName = attributeString(element, "draw:style-name");
+  const groupStyle = styleName ? context.graphicStyles.get(styleName) : undefined;
+  if (graphicOutline(groupStyle))
+    throw new OdtParseError(
+      "ODT group outline has no equivalent in the canonical group model",
+      "content.xml",
+      "/office:document-content/office:body/draw:g",
+      "draw:style-name",
+      "unsupported-group-outline",
+    );
   const children: WpgChildMediaData[] = childElements.map((child) => {
     if (child.name === "draw:g") {
       const group = parseGroup(child, context);
@@ -782,37 +802,55 @@ export function parseGroup(element: Element, context: ParseContext): ParagraphCh
         return "wpgGroup" in group ? group.wpgGroup.transformation : { width: 0, height: 0 };
       }),
   ];
-  const left = Math.min(
-    ...transformations.map((transformation) => Number(transformation.offset?.x ?? 0)),
-  );
-  const top = Math.min(
-    ...transformations.map((transformation) => Number(transformation.offset?.y ?? 0)),
-  );
-  const right = Math.max(
-    ...transformations.map(
-      (transformation) => Number(transformation.offset?.x ?? 0) + Number(transformation.width),
-    ),
-  );
-  const bottom = Math.max(
-    ...transformations.map(
-      (transformation) => Number(transformation.offset?.y ?? 0) + Number(transformation.height),
-    ),
-  );
+  const left = transformations.length
+    ? Math.min(...transformations.map((transformation) => Number(transformation.offset?.x ?? 0)))
+    : 0;
+  const top = transformations.length
+    ? Math.min(...transformations.map((transformation) => Number(transformation.offset?.y ?? 0)))
+    : 0;
+  const right = transformations.length
+    ? Math.max(
+        ...transformations.map(
+          (transformation) => Number(transformation.offset?.x ?? 0) + Number(transformation.width),
+        ),
+      )
+    : 0;
+  const bottom = transformations.length
+    ? Math.max(
+        ...transformations.map(
+          (transformation) => Number(transformation.offset?.y ?? 0) + Number(transformation.height),
+        ),
+      )
+    : 0;
+  const x = lengthToEmu(attributeString(element, "svg:x"));
+  const y = lengthToEmu(attributeString(element, "svg:y"));
+  const width = lengthToEmu(attributeString(element, "svg:width"));
+  const height = lengthToEmu(attributeString(element, "svg:height"));
+  const name = attributeString(element, "draw:name");
+  const title = childNamed(element, "svg:title");
+  const description = childNamed(element, "svg:desc");
   return {
     wpgGroup: {
       children,
       transformation: {
-        offset: { x: left, y: top },
-        width: right - left,
-        height: bottom - top,
+        offset: { x: x ?? left, y: y ?? top },
+        width: width ?? right - left,
+        height: height ?? bottom - top,
       },
       childOffsetX: left,
       childOffsetY: top,
       childExtentWidth: right - left,
       childExtentHeight: bottom - top,
-      altText: attributeString(element, "draw:name")
-        ? { name: attributeString(element, "draw:name") ?? "" }
-        : undefined,
+      ...(graphicFill(groupStyle) ? { fill: graphicFill(groupStyle) } : {}),
+      ...(name || title || description
+        ? {
+            altText: {
+              name: name ?? "",
+              ...(title ? { title: textOf(title) } : {}),
+              ...(description ? { description: textOf(description) } : {}),
+            },
+          }
+        : {}),
     } satisfies GroupOptions,
   };
 }

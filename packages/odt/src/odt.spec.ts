@@ -67,6 +67,43 @@ async function parseBodyError(body: string, name: string, reason?: string): Prom
 }
 
 describe("ODT canonical projection", () => {
+  it("round-trips grouped shapes and their metadata", async () => {
+    const source = odtPackage(
+      '<text:p><draw:g draw:name="Group" svg:x="1cm" svg:y="2cm" svg:width="4cm" svg:height="3cm"><svg:title>Group title</svg:title><svg:desc>Group description</svg:desc><draw:rect draw:name="Child" svg:x="0.5cm" svg:y="0.25cm" svg:width="2cm" svg:height="1cm"><text:p>Grouped text</text:p></draw:rect></draw:g></text:p>',
+    );
+    const parsed = await parseDocument(source);
+    expect(parsed.sections[0]?.children?.[0]).toMatchObject({
+      paragraph: {
+        children: [
+          {
+            wpgGroup: {
+              transformation: {
+                offset: { x: 360000, y: 720000 },
+                width: 1440000,
+                height: 1080000,
+              },
+              altText: {
+                name: "Group",
+                title: "Group title",
+                description: "Group description",
+              },
+              children: [
+                {
+                  type: "wps",
+                  data: {
+                    children: [{ paragraph: { text: "Grouped text" } }],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    });
+    const regenerated = await parseDocument(await generateDocument(parsed));
+    expect(regenerated.sections[0]?.children).toEqual(parsed.sections[0]?.children);
+  });
+
   it("generates textbox section children instead of dropping them", async () => {
     const generated = await generateDocument({
       sections: [
