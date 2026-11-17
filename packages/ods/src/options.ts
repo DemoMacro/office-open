@@ -12,6 +12,8 @@ export interface OdsDataPilotFunctionOptions {
 
 /** ODF calculation settings that extend the canonical workbook calculation model. */
 export interface OdsCalculationSettingsOptions extends NonNullable<WorkbookOptions["calculation"]> {
+  /** Preserve an ODF iteration element whose optional status is omitted. */
+  iterationPresent?: boolean;
   /** Whether search criteria must match the complete cell contents. */
   searchCriteriaMustApplyToWholeCell?: boolean;
   /** ODF compatibility year used when evaluating two-digit dates. */

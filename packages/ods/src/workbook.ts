@@ -506,10 +506,12 @@ export function parseOdsSemantics(body: Element | undefined): OdsWorkbookOptions
     calculation,
     "table:search-criteria-must-apply-to-whole-cell",
   );
+  const iterationStatus = iteration ? calculationIterationStatus(iteration) : undefined;
   const result: OdsCalculationSettingsOptions = {
     ...(iteration
       ? {
-          iterate: calculationIterationStatus(iteration),
+          ...(iterationStatus === undefined ? { iterationPresent: true } : {}),
+          ...(iterationStatus === undefined ? {} : { iterate: iterationStatus }),
           ...(attributeNumber(iteration, "table:steps") !== undefined
             ? { iterateCount: attributeNumber(iteration, "table:steps") }
             : {}),
@@ -591,8 +593,9 @@ function calculationBoolean(element: Element, name: string): boolean | undefined
   );
 }
 
-function calculationIterationStatus(element: Element): boolean {
+function calculationIterationStatus(element: Element): boolean | undefined {
   const value = attributeString(element, "table:status");
+  if (value === undefined) return undefined;
   if (value === "enable") return true;
   if (value === "disable") return false;
   throw unknownOdsElement(
@@ -638,6 +641,7 @@ export function semanticsXml(calculation: OdsWorkbookOptions["calculation"]): st
   if (!calculation) return "";
   const hasSettings =
     calculation.iterate !== undefined ||
+    calculation.iterationPresent !== undefined ||
     calculation.caseSensitive !== undefined ||
     calculation.precisionAsShown !== undefined ||
     calculation.automaticLabelSearch !== undefined ||
@@ -666,7 +670,9 @@ export function semanticsXml(calculation: OdsWorkbookOptions["calculation"]): st
       "table:null-year": calculation.nullYear,
     },
     [
-      ...(calculation.iterate !== undefined ? [xmlElement("table:iteration", iteration)] : []),
+      ...(calculation.iterate !== undefined || calculation.iterationPresent
+        ? [xmlElement("table:iteration", iteration)]
+        : []),
       ...(calculation.nullDate
         ? [
             xmlElement("table:null-date", {

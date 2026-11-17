@@ -1034,6 +1034,21 @@ describe("ODS codec", () => {
     });
   });
 
+  it("preserves an iteration element with omitted status", async () => {
+    const source = generateOcf("application/vnd.oasis.opendocument.spreadsheet", {
+      "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:spreadsheet><table:calculation-settings><table:iteration table:maximum-difference="0.0001"/></table:calculation-settings></office:spreadsheet></office:body></office:document-content>`,
+    });
+    const parsed = await parseWorkbook(source);
+    expect(parsed.calculation).toMatchObject({ iterationPresent: true, iterateDelta: 0.0001 });
+    const content = (
+      await readOcf(
+        await generateWorkbook(parsed),
+        "application/vnd.oasis.opendocument.spreadsheet",
+      )
+    ).files["content.xml"]!;
+    expect(content).toContain('<table:iteration table:maximum-difference="0.0001"/>');
+  });
+
   it("round-trips canonical spreadsheet error values", async () => {
     const parsed = await parseWorkbook(
       await generateWorkbook({
