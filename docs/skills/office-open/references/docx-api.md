@@ -557,8 +557,9 @@ Each command uses `at: { field, route, text }`. `field` is a `DocumentOptions` r
 Scan a template to discover all placeholder keys:
 
 ```ts
+import { readFileSync } from "node:fs";
 import { patchDetector } from "@office-open/docx";
 
-const placeholderKeys = await patchDetector({ data: templateBuffer });
+const placeholderKeys = await patchDetector({ data: readFileSync("template.docx") });
 // ["name", "title", "content", ...]
 ```

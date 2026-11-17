@@ -64,6 +64,7 @@ Stream variant: `generateDocumentStream`, `generatePresentationStream`, `generat
 Read existing files back into options objects for modification or round-trip:
 
 ```ts
+import { readFileSync } from "node:fs";
 import { parseDocument, generateDocument } from "@office-open/docx";
 const opts = await parseDocument(readFileSync("input.docx")); // Uint8Array, ArrayBuffer, typed-array view, base64 string
 const buffer = await generateDocument(opts);
@@ -77,6 +78,7 @@ Patch template files with ordered, source-preserving commands:
 
 ```ts
 // DOCX — text and block content
+import { readFileSync } from "node:fs";
 import { patchDocument } from "@office-open/docx";
 const result = await patchDocument({
   outputType: "uint8array",

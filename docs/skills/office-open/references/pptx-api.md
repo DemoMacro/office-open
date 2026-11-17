@@ -609,11 +609,12 @@ Add `class: "exit"`:
 
 ```ts
 import { readFileSync } from "node:fs";
-import { parsePresentation } from "@office-open/pptx";
+import { generatePresentation, parsePresentation } from "@office-open/pptx";
 
 // parsePresentation accepts Uint8Array, ArrayBuffer, typed-array views, number[], base64 string
 const opts = await parsePresentation(readFileSync("input.pptx"));
 // Returns PresentationOptions — pass to generatePresentation(opts) to modify and re-export
+const buffer = await generatePresentation(opts);
 ```
 
 ## Patching
