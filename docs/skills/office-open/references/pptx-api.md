@@ -607,9 +607,12 @@ Add `class: "exit"`:
 
 ## Parsing
 
-```json
+```ts
+import { readFileSync } from "node:fs";
+import { parsePresentation } from "@office-open/pptx";
+
 // parsePresentation accepts Uint8Array, ArrayBuffer, typed-array views, number[], base64 string
-await parsePresentation(readFileSync("input.pptx"))
+const opts = await parsePresentation(readFileSync("input.pptx"));
 // Returns PresentationOptions — pass to generatePresentation(opts) to modify and re-export
 ```
 
