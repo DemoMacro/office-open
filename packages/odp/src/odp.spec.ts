@@ -31,15 +31,16 @@ describe("ODP codec", () => {
   it("round-trips slide names and master bindings", async () => {
     const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:presentation><draw:page draw:name="Overview" draw:master-page-name="Master"/></office:presentation></office:body></office:document-content>`;
     const source = await parsePresentation(
-      generateOcf("application/vnd.oasis.opendocument.presentation", { "content.xml": content }),
+      generateOcf("application/vnd.oasis.opendocument.presentation", {
+        "content.xml": content,
+        "styles.xml": `<?xml version="1.0"?><office:document-styles ${ODF_NAMESPACES}><office:master-styles><style:master-page style:name="Master" style:page-layout-name="PM1"/></office:master-styles></office:document-styles>`,
+      }),
     );
+    expect(source.masters).toMatchObject([{ name: "Master" }]);
     expect(source.slides?.[0]).toMatchObject({ name: "Overview", master: "Master" });
-    expect((await parsePresentation(await generatePresentation(source))).slides?.[0]).toMatchObject(
-      {
-        name: "Overview",
-        master: "Master",
-      },
-    );
+    const regenerated = await parsePresentation(await generatePresentation(source));
+    expect(regenerated.masters).toEqual(expect.arrayContaining([{ name: "Master" }]));
+    expect(regenerated.slides?.[0]).toMatchObject({ name: "Overview", master: "Master" });
   });
 
   it("round-trips a typed slide transition", async () => {

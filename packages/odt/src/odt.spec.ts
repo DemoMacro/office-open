@@ -1592,13 +1592,13 @@ describe("ODT linked and revision boundaries", () => {
       "</text:variable-decls><text:p><text:variable-set text:name='ReportDate' office:value-type='date'" +
       " office:date-value='2016-10-05T00:00:00.0Z' text:formula='ooow:Date(2016;10;05)' text:display='none'/></text:p>";
     const parsed = await parseDocument(odtPackage(body));
-    expect(parsed.odtVariableDeclarations).toEqual([{ name: "ReportDate", valueType: "date" }]);
+    expect(parsed.variableDeclarations).toEqual([{ name: "ReportDate", valueType: "date" }]);
     const paragraph = sectionParagraph(parsed.sections[0]?.children[0]);
     expect(paragraph?.children?.[0]).toMatchObject({
       simpleField: { cachedValue: undefined },
     });
     const regenerated = await parseDocument(await generateDocument(parsed));
-    expect(regenerated.odtVariableDeclarations).toEqual(parsed.odtVariableDeclarations);
+    expect(regenerated.variableDeclarations).toEqual(parsed.variableDeclarations);
     expect(
       (
         await parseBodyError(

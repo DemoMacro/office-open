@@ -1,4 +1,9 @@
-import type { FormControlOptions, SequenceDeclarationOptions } from "@office-open/core";
+import type {
+  FormControlOptions,
+  SequenceDeclarationOptions,
+  VariableDeclarationOptions,
+  VariableValueType,
+} from "@office-open/core";
 import type {
   ChartOptions,
   BlockContentChild,
@@ -1097,27 +1102,20 @@ export function declarationsXml(options: OdtDocumentOptions, notes: NotesContext
       : "";
   const implicitVariableDeclarations = [...notes.variableTypes]
     .filter(
-      ([name]) =>
-        !options.variableDeclarations?.some((declaration) => declaration.name === name) &&
-        !options.odtVariableDeclarations?.some((declaration) => declaration.name === name),
+      ([name]) => !options.variableDeclarations?.some((declaration) => declaration.name === name),
     )
-    .map(([name, valueType]): OdtVariableDeclarationOptions => ({ name, valueType }));
+    .map(([name, valueType]): VariableDeclarationOptions => ({ name, valueType }));
   const variableDecls =
-    options.variableDeclarations?.length ||
-    options.odtVariableDeclarations?.length ||
-    implicitVariableDeclarations.length
+    options.variableDeclarations?.length || implicitVariableDeclarations.length
       ? xmlElement(
           "text:variable-decls",
           undefined,
-          [
-            ...(options.variableDeclarations ?? []),
-            ...(options.odtVariableDeclarations ?? []),
-            ...implicitVariableDeclarations,
-          ].map((declaration) =>
-            xmlElement("text:variable-decl", {
-              "text:name": declaration.name,
-              "office:value-type": declaration.valueType,
-            }),
+          [...(options.variableDeclarations ?? []), ...implicitVariableDeclarations].map(
+            (declaration) =>
+              xmlElement("text:variable-decl", {
+                "text:name": declaration.name,
+                "office:value-type": declaration.valueType,
+              }),
           ),
         )
       : "";
@@ -1207,7 +1205,7 @@ export function declarationsXml(options: OdtDocumentOptions, notes: NotesContext
 
 export function variableSetXml(value: {
   name: string;
-  valueType: OdtVariableValueType;
+  valueType: VariableValueType;
   value?: string;
   currency?: string;
   display?: "value" | "none";
@@ -2405,25 +2403,10 @@ export function conditionalTextField(value: {
   };
 }
 
-export type OdtVariableValueType =
-  | "float"
-  | "percentage"
-  | "currency"
-  | "date"
-  | "time"
-  | "boolean"
-  | "string";
-
-/** ODF-specific variable declaration for value types outside DOCX variables. */
-export interface OdtVariableDeclarationOptions {
-  name: string;
-  valueType: OdtVariableValueType;
-}
-
 /** Full ODF common value-and-type projection for `text:variable-set`. */
 export interface OdtVariableSetOptions {
   name: string;
-  valueType: OdtVariableValueType;
+  valueType: VariableValueType;
   value?: string;
   currency?: string;
   display?: "value" | "none";
@@ -2577,9 +2560,7 @@ export function parseVariableDeclarations(element: Element, context: ParseContex
     ) {
       throw unknownOdtElement(declaration);
     }
-    if (valueType === "float" || valueType === "string")
-      context.declaredVariables.push({ name, valueType });
-    else context.odtDeclaredVariables.push({ name, valueType });
+    context.declaredVariables.push({ name, valueType });
     context.pendingVariables.set(name, valueType);
   }
 }

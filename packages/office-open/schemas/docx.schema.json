@@ -34119,9 +34119,8 @@
           "type": "string"
         },
         "valueType": {
-          "description": "Stored value type; display text is owned by the field result.",
-          "enum": ["float", "string"],
-          "type": "string"
+          "$ref": "#/definitions/VariableValueType",
+          "description": "Stored value type; display text is owned by the field result."
         }
       },
       "required": ["name", "valueType"],
@@ -34190,6 +34189,10 @@
         }
       },
       "type": "object"
+    },
+    "VariableValueType": {
+      "enum": ["float", "percentage", "currency", "date", "time", "boolean", "string"],
+      "type": "string"
     },
     "VariantValue": {
       "anyOf": [

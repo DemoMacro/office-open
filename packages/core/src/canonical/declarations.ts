@@ -10,6 +10,15 @@ export interface SequenceDeclarationOptions {
   outlineSeparator?: string;
 }
 
+export type VariableValueType =
+  | "float"
+  | "percentage"
+  | "currency"
+  | "date"
+  | "time"
+  | "boolean"
+  | "string";
+
 /**
  * A named variable-field declaration.
  */
@@ -17,5 +26,5 @@ export interface VariableDeclarationOptions {
   /** Unique variable name used by variable fields. */
   name: string;
   /** Stored value type; display text is owned by the field result. */
-  valueType: "float" | "string";
+  valueType: VariableValueType;
 }

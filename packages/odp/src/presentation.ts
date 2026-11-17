@@ -104,6 +104,11 @@ function generateOdpPackage(options: OdpPresentationOptions): Uint8Array {
   const styles: string[] = styleResourcesXml(
     reconcileTransitionStyleResources(options, transitionSounds),
   );
+  const masterNames = [
+    "Default",
+    ...(options.masters ?? []).flatMap((master) => (master.name ? [master.name] : [])),
+    ...(options.slides ?? []).flatMap((slide) => (slide.master ? [slide.master] : [])),
+  ].filter((name, index, names) => names.indexOf(name) === index);
   const charts: OdpChart[] = [];
   const embeddedObjectPool = new Map(
     (embeddedObjects ?? []).map((object) => [object.path ?? object.sourceUrl!, object] as const),
@@ -131,7 +136,7 @@ function generateOdpPackage(options: OdpPresentationOptions): Uint8Array {
   );
   const files: OdfPackageFiles = {
     "content.xml": contentXml(pages.join(""), styles),
-    "styles.xml": stylesXml(pageLayout),
+    "styles.xml": stylesXml(pageLayout, masterNames),
     "meta.xml": metaXml(options),
   };
   const mediaTypes: Record<string, string> = Object.fromEntries(
@@ -289,6 +294,11 @@ function parseOdpPackage(data: Uint8Array): OdpPresentationOptions {
   validateEmbeddedObjectBodies(body, binaries, chartPool, embeddedObjects);
   const nextEmbeddedShapeId = { value: 1 };
   const styleResources = parseStyleResources(childNamed(content, "office:automatic-styles"));
+  const masterStyles = childNamed(stylesDocument, "office:master-styles");
+  const masters = childrenNamed(masterStyles, "style:master-page").flatMap((master) => {
+    const name = attributeString(master, "style:name");
+    return name === undefined ? [] : [{ name }];
+  });
   const result = {
     ...parseMeta(files),
     ...(width && height ? { size: { width, height } } : {}),
@@ -319,6 +329,7 @@ function parseOdpPackage(data: Uint8Array): OdpPresentationOptions {
   );
   return {
     ...result,
+    ...(masters.length > 0 ? { masters } : {}),
     ...(hasOcfManifestOptions(manifest) ? { packageManifest: manifest } : {}),
     ...(packageMembers.length > 0 ? { packageMembers } : {}),
     ...(embeddedObjects.size > 0 ? { embeddedObjects: [...embeddedObjects.values()] } : {}),
@@ -438,8 +449,19 @@ export function contentXml(pages: string, styles: string[]): string {
   )}</office:automatic-styles><office:body><office:presentation>${pages}</office:presentation></office:body></office:document-content>`;
 }
 
-export function stylesXml(pageLayout: string): string {
-  return `<?xml version="1.0" encoding="UTF-8"?><office:document-styles ${NAMESPACES} office:version="1.3"><office:styles/><office:automatic-styles>${pageLayout}</office:automatic-styles><office:master-styles><style:master-page style:name="Default" style:page-layout-name="PM1"/></office:master-styles></office:document-styles>`;
+export function stylesXml(
+  pageLayout: string,
+  masterNames: readonly string[] = ["Default"],
+): string {
+  const masters = masterNames
+    .map((name) =>
+      xmlElement("style:master-page", {
+        "style:name": name,
+        "style:page-layout-name": "PM1",
+      }),
+    )
+    .join("");
+  return `<?xml version="1.0" encoding="UTF-8"?><office:document-styles ${NAMESPACES} office:version="1.3"><office:styles/><office:automatic-styles>${pageLayout}</office:automatic-styles><office:master-styles>${masters}</office:master-styles></office:document-styles>`;
 }
 
 export function normalizeSize(size: PresentationOptions["size"]): {

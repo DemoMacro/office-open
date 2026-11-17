@@ -46,7 +46,6 @@ const PARAGRAPH_STYLE_ATTRIBUTES = [
   "fo:border-left",
   "fo:border-right",
   "fo:border-top",
-  "fo:border-top",
   "fo:break-after",
   "fo:break-before",
   "fo:hyphenation-keep",

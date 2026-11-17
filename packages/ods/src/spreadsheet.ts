@@ -794,6 +794,13 @@ export function dataPilotTablesXml(
               "table:function": "auto",
             }),
           ),
+          ...(pivot.pages ?? []).map((field) =>
+            xmlElement("table:data-pilot-field", {
+              "table:source-field-name": field.field,
+              "table:orientation": "page",
+              "table:function": "auto",
+            }),
+          ),
           ...(pivot.columns ?? []).map((field) =>
             xmlElement("table:data-pilot-field", {
               "table:source-field-name": field,
@@ -1229,11 +1236,13 @@ export function parseDataPilotTables(
     const source = parseSheetAddress(attributeString(sourceRange, "table:cell-range-address"));
     const rows: string[] = [];
     const columns: string[] = [];
+    const pages: { field: string }[] = [];
     const data: PivotDataField[] = [];
     for (const field of childrenNamed(table, "table:data-pilot-field")) {
       const name = attributeString(field, "table:source-field-name") ?? "";
       const orientation = attributeString(field, "table:orientation");
       if (orientation === "row") rows.push(name);
+      else if (orientation === "page") pages.push({ field: name });
       else if (orientation === "column") columns.push(name);
       else if (orientation === "data") {
         const functionValue = attributeString(field, "table:function");
@@ -1264,6 +1273,7 @@ export function parseDataPilotTables(
         sourceSheet: source?.sheet,
         location: target.address.split(":")[0],
         rows,
+        ...(pages.length > 0 ? { pages } : {}),
         columns,
         data,
       },

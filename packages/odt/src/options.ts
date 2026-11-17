@@ -3,7 +3,6 @@ import type { PackageOptions } from "@office-open/odf";
 
 import type { OdtCalculationSettingsOptions } from "./calculation-settings";
 import type { OdtEmbeddedObjectOptions } from "./embedded-objects";
-import type { OdtVariableDeclarationOptions } from "./paragraph";
 
 /** Canonical document model plus the unified ODF package overlay. */
 export interface OdtDocumentOptions extends DocumentOptions, PackageOptions {
@@ -11,10 +10,7 @@ export interface OdtDocumentOptions extends DocumentOptions, PackageOptions {
   calculationSettings?: OdtCalculationSettingsOptions;
   indexAutoMarkFile?: OdtIndexAutoMarkFileOptions;
   sectionSources?: OdtSectionSourceOptions[];
-  odtVariableDeclarations?: OdtVariableDeclarationOptions[];
 }
-
-export type { OdtVariableDeclarationOptions };
 
 /** External alphabetical-index auto-mark file linked from ODT body declarations. */
 export interface OdtIndexAutoMarkFileOptions {

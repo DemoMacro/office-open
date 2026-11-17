@@ -13,6 +13,7 @@ import type {
   OfficeFormsOptions,
   SequenceDeclarationOptions,
   VariableDeclarationOptions,
+  VariableValueType,
 } from "@office-open/core";
 import type {
   BlockContentChild,
@@ -163,10 +164,9 @@ export interface ParseContext {
   pendingInsertions: Set<string>;
   declaredSequences: SequenceDeclarationOptions[];
   declaredVariables: VariableDeclarationOptions[];
-  odtDeclaredVariables: import("./paragraph").OdtVariableDeclarationOptions[];
   documentVariables: NonNullable<NonNullable<DocumentOptions["settings"]>["docVars"]>;
   pendingSequences: Set<string>;
-  pendingVariables: Map<string, import("./paragraph").OdtVariableValueType>;
+  pendingVariables: Map<string, VariableValueType>;
   sourcePath?: string;
   nextEmbeddedShapeId: number;
   trackRevisions?: boolean;
@@ -517,7 +517,6 @@ function parseOdtPackage(data: Uint8Array): OdtDocumentOptions {
     pendingInsertions: new Set(),
     declaredSequences: [],
     declaredVariables: [],
-    odtDeclaredVariables: [],
     documentVariables: [],
     pendingSequences: new Set(),
     pendingVariables: new Map(),
@@ -568,8 +567,6 @@ function parseOdtPackage(data: Uint8Array): OdtDocumentOptions {
   if (context.comments.length > 0) result.comments = context.comments;
   if (context.declaredSequences.length > 0) result.sequenceDeclarations = context.declaredSequences;
   if (context.declaredVariables.length > 0) result.variableDeclarations = context.declaredVariables;
-  if (context.odtDeclaredVariables.length > 0)
-    result.odtVariableDeclarations = context.odtDeclaredVariables;
   if (context.documentVariables.length > 0)
     result.settings = { ...result.settings, docVars: context.documentVariables };
   if (context.notes.footnotes.length > 0) result.footnotes = context.notes.footnotes;

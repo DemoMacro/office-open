@@ -8409,9 +8409,8 @@
           "type": "string"
         },
         "valueType": {
-          "description": "Declared source value type retained for round-trip.",
-          "enum": ["float", "string", "date", "boolean", "percentage", "currency", "time"],
-          "type": "string"
+          "$ref": "#/definitions/VariableValueType",
+          "description": "Declared source value type retained for round-trip."
         }
       },
       "required": ["reference"],
@@ -27752,6 +27751,10 @@
         }
       },
       "type": "object"
+    },
+    "VariableValueType": {
+      "enum": ["float", "percentage", "currency", "date", "time", "boolean", "string"],
+      "type": "string"
     },
     "VariantValue": {
       "anyOf": [

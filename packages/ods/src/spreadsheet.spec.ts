@@ -226,7 +226,7 @@ describe("ODS spreadsheet semantics", () => {
   it("round-trips database ranges and source-mode data pilot tables", async () => {
     const { parsed, regenerated } = await roundTrip(
       packageWith(
-        `<table:table table:name="Data"><table:table-row><table:table-cell office:value-type="float" office:value="1"/></table:table-row></table:table><table:database-ranges><table:database-range table:name="Database" table:target-range-address="Data.A1:A10" table:contains-header="true"/></table:database-ranges><table:data-pilot-tables><table:data-pilot-table table:name="Pivot" table:target-range-address="Data.B1:B4"><table:source-cell-range table:cell-range-address="Data.A1:A10"/><table:data-pilot-field table:source-field-name="Region" table:orientation="row" table:function="auto"/><table:data-pilot-field table:source-field-name="Sales" table:orientation="data" table:function="sum"/></table:data-pilot-table></table:data-pilot-tables>`,
+        `<table:table table:name="Data"><table:table-row><table:table-cell office:value-type="float" office:value="1"/></table:table-row></table:table><table:database-ranges><table:database-range table:name="Database" table:target-range-address="Data.A1:A10" table:contains-header="true"/></table:database-ranges><table:data-pilot-tables><table:data-pilot-table table:name="Pivot" table:target-range-address="Data.B1:B4"><table:source-cell-range table:cell-range-address="Data.A1:A10"/><table:data-pilot-field table:source-field-name="Region" table:orientation="row" table:function="auto"/><table:data-pilot-field table:source-field-name="Year" table:orientation="page" table:function="auto"/><table:data-pilot-field table:source-field-name="Sales" table:orientation="data" table:function="sum"/></table:data-pilot-table></table:data-pilot-tables>`,
       ),
     );
     expect(parsed.worksheets?.[0]?.tables).toMatchObject([
@@ -240,6 +240,7 @@ describe("ODS spreadsheet semantics", () => {
         sourceSheet: "Data",
         location: "B1",
         rows: ["Region"],
+        pages: [{ field: "Year" }],
         data: [{ field: "Sales", summarize: "sum" }],
       },
     ]);
@@ -247,7 +248,7 @@ describe("ODS spreadsheet semantics", () => {
       { displayName: "Database", ref: "A1:A10" },
     ]);
     expect(regenerated.worksheets?.[0]?.pivotTables).toMatchObject([
-      { name: "Pivot", source: "A1:A10", rows: ["Region"] },
+      { name: "Pivot", source: "A1:A10", rows: ["Region"], pages: [{ field: "Year" }] },
     ]);
   });
 
