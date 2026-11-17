@@ -269,7 +269,6 @@ function parseOdsPackage(data: Uint8Array): OdsWorkbookOptions {
   }
   const automaticStyles = childNamed(content, "office:automatic-styles");
   const dimensions = parseDimensionStyles(automaticStyles);
-  const cellStyles = parseNumberStyles(automaticStyles);
   const chartPool = parseEmbeddedCharts(manifest, files, binaries, files["styles.xml"]);
   const usedBinaryPaths = new Set<string>();
   const calcProperties = parseOdsSemantics(body);
@@ -279,6 +278,7 @@ function parseOdsPackage(data: Uint8Array): OdsWorkbookOptions {
   const contentValidations = parseContentValidations(body);
   const dataMappings = parseDataMappings(body);
   const commonCellStyles = parseCommonCellStyles(stylesDocument);
+  const cellStyles = new Map([...commonCellStyles, ...parseNumberStyles(automaticStyles)]);
   const graphicStyles = parseWorksheetGraphicStyles(automaticStyles, stylesDocument);
   const textStyles = parseTextStyles([
     automaticStyles,

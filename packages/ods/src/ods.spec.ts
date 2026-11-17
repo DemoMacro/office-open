@@ -136,6 +136,18 @@ describe("ODS codec", () => {
     });
   });
 
+  it("applies common table-cell styles from styles.xml", async () => {
+    const parsed = await parseWorkbook(
+      generateOcf("application/vnd.oasis.opendocument.spreadsheet", {
+        "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:spreadsheet><table:table table:name="Sheet1"><table:table-row><table:table-cell table:style-name="CommonCell" office:value-type="string"><text:p>Styled</text:p></table:table-cell></table:table-row></table:table></office:spreadsheet></office:body></office:document-content>`,
+        "styles.xml": `<?xml version="1.0"?><office:document-styles ${ODF_NAMESPACES}><office:styles><style:style style:name="CommonCell" style:family="table-cell"><style:text-properties fo:font-weight="bold" fo:font-size="14pt"/></style:style></office:styles></office:document-styles>`,
+      }),
+    );
+    expect(parsed.worksheets?.[0]?.rows?.[0]?.cells?.[0]?.style).toEqual({
+      font: { bold: true, size: 14 },
+    });
+  });
+
   it("round-trips cell range sources and detective metadata", async () => {
     const parsed = await parseWorkbook(
       await generateWorkbook({
