@@ -307,7 +307,6 @@ function parseOdpPackage(data: Uint8Array): OdpPresentationOptions {
   const firstPageLayout =
     pageLayouts.find((layout) => layout.name === firstLayoutName) ?? pageLayouts[0];
   const size = firstPageLayout?.size;
-  const graphicStyles = parseGraphicStyles(childNamed(content, "office:automatic-styles"));
   const chartPool = parseEmbeddedCharts(manifest, files, binaries, files["styles.xml"]);
   const embeddedObjects = embeddedObjectPool(manifest, files, binaries, chartPool);
   const manifestMediaTypes = new Map(
@@ -329,7 +328,7 @@ function parseOdpPackage(data: Uint8Array): OdpPresentationOptions {
         (candidate) => candidate.name === resource.name && candidate.family === resource.family,
       ) === index,
   );
-  const masterGraphicStyles = new Map([
+  const graphicStyles = new Map([
     ...parseGraphicStyles(contentAutomaticStyles),
     ...parseGraphicStyles(stylesAutomaticStyles),
     ...parseGraphicStyles(commonStyles),
@@ -337,10 +336,12 @@ function parseOdpPackage(data: Uint8Array): OdpPresentationOptions {
   const textStyles = new Map([
     ...parseTextStyles(contentAutomaticStyles),
     ...parseTextStyles(stylesAutomaticStyles),
+    ...parseTextStyles(commonStyles),
   ]);
   const columnWidths = new Map([
     ...parseColumnWidths(contentAutomaticStyles),
     ...parseColumnWidths(stylesAutomaticStyles),
+    ...parseColumnWidths(commonStyles),
   ]);
   const masterStyleResources = [
     ...parseStyleResources(contentAutomaticStyles),
@@ -356,7 +357,7 @@ function parseOdpPackage(data: Uint8Array): OdpPresentationOptions {
       columnWidths,
       binaries,
       files,
-      masterGraphicStyles,
+      graphicStyles,
       chartPool,
       usedBinaryPaths,
       embeddedObjects,
@@ -390,8 +391,8 @@ function parseOdpPackage(data: Uint8Array): OdpPresentationOptions {
     slides: childrenNamed(body, "draw:page").map((page) =>
       parseSlide(
         page,
-        parseTextStyles(childNamed(content, "office:automatic-styles")),
-        parseColumnWidths(childNamed(content, "office:automatic-styles")),
+        textStyles,
+        columnWidths,
         binaries,
         files,
         graphicStyles,
