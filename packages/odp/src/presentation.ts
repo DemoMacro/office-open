@@ -44,7 +44,12 @@ import type { Element } from "@office-open/xml";
 import type { OdpChart, OdpImage } from "./drawing";
 import { normalizeEmbeddedObjectPath, type OdpEmbeddedObjectPool } from "./embedded-frames";
 import { OdpGenerateError, OdpParseError } from "./error";
-import type { OdpPresentationOptions, OdpSlideOptions } from "./options";
+import type {
+  OdpMasterDefinition,
+  OdpMasterHeaderFooterOptions,
+  OdpPresentationOptions,
+  OdpSlideOptions,
+} from "./options";
 import {
   parseColumnWidths,
   parseSlide,
@@ -53,7 +58,7 @@ import {
   slideXml,
 } from "./slide";
 import { parseStyleResources, parseTextStyles, styleResourcesXml } from "./styles";
-import type { TextProperties } from "./text-run";
+import { parseParagraph, textBodyXml, type TextProperties } from "./text-run";
 import { materializeOdpTransitionSound, type OdpTransitionOptions } from "./transition";
 
 export const MIME = "application/vnd.oasis.opendocument.presentation";
@@ -359,7 +364,13 @@ function parseOdpPackage(data: Uint8Array): OdpPresentationOptions {
         "unsupported-odf-theme",
       );
     }
-    return [{ name, ...(children.length > 0 ? { children } : {}) }];
+    return [
+      {
+        name,
+        ...(children.length > 0 ? { children } : {}),
+        ...parseMasterHeaderFooter(master, textStyles),
+      },
+    ];
   });
   const result = {
     ...parseMeta(files),
@@ -522,7 +533,7 @@ export function stylesXml(
 
 function masterPagesXml(
   names: readonly string[],
-  masters: readonly MasterDefinition[],
+  masters: readonly OdpMasterDefinition[],
   styles: string[],
   images: OdpImage[],
   mediaFiles: OdpImage[],
@@ -555,8 +566,33 @@ function masterPagesXml(
     return xmlElement(
       "style:master-page",
       { "style:name": name, "style:page-layout-name": "PM1" },
-      children,
+      [...masterHeaderFooterXml(master, styles), ...children],
     );
+  });
+}
+
+function masterHeaderFooterXml(
+  master: OdpMasterDefinition | undefined,
+  styles: string[],
+): string[] {
+  if (!master) return [];
+  const regions: [string, OdpMasterHeaderFooterOptions | undefined][] = [
+    ["header", master.header],
+    ["header-left", master.headerLeft],
+    ["header-first", master.headerFirst],
+    ["footer", master.footer],
+    ["footer-left", master.footerLeft],
+    ["footer-first", master.footerFirst],
+  ];
+  return regions.flatMap(([name, value]) => {
+    if (value === undefined) return [];
+    return [
+      xmlElement(
+        `style:${name}`,
+        { "style:display": value.display },
+        value.paragraphs === undefined ? [] : textBodyXml({ paragraphs: value.paragraphs }, styles),
+      ),
+    ];
   });
 }
 
@@ -574,29 +610,19 @@ function parseMasterChildren(
   nextEmbeddedShapeId: { value: number },
   styleResources: StyleResourceOptions[],
 ): NonNullable<MasterDefinition["children"]> {
-  const headerFooter = (master.elements ?? []).find(
-    (child) =>
-      child.name === "style:header" ||
-      child.name === "style:header-left" ||
-      child.name === "style:header-first" ||
-      child.name === "style:footer" ||
-      child.name === "style:footer-left" ||
-      child.name === "style:footer-first",
-  );
-  if (headerFooter) {
-    const path = `/office:document-styles/office:master-styles/style:master-page/${headerFooter.name}`;
-    throw new OdpParseError(
-      `styles.xml: ${path}: master page header/footer has no canonical PresentationOptions mapping`,
-      "styles.xml",
-      path,
-      headerFooter.name ?? "style:header",
-      "unsupported-master-header-footer",
-    );
-  }
   const page: Element = {
     ...master,
     name: "draw:page",
-    elements: (master.elements ?? []).filter((child) => child.name !== "loext:theme"),
+    elements: (master.elements ?? []).filter(
+      (child) =>
+        child.name !== "loext:theme" &&
+        child.name !== "style:header" &&
+        child.name !== "style:header-left" &&
+        child.name !== "style:header-first" &&
+        child.name !== "style:footer" &&
+        child.name !== "style:footer-left" &&
+        child.name !== "style:footer-first",
+    ),
   };
   try {
     return (
@@ -632,6 +658,75 @@ function parseMasterChildren(
       { cause: error },
     );
   }
+}
+
+function parseMasterHeaderFooter(
+  master: Element,
+  textStyles: Map<string, TextProperties>,
+): Pick<
+  OdpMasterDefinition,
+  "header" | "headerLeft" | "headerFirst" | "footer" | "footerLeft" | "footerFirst"
+> {
+  const result: Pick<
+    OdpMasterDefinition,
+    "header" | "headerLeft" | "headerFirst" | "footer" | "footerLeft" | "footerFirst"
+  > = {};
+  const regions = [
+    ["style:header", "header"],
+    ["style:header-left", "headerLeft"],
+    ["style:header-first", "headerFirst"],
+    ["style:footer", "footer"],
+    ["style:footer-left", "footerLeft"],
+    ["style:footer-first", "footerFirst"],
+  ] as const;
+  for (const [elementName, optionName] of regions) {
+    const element = childNamed(master, elementName);
+    if (!element) continue;
+    const path = `/office:document-styles/office:master-styles/style:master-page/${elementName}`;
+    const unsupported = Object.keys(element.attributes ?? {}).find(
+      (attribute) => attribute !== "style:display",
+    );
+    if (unsupported) throw unsupportedMasterHeaderFooter(element, path, unsupported);
+    const children = (element.elements ?? []).filter((child) => child.type === "element");
+    const unsupportedChild = children.find((child) => child.name !== "text:p");
+    if (unsupportedChild)
+      throw unsupportedMasterHeaderFooter(element, path, unsupportedChild.name!);
+    result[optionName] = {
+      ...(attributeBoolean(element, "style:display") === undefined
+        ? {}
+        : { display: attributeBoolean(element, "style:display") }),
+      ...(children.length > 0
+        ? { paragraphs: children.map((child) => parseParagraph(child, textStyles)) }
+        : {}),
+    };
+  }
+  return result;
+}
+
+function attributeBoolean(element: Element, name: string): boolean | undefined {
+  const value = attributeString(element, name);
+  if (value === undefined) return undefined;
+  if (value === "true" || value === "1") return true;
+  if (value === "false" || value === "0") return false;
+  throw unsupportedMasterHeaderFooter(
+    element,
+    `/office:document-styles/office:master-styles/style:master-page/${element.name}`,
+    name,
+  );
+}
+
+function unsupportedMasterHeaderFooter(
+  element: Element,
+  path: string,
+  name: string,
+): OdpParseError {
+  return new OdpParseError(
+    `styles.xml: ${path}: unsupported master header/footer member ${name}`,
+    "styles.xml",
+    `${path}/${name}`,
+    element.name ?? "style:header",
+    "unsupported-master-header-footer",
+  );
 }
 
 export function normalizeSize(size: PresentationOptions["size"]): {

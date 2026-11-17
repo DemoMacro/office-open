@@ -8,6 +8,8 @@ export {
 export { patchPresentation, type OdpPatchCommand, type OdpPatchOptions } from "./patch";
 export { OdpGenerateError, OdpParseError } from "./error";
 export type {
+  OdpMasterDefinition,
+  OdpMasterHeaderFooterOptions,
   OdpPresentationOptions,
   OdpSlideOptions,
   PresentationOptions,

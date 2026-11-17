@@ -71,26 +71,31 @@ describe("ODP codec", () => {
     ]);
   });
 
-  it("rejects master headers without a canonical presentation mapping", async () => {
+  it("round-trips all master header/footer regions through the ODF typed overlay", async () => {
     const source = generateOcf("application/vnd.oasis.opendocument.presentation", {
       "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:presentation/></office:body></office:document-content>`,
-      "styles.xml": `<?xml version="1.0"?><office:document-styles ${ODF_NAMESPACES}><office:automatic-styles/><office:master-styles><style:master-page style:name="Master"><style:header><text:p>Header text</text:p></style:header></style:master-page></office:master-styles></office:document-styles>`,
+      "styles.xml": `<?xml version="1.0"?><office:document-styles ${ODF_NAMESPACES}><office:automatic-styles><style:style style:name="HeaderBold" style:family="text"><style:text-properties fo:font-weight="bold"/></style:style></office:automatic-styles><office:master-styles><style:master-page style:name="Master"><style:header style:display="false"><text:p>Header text</text:p><text:p><text:span text:style-name="HeaderBold">Bold header</text:span></text:p></style:header><style:header-left><text:p>Left header</text:p></style:header-left><style:header-first><text:p>First header</text:p></style:header-first><style:footer><text:p>Footer text</text:p></style:footer><style:footer-left><text:p>Left footer</text:p></style:footer-left><style:footer-first><text:p>First footer</text:p></style:footer-first></style:master-page></office:master-styles></office:document-styles>`,
     });
-    await expect(parsePresentation(source)).rejects.toMatchObject({
-      part: "styles.xml",
-      path: "/office:document-styles/office:master-styles/style:master-page/style:header",
-      reason: "unsupported-master-header-footer",
+    const parsed = await parsePresentation(source);
+    expect(parsed.masters?.[0]).toMatchObject({
+      header: {
+        display: false,
+        paragraphs: [{ text: "Header text" }, { children: [{ text: "Bold header", bold: true }] }],
+      },
+      headerLeft: { paragraphs: [{ text: "Left header" }] },
+      headerFirst: { paragraphs: [{ text: "First header" }] },
+      footer: { paragraphs: [{ text: "Footer text" }] },
+      footerLeft: { paragraphs: [{ text: "Left footer" }] },
+      footerFirst: { paragraphs: [{ text: "First footer" }] },
     });
-  });
-
-  it("rejects LibreOffice master theme extensions without an ODF mapping", async () => {
-    const source = generateOcf("application/vnd.oasis.opendocument.presentation", {
-      "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:presentation/></office:body></office:document-content>`,
-      "styles.xml": `<?xml version="1.0"?><office:document-styles ${ODF_NAMESPACES}><office:automatic-styles/><office:master-styles><style:master-page style:name="Master"><loext:theme loext:name="Office">\n<loext:theme-colors loext:name="LibreOffice">\n<loext:color loext:name="accent1" loext:color="#18a303"/><loext:color loext:name="followed-hyperlink" loext:color="#551a8b"/>\n</loext:theme-colors>\n</loext:theme></style:master-page></office:master-styles></office:document-styles>`,
-    });
-    await expect(parsePresentation(source)).rejects.toMatchObject({
-      reason: "unsupported-odf-theme",
-      part: "styles.xml",
+    const regenerated = await parsePresentation(await generatePresentation(parsed));
+    expect(regenerated.masters?.find((master) => master.name === "Master")).toMatchObject({
+      header: parsed.masters?.[0]?.header,
+      headerLeft: parsed.masters?.[0]?.headerLeft,
+      headerFirst: parsed.masters?.[0]?.headerFirst,
+      footer: parsed.masters?.[0]?.footer,
+      footerLeft: parsed.masters?.[0]?.footerLeft,
+      footerFirst: parsed.masters?.[0]?.footerFirst,
     });
   });
 

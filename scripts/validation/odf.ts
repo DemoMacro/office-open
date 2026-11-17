@@ -17,10 +17,13 @@ import { RelaxNGValidator, XmlDocument } from "libxml2-wasm";
 import type { FormControlOptions, OfficeFormsOptions } from "../../packages/core/src";
 import type { DocumentOptions } from "../../packages/docx/src";
 import { generateChartDocument, parseChartDocument } from "../../packages/odf/src";
-import { generatePresentation, parsePresentation } from "../../packages/odp/src";
+import {
+  generatePresentation,
+  parsePresentation,
+  type OdpPresentationOptions,
+} from "../../packages/odp/src";
 import { generateWorkbook, parseWorkbook } from "../../packages/ods/src";
 import { generateDocument, parseDocument } from "../../packages/odt/src";
-import type { PresentationOptions } from "../../packages/pptx/src";
 import type { WorkbookOptions } from "../../packages/xlsx/src";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -158,11 +161,12 @@ const ODS_WORKBOOK: WorkbookOptions = {
   ],
 };
 
-const ODP_PRESENTATION: PresentationOptions = {
+const ODP_PRESENTATION: OdpPresentationOptions = {
   size: { width: 9144000, height: 6858000 },
   masters: [
     {
       name: "Master",
+      header: { paragraphs: [{ text: "Master header" }] },
       children: [
         {
           shape: {
