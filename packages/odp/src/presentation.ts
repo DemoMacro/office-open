@@ -18,7 +18,6 @@ import {
   childNamed,
   childrenNamed,
   createGraphicStyleResources,
-  emuToLength,
   descendantElements,
   generateOcf,
   graphicStyleFiles,
@@ -37,11 +36,14 @@ import {
   parseMeta,
   readOcfSync,
   readXml,
+  parseStyleProperty,
+  stylePropertyXml,
   xmlElement,
   type OcfManifestOptions,
   type GraphicStyle,
   type OdfPackageFiles,
   type StyleResourceOptions,
+  type StylePropertyOptions,
 } from "@office-open/odf";
 import type { PackageMemberOptions } from "@office-open/odf";
 import type { MasterDefinition, PresentationOptions, SlideOptions } from "@office-open/pptx";
@@ -682,11 +684,19 @@ function pageLayoutXml(
   fallback: { width: number; height: number },
 ): string {
   const size = layout.size === undefined ? fallback : normalizeSize(layout.size);
-  return xmlElement("style:page-layout", { "style:name": layout.name }, [
-    xmlElement("style:page-layout-properties", {
-      "fo:page-width": emuToLength(size.width),
-      "fo:page-height": emuToLength(size.height),
+  const properties: StylePropertyOptions = {
+    ...(layout.pageLayoutProperties ?? {
+      name: "style:page-layout-properties" as const,
+      attributes: {},
     }),
+    attributes: {
+      ...layout.pageLayoutProperties?.attributes,
+      "fo:page-width": size.width,
+      "fo:page-height": size.height,
+    },
+  };
+  return xmlElement("style:page-layout", { "style:name": layout.name }, [
+    stylePropertyXml(properties, "emu"),
   ]);
 }
 
@@ -902,7 +912,9 @@ function parsePageLayouts(stylesDocument: Element | undefined): OdpPageLayoutOpt
     const properties = childNamed(layout, "style:page-layout-properties");
     const width = lengthToEmu(attributeString(properties, "fo:page-width"));
     const height = lengthToEmu(attributeString(properties, "fo:page-height"));
-    if (width === undefined && height === undefined) return [{ name }];
+    const pageLayoutProperties = parsePageLayoutProperties(properties);
+    if (width === undefined && height === undefined)
+      return [{ name, ...(pageLayoutProperties ? { pageLayoutProperties } : {}) }];
     if (width === undefined || height === undefined) {
       throw new OdpParseError(
         `styles.xml: page layout "${name}" has only one page dimension`,
@@ -912,8 +924,40 @@ function parsePageLayouts(stylesDocument: Element | undefined): OdpPageLayoutOpt
         "incomplete-page-layout",
       );
     }
-    return [{ name, size: { width, height } }];
+    return [
+      {
+        name,
+        size: { width, height },
+        ...(pageLayoutProperties ? { pageLayoutProperties } : {}),
+      },
+    ];
   });
+}
+
+function parsePageLayoutProperties(
+  element: Element | undefined,
+): OdpPageLayoutOptions["pageLayoutProperties"] {
+  if (element === undefined) return undefined;
+  const parsed = parseStyleProperty(element, { family: "page-layout", scale: "emu" });
+  if (!parsed.ok) {
+    throw new OdpParseError(
+      `styles.xml: ${parsed.reason}`,
+      "styles.xml",
+      "/office:document-styles/office:automatic-styles/style:page-layout/style:page-layout-properties",
+      parsed.attributeName ?? parsed.elementName,
+      "invalid-page-layout-properties",
+    );
+  }
+  if (parsed.value.name !== "style:page-layout-properties") {
+    throw new OdpParseError(
+      "styles.xml: page layout property has the wrong element name",
+      "styles.xml",
+      "/office:document-styles/office:automatic-styles/style:page-layout/style:page-layout-properties",
+      parsed.value.name,
+      "invalid-page-layout-properties",
+    );
+  }
+  return parsed.value;
 }
 
 export function normalizeSize(size: PresentationOptions["size"]): {

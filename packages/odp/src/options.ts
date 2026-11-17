@@ -1,5 +1,5 @@
 import type { TextBodyOptions } from "@office-open/core";
-import type { PackageOptions } from "@office-open/odf";
+import type { PackageOptions, StylePropertyOptions } from "@office-open/odf";
 import type {
   MasterDefinition,
   PresentationOptions,
@@ -25,6 +25,7 @@ export interface OdpPresentationOptions
 export interface OdpPageLayoutOptions {
   name: string;
   size?: SlideSize;
+  pageLayoutProperties?: Extract<StylePropertyOptions, { name: "style:page-layout-properties" }>;
 }
 
 /** Typed ODF master-page header/footer content without a PPTX equivalent. */
