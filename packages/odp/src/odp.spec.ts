@@ -90,6 +90,79 @@ describe("ODP codec", () => {
     );
   });
 
+  it("round-trips structured notes shapes through canonical NotesSlideOptions", async () => {
+    const options: OdpPresentationOptions = {
+      slides: [
+        {
+          notes: {
+            children: [
+              {
+                shape: {
+                  id: 7,
+                  name: "Notes callout",
+                  x: 914400,
+                  y: 457200,
+                  width: 1828800,
+                  height: 914400,
+                  textBody: { paragraphs: [{ text: "Keep this note" }] },
+                },
+              },
+            ],
+          },
+        },
+      ],
+    };
+    const parsed = await parsePresentation(await generatePresentation(options));
+    expect(parsed.slides?.[0]?.notes).toMatchObject({
+      children: [
+        {
+          shape: {
+            id: 7,
+            name: "Notes callout",
+            x: 914400,
+            y: 457200,
+            width: 1828800,
+            height: 914400,
+            textBody: { paragraphs: [{ text: "Keep this note" }] },
+          },
+        },
+      ],
+    });
+  });
+
+  it("keeps formatted note runs out of the plain-text shorthand", async () => {
+    const parsed = await parsePresentation(
+      await generatePresentation({
+        slides: [
+          {
+            notes: {
+              children: [
+                {
+                  shape: {
+                    textBody: {
+                      paragraphs: [{ children: [{ text: "Emphasis", bold: true }] }],
+                    },
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      }),
+    );
+    expect(parsed.slides?.[0]?.notes).toMatchObject({
+      children: [
+        {
+          shape: {
+            textBody: {
+              paragraphs: [{ children: [{ text: "Emphasis", bold: true }] }],
+            },
+          },
+        },
+      ],
+    });
+  });
+
   it("round-trips slide names and master bindings", async () => {
     const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:presentation><draw:page draw:name="Overview" draw:master-page-name="Master"/></office:presentation></office:body></office:document-content>`;
     const source = await parsePresentation(

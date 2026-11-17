@@ -19,6 +19,7 @@ import type { StyleResourceOptions } from "@office-open/odf";
 import type {
   AnimationEntry,
   GroupOptions,
+  NotesSlideOptions,
   SlideChild,
   SlideCommentOptions,
   TableOptions,
@@ -140,19 +141,51 @@ export function slideXml(
       ? transitionDrawingPageXml(transitionStyleName, transitionForStyle)
       : undefined;
   if (transitionStyleXml !== undefined) styles.push(transitionStyleXml);
-  const notes = typeof slide.notes === "string" ? slide.notes : slide.notes?.text;
-  const notesXml = notes
-    ? xmlElement("presentation:notes", undefined, [
-        xmlElement("draw:frame", undefined, [
-          xmlElement(
-            "draw:text-box",
-            undefined,
-            notes
-              .split(/\r?\n/u)
-              .map((paragraph) => xmlElement("text:p", undefined, [escapeText(paragraph)])),
-          ),
+  const notes = typeof slide.notes === "string" ? { text: slide.notes } : slide.notes;
+  if (
+    notes?.background ||
+    notes?.colorMappingOverride ||
+    notes?.cSldExt ||
+    notes?.show === false ||
+    (notes?.text !== undefined && notes.children !== undefined)
+  ) {
+    throw new OdpGenerateError(
+      "ODF notes cannot represent the requested PowerPoint notes properties",
+      "content.xml",
+      "/office:document-content/office:body/office:presentation/draw:page/presentation:notes",
+      "presentation:notes",
+      "unsupported-notes-properties",
+    );
+  }
+  const notesChildren = [
+    ...(notes?.text === undefined
+      ? []
+      : [
+          xmlElement("draw:frame", undefined, [
+            xmlElement(
+              "draw:text-box",
+              undefined,
+              notes.text
+                .split(/\r?\n/u)
+                .map((paragraph) => xmlElement("text:p", undefined, [escapeText(paragraph)])),
+            ),
+          ]),
         ]),
-      ])
+    ...(notes?.children ?? []).map((child) => {
+      if (!("shape" in child || "line" in child || "connector" in child)) {
+        throw new OdpGenerateError(
+          "ODF notes support shape, line, and connector children",
+          "content.xml",
+          "/office:document-content/office:body/office:presentation/draw:page/presentation:notes",
+          "notes-child",
+          "unsupported-notes-child",
+        );
+      }
+      return slideChildXml(child, styles, images, mediaFiles, embeddedObjects, charts);
+    }),
+  ];
+  const notesXml = notesChildren.length
+    ? xmlElement("presentation:notes", undefined, notesChildren)
     : undefined;
   return xmlElement(
     "draw:page",
@@ -442,15 +475,7 @@ export function parseSlide(
       ),
   );
   const shapeReferences = collectOdfShapeIds(normalizedPage);
-  const notes = childNamed(
-    childNamed(childNamed(page, "presentation:notes"), "draw:frame"),
-    "draw:text-box",
-  );
-  const notesText = notes
-    ? childrenNamed(notes, "text:p")
-        .map((paragraph) => textOf(paragraph))
-        .join("\n") || undefined
-    : undefined;
+  const notes = parseNotes(childNamed(page, "presentation:notes"), textStyles, graphicStyles);
   const comments = childrenNamed(page, "officeooo:annotation").map(parseAnnotation);
   const children: SlideChild[] = [];
   const odpNodes: OdpSlideNodeOptions[] = [];
@@ -631,9 +656,73 @@ export function parseSlide(
       : {}),
     ...(animations.length > 0 ? { animations } : {}),
     ...(comments.length > 0 ? { comments } : {}),
-    ...(notesText ? { notes: notesText } : {}),
+    ...(notes === undefined ? {} : { notes }),
   };
   return slideOptions;
+}
+
+function parseNotes(
+  element: Element | undefined,
+  textStyles: Map<string, TextProperties>,
+  graphicStyles: Map<string, GraphicStyle>,
+): NotesSlideOptions | string | undefined {
+  if (element === undefined) return undefined;
+  const path =
+    "/office:document-content/office:body/office:presentation/draw:page/presentation:notes";
+  const children: SlideChild[] = [];
+  for (const child of element.elements ?? []) {
+    if (child.type !== "element") continue;
+    if (child.name === "draw:frame") {
+      if (childNamed(child, "draw:text-box")) {
+        children.push({ shape: parseShape(child, textStyles) });
+        continue;
+      }
+    } else if (child.name === "draw:custom-shape") {
+      children.push({ shape: parseCustomSlideShape(child, textStyles, graphicStyles) });
+      continue;
+    } else if (
+      child.name === "draw:rect" ||
+      child.name === "draw:circle" ||
+      child.name === "draw:ellipse" ||
+      child.name === "draw:path" ||
+      child.name === "draw:polygon" ||
+      child.name === "draw:polyline"
+    ) {
+      children.push({ shape: parsePrimitiveSlideShape(child, textStyles, graphicStyles) });
+      continue;
+    } else if (child.name === "draw:line") {
+      children.push(parseLine(child, graphicStyles));
+      continue;
+    } else if (child.name === "draw:connector") {
+      children.push(parseConnector(child, graphicStyles));
+      continue;
+    }
+    throw unknownSlideChild(child, path);
+  }
+  if (children.length === 0) return undefined;
+  const [first] = children;
+  if (children.length === 1 && first && "shape" in first) {
+    const { shape } = first;
+    const paragraphs = first.shape.textBody?.paragraphs ?? [];
+    if (
+      shape.id === undefined &&
+      shape.name === undefined &&
+      shape.x === undefined &&
+      shape.y === undefined &&
+      shape.width === undefined &&
+      shape.height === undefined &&
+      shape.properties === undefined &&
+      paragraphs.every(
+        (paragraph) => typeof paragraph === "string" || paragraph.children === undefined,
+      )
+    ) {
+      const text = paragraphs
+        .map((paragraph) => (typeof paragraph === "string" ? paragraph : (paragraph.text ?? "")))
+        .join("\n");
+      if (text !== "") return text;
+    }
+  }
+  return { children };
 }
 
 function compatibilityPage(page: Element): Element {
