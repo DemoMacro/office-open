@@ -36,6 +36,10 @@ export interface OdsTableSourceOptions {
 
 /** Canonical worksheet plus ODF table-level features without an OOXML equivalent. */
 export interface OdsWorksheetOptions extends WorksheetOptions {
+  /** ODF table title; no direct OOXML worksheet equivalent. */
+  tableTitle?: string;
+  /** ODF table description; no direct OOXML worksheet equivalent. */
+  tableDescription?: string;
   scenario?: OdsScenarioOptions;
   tableSource?: OdsTableSourceOptions;
 }

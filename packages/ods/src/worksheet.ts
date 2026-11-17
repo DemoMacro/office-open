@@ -521,6 +521,12 @@ export function worksheetXml(
     "table:table",
     { "table:name": sheetName, "table:style-name": tableStyleName },
     [
+      worksheet.tableTitle === undefined
+        ? ""
+        : xmlElement("table:title", undefined, [escapeText(worksheet.tableTitle)]),
+      worksheet.tableDescription === undefined
+        ? ""
+        : xmlElement("table:desc", undefined, [escapeText(worksheet.tableDescription)]),
       tableSourceXml,
       scenarioXml,
       formsXml,
@@ -953,10 +959,39 @@ export function worksheet(
   };
 }
 
-function parseTableFeatures(table: Element): Pick<OdsWorksheetOptions, "scenario" | "tableSource"> {
+function parseTableFeatures(
+  table: Element,
+): Pick<OdsWorksheetOptions, "tableTitle" | "tableDescription" | "scenario" | "tableSource"> {
   const scenario = childNamed(table, "table:scenario");
   const source = childNamed(table, "table:table-source");
+  const mode = attributeString(source, "table:mode");
+  if (mode !== undefined && mode !== "copy-all" && mode !== "copy-results-only") {
+    throw unknownOdsElement(source!, "/table:table", "table:mode", "invalid table source mode");
+  }
+  const actuate = attributeString(source, "xlink:actuate");
+  if (actuate !== undefined && actuate !== "onRequest") {
+    throw unknownOdsElement(
+      source!,
+      "/table:table",
+      "xlink:actuate",
+      "invalid table source actuation",
+    );
+  }
+  if (source && attributeString(source, "xlink:type") !== "simple") {
+    throw unknownOdsElement(
+      source,
+      "/table:table",
+      "xlink:type",
+      "table source link type must be simple",
+    );
+  }
   return {
+    ...(childNamed(table, "table:title")
+      ? { tableTitle: textOf(childNamed(table, "table:title")) }
+      : {}),
+    ...(childNamed(table, "table:desc")
+      ? { tableDescription: textOf(childNamed(table, "table:desc")) }
+      : {}),
     ...(scenario
       ? {
           scenario: {
@@ -980,15 +1015,11 @@ function parseTableFeatures(table: Element): Pick<OdsWorksheetOptions, "scenario
       ? {
           tableSource: {
             href: requiredAttribute(source, "xlink:href"),
-            ...(attributeString(source, "table:mode")
-              ? { mode: attributeString(source, "table:mode") as "copy-all" | "copy-results-only" }
-              : {}),
+            ...(mode !== undefined ? { mode } : {}),
             ...(attributeString(source, "table:table-name")
               ? { tableName: attributeString(source, "table:table-name") }
               : {}),
-            ...(attributeString(source, "xlink:actuate")
-              ? { actuate: attributeString(source, "xlink:actuate") as "onRequest" }
-              : {}),
+            ...(actuate !== undefined ? { actuate } : {}),
             ...(attributeString(source, "table:filter-name")
               ? { filterName: attributeString(source, "table:filter-name") }
               : {}),

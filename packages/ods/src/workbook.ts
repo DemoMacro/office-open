@@ -305,7 +305,9 @@ function parseOdsPackage(data: Uint8Array): OdsWorkbookOptions {
   const contentValidations = parseContentValidations(body);
   const dataMappings = parseDataMappings(body);
   const commonCellStyles = parseCommonCellStyles(stylesDocument);
-  const cellStyles = new Map([...commonCellStyles, ...parseNumberStyles(automaticStyles)]);
+  const commonStyles = childNamed(stylesDocument, "office:styles");
+  const automaticCellStyles = parseNumberStyles(automaticStyles, [commonStyles]);
+  const cellStyles = new Map([...commonCellStyles, ...automaticCellStyles]);
   const graphicStyles = parseWorksheetGraphicStyles(automaticStyles, stylesDocument);
   const textStyles = parseTextStyles([
     automaticStyles,
