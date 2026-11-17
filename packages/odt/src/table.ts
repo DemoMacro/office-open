@@ -149,9 +149,12 @@ export function parseTable(
 ): SectionChild {
   const parsedTables = new Map<Element, SectionChild>();
   for (const current of collectTableElements(element)) {
-    const columnWidths = childrenNamed(current, "table:table-column").map(
-      (column) => columnWidthOf(attributeString(column, "table:style-name") ?? "") ?? 5000,
+    const columnWidths = childrenNamed(current, "table:table-column").map((column) =>
+      columnWidthOf(attributeString(column, "table:style-name") ?? ""),
     );
+    const hasCompleteColumnWidths =
+      columnWidths.length > 0 &&
+      columnWidths.every((width): width is number => width !== undefined);
     const rows = childrenNamed(current, "table:table-row").map((row) => ({
       cells: childrenNamed(row, "table:table-cell").map((cell) => {
         const cellChildren =
@@ -178,7 +181,7 @@ export function parseTable(
     }));
     parsedTables.set(current, {
       table: {
-        columnWidths,
+        ...(hasCompleteColumnWidths ? { columnWidths } : {}),
         rows,
         ...(attributeString(current, "table:style-name") === undefined
           ? {}

@@ -576,6 +576,19 @@ describe("ODT canonical projection", () => {
     });
   });
 
+  it("does not invent fixed widths for unstyled ODF table columns", async () => {
+    const source = generateOcf("application/vnd.oasis.opendocument.text", {
+      "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:text><table:table><table:table-column/><table:table-row><table:table-cell><text:p>Cell</text:p></table:table-cell></table:table-row></table:table></office:text></office:body></office:document-content>`,
+      "styles.xml": `<?xml version="1.0"?><office:document-styles ${ODF_NAMESPACES}><office:styles/></office:document-styles>`,
+    });
+    const parsed = await parseDocument(source);
+    const child = parsed.sections[0]?.children[0];
+    expect(child).toMatchObject({
+      table: { rows: [{ cells: [{ children: [{ paragraph: { text: "Cell" } }] }] }] },
+    });
+    expect(child && "table" in child ? child.table.columnWidths : undefined).toBeUndefined();
+  });
+
   it("preserves the canonical table style reference", async () => {
     const parsed = await parseDocument(
       await generateDocument({
