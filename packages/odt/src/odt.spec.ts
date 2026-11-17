@@ -539,6 +539,28 @@ describe("ODT canonical projection", () => {
     ]);
   });
 
+  it("writes edited section properties to the referenced page layout", async () => {
+    const source = generateOcf("application/vnd.oasis.opendocument.text", {
+      "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:automatic-styles/><office:body><office:text><text:p>Body</text:p></office:text></office:body></office:document-content>`,
+      "styles.xml": `<?xml version="1.0"?><office:document-styles ${ODF_NAMESPACES}><office:styles/><office:automatic-styles><style:page-layout style:name="Portrait"><style:page-layout-properties fo:page-width="21cm" fo:page-height="29.7cm"/></style:page-layout><style:page-layout style:name="Landscape"><style:page-layout-properties fo:page-width="29.7cm" fo:page-height="21cm"/></style:page-layout></office:automatic-styles><office:master-styles><style:master-page style:name="Default" style:page-layout-name="Landscape"/></office:master-styles></office:document-styles>`,
+    });
+    const parsed = await parseDocument(source);
+    parsed.sections[0]!.properties!.pageSize = { width: 12000, height: 16000 };
+
+    const regenerated = await parseDocument(await generateDocument(parsed));
+    expect(regenerated.sections[0]?.properties?.pageSize).toMatchObject({
+      width: 12000,
+      height: 16000,
+    });
+    expect(regenerated.pageLayouts).toMatchObject([
+      {
+        name: "Portrait",
+        properties: { pageSize: { width: expect.not.objectContaining({ width: 12000 }) } },
+      },
+      { name: "Landscape", properties: { pageSize: { width: 12000, height: 16000 } } },
+    ]);
+  });
+
   it("round-trips tables inside master page headers", async () => {
     const options: DocumentOptions = {
       sections: [

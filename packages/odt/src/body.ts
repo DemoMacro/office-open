@@ -208,8 +208,11 @@ function generateOdtPackage(options: OdtDocumentOptions): Uint8Array {
   const body = declarationsXml(options, notes) + bodyBlocks;
   const section = options.sections[0];
   const sectionProperties = section?.properties;
+  const referencedPageLayoutName = options.masterPages?.[0]?.pageLayoutName;
   const pageLayouts = options.pageLayouts?.map((layout, index) =>
-    index !== 0 || sectionProperties === undefined
+    (referencedPageLayoutName !== undefined
+      ? layout.name !== referencedPageLayoutName
+      : index !== 0) || sectionProperties === undefined
       ? layout
       : {
           ...layout,
