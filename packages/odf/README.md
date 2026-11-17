@@ -35,9 +35,10 @@ bun add @office-open/odf
 ## Quick Start
 
 ```typescript
+import { readFileSync } from "node:fs";
 import { readOcf } from "@office-open/odf";
 
-const archive = await readOcf(file, "application/vnd.oasis.opendocument.text");
+const archive = await readOcf(readFileSync("input.odt"), "application/vnd.oasis.opendocument.text");
 ```
 
 ## API

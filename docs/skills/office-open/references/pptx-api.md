@@ -624,11 +624,12 @@ const buffer = await generatePresentation(opts);
 Modify an existing `.pptx` template with ordered, source-preserving commands:
 
 ```ts
+import { readFileSync } from "node:fs";
 import { patchPresentation } from "@office-open/pptx";
 
 const result = await patchPresentation({
   outputType: "nodebuffer",
-  data: templateBuffer,
+  data: readFileSync("template.pptx"),
   commands: [
     {
       type: "replace",

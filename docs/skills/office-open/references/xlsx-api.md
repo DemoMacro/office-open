@@ -417,11 +417,12 @@ const doc = parseXlsx(readFileSync("input.xlsx"));
 Modify an existing `.xlsx` template with ordered, source-preserving commands:
 
 ```ts
+import { readFileSync } from "node:fs";
 import { patchWorkbook } from "@office-open/xlsx";
 
 const result = await patchWorkbook({
   outputType: "nodebuffer",
-  data: templateBuffer,
+  data: readFileSync("template.xlsx"),
   commands: [
     {
       type: "replace",

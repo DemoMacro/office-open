@@ -240,8 +240,10 @@ Define documents as plain JSON objects, or reach for the TypeScript API for a fu
   ::code-group
 
   ```ts [DOCX]
+import { readFileSync } from "node:fs";
 import { parseDocument, patchDocument } from "@office-open/docx";
 
+const buffer = new Uint8Array(readFileSync("input.docx"));
 // Parse existing file
 const opts = await parseDocument(buffer);
 // opts.sections — document sections
@@ -262,8 +264,10 @@ const result = await patchDocument({
 ```
 
   ```ts [PPTX]
+import { readFileSync } from "node:fs";
 import { parsePresentation, patchPresentation } from "@office-open/pptx";
 
+const buffer = new Uint8Array(readFileSync("input.pptx"));
 // Parse existing file
 const opts = await parsePresentation(buffer);
 // opts.slides — slide array
@@ -284,8 +288,10 @@ const result = await patchPresentation({
 ```
 
   ```ts [XLSX]
+import { readFileSync } from "node:fs";
 import { parseWorkbook, patchWorkbook } from "@office-open/xlsx";
 
+const buffer = new Uint8Array(readFileSync("input.xlsx"));
 // Parse existing file
 const opts = await parseWorkbook(buffer);
 // opts.worksheets — worksheet array

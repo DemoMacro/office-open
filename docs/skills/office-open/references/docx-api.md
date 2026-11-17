@@ -507,11 +507,12 @@ Used in TextRun children as a string — displays the page number where the refe
 Modify an existing `.docx` template with ordered, source-preserving commands:
 
 ```ts
+import { readFileSync } from "node:fs";
 import { patchDocument } from "@office-open/docx";
 
 const result = await patchDocument({
   outputType: "nodebuffer",
-  data: templateBuffer,
+  data: readFileSync("template.docx"),
   commands: [
     {
       type: "replace",

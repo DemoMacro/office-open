@@ -68,8 +68,10 @@ console.log(parsed.format, parsed.options);
 ### Patch
 
 ```typescript
+import { readFileSync } from "node:fs";
 import { patchDocument } from "office-open";
 
+const input = new Uint8Array(readFileSync("input.docx"));
 const patched = await patchDocument({
   format: "docx",
   data: input,
