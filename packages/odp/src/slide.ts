@@ -719,8 +719,10 @@ function compatibilityPage(page: Element): Element {
       ...branches.filter((branch) => branch.name === "mc:Choice"),
       ...branches.filter((branch) => branch.name === "mc:Fallback"),
     ];
-    const selectedBranch = candidates.find((branch) =>
-      (branch.elements ?? []).some((content) => isKnownCompatibilityChild(content.name)),
+    const selectedBranch = candidates.find(
+      (branch) =>
+        (branch.name === "mc:Fallback" || supportsCompatibilityChoice(branch)) &&
+        (branch.elements ?? []).some((content) => isKnownCompatibilityChild(content.name)),
     );
     const selected = selectedBranch?.elements ?? candidates[0]?.elements ?? [];
     if (selected.length === 0) {
@@ -761,6 +763,25 @@ function isKnownCompatibilityChild(name: string | undefined): boolean {
     name === "office:forms" ||
     name === "officeooo:annotation"
   );
+}
+
+const SUPPORTED_COMPATIBILITY_PREFIXES = new Set([
+  "anim",
+  "draw",
+  "odf",
+  "office",
+  "officeooo",
+  "presentation",
+  "table",
+]);
+
+function supportsCompatibilityChoice(branch: Element): boolean {
+  const requires = attributeString(branch, "Requires");
+  if (requires === undefined || requires.trim() === "") return true;
+  return requires
+    .trim()
+    .split(/\s+/u)
+    .every((prefix) => SUPPORTED_COMPATIBILITY_PREFIXES.has(prefix));
 }
 
 function containsTransitionFilter(entry: AnimationEntry): boolean {

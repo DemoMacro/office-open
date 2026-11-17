@@ -715,6 +715,16 @@ describe("ODP codec", () => {
     expect(parsed.slides?.[0]?.children).toHaveLength(2);
   });
 
+  it("uses fallback when a compatibility choice requires an unsupported namespace", async () => {
+    const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES} xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"><office:body><office:presentation><draw:page><mc:AlternateContent><mc:Choice Requires="unsupported"><draw:rect svg:x="1cm" svg:y="1cm" svg:width="1cm" svg:height="1cm"/></mc:Choice><mc:Fallback><draw:rect svg:x="5cm" svg:y="1cm" svg:width="1cm" svg:height="1cm"/></mc:Fallback></mc:AlternateContent></draw:page></office:presentation></office:body></office:document-content>`;
+    const parsed = await parsePresentation(
+      generateOcf("application/vnd.oasis.opendocument.presentation", { "content.xml": content }),
+    );
+    expect(parsed.slides?.[0]?.children).toMatchObject([
+      { shape: { x: 1800000, y: 360000, width: 360000, height: 360000 } },
+    ]);
+  });
+
   it("treats inherited object names as unknown drawing presets", async () => {
     const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:presentation><draw:page><draw:custom-shape svg:x="1cm" svg:y="1cm" svg:width="1cm" svg:height="1cm"><draw:enhanced-geometry draw:type="constructor"/></draw:custom-shape></draw:page></office:presentation></office:body></office:document-content>`;
     const parsed = await parsePresentation(
