@@ -13,6 +13,7 @@ import { NAMESPACES } from "./body";
 import { outlineStyleXml } from "./list";
 import { lengthToTwips, twipsToLength } from "./master-pages";
 import { notesConfigurationXml } from "./notes";
+import type { OdtMasterPageOptions, OdtPageLayoutOptions } from "./options";
 
 /** Docx font-table entry, indexed from the shared document model. */
 export type FontEntry = NonNullable<DocumentOptions["fonts"]>[number];
@@ -68,11 +69,53 @@ export function documentStylesXml(
   numbering: DocumentOptions["numbering"],
   styles: DocumentOptions["styles"],
   headerFooter: string,
+  pageLayouts?: readonly OdtPageLayoutOptions[],
+  masterPages?: readonly OdtMasterPageOptions[],
+  masterPageXml?: readonly string[],
 ): string {
   const properties = section?.properties;
+  const needsDefaultLayout =
+    pageLayouts?.length || properties !== undefined || headerFooter !== "" || masterPages?.length;
+  const layouts = pageLayouts?.length
+    ? pageLayouts
+    : needsDefaultLayout
+      ? [{ name: "pm1", properties }]
+      : [];
+  const pageLayout = layouts
+    .map(
+      (layout) =>
+        `<style:page-layout style:name="${layout.name}">${pageLayoutPropertiesXml(
+          layout.properties,
+        )}</style:page-layout>`,
+    )
+    .join("");
+  const masters = masterPageXml?.length
+    ? masterPageXml.join("")
+    : masterPages?.length
+      ? masterPages
+          .map(
+            (master) =>
+              `<style:master-page style:name="${master.name}"${
+                master.pageLayoutName ? ` style:page-layout-name="${master.pageLayoutName}"` : ""
+              }/>`,
+          )
+          .join("")
+      : headerFooter !== ""
+        ? `<style:master-page style:name="Standard" style:page-layout-name="${layouts[0]?.name ?? "pm1"}">${headerFooter}</style:master-page>`
+        : "";
+  const masterStyles = masters ? `<office:master-styles>${masters}</office:master-styles>` : "";
+  const notes =
+    commonStylesXml(styles) +
+    notesConfigurationXml(settings) +
+    outlineStyleXml(numbering) +
+    defaultStyleXml(styles);
+  return `<?xml version="1.0" encoding="UTF-8"?><office:document-styles ${NAMESPACES} office:version="1.3"><office:styles>${notes}</office:styles><office:automatic-styles>${pageLayout}</office:automatic-styles>${masterStyles}</office:document-styles>`;
+}
+
+function pageLayoutPropertiesXml(properties: SectionOptions["properties"]): string {
   const pageSize = typeof properties?.pageSize === "object" ? properties.pageSize : undefined;
   const pageMargin = typeof properties?.pageMargin === "object" ? properties.pageMargin : undefined;
-  const layoutAttributes = [
+  const attributes = [
     pageSize?.width !== undefined && `fo:page-width="${twipsToLength(pageSize.width)}"`,
     pageSize?.height !== undefined && `fo:page-height="${twipsToLength(pageSize.height)}"`,
     pageSize?.orientation && `style:print-orientation="${pageSize.orientation}"`,
@@ -81,21 +124,7 @@ export function documentStylesXml(
     pageMargin?.bottom !== undefined && `fo:margin-bottom="${twipsToLength(pageMargin.bottom)}"`,
     pageMargin?.left !== undefined && `fo:margin-left="${twipsToLength(pageMargin.left)}"`,
   ].filter(Boolean);
-  const needsMaster = layoutAttributes.length > 0 || headerFooter !== "";
-  const pageLayout = needsMaster
-    ? `<style:page-layout style:name="pm1"><style:page-layout-properties ${layoutAttributes.join(
-        " ",
-      )}/></style:page-layout>`
-    : "";
-  const masterStyles = needsMaster
-    ? `<office:master-styles><style:master-page style:name="Standard" style:page-layout-name="pm1">${headerFooter}</style:master-page></office:master-styles>`
-    : "";
-  const notes =
-    commonStylesXml(styles) +
-    notesConfigurationXml(settings) +
-    outlineStyleXml(numbering) +
-    defaultStyleXml(styles);
-  return `<?xml version="1.0" encoding="UTF-8"?><office:document-styles ${NAMESPACES} office:version="1.3"><office:styles>${notes}</office:styles><office:automatic-styles>${pageLayout}</office:automatic-styles>${masterStyles}</office:document-styles>`;
+  return `<style:page-layout-properties${attributes.length ? ` ${attributes.join(" ")}` : ""}/>`;
 }
 
 export function commonStylesXml(styles: DocumentOptions["styles"]): string {

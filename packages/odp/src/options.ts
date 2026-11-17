@@ -1,6 +1,11 @@
 import type { TextBodyOptions } from "@office-open/core";
 import type { PackageOptions } from "@office-open/odf";
-import type { MasterDefinition, PresentationOptions, SlideOptions } from "@office-open/pptx";
+import type {
+  MasterDefinition,
+  PresentationOptions,
+  SlideOptions,
+  SlideSize,
+} from "@office-open/pptx";
 
 import type { OdpEmbeddedObjectOptions } from "./embedded-objects";
 import type { OdpSlideNodeOptions } from "./slide-nodes";
@@ -12,6 +17,14 @@ export interface OdpPresentationOptions
   embeddedObjects?: OdpEmbeddedObjectOptions[];
   masters?: OdpMasterDefinition[];
   slides?: OdpSlideOptions[];
+  /** All ODF page layouts; the first referenced layout also maps to presentation size. */
+  pageLayouts?: OdpPageLayoutOptions[];
+}
+
+/** ODF page layout expressed with the canonical presentation size type. */
+export interface OdpPageLayoutOptions {
+  name: string;
+  size?: SlideSize;
 }
 
 /** Typed ODF master-page header/footer content without a PPTX equivalent. */
@@ -22,6 +35,8 @@ export interface OdpMasterHeaderFooterOptions {
 
 /** Canonical presentation master plus ODF-only master-page text regions. */
 export interface OdpMasterDefinition extends MasterDefinition {
+  /** ODF page-layout referenced by this master page. */
+  pageLayoutName?: string;
   header?: OdpMasterHeaderFooterOptions;
   headerLeft?: OdpMasterHeaderFooterOptions;
   headerFirst?: OdpMasterHeaderFooterOptions;

@@ -39,8 +39,30 @@ describe("ODP codec", () => {
     expect(source.masters).toMatchObject([{ name: "Master" }]);
     expect(source.slides?.[0]).toMatchObject({ name: "Overview", master: "Master" });
     const regenerated = await parsePresentation(await generatePresentation(source));
-    expect(regenerated.masters).toEqual(expect.arrayContaining([{ name: "Master" }]));
+    expect(regenerated.masters).toMatchObject([{ name: "Master", pageLayoutName: "PM1" }]);
     expect(regenerated.slides?.[0]).toMatchObject({ name: "Overview", master: "Master" });
+  });
+
+  it("preserves all page layouts and master-page bindings", async () => {
+    const source = await parsePresentation(
+      generateOcf("application/vnd.oasis.opendocument.presentation", {
+        "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:presentation><draw:page draw:master-page-name="Portrait"/></office:presentation></office:body></office:document-content>`,
+        "styles.xml": `<?xml version="1.0"?><office:document-styles ${ODF_NAMESPACES}><office:automatic-styles><style:page-layout style:name="Portrait"><style:page-layout-properties fo:page-width="21cm" fo:page-height="29.7cm"/></style:page-layout><style:page-layout style:name="Landscape"><style:page-layout-properties fo:page-width="29.7cm" fo:page-height="21cm"/></style:page-layout></office:automatic-styles><office:master-styles><style:master-page style:name="Portrait" style:page-layout-name="Portrait"/><style:master-page style:name="Landscape" style:page-layout-name="Landscape"/></office:master-styles></office:document-styles>`,
+      }),
+    );
+    expect(source.pageLayouts).toMatchObject([
+      { name: "Portrait", size: { width: expect.any(Number) } },
+      { name: "Landscape", size: { height: expect.any(Number) } },
+    ]);
+    expect(source.masters).toMatchObject([
+      { name: "Portrait", pageLayoutName: "Portrait" },
+      { name: "Landscape", pageLayoutName: "Landscape" },
+    ]);
+    expect(source.size).toEqual(source.pageLayouts?.[0]?.size);
+
+    const regenerated = await parsePresentation(await generatePresentation(source));
+    expect(regenerated.pageLayouts).toEqual(source.pageLayouts);
+    expect(regenerated.masters).toMatchObject(source.masters ?? []);
   });
 
   it("round-trips canonical master children", async () => {

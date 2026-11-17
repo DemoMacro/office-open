@@ -694,6 +694,8 @@ describe("ODS codec", () => {
       automaticLabelSearch: true,
       regularExpressionSearch: true,
       wildcardSearch: true,
+      searchCriteriaMustApplyToWholeCell: true,
+      nullYear: 1930,
       nullDate: { year: 1900, month: 1, day: 1 },
     };
     const controls: FormControlOptions[] = [

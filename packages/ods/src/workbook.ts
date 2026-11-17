@@ -43,7 +43,7 @@ import { parseWorksheetCharts } from "./drawing-chart";
 import { OdsParseError } from "./error";
 import { base64ToBytes, bytesToBase64, imageMediaType } from "./image-data";
 import { parseNumberStyles } from "./numbering";
-import type { OdsWorkbookOptions } from "./options";
+import type { OdsCalculationSettingsOptions, OdsWorkbookOptions } from "./options";
 import {
   attachContentValidations,
   contentValidationsXml,
@@ -456,14 +456,23 @@ export function contentXml(
   return result;
 }
 
-export function parseOdsSemantics(body: Element | undefined): WorkbookOptions["calculation"] {
+export function parseOdsSemantics(body: Element | undefined): OdsWorkbookOptions["calculation"] {
   const calculation = childNamed(body, "table:calculation-settings");
   if (!calculation) return undefined;
   const iteration = childNamed(calculation, "table:iteration");
-  const result: NonNullable<WorkbookOptions["calculation"]> = {
+  const caseSensitive = calculationBoolean(calculation, "table:case-sensitive");
+  const precisionAsShown = calculationBoolean(calculation, "table:precision-as-shown");
+  const automaticLabelSearch = calculationBoolean(calculation, "table:automatic-find-labels");
+  const regularExpressionSearch = calculationBoolean(calculation, "table:use-regular-expressions");
+  const wildcardSearch = calculationBoolean(calculation, "table:use-wildcards");
+  const searchCriteriaMustApplyToWholeCell = calculationBoolean(
+    calculation,
+    "table:search-criteria-must-apply-to-whole-cell",
+  );
+  const result: OdsCalculationSettingsOptions = {
     ...(iteration
       ? {
-          iterate: attributeString(iteration, "table:status") === "enable",
+          iterate: calculationIterationStatus(iteration),
           ...(attributeNumber(iteration, "table:steps") !== undefined
             ? { iterateCount: attributeNumber(iteration, "table:steps") }
             : {}),
@@ -472,21 +481,14 @@ export function parseOdsSemantics(body: Element | undefined): WorkbookOptions["c
             : {}),
         }
       : {}),
-    ...(attributeString(calculation, "table:case-sensitive") === "false"
-      ? { caseSensitive: false }
-      : {}),
-    ...(attributeString(calculation, "table:precision-as-shown") === "true"
-      ? { precisionAsShown: true }
-      : {}),
-    ...(attributeString(calculation, "table:automatic-find-labels") === "true"
-      ? { automaticLabelSearch: true }
-      : {}),
-    ...(attributeString(calculation, "table:use-regular-expressions") === "true"
-      ? { regularExpressionSearch: true }
-      : {}),
-    ...(attributeString(calculation, "table:use-wildcards") === "true"
-      ? { wildcardSearch: true }
-      : {}),
+    ...(caseSensitive === undefined ? {} : { caseSensitive }),
+    ...(precisionAsShown === undefined ? {} : { precisionAsShown }),
+    ...(automaticLabelSearch === undefined ? {} : { automaticLabelSearch }),
+    ...(regularExpressionSearch === undefined ? {} : { regularExpressionSearch }),
+    ...(wildcardSearch === undefined ? {} : { wildcardSearch }),
+    ...(searchCriteriaMustApplyToWholeCell === undefined
+      ? {}
+      : { searchCriteriaMustApplyToWholeCell }),
   };
   const nullDate = childNamed(calculation, "table:null-date");
   if (nullDate) {
@@ -503,13 +505,15 @@ export function parseOdsSemantics(body: Element | undefined): WorkbookOptions["c
           day: attributeNumber(nullDate, "table:date-value-day") ?? 30,
         };
   }
+  const nullYear = attributeNumber(calculation, "table:null-year");
+  if (nullYear !== undefined) result.nullYear = nullYear;
   assertCalculationChildren(calculation, result);
   return result;
 }
 
 export function assertCalculationChildren(
   calculation: Element,
-  result: NonNullable<WorkbookOptions["calculation"]>,
+  result: NonNullable<OdsWorkbookOptions["calculation"]>,
 ): void {
   for (const child of calculation.elements ?? []) {
     if (child.type !== "element") continue;
@@ -535,6 +539,31 @@ export function assertCalculationChildren(
       "element has no canonical calculation mapping",
     );
   }
+}
+
+function calculationBoolean(element: Element, name: string): boolean | undefined {
+  const value = attributeString(element, name);
+  if (value === undefined) return undefined;
+  if (value === "true" || value === "1") return true;
+  if (value === "false" || value === "0") return false;
+  throw unknownOdsElement(
+    element,
+    "/office:document-content/office:body/office:spreadsheet/table:calculation-settings",
+    name,
+    `invalid boolean value: ${value}`,
+  );
+}
+
+function calculationIterationStatus(element: Element): boolean {
+  const value = attributeString(element, "table:status");
+  if (value === "enable") return true;
+  if (value === "disable") return false;
+  throw unknownOdsElement(
+    element,
+    "/office:document-content/office:body/office:spreadsheet/table:calculation-settings/table:iteration",
+    "table:status",
+    `invalid iteration status: ${value ?? ""}`,
+  );
 }
 
 export function formsXml(forms: WorkbookOptions["forms"]): string {
@@ -568,7 +597,7 @@ export function parseForms(body: Element | undefined): OfficeFormsOptions | unde
   };
 }
 
-export function semanticsXml(calculation: WorkbookOptions["calculation"]): string {
+export function semanticsXml(calculation: OdsWorkbookOptions["calculation"]): string {
   if (!calculation) return "";
   const hasSettings =
     calculation.iterate !== undefined ||
@@ -577,7 +606,9 @@ export function semanticsXml(calculation: WorkbookOptions["calculation"]): strin
     calculation.automaticLabelSearch !== undefined ||
     calculation.regularExpressionSearch !== undefined ||
     calculation.wildcardSearch !== undefined ||
-    calculation.nullDate !== undefined;
+    calculation.nullDate !== undefined ||
+    calculation.searchCriteriaMustApplyToWholeCell !== undefined ||
+    calculation.nullYear !== undefined;
   if (!hasSettings) return "";
   const iteration = {
     "table:status":
@@ -593,6 +624,9 @@ export function semanticsXml(calculation: WorkbookOptions["calculation"]): strin
       "table:automatic-find-labels": calculation.automaticLabelSearch,
       "table:use-regular-expressions": calculation.regularExpressionSearch,
       "table:use-wildcards": calculation.wildcardSearch,
+      "table:search-criteria-must-apply-to-whole-cell":
+        calculation.searchCriteriaMustApplyToWholeCell,
+      "table:null-year": calculation.nullYear,
     },
     [
       ...(calculation.iterate !== undefined ? [xmlElement("table:iteration", iteration)] : []),

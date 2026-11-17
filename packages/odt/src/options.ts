@@ -1,4 +1,4 @@
-import type { DocumentOptions } from "@office-open/docx";
+import type { DocumentOptions, SectionOptions } from "@office-open/docx";
 import type { PackageOptions } from "@office-open/odf";
 
 import type { OdtCalculationSettingsOptions } from "./calculation-settings";
@@ -10,6 +10,24 @@ export interface OdtDocumentOptions extends DocumentOptions, PackageOptions {
   calculationSettings?: OdtCalculationSettingsOptions;
   indexAutoMarkFile?: OdtIndexAutoMarkFileOptions;
   sectionSources?: OdtSectionSourceOptions[];
+  /** All ODF page layouts; the first applicable layout also maps to section properties. */
+  pageLayouts?: OdtPageLayoutOptions[];
+  /** ODF master pages and their canonical header/footer regions. */
+  masterPages?: OdtMasterPageOptions[];
+}
+
+/** ODF page layout expressed with canonical section page properties. */
+export interface OdtPageLayoutOptions {
+  name: string;
+  properties?: SectionOptions["properties"];
+}
+
+/** ODF master page expressed with canonical section header/footer regions. */
+export interface OdtMasterPageOptions {
+  name: string;
+  pageLayoutName?: string;
+  headers?: SectionOptions["headers"];
+  footers?: SectionOptions["footers"];
 }
 
 /** External alphabetical-index auto-mark file linked from ODT body declarations. */

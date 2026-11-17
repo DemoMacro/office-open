@@ -86,7 +86,12 @@ import {
   parseOutlineStyle,
   type AbstractNumbering,
 } from "./list";
-import { masterHeaderFooter, parseMasterHeaderFooter, parsePageLayout } from "./master-pages";
+import {
+  masterHeaderFooter,
+  parseMasterPages,
+  parsePageLayout,
+  parsePageLayouts,
+} from "./master-pages";
 import { parseNotesConfiguration } from "./notes";
 import type { OdtDocumentOptions } from "./options";
 import {
@@ -205,6 +210,28 @@ function generateOdtPackage(options: OdtDocumentOptions): Uint8Array {
     renderBlocks: (children) =>
       blocksXml(children, styles, images, notes, options.numbering, charts, embeddedObjects ?? []),
   });
+  const masterPageXml = options.masterPages?.map((master) => {
+    const content = masterHeaderFooter(master, {
+      renderBlocks: (children) =>
+        blocksXml(
+          children,
+          styles,
+          images,
+          notes,
+          options.numbering,
+          charts,
+          embeddedObjects ?? [],
+        ),
+    });
+    return xmlElement(
+      "style:master-page",
+      {
+        "style:name": master.name,
+        "style:page-layout-name": master.pageLayoutName,
+      },
+      content ? [content] : [],
+    );
+  });
   const files: OdfPackageFiles = {
     "content.xml": contentXml(body, styles, fontFaceDecls(options.fonts)),
     "styles.xml": documentStylesXml(
@@ -213,6 +240,9 @@ function generateOdtPackage(options: OdtDocumentOptions): Uint8Array {
       options.numbering,
       options.styles,
       headerFooter,
+      options.pageLayouts,
+      options.masterPages,
+      masterPageXml,
     ),
     "meta.xml": metaXml(options),
   };
@@ -545,6 +575,8 @@ function parseOdtPackage(data: Uint8Array): OdtDocumentOptions {
     ...meta,
     sections: [{ properties: parsePageLayout(files), children }],
   };
+  const pageLayouts = parsePageLayouts(files);
+  if (pageLayouts.length > 0) result.pageLayouts = pageLayouts;
   if (calculationSettings)
     result.calculationSettings = parseCalculationSettings(calculationSettings);
   const packageMembers = sourcePackageMembers(
@@ -603,13 +635,15 @@ function parseOdtPackage(data: Uint8Array): OdtDocumentOptions {
       ...result.styles,
       default: { ...result.styles?.default, document: defaultStyle },
     };
-  const masterHeaderFooter = parseMasterHeaderFooter(files, (elements, path) =>
+  const masterPages = parseMasterPages(files, (elements, path) =>
     parseBlocks(elements, context, 0, undefined, path),
   );
+  if (masterPages.length > 0) result.masterPages = masterPages;
   const section = result.sections[0];
   if (section) {
-    if (masterHeaderFooter.headers) section.headers = masterHeaderFooter.headers;
-    if (masterHeaderFooter.footers) section.footers = masterHeaderFooter.footers;
+    const firstMaster = masterPages[0];
+    if (firstMaster?.headers) section.headers = firstMaster.headers;
+    if (firstMaster?.footers) section.footers = firstMaster.footers;
   }
   return result;
 }

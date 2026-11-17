@@ -47,6 +47,7 @@ import { OdpGenerateError, OdpParseError } from "./error";
 import type {
   OdpMasterDefinition,
   OdpMasterHeaderFooterOptions,
+  OdpPageLayoutOptions,
   OdpPresentationOptions,
   OdpSlideOptions,
 } from "./options";
@@ -118,24 +119,23 @@ function generateOdpPackage(options: OdpPresentationOptions): Uint8Array {
     reconcileTransitionStyleResources(options, transitionSounds),
   );
   const masterNames = [
-    "Default",
     ...(options.masters ?? []).flatMap((master) => (master.name ? [master.name] : [])),
     ...(options.slides ?? []).flatMap((slide) => (slide.master ? [slide.master] : [])),
   ].filter((name, index, names) => names.indexOf(name) === index);
+  if (masterNames.length === 0) masterNames.push("Default");
   const charts: OdpChart[] = [];
   const embeddedObjectPool = new Map(
     (embeddedObjects ?? []).map((object) => [object.path ?? object.sourceUrl!, object] as const),
   );
   const size = normalizeSize(options.size);
-  const pageLayout = xmlElement("style:page-layout", { "style:name": "PM1" }, [
-    xmlElement("style:page-layout-properties", {
-      "fo:page-width": emuToLength(size.width),
-      "fo:page-height": emuToLength(size.height),
-    }),
-  ]);
+  const pageLayouts = options.pageLayouts?.length
+    ? options.pageLayouts
+    : [{ name: "PM1", size: options.size ?? { width: size.width, height: size.height } }];
+  const pageLayout = pageLayouts.map((layout) => pageLayoutXml(layout, size)).join("");
   const masterPages = masterPagesXml(
     masterNames,
     options.masters ?? [],
+    pageLayouts[0]?.name ?? "PM1",
     styles,
     images,
     mediaFiles,
@@ -300,12 +300,13 @@ function parseOdpPackage(data: Uint8Array): OdpPresentationOptions {
     );
   }
   const stylesDocument = files["styles.xml"] ? readXml(files, "styles.xml") : undefined;
-  const pageLayout = childNamed(
-    childNamed(childNamed(stylesDocument, "office:automatic-styles"), "style:page-layout"),
-    "style:page-layout-properties",
-  );
-  const width = lengthToEmu(attributeString(pageLayout, "fo:page-width"));
-  const height = lengthToEmu(attributeString(pageLayout, "fo:page-height"));
+  const pageLayouts = parsePageLayouts(stylesDocument);
+  const masterStyles = childNamed(stylesDocument, "office:master-styles");
+  const firstMaster = childNamed(masterStyles, "style:master-page");
+  const firstLayoutName = attributeString(firstMaster, "style:page-layout-name");
+  const firstPageLayout =
+    pageLayouts.find((layout) => layout.name === firstLayoutName) ?? pageLayouts[0];
+  const size = firstPageLayout?.size;
   const graphicStyles = parseGraphicStyles(childNamed(content, "office:automatic-styles"));
   const chartPool = parseEmbeddedCharts(manifest, files, binaries, files["styles.xml"]);
   const embeddedObjects = embeddedObjectPool(manifest, files, binaries, chartPool);
@@ -315,7 +316,6 @@ function parseOdpPackage(data: Uint8Array): OdpPresentationOptions {
   const usedBinaryPaths = new Set<string>();
   validateEmbeddedObjectBodies(body, binaries, chartPool, embeddedObjects);
   const nextEmbeddedShapeId = { value: 1 };
-  const masterStyles = childNamed(stylesDocument, "office:master-styles");
   const contentAutomaticStyles = childNamed(content, "office:automatic-styles");
   const stylesAutomaticStyles = childNamed(stylesDocument, "office:automatic-styles");
   const commonStyles = childNamed(stylesDocument, "office:styles");
@@ -376,6 +376,9 @@ function parseOdpPackage(data: Uint8Array): OdpPresentationOptions {
     return [
       {
         name,
+        ...(attributeString(master, "style:page-layout-name")
+          ? { pageLayoutName: attributeString(master, "style:page-layout-name") }
+          : {}),
         ...(children.length > 0 ? { children } : {}),
         ...parseMasterHeaderFooter(master, textStyles),
       },
@@ -383,7 +386,7 @@ function parseOdpPackage(data: Uint8Array): OdpPresentationOptions {
   });
   const result = {
     ...parseMeta(files),
-    ...(width && height ? { size: { width, height } } : {}),
+    ...(size ? { size } : {}),
     slides: childrenNamed(body, "draw:page").map((page) =>
       parseSlide(
         page,
@@ -412,6 +415,7 @@ function parseOdpPackage(data: Uint8Array): OdpPresentationOptions {
   return {
     ...result,
     ...(masters.length > 0 ? { masters } : {}),
+    ...(pageLayouts.length > 0 ? { pageLayouts } : {}),
     ...(hasOcfManifestOptions(manifest) ? { packageManifest: manifest } : {}),
     ...(packageMembers.length > 0 ? { packageMembers } : {}),
     ...(embeddedObjects.size > 0 ? { embeddedObjects: [...embeddedObjects.values()] } : {}),
@@ -540,9 +544,23 @@ export function stylesXml(
   return `<?xml version="1.0" encoding="UTF-8"?><office:document-styles ${NAMESPACES} office:version="1.3"><office:styles/><office:automatic-styles>${pageLayout}</office:automatic-styles><office:master-styles>${masterPages.join("")}</office:master-styles></office:document-styles>`;
 }
 
+function pageLayoutXml(
+  layout: OdpPageLayoutOptions,
+  fallback: { width: number; height: number },
+): string {
+  const size = layout.size === undefined ? fallback : normalizeSize(layout.size);
+  return xmlElement("style:page-layout", { "style:name": layout.name }, [
+    xmlElement("style:page-layout-properties", {
+      "fo:page-width": emuToLength(size.width),
+      "fo:page-height": emuToLength(size.height),
+    }),
+  ]);
+}
+
 function masterPagesXml(
   names: readonly string[],
   masters: readonly OdpMasterDefinition[],
+  defaultPageLayoutName: string,
   styles: string[],
   images: OdpImage[],
   mediaFiles: OdpImage[],
@@ -574,7 +592,10 @@ function masterPagesXml(
     });
     return xmlElement(
       "style:master-page",
-      { "style:name": name, "style:page-layout-name": "PM1" },
+      {
+        "style:name": name,
+        "style:page-layout-name": master?.pageLayoutName ?? defaultPageLayoutName,
+      },
       [...masterHeaderFooterXml(master, styles), ...children],
     );
   });
@@ -736,6 +757,30 @@ function unsupportedMasterHeaderFooter(
     element.name ?? "style:header",
     "unsupported-master-header-footer",
   );
+}
+
+function parsePageLayouts(stylesDocument: Element | undefined): OdpPageLayoutOptions[] {
+  return childrenNamed(
+    childNamed(stylesDocument, "office:automatic-styles"),
+    "style:page-layout",
+  ).flatMap((layout) => {
+    const name = attributeString(layout, "style:name");
+    if (name === undefined) return [];
+    const properties = childNamed(layout, "style:page-layout-properties");
+    const width = lengthToEmu(attributeString(properties, "fo:page-width"));
+    const height = lengthToEmu(attributeString(properties, "fo:page-height"));
+    if (width === undefined && height === undefined) return [{ name }];
+    if (width === undefined || height === undefined) {
+      throw new OdpParseError(
+        `styles.xml: page layout "${name}" has only one page dimension`,
+        "styles.xml",
+        `/office:document-styles/office:automatic-styles/style:page-layout[@style:name="${name}"]/style:page-layout-properties`,
+        "style:page-layout-properties",
+        "incomplete-page-layout",
+      );
+    }
+    return [{ name, size: { width, height } }];
+  });
 }
 
 export function normalizeSize(size: PresentationOptions["size"]): {

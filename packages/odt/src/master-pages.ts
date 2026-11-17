@@ -12,6 +12,7 @@ import {
 import type { Element } from "@office-open/xml";
 
 import { OdtGenerateError, OdtParseError } from "./error";
+import type { OdtMasterPageOptions, OdtPageLayoutOptions } from "./options";
 
 export interface MasterHeaderFooterContext {
   renderBlocks: (children: SectionChild[]) => string;
@@ -67,6 +68,39 @@ export function parseMasterHeaderFooter(
     childNamed(readXml(files, "styles.xml"), "office:master-styles"),
     "style:master-page",
   );
+  return master ? parseMasterRegions(master, parseBlocks) : {};
+}
+
+export function parseMasterPages(
+  files: OdfFiles,
+  parseBlocks: (elements: Element[], path: string) => SectionChild[],
+): OdtMasterPageOptions[] {
+  const styles = readXml(files, "styles.xml");
+  return childrenNamed(childNamed(styles, "office:master-styles"), "style:master-page").flatMap(
+    (master) => {
+      const name = attributeString(master, "style:name");
+      if (name === undefined) return [];
+      const regions = parseMasterRegions(master, parseBlocks);
+      return [
+        {
+          name,
+          ...(attributeString(master, "style:page-layout-name")
+            ? { pageLayoutName: attributeString(master, "style:page-layout-name") }
+            : {}),
+          ...regions,
+        },
+      ];
+    },
+  );
+}
+
+function parseMasterRegions(
+  master: Element,
+  parseBlocks: (elements: Element[], path: string) => SectionChild[],
+): {
+  headers?: SectionOptions["headers"];
+  footers?: SectionOptions["footers"];
+} {
   const regions = [
     ["style:header", "headers", "default"],
     ["style:header-left", "headers", "even"],
@@ -102,6 +136,22 @@ export function parseMasterHeaderFooter(
   return result;
 }
 
+export function parsePageLayouts(files: OdfFiles): OdtPageLayoutOptions[] {
+  const styles = readXml(files, "styles.xml");
+  return childrenNamed(childNamed(styles, "office:automatic-styles"), "style:page-layout").flatMap(
+    (layout) => {
+      const name = attributeString(layout, "style:name");
+      if (name === undefined) return [];
+      return [
+        {
+          name,
+          properties: parsePageLayoutProperties(childNamed(layout, "style:page-layout-properties")),
+        },
+      ];
+    },
+  );
+}
+
 export function parsePageLayout(files: OdfFiles): SectionOptions["properties"] {
   const styles = readXml(files, "styles.xml");
   const master = childNamed(childNamed(styles, "office:master-styles"), "style:master-page");
@@ -115,6 +165,10 @@ export function parsePageLayout(files: OdfFiles): SectionOptions["properties"] {
       pageLayouts[0],
     "style:page-layout-properties",
   );
+  return parsePageLayoutProperties(layout);
+}
+
+function parsePageLayoutProperties(layout: Element | undefined): SectionOptions["properties"] {
   const width = lengthToTwips(attributeString(layout, "fo:page-width"));
   const height = lengthToTwips(attributeString(layout, "fo:page-height"));
   const orientation = attributeString(layout, "style:print-orientation");
