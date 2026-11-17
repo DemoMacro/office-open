@@ -1,5 +1,5 @@
 import type { PackageOptions } from "@office-open/odf";
-import type { WorkbookOptions, WorksheetOptions } from "@office-open/xlsx";
+import type { CellOptions, RowOptions, WorkbookOptions, WorksheetOptions } from "@office-open/xlsx";
 
 import type { DataMappingOptions } from "./data-mappings";
 
@@ -34,14 +34,26 @@ export interface OdsTableSourceOptions {
   refreshDelay?: string;
 }
 
+/** ODF cell projection with a repeat count that exceeds XLSX materialization limits. */
+export interface OdsCellOptions extends CellOptions {
+  repeat?: number;
+}
+
+/** ODF row projection with a repeat count that exceeds XLSX materialization limits. */
+export interface OdsRowOptions extends Omit<RowOptions, "cells"> {
+  cells?: OdsCellOptions[];
+  repeat?: number;
+}
+
 /** Canonical worksheet plus ODF table-level features without an OOXML equivalent. */
-export interface OdsWorksheetOptions extends WorksheetOptions {
+export interface OdsWorksheetOptions extends Omit<WorksheetOptions, "rows"> {
   /** ODF table title; no direct OOXML worksheet equivalent. */
   tableTitle?: string;
   /** ODF table description; no direct OOXML worksheet equivalent. */
   tableDescription?: string;
   scenario?: OdsScenarioOptions;
   tableSource?: OdsTableSourceOptions;
+  rows?: OdsRowOptions[];
 }
 
 /** ODF calculation settings that extend the canonical workbook calculation model. */

@@ -9,7 +9,9 @@ export { patchWorkbook, type OdsPatchCommand, type OdsPatchOptions } from "./pat
 export { OdsGenerateError, OdsParseError } from "./error";
 export type {
   OdsCalculationSettingsOptions,
+  OdsCellOptions,
   OdsDataPilotFunctionOptions,
+  OdsRowOptions,
   OdsScenarioOptions,
   OdsTableSourceOptions,
   OdsWorksheetOptions,

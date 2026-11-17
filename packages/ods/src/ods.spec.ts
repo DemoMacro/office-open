@@ -551,6 +551,24 @@ describe("ODS codec", () => {
     expect(worksheet?.rows).toEqual([]);
   });
 
+  it("preserves populated repeats beyond XLSX materialization limits", async () => {
+    const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:spreadsheet><table:table table:name="Sheet1"><table:table-row table:number-rows-repeated="999999999"><table:table-cell table:number-columns-repeated="999999999" office:value-type="string"><text:p>X</text:p></table:table-cell></table:table-row></table:table></office:spreadsheet></office:body></office:document-content>`;
+    const source = generateOcf("application/vnd.oasis.opendocument.spreadsheet", {
+      "content.xml": content,
+    });
+    const parsed = await parseWorkbook(source);
+    expect(parsed.worksheets?.[0]?.rows).toMatchObject([
+      {
+        rowNumber: 1,
+        repeat: 999999999,
+        cells: [{ reference: "A1", value: "X", repeat: 999999999 }],
+      },
+    ]);
+    const regenerated = await parseWorkbook(await generateWorkbook(parsed));
+    expect(regenerated.worksheets?.[0]?.rows?.[0]?.repeat).toBe(999999999);
+    expect(regenerated.worksheets?.[0]?.rows?.[0]?.cells?.[0]?.repeat).toBe(999999999);
+  });
+
   it("clamps virtual default column repeats", async () => {
     const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:spreadsheet><table:table table:name="Sheet1"><table:table-column table:number-columns-repeated="999999999"/><table:table-row><table:table-cell office:value-type="float" office:value="1"/></table:table-row></table:table></office:spreadsheet></office:body></office:document-content>`;
     const worksheet = (

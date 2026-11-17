@@ -45,7 +45,7 @@ import { cellDecorationXml } from "./comments";
 import { cellGraphicXml, type OdsChartFrame } from "./drawing-chart";
 import { OdsGenerateError, OdsParseError } from "./error";
 import { odfDateValue } from "./numbering";
-import type { OdsWorksheetOptions } from "./options";
+import type { OdsCellOptions, OdsRowOptions, OdsWorksheetOptions } from "./options";
 import {
   cellShapeXml,
   conditionalFormatsXml,
@@ -80,7 +80,7 @@ const MAX_ROWS = 1048576;
 const MAX_MATERIALIZED_EMPTY_REPEATS = 100;
 
 interface RepeatedRow {
-  readonly row: RowOptions;
+  readonly row: OdsRowOptions;
   readonly rowIndex: number;
   readonly repeat: number;
 }
@@ -125,8 +125,12 @@ function structuralEqual(left: unknown, right: unknown): boolean {
     );
   }
   if (typeof left === "object" && left !== null && typeof right === "object" && right !== null) {
-    const leftEntries = Object.entries(left).filter(([name]) => name !== "reference");
-    const rightEntries = Object.entries(right).filter(([name]) => name !== "reference");
+    const leftEntries = Object.entries(left).filter(
+      ([name]) => name !== "reference" && name !== "repeat",
+    );
+    const rightEntries = Object.entries(right).filter(
+      ([name]) => name !== "reference" && name !== "repeat",
+    );
     if (leftEntries.length !== rightEntries.length) return false;
     return leftEntries.every(([name, value]) => {
       const rightValue = (right as Record<string, unknown>)[name];
@@ -175,7 +179,7 @@ function graphicDisplay(element: Element): "printer" | undefined {
   return "printer";
 }
 
-function groupRepeatedRows(rows: readonly RowOptions[], canShareOutput: boolean): RepeatedRow[] {
+function groupRepeatedRows(rows: readonly OdsRowOptions[], canShareOutput: boolean): RepeatedRow[] {
   const groups: RepeatedRow[] = [];
   for (const [rowIndex, row] of rows.entries()) {
     const previous = groups[groups.length - 1];
@@ -186,6 +190,8 @@ function groupRepeatedRows(rows: readonly RowOptions[], canShareOutput: boolean)
     if (
       canShareOutput &&
       previous &&
+      previous.row.repeat === undefined &&
+      row.repeat === undefined &&
       previousRowNumber !== undefined &&
       rowNumber === previousRowNumber + 1 &&
       rowEqual(previous.row, row, previousRowNumber, rowNumber)
@@ -193,7 +199,7 @@ function groupRepeatedRows(rows: readonly RowOptions[], canShareOutput: boolean)
       groups[groups.length - 1] = { ...previous, repeat: previous.repeat + 1 };
       continue;
     }
-    groups.push({ row, rowIndex, repeat: 1 });
+    groups.push({ row, rowIndex, repeat: row.repeat ?? 1 });
   }
   return groups;
 }
@@ -270,7 +276,7 @@ export function worksheetXml(
       (_, offset) => merge.firstRow + offset,
     ),
   );
-  const rowsForOutput: RowOptions[] = [
+  const rowsForOutput: OdsRowOptions[] = [
     ...sourceRows,
     ...mergeRows
       .filter((rowNumber) => !sourceRowNumbers.has(rowNumber))
@@ -389,8 +395,9 @@ export function worksheetXml(
           : undefined,
       );
       const previous = groupedCellXml[groupedCellXml.length - 1];
-      if (previous?.xml === xml) previous.count += 1;
-      else groupedCellXml.push({ count: 1, xml });
+      const repeat = cell.repeat ?? 1;
+      if (previous?.xml === xml) previous.count += repeat;
+      else groupedCellXml.push({ count: repeat, xml });
     }
     const xml = xmlElement(
       "table:table-row",
@@ -414,7 +421,7 @@ export function worksheetXml(
         xml,
       });
     }
-    expectedRowNumber = rowNumber + 1;
+    expectedRowNumber = rowNumber + repeat;
   }
   const rows = concatenate(
     bodyRows.length
@@ -1499,8 +1506,8 @@ function parseRows(
   textStyles: Map<string, RichTextRunPropertiesOptions>,
   hyperlinks: HyperlinkOptions[],
   groups: WorksheetOptions["groups"],
-): { rows: RowOptions[]; defaultRowHeight?: number } {
-  const rows: RowOptions[] = [];
+): { rows: OdsRowOptions[]; defaultRowHeight?: number } {
+  const rows: OdsRowOptions[] = [];
   let defaultRowHeight: number | undefined;
   let rowNumber = 1;
   for (const row of tableRows(table)) {
@@ -1521,13 +1528,18 @@ function parseRows(
     );
     const hasRowData = (parsed.cells ?? []).some(hasCellContent) || parsed.hidden === true;
     if (repeat > MAX_ROWS && hasRowData) {
-      throw new OdsParseError(
-        "Invalid OpenDocument spreadsheet repeat count",
-        "content.xml",
-        "office:body/office:spreadsheet/table:table",
-        "table:number-rows-repeated",
-        "invalid-repeat-count",
-      );
+      if (mergeCells.length !== mergeStart) {
+        throw new OdsParseError(
+          "Repeated rows with merged cells exceed the canonical worksheet limits",
+          "content.xml",
+          "office:body/office:spreadsheet/table:table",
+          "table:number-rows-repeated",
+          "unsupported-repeated-merge",
+        );
+      }
+      rows.push({ ...parsed, repeat });
+      rowNumber += repeat;
+      continue;
     }
     if (isLargeEmptyRepeat(repeat, hasRowData)) {
       if (typeof parsed.height === "number" && defaultRowHeight === undefined) {
@@ -1620,7 +1632,7 @@ export function parseRow(
   textStyles: Map<string, RichTextRunPropertiesOptions> = new Map(),
   hyperlinks: HyperlinkOptions[] = [],
   groups: WorksheetOptions["groups"] = [],
-): RowOptions {
+): OdsRowOptions {
   const style = dimensions.get(attributeString(row, "table:style-name") ?? "");
   const cellStartColumns: number[] = [];
   let columnNumber = 1;
@@ -1661,7 +1673,7 @@ export function parseRow(
             ["text:p", "draw:frame"],
           );
           const coveredStyle = cellStyles.get(attributeString(cell, "table:style-name") ?? "");
-          const coveredCell: CellOptions = {
+          const coveredCell: OdsCellOptions = {
             reference: `${columnName(startColumn)}${rowNumber}`,
             covered: {
               reference: `${columnName(startColumn)}${rowNumber}`,
@@ -1686,20 +1698,7 @@ export function parseRow(
             : undefined;
           if (graphics) coveredCell.graphics = graphics;
           if (repeat > MAX_COLUMNS) {
-            if (
-              !childNamed(cell, "text:p") &&
-              !attributeString(cell, "office:value-type") &&
-              !hasVisibleCellStyle(coveredStyle)
-            ) {
-              return [];
-            }
-            throw new OdsParseError(
-              "Invalid OpenDocument spreadsheet repeat count",
-              "content.xml",
-              "office:body/office:spreadsheet/table:table",
-              "table:number-columns-repeated",
-              "invalid-repeat-count",
-            );
+            return [{ ...coveredCell, repeat }];
           }
           return Array.from({ length: repeat }, (_, repeatedIndex) => ({
             ...coveredCell,
@@ -1719,7 +1718,14 @@ export function parseRow(
             "element has no canonical CellOptions mapping",
           );
         }
-        const firstCell = parseCell(cell, rowNumber, startColumn, cellStyles, [], textStyles);
+        const firstCell: OdsCellOptions = parseCell(
+          cell,
+          rowNumber,
+          startColumn,
+          cellStyles,
+          [],
+          textStyles,
+        );
         const hasMergeSpan =
           (attributeNumber(cell, "table:number-columns-spanned") ?? 1) > 1 ||
           (attributeNumber(cell, "table:number-rows-spanned") ?? 1) > 1;
@@ -1728,13 +1734,25 @@ export function parseRow(
           hasMergeSpan ||
           hasVisibleCellStyle(typeof firstCell.style === "number" ? undefined : firstCell.style);
         if (repeat > MAX_COLUMNS && hasCellSurface) {
-          throw new OdsParseError(
-            "Invalid OpenDocument spreadsheet repeat count",
-            "content.xml",
-            "office:body/office:spreadsheet/table:table",
-            "table:number-columns-repeated",
-            "invalid-repeat-count",
-          );
+          if (
+            hasMergeSpan ||
+            (cell.elements ?? []).some(
+              (child) =>
+                child.name === "office:annotation" ||
+                child.name === "draw:frame" ||
+                child.name === "draw:g",
+            ) ||
+            parseCellHyperlinks(cell, firstCell.reference ?? "").length > 0
+          ) {
+            throw new OdsParseError(
+              "Repeated cells with per-cell metadata exceed the canonical worksheet limits",
+              "content.xml",
+              "office:body/office:spreadsheet/table:table",
+              "table:number-columns-repeated",
+              "unsupported-repeated-cell-metadata",
+            );
+          }
+          return [{ ...firstCell, repeat }];
         }
         if (isLargeEmptyRepeat(repeat, hasCellSurface)) return [];
         return Array.from({ length: repeat }, (_, repeatedIndex) => {
