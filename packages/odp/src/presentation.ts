@@ -19,6 +19,7 @@ import {
   emuToLength,
   descendantElements,
   generateOcf,
+  hexColorValue,
   hasOcfManifestOptions,
   isExternalOdfUrl,
   lengthToEmu,
@@ -96,31 +97,132 @@ function packageOptions(options: PresentationOptions): Partial<OdpPresentationOp
   return isOdpPackageOptions(options) ? options : {};
 }
 
+function backgroundOptions(
+  slides: readonly OdpSlideOptions[],
+  resources: readonly StyleResourceOptions[],
+): { slides: OdpSlideOptions[]; resources: StyleResourceOptions[] } {
+  const nextResources = [...resources];
+  const usedNames = new Set(resources.map((resource) => resource.name));
+  const nextSlides = slides.map((slide, index) => {
+    if (slide.background === undefined) return slide;
+    const background = slide.background;
+    if (
+      background.reference !== undefined ||
+      background.effects !== undefined ||
+      background.effectsList !== undefined ||
+      background.shadeToTitle !== undefined ||
+      background.blackWhiteMode !== undefined
+    )
+      throw new OdpGenerateError(
+        "ODF drawing-page styles cannot represent these background properties",
+        "content.xml",
+        "/office:document-content/office:automatic-styles/style:style/style:drawing-page-properties",
+        "background",
+        "unsupported-background-properties",
+      );
+    const fill = background.fill;
+    let fillMode: string;
+    let fillColor: string | undefined;
+    if (fill === undefined || (typeof fill === "object" && fill.type === "none")) {
+      fillMode = "none";
+    } else if (
+      typeof fill === "object" &&
+      fill.type === "solid" &&
+      hexColorValue(fill.color) !== undefined
+    ) {
+      const color = hexColorValue(fill.color)!.slice(-6);
+      if (!/^[0-9a-f]{6}$/iu.test(color))
+        throw new OdpGenerateError(
+          "ODF slide background requires an RGB color",
+          "content.xml",
+          "/office:document-content/office:automatic-styles/style:style/style:drawing-page-properties",
+          "background fill color",
+          "invalid-rgb-color",
+        );
+      fillMode = "solid";
+      fillColor = `#${color}`;
+    } else {
+      throw new OdpGenerateError(
+        "ODF slide background supports only solid colors and no-fill",
+        "content.xml",
+        "/office:document-content/office:automatic-styles/style:style/style:drawing-page-properties",
+        "background fill",
+        "unsupported-background-fill",
+      );
+    }
+    let name = slide.drawingPageStyleName;
+    if (name === undefined) {
+      let suffix = index + 1;
+      name = `ODPBackground${suffix}`;
+      while (usedNames.has(name)) name = `ODPBackground${++suffix}`;
+    }
+    usedNames.add(name);
+    const resourceIndex = nextResources.findIndex(
+      (resource) => resource.name === name && resource.family === "drawing-page",
+    );
+    const resource = resourceIndex < 0 ? undefined : nextResources[resourceIndex];
+    const properties = [...(resource?.properties ?? [])];
+    const propertyIndex = properties.findIndex(
+      (property) => property.name === "style:drawing-page-properties",
+    );
+    const existingProperty = properties[propertyIndex];
+    const drawingPageProperties = {
+      name: "style:drawing-page-properties" as const,
+      attributes: {
+        ...existingProperty?.attributes,
+        "draw:fill": fillMode,
+        "draw:fill-color": fillColor,
+      },
+      ...(existingProperty && "children" in existingProperty && existingProperty.children
+        ? { children: existingProperty.children }
+        : {}),
+    };
+    if (propertyIndex < 0) properties.push(drawingPageProperties);
+    else properties[propertyIndex] = drawingPageProperties;
+    const nextResource: StyleResourceOptions = {
+      name,
+      family: "drawing-page",
+      properties,
+      ...(resource?.maps === undefined ? {} : { maps: resource.maps }),
+    };
+    if (resourceIndex < 0) nextResources.push(nextResource);
+    else nextResources[resourceIndex] = nextResource;
+    return { ...slide, drawingPageStyleName: name };
+  });
+  return { slides: nextSlides, resources: nextResources };
+}
+
 function generateOdpPackage(options: OdpPresentationOptions): Uint8Array {
   const { packageManifest, packageMembers, styleResources, embeddedObjects, packageMediaType } =
     packageOptions(options);
   validateEmbeddedObjects(options, embeddedObjects);
   const images: OdpImage[] = [];
   const mediaFiles: OdpImage[] = [];
-  const usedStyleNames = new Set(styleResources?.map((resource) => resource.name));
+  const background = backgroundOptions(options.slides ?? [], styleResources ?? []);
+  const slides = background.slides;
+  const usedStyleNames = new Set(background.resources.map((resource) => resource.name));
   const occupiedPaths = new Set([
     ...(packageMembers ?? []).map((member) => member.path),
     ...(embeddedObjects ?? []).flatMap((object) => object.members.map((member) => member.path)),
   ]);
   const transitionSounds = new Map<OdpSlideOptions, OdpTransitionOptions>();
-  for (const slide of options.slides ?? []) {
+  for (const slide of slides) {
     if (slide.transition === undefined || typeof slide.transition === "string") continue;
     transitionSounds.set(
       slide,
       materializeOdpTransitionSound(slide.transition, mediaFiles, occupiedPaths),
     );
   }
+  const presentationOptions = { ...options, slides };
   const styles: string[] = styleResourcesXml(
-    reconcileTransitionStyleResources(options, transitionSounds),
+    reconcileTransitionStyleResources(
+      { ...presentationOptions, styleResources: background.resources },
+      transitionSounds,
+    ),
   );
   const masterNames = [
     ...(options.masters ?? []).flatMap((master) => (master.name ? [master.name] : [])),
-    ...(options.slides ?? []).flatMap((slide) => (slide.master ? [slide.master] : [])),
+    ...slides.flatMap((slide) => (slide.master ? [slide.master] : [])),
   ].filter((name, index, names) => names.indexOf(name) === index);
   if (masterNames.length === 0) masterNames.push("Default");
   const charts: OdpChart[] = [];
@@ -142,7 +244,7 @@ function generateOdpPackage(options: OdpPresentationOptions): Uint8Array {
     embeddedObjectPool,
     charts,
   );
-  const pages = (options.slides ?? []).map((slide, index) =>
+  const pages = slides.map((slide, index) =>
     slideXml(
       slide,
       index + 1,

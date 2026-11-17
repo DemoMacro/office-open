@@ -13,6 +13,7 @@ import {
   xmlElement,
 } from "@office-open/odf";
 import type { StyleFamily, StyleResourceOptions } from "@office-open/odf";
+import type { BackgroundOptions } from "@office-open/pptx";
 import type { Element } from "@office-open/xml";
 
 import { OdpParseError } from "./error";
@@ -169,6 +170,25 @@ export function parseParagraphStyles(
     }
   }
   return result;
+}
+
+export function parseDrawingPageBackground(
+  styleResources: readonly StyleResourceOptions[],
+  styleName: string | undefined,
+): BackgroundOptions | undefined {
+  if (!styleName) return undefined;
+  const resource = styleResources.find(
+    (style) => style.name === styleName && style.family === "drawing-page",
+  );
+  const properties = resource?.properties.find(
+    (property) => property.name === "style:drawing-page-properties",
+  );
+  const fill = properties?.attributes["draw:fill"];
+  const color = properties?.attributes["draw:fill-color"];
+  if (fill === "none") return { fill: { type: "none" } };
+  if (fill !== "solid" || typeof color !== "string" || !/^#[0-9a-f]{6}$/iu.test(color))
+    return undefined;
+  return { fill: { type: "solid", color: color.slice(1) } };
 }
 
 function pointValue(value: string | undefined): number | undefined {

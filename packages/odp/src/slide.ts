@@ -75,6 +75,7 @@ import {
   type OdpSlideNodeOptions,
   type OdpSlideNodePayload,
 } from "./slide-nodes";
+import { parseDrawingPageBackground } from "./styles";
 import { addColumnStyle } from "./styles";
 import { parseParagraph, textBodyXml, type TextProperties } from "./text-run";
 import {
@@ -469,6 +470,7 @@ export function parseSlide(
     binaries,
   );
   const animationRoots = parsedAnimationRoots;
+  const background = parseDrawingPageBackground(styleResources ?? [], pageStyleName);
   const shapeReferences = collectOdfShapeIds(normalizedPage);
   const notes = parseNotes(childNamed(page, "presentation:notes"), textStyles, graphicStyles);
   const comments = childrenNamed(page, "officeooo:annotation").map(parseAnnotation);
@@ -638,6 +640,7 @@ export function parseSlide(
       ? { master: attributeString(page, "draw:master-page-name") }
       : {}),
     ...(forms !== undefined ? { forms } : {}),
+    ...(background === undefined ? {} : { background }),
     children,
     ...(odpNodes.length > 0 ? { odpNodes } : {}),
     ...(transition !== undefined ? { transition } : {}),

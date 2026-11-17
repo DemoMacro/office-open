@@ -33,6 +33,28 @@ describe("ODP codec", () => {
     });
   });
 
+  it("maps drawing-page background styles to canonical slide backgrounds", async () => {
+    const source = generateOcf("application/vnd.oasis.opendocument.presentation", {
+      "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:automatic-styles><style:style style:name="Page" style:family="drawing-page"><style:drawing-page-properties draw:fill="solid" draw:fill-color="#112233"/></style:style></office:automatic-styles><office:body><office:presentation><draw:page draw:style-name="Page"/></office:presentation></office:body></office:document-content>`,
+    });
+    const parsed = await parsePresentation(source);
+    expect(parsed.slides?.[0]?.background).toEqual({
+      fill: { type: "solid", color: "112233" },
+    });
+
+    const authored = await generatePresentation({
+      slides: [{ background: { fill: { type: "solid", color: "FF445566" } } }],
+    });
+    const content = (await readOcf(authored, "application/vnd.oasis.opendocument.presentation"))
+      .files["content.xml"]!;
+    expect(content).toContain('draw:fill="solid"');
+    expect(content).toContain('draw:fill-color="#445566"');
+    const reread = await parsePresentation(authored);
+    expect(reread.slides?.[0]?.background).toEqual({
+      fill: { type: "solid", color: "445566" },
+    });
+  });
+
   it("round-trips text-box fill and outline through canonical shape properties", async () => {
     const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:automatic-styles><style:style style:name="TextBox" style:family="graphic"><style:graphic-properties draw:fill="solid" draw:fill-color="#112233" draw:stroke="solid" svg:stroke-width="0.5pt" svg:stroke-color="#445566"/></style:style></office:automatic-styles><office:body><office:presentation><draw:page><draw:frame draw:style-name="TextBox" svg:x="1cm" svg:y="1cm" svg:width="4cm" svg:height="2cm"><draw:text-box><text:p>Styled</text:p></draw:text-box></draw:frame></draw:page></office:presentation></office:body></office:document-content>`;
     const source = generateOcf("application/vnd.oasis.opendocument.presentation", {
