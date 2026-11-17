@@ -27,7 +27,9 @@ import {
   chartSubdocumentFiles,
   childNamed,
   childrenNamed,
+  bindGraphicStyleResources,
   descendantElements,
+  createGraphicStyleResources,
   generateOcf,
   hasOcfManifestOptions,
   metaXml,
@@ -36,6 +38,8 @@ import {
   parseOfficeForms,
   parseEmbeddedCharts,
   parseGraphicStyles,
+  parseGraphicStyleResources,
+  graphicStyleFiles,
   parseMeta,
   readOcfSync,
   readXml,
@@ -52,6 +56,7 @@ import type { Element } from "@office-open/xml";
 import {
   automaticStyleResourcesXml,
   parseStyles,
+  type ParsedStyle,
   type OdtAutomaticStyleResource,
   type StyleMap,
 } from "./automatic-styles";
@@ -182,6 +187,8 @@ export interface ParseContext {
 function generateOdtPackage(options: OdtDocumentOptions): Uint8Array {
   const { packageManifest, embeddedObjects, packageMembers, styleResources } = options;
   const styles: string[] = automaticStyleResourcesXml(styleResources);
+  const graphicResources = createGraphicStyleResources();
+  bindGraphicStyleResources(styles, graphicResources);
   const blocks = options.sections.flatMap((section) => section.children);
   const images: OdtImage[] = [];
   const charts: OdtChart[] = [];
@@ -276,10 +283,12 @@ function generateOdtPackage(options: OdtDocumentOptions): Uint8Array {
       pageLayouts,
       masterPages,
       masterPageXml,
+      graphicResources,
     ),
     "meta.xml": metaXml(options),
   };
   for (const image of images) files[image.path] = image.data;
+  for (const file of graphicStyleFiles(graphicResources)) files[file.path] = file.data;
   for (const entry of charts)
     Object.assign(files, chartSubdocumentFiles(`${entry.path}/`, entry.chart));
   const mediaTypes: Record<string, string> = Object.fromEntries(
@@ -541,9 +550,14 @@ function parseOdtPackage(data: Uint8Array): OdtDocumentOptions {
   const styleContainer = childNamed(content, "office:automatic-styles");
   const commonStyleContainer = childNamed(readXml(files, "styles.xml"), "office:styles");
   const styleMap = parseStyles(commonStyleContainer, styleContainer);
+  const graphicResources = parseGraphicStyleResources(
+    [commonStyleContainer, styleContainer],
+    binaries,
+  );
+  const commonGraphicStyles = parseGraphicStyles(commonStyleContainer, "graphic", graphicResources);
   const graphicStyles = new Map([
-    ...parseGraphicStyles(commonStyleContainer),
-    ...parseGraphicStyles(styleContainer),
+    ...commonGraphicStyles,
+    ...parseGraphicStyles(styleContainer, "graphic", graphicResources, commonGraphicStyles),
   ]);
   const chartBodies = parseEmbeddedCharts(manifest, files, binaries, files["styles.xml"]);
   const objectMediaTypes = new Map(
@@ -628,7 +642,11 @@ function parseOdtPackage(data: Uint8Array): OdtDocumentOptions {
   if (packageMembers.length > 0) result.packageMembers = packageMembers;
   const automaticStyles = parseStyles(styleContainer);
   const styleResources: OdtAutomaticStyleResource[] = [...automaticStyles]
-    .filter(([, style]) => (style.properties ?? []).some(hasStyleProjection))
+    .filter(
+      ([, style]) =>
+        (style.family !== "graphic" || !hasGraphicResourceReference(style)) &&
+        (style.properties ?? []).some(hasStyleProjection),
+    )
     .map(([name, style]) => ({
       name,
       family: style.family,
@@ -691,6 +709,17 @@ function hasStyleProjection(property: {
   children?: unknown[];
 }) {
   return Object.keys(property.attributes).length > 0 || (property.children?.length ?? 0) > 0;
+}
+
+function hasGraphicResourceReference(style: ParsedStyle): boolean {
+  const resourceAttributes = new Set([
+    "draw:fill-gradient-name",
+    "draw:fill-hatch-name",
+    "draw:fill-image-name",
+  ]);
+  return (style.properties ?? []).some((property) =>
+    Object.keys(property.attributes).some((name) => resourceAttributes.has(name)),
+  );
 }
 
 function validateEmbeddedObjectBodies(
@@ -1303,7 +1332,7 @@ export function parseBlocks(
       continue;
     }
     if (isShapeElement(element.name)) {
-      push(shapeBlock(parseShape(element)));
+      push(shapeBlock(parseShape(element, context)));
       continue;
     }
     if (element.name === "draw:g") {

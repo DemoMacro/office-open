@@ -67,6 +67,82 @@ async function parseBodyError(body: string, name: string, reason?: string): Prom
 }
 
 describe("ODT canonical projection", () => {
+  it("projects and regenerates graphic gradient fills", async () => {
+    const source = generateOcf("application/vnd.oasis.opendocument.text", {
+      "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES} ${FORM_NAMESPACE}><office:automatic-styles><style:style style:name="Gradient" style:family="graphic"><style:graphic-properties draw:fill="gradient" draw:fill-gradient-name="Blue"/></style:style></office:automatic-styles><office:body><office:text><text:p><draw:rect draw:style-name="Gradient" svg:x="1cm" svg:y="1cm" svg:width="4cm" svg:height="2cm"/></text:p></office:text></office:body></office:document-content>`,
+      "styles.xml": `<?xml version="1.0"?><office:document-styles ${ODF_NAMESPACES}><office:styles><draw:gradient draw:name="Blue" draw:style="linear" draw:angle="900" draw:start-color="#112233" draw:end-color="#AABBCC"/></office:styles></office:document-styles>`,
+    });
+    const parsed = await parseDocument(source);
+    expect(parsed.sections[0]?.children?.[0]).toMatchObject({
+      paragraph: {
+        children: [
+          {
+            wpsShape: {
+              fill: {
+                type: "gradient",
+                angle: 900,
+                stops: [
+                  { position: 0, color: "112233" },
+                  { position: 100, color: "AABBCC" },
+                ],
+              },
+            },
+          },
+        ],
+      },
+    });
+    const generated = await generateDocument(parsed);
+    const files = (await readOcf(generated, "application/vnd.oasis.opendocument.text")).files;
+    expect(files["styles.xml"]).toContain('draw:gradient draw:name="gradient-1"');
+    expect(files["content.xml"]).toContain('draw:fill="gradient"');
+    const reread = await parseDocument(generated);
+    expect(reread.sections[0]?.children?.[0]).toMatchObject({
+      paragraph: { children: [{ wpsShape: { fill: { type: "gradient" } } }] },
+    });
+  });
+
+  it("inherits graphic style properties from common styles", async () => {
+    const source = generateOcf("application/vnd.oasis.opendocument.text", {
+      "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES} ${FORM_NAMESPACE}><office:automatic-styles><style:style style:name="Child" style:family="graphic" style:parent-style-name="Parent"><style:graphic-properties draw:stroke="none"/></style:style></office:automatic-styles><office:body><office:text><text:p><draw:rect draw:style-name="Child" svg:width="1cm" svg:height="1cm"/></text:p></office:text></office:body></office:document-content>`,
+      "styles.xml": `<?xml version="1.0"?><office:document-styles ${ODF_NAMESPACES}><office:styles><style:style style:name="Parent" style:family="graphic"><style:graphic-properties draw:fill="solid" draw:fill-color="#112233"/></style:style></office:styles></office:document-styles>`,
+    });
+    const parsed = await parseDocument(source);
+    expect(parsed.sections[0]?.children?.[0]).toMatchObject({
+      paragraph: { children: [{ wpsShape: { fill: { type: "solid", color: "112233" } } }] },
+    });
+  });
+
+  it("projects floating picture anchors through the canonical picture model", async () => {
+    const source = generateOcf("application/vnd.oasis.opendocument.text", {
+      "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES} ${FORM_NAMESPACE}><office:automatic-styles/><office:body><office:text><text:p><draw:frame text:anchor-type="page" draw:transform="translate(1cm 2cm) rotate(15deg)" svg:x="1cm" svg:y="2cm" svg:width="4cm" svg:height="3cm" draw:name="Logo"><draw:image xlink:href="Pictures/logo.png"/></draw:frame></text:p></office:text></office:body></office:document-content>`,
+      "styles.xml": `<?xml version="1.0"?><office:document-styles ${ODF_NAMESPACES}><office:styles/></office:document-styles>`,
+      "Pictures/logo.png": new Uint8Array([1, 2, 3]),
+    });
+    const parsed = await parseDocument(source);
+    const picture = sectionParagraph(parsed.sections[0]?.children?.[0])?.children?.[0];
+    expect(picture).toMatchObject({
+      picture: {
+        floating: {
+          horizontalPosition: { relative: "page", offset: 360000 },
+          verticalPosition: { relative: "page", offset: 720000 },
+        },
+        transformation: { offset: { x: 720000, y: 1440000 }, rotation: 15 },
+      },
+    });
+
+    const generated = await generateDocument(parsed);
+    const files = (await readOcf(generated, "application/vnd.oasis.opendocument.text")).files;
+    expect(files["content.xml"]).toContain('text:anchor-type="page"');
+    expect(files["content.xml"]).toContain('draw:transform="rotate(15deg)"');
+    const reread = await parseDocument(generated);
+    expect(sectionParagraph(reread.sections[0]?.children?.[0])?.children?.[0]).toMatchObject({
+      picture: {
+        floating: { verticalPosition: { relative: "page" } },
+        transformation: { rotation: 15 },
+      },
+    });
+  });
+
   it("round-trips grouped shapes and their metadata", async () => {
     const source = odtPackage(
       '<text:p><draw:g draw:name="Group" svg:x="1cm" svg:y="2cm" svg:width="4cm" svg:height="3cm"><svg:title>Group title</svg:title><svg:desc>Group description</svg:desc><draw:rect draw:name="Child" svg:x="0.5cm" svg:y="0.25cm" svg:width="2cm" svg:height="1cm"><text:p>Grouped text</text:p></draw:rect></draw:g></text:p>',
@@ -417,6 +493,34 @@ describe("ODT canonical projection", () => {
           offset: { x: 360000, y: 720000 },
           width: 1080000,
         },
+      },
+    });
+  });
+
+  it("projects custom-shape transforms and floating anchors", async () => {
+    const parsed = await parseDocument(
+      odtPackage(
+        '<text:p><draw:custom-shape text:anchor-type="page" draw:transform="translate(1cm 2cm) rotate(15deg)" svg:x="1cm" svg:y="2cm" svg:width="3cm" svg:height="4cm"><draw:enhanced-geometry draw:type="rectangle"/></draw:custom-shape></text:p>',
+      ),
+    );
+    const shape = sectionParagraph(parsed.sections[0]?.children[0])?.children?.[0];
+    expect(shape).toMatchObject({
+      wpsShape: {
+        floating: {
+          horizontalPosition: { relative: "page" },
+          verticalPosition: { relative: "page" },
+        },
+        transformation: {
+          offset: { x: 720000, y: 1440000 },
+          rotation: 15,
+        },
+      },
+    });
+    const reread = await parseDocument(await generateDocument(parsed));
+    expect(sectionParagraph(reread.sections[0]?.children[0])?.children?.[0]).toMatchObject({
+      wpsShape: {
+        transformation: { rotation: 15 },
+        floating: { verticalPosition: { relative: "page" } },
       },
     });
   });

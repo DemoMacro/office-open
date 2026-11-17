@@ -2195,7 +2195,7 @@ export function parseRuns(
         const shape = parseCustomShape(child, context);
         return shape ? [shape] : [];
       }
-      if (isShapeElement(child.name)) return [{ wpsShape: parseShape(child) }];
+      if (isShapeElement(child.name)) return [{ wpsShape: parseShape(child, context) }];
       if (child.name === "text:span") {
         const styleEntry = context.styles.get(attributeString(child, "text:style-name") ?? "");
         const properties = styleEntry?.character;

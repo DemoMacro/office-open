@@ -9,6 +9,8 @@ import {
   childNamed,
   childrenNamed,
   readXml,
+  type GraphicStyleResources,
+  graphicStyleResourcesXml,
   xmlElement,
   type OdfFiles,
 } from "@office-open/odf";
@@ -91,6 +93,7 @@ export function documentStylesXml(
   pageLayouts?: readonly OdtPageLayoutOptions[],
   masterPages?: readonly OdtMasterPageOptions[],
   masterPageXml?: readonly string[],
+  graphicResources?: GraphicStyleResources,
 ): string {
   const properties = section?.properties;
   const needsDefaultLayout =
@@ -128,7 +131,7 @@ export function documentStylesXml(
     notesConfigurationXml(settings) +
     outlineStyleXml(numbering) +
     defaultStyleXml(styles);
-  return `<?xml version="1.0" encoding="UTF-8"?><office:document-styles ${NAMESPACES} office:version="1.3"><office:styles>${notes}</office:styles><office:automatic-styles>${pageLayout}</office:automatic-styles>${masterStyles}</office:document-styles>`;
+  return `<?xml version="1.0" encoding="UTF-8"?><office:document-styles ${NAMESPACES} office:version="1.3"><office:styles>${notes}${graphicResources ? graphicStyleResourcesXml(graphicResources).join("") : ""}</office:styles><office:automatic-styles>${pageLayout}</office:automatic-styles>${masterStyles}</office:document-styles>`;
 }
 
 function pageLayoutPropertiesXml(properties: SectionOptions["properties"]): string {

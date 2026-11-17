@@ -8,6 +8,7 @@ import type {
   PictureOptions,
   SectionChild,
   ShapeOptions,
+  Floating,
 } from "@office-open/docx";
 import {
   attributeString,
@@ -19,6 +20,7 @@ import {
   graphicOutline,
   isExternalOdfUrl,
   lengthToEmu,
+  odfGroupTransform,
   parseOdfGroupTransform,
   presetGeometryOdf,
   pushShapeStyle,
@@ -28,6 +30,7 @@ import {
   textOf,
   xmlElement,
 } from "@office-open/odf";
+import type { OdfGroupTransform } from "@office-open/odf";
 import type { Element } from "@office-open/xml";
 
 type WpgChildMediaData = Extract<GroupChildMediaData, { type: "wps" | "wpg" }>;
@@ -46,6 +49,7 @@ export type PictureType = NonNullable<PictureOptions["type"]>;
 export type RasterPictureType = Exclude<PictureType, "svg">;
 
 type DrawingTransformation = ChartOptions["transformation"];
+type DrawingOffset = { x?: number; y?: number };
 
 const FRAME_PAYLOADS = [
   "draw:text-box",
@@ -98,6 +102,41 @@ function transformationOffset(
   return value === undefined || value === 0 ? undefined : emuToLength(value);
 }
 
+function odfAnchorType(floating: Floating | undefined): OdtFrameAnchorType {
+  if (!floating) return "as-char";
+  if (
+    floating.horizontalPosition.relative === "character" ||
+    floating.verticalPosition.relative === "line"
+  )
+    return "char";
+  if (
+    floating.horizontalPosition.relative === "page" ||
+    floating.verticalPosition.relative === "page"
+  )
+    return "page";
+  return "paragraph";
+}
+
+function floatingOptions(frame: Element): Floating | undefined {
+  const anchorType = frameAnchorType(attributeString(frame, "text:anchor-type"));
+  if (anchorType === undefined || anchorType === "as-char") return undefined;
+  const offset = frameOffset(frame);
+  const horizontalRelative =
+    anchorType === "page" ? "page" : anchorType === "char" ? "character" : "column";
+  const verticalRelative =
+    anchorType === "page" ? "page" : anchorType === "char" ? "line" : "paragraph";
+  return {
+    horizontalPosition: {
+      relative: horizontalRelative,
+      ...(offset?.x === undefined ? {} : { offset: offset.x }),
+    },
+    verticalPosition: {
+      relative: verticalRelative,
+      ...(offset?.y === undefined ? {} : { offset: offset.y }),
+    },
+  };
+}
+
 /** Binary image collected during generation — emitted as a Pictures/ entry. */
 export interface OdtImage {
   path: string;
@@ -125,9 +164,10 @@ export function chartFrameXml(chart: ChartOptions, charts: OdtChart[]): string {
   return xmlElement(
     "draw:frame",
     {
-      "text:anchor-type": "as-char",
+      "text:anchor-type": odfAnchorType(chart.floating),
       "svg:width": transformationWidth(chart.transformation),
       "svg:height": transformationHeight(chart.transformation),
+      "draw:transform": odfGroupTransform(chart.transformation.rotation),
     },
     [xmlElement("draw:object", { "xlink:href": `./${path}`, "xlink:type": "simple" })],
   );
@@ -154,12 +194,13 @@ export function wpsShapeFrameXml(
       "draw:control",
       {
         "draw:control": shape.controlId,
-        "text:anchor-type": "as-char",
+        "text:anchor-type": odfAnchorType(shape.floating),
         "draw:style-name": addShapeStyle(shape, styles),
         "svg:x": transformationOffset(offset, "x"),
         "svg:y": transformationOffset(offset, "y"),
         "svg:width": transformationWidth(shape.transformation),
         "svg:height": transformationHeight(shape.transformation),
+        "draw:transform": odfGroupTransform(shape.transformation.rotation),
         "draw:name": shape.altText?.name,
       },
       text,
@@ -173,12 +214,13 @@ export function wpsShapeFrameXml(
   return xmlElement(
     "draw:custom-shape",
     {
-      "text:anchor-type": "as-char",
+      "text:anchor-type": odfAnchorType(shape.floating),
       "draw:style-name": addShapeStyle(shape, styles),
       "svg:x": transformationOffset(offset, "x"),
       "svg:y": transformationOffset(offset, "y"),
       "svg:width": transformationWidth(shape.transformation),
       "svg:height": transformationHeight(shape.transformation),
+      "draw:transform": odfGroupTransform(shape.transformation.rotation),
       "draw:name": shape.nonVisualProperties?.name ?? shape.altText?.name,
     },
     [
@@ -230,6 +272,7 @@ function embeddedObjectFrameXml(
       "svg:y": lengthAttributeXml(transformationOffset(offset, "y")),
       "svg:width": lengthAttributeXml(transformationWidth(shape.transformation)),
       "svg:height": lengthAttributeXml(transformationHeight(shape.transformation)),
+      "draw:transform": odfGroupTransform(shape.transformation.rotation),
       "draw:name": name,
     },
     [
@@ -261,11 +304,37 @@ function lengthAttributeXml(value: number | string | undefined): string | undefi
   return typeof value === "number" ? emuToLength(value) : value;
 }
 
-function frameOffset(frame: Element): DrawingTransformation["offset"] | undefined {
+function frameOffset(frame: Element): DrawingOffset | undefined {
   const x = lengthToEmu(attributeString(frame, "svg:x"));
   const y = lengthToEmu(attributeString(frame, "svg:y"));
   if (x === undefined && y === undefined) return undefined;
   return { ...(x === undefined ? {} : { x }), ...(y === undefined ? {} : { y }) };
+}
+
+function frameTransformation(frame: Element): {
+  offset?: DrawingOffset;
+  rotation?: number;
+} {
+  const transform = parseDrawingTransform(frame, "frame");
+  const base = frameOffset(frame);
+  const x = base?.x === undefined ? transform.x : base.x + (transform.x ?? 0);
+  const y = base?.y === undefined ? transform.y : base.y + (transform.y ?? 0);
+  return {
+    ...(x === undefined && y === undefined ? {} : { offset: { x, y } }),
+    ...(transform.rotation === undefined ? {} : { rotation: transform.rotation }),
+  };
+}
+
+function parseDrawingTransform(element: Element, kind: string): OdfGroupTransform {
+  const transform = parseOdfGroupTransform(attributeString(element, "draw:transform"));
+  if (transform !== null) return transform;
+  throw new OdtParseError(
+    `ODT ${kind} transform cannot be projected to the canonical drawing model`,
+    "content.xml",
+    `/office:document-content/office:body/office:text/${kind}`,
+    "draw:transform",
+    "unsupported-drawing-transform",
+  );
 }
 
 /** Shape fill and outline land in a reusable graphic style. */
@@ -288,11 +357,12 @@ export function pictureFrameXml(picture: PictureOptions, images: OdtImage[]): st
   return xmlElement(
     "draw:frame",
     {
-      "text:anchor-type": "as-char",
+      "text:anchor-type": odfAnchorType(picture.floating),
       "svg:x": lengthAttributeXml(picture.transformation.offset?.x),
       "svg:y": lengthAttributeXml(picture.transformation.offset?.y),
       "svg:width": transformationWidth(picture.transformation),
       "svg:height": transformationHeight(picture.transformation),
+      "draw:transform": odfGroupTransform(picture.transformation.rotation),
       "draw:name": picture.altText?.name,
     },
     [
@@ -313,14 +383,15 @@ export function shapeBlock(shape: ShapeOptions): SectionChild {
   return { paragraph: { children: [{ wpsShape: shape }] } };
 }
 
-export function parseShape(element: Element): ShapeOptions {
-  return parseShapeElement(element, undefined);
+export function parseShape(element: Element, context?: ParseContext): ShapeOptions {
+  return parseShapeElement(element, context);
 }
 
 export function parseShapeElement(
   element: Element,
   context: ParseContext | undefined,
 ): ShapeOptions {
+  const transform = parseDrawingTransform(element, "shape");
   const name = attributeString(element, "draw:name");
   const styleName = attributeString(element, "draw:style-name");
   const graphic = context?.graphicStyles.get(styleName ?? "");
@@ -329,12 +400,16 @@ export function parseShapeElement(
   const x2 = lengthToEmu(attributeString(element, "svg:x2"));
   const y2 = lengthToEmu(attributeString(element, "svg:y2"));
   const hasEndpoints = x1 !== undefined || y1 !== undefined || x2 !== undefined || y2 !== undefined;
+  const translatedX1 = x1 === undefined ? undefined : x1 + (transform.x ?? 0);
+  const translatedY1 = y1 === undefined ? undefined : y1 + (transform.y ?? 0);
+  const translatedX2 = x2 === undefined ? undefined : x2 + (transform.x ?? 0);
+  const translatedY2 = y2 === undefined ? undefined : y2 + (transform.y ?? 0);
   const x = hasEndpoints
-    ? Math.min(x1 ?? 0, x2 ?? 0)
-    : (lengthToEmu(attributeString(element, "svg:x")) ?? 0);
+    ? Math.min(translatedX1 ?? 0, translatedX2 ?? 0)
+    : (lengthToEmu(attributeString(element, "svg:x")) ?? 0) + (transform.x ?? 0);
   const y = hasEndpoints
-    ? Math.min(y1 ?? 0, y2 ?? 0)
-    : (lengthToEmu(attributeString(element, "svg:y")) ?? 0);
+    ? Math.min(translatedY1 ?? 0, translatedY2 ?? 0)
+    : (lengthToEmu(attributeString(element, "svg:y")) ?? 0) + (transform.y ?? 0);
   const width = hasEndpoints
     ? Math.abs((x2 ?? 0) - (x1 ?? 0))
     : (lengthToEmu(attributeString(element, "svg:width")) ?? 0);
@@ -356,6 +431,7 @@ export function parseShapeElement(
   const controlId = attributeString(element, "draw:control");
   const title = textOf(childNamed(element, "svg:title"));
   const description = textOf(childNamed(element, "svg:desc"));
+  const floating = floatingOptions(element);
   const children =
     context === undefined
       ? []
@@ -380,10 +456,12 @@ export function parseShapeElement(
       ...(x || y ? { offset: { ...(x ? { x } : {}), ...(y ? { y } : {}) } } : {}),
       width,
       height,
+      ...(transform.rotation === undefined ? {} : { rotation: transform.rotation }),
     },
     ...(fill ? { fill } : {}),
     ...(outline ? { outline } : {}),
     ...(textWarp ? { bodyProperties: { prstTxWarp: { preset: textWarp } } } : {}),
+    ...(floating ? { floating } : {}),
   };
 }
 
@@ -433,7 +511,9 @@ export function isShapeElement(name: string | undefined): boolean {
 
 /** draw:frame + draw:image maps back to an inline picture run. */
 export function parsePictureFrame(frame: Element, context: ParseContext): ParagraphChild[] {
-  const offset = frameOffset(frame);
+  const frameTransform = frameTransformation(frame);
+  const offset = frameTransform.offset;
+  const floating = floatingOptions(frame);
   const images: ParsedImage[] = childrenNamed(frame, "draw:image").flatMap((image) => {
     const href = attributeString(image, "xlink:href");
     const path = href ? packagePathFromReference(href) : undefined;
@@ -463,7 +543,11 @@ export function parsePictureFrame(frame: Element, context: ParseContext): Paragr
               ...(offset ? { offset } : {}),
               width: lengthToEmu(attributeString(frame, "svg:width")) ?? 0,
               height: lengthToEmu(attributeString(frame, "svg:height")) ?? 0,
+              ...(frameTransform.rotation === undefined
+                ? {}
+                : { rotation: frameTransform.rotation }),
             },
+            ...(floating ? { floating } : {}),
           },
         },
       ];
@@ -502,7 +586,9 @@ export function parsePictureFrame(frame: Element, context: ParseContext): Paragr
           ...(offset ? { offset } : {}),
           width: lengthToEmu(attributeString(frame, "svg:width")) ?? 0,
           height: lengthToEmu(attributeString(frame, "svg:height")) ?? 0,
+          ...(frameTransform.rotation === undefined ? {} : { rotation: frameTransform.rotation }),
         },
+        ...(floating ? { floating } : {}),
       },
     },
   ];
@@ -554,7 +640,9 @@ function pictureTypeFromUrl(value: string): RasterPictureType {
 
 /** draw:frame + draw:object resolves a typed embedded-object subdocument. */
 export function parseChartFrame(frame: Element, context: ParseContext): ParagraphChild[] {
-  const offset = frameOffset(frame);
+  const frameTransform = frameTransformation(frame);
+  const offset = frameTransform.offset;
+  const floating = floatingOptions(frame);
   const href = attributeString(childNamed(frame, "draw:object"), "xlink:href")
     ?.replace(/^\.\//, "")
     .replace(/^\//, "");
@@ -580,7 +668,9 @@ export function parseChartFrame(frame: Element, context: ParseContext): Paragrap
             ...(offset ? { offset } : {}),
             width: lengthToEmu(attributeString(frame, "svg:width")) ?? 0,
             height: lengthToEmu(attributeString(frame, "svg:height")) ?? 0,
+            ...(frameTransform.rotation === undefined ? {} : { rotation: frameTransform.rotation }),
           },
+          ...(floating ? { floating } : {}),
         },
       },
     ];
@@ -631,20 +721,20 @@ function frameAnchorType(value: string | undefined): OdtFrameAnchorType | undefi
 }
 
 function embeddedObjectShape(frame: Element, context: ParseContext, shapeId: number): ShapeOptions {
+  const frameTransform = frameTransformation(frame);
   const styleName = attributeString(frame, "draw:style-name");
   const graphic = styleName ? context.graphicStyles.get(styleName) : undefined;
   const fill = graphicFill(graphic);
   const outline = graphicOutline(graphic);
   const name = attributeString(frame, "draw:name");
-  const x = lengthToEmu(attributeString(frame, "svg:x"));
-  const y = lengthToEmu(attributeString(frame, "svg:y"));
   return {
     children: [],
     geometry: "rect",
     transformation: {
-      ...(x || y ? { offset: { ...(x ? { x } : {}), ...(y ? { y } : {}) } } : {}),
+      ...(frameTransform.offset ? { offset: frameTransform.offset } : {}),
       width: lengthToEmu(attributeString(frame, "svg:width")) ?? 0,
       height: lengthToEmu(attributeString(frame, "svg:height")) ?? 0,
+      ...(frameTransform.rotation === undefined ? {} : { rotation: frameTransform.rotation }),
     },
     nonVisualProperties: { id: shapeId, ...(name ? { name } : {}) },
     ...(fill ? { fill } : {}),
@@ -682,8 +772,9 @@ export function parseCustomShape(
     presetType && resolvedGeometry
       ? resolveOdfDrawGeometryOverlay(presetType, resolvedGeometry)
       : undefined;
-  const x = lengthToEmu(attributeString(element, "svg:x")) ?? 0;
-  const y = lengthToEmu(attributeString(element, "svg:y")) ?? 0;
+  const transform = parseDrawingTransform(element, "custom-shape");
+  const x = (lengthToEmu(attributeString(element, "svg:x")) ?? 0) + (transform.x ?? 0);
+  const y = (lengthToEmu(attributeString(element, "svg:y")) ?? 0) + (transform.y ?? 0);
   const width = lengthToEmu(attributeString(element, "svg:width")) ?? 0;
   const height = lengthToEmu(attributeString(element, "svg:height")) ?? 0;
   const fill: FillOptions | undefined = graphicFill(graphic);
@@ -691,6 +782,7 @@ export function parseCustomShape(
   const name = attributeString(element, "draw:name");
   const title = textOf(childNamed(element, "svg:title"));
   const description = textOf(childNamed(element, "svg:desc"));
+  const floating = floatingOptions(element);
   const children = (element.elements ?? []).flatMap((child) => {
     if (child.type !== "element") return [];
     if (child.name === "text:p" || child.name === "text:h")
@@ -710,6 +802,7 @@ export function parseCustomShape(
         ...(x || y ? { offset: { ...(x ? { x } : {}), ...(y ? { y } : {}) } } : {}),
         width,
         height,
+        ...(transform.rotation === undefined ? {} : { rotation: transform.rotation }),
       },
       ...(name
         ? {
@@ -734,6 +827,7 @@ export function parseCustomShape(
       ...(fill ? { fill } : {}),
       ...(outline ? { outline } : {}),
       ...(textWarp ? { bodyProperties: { prstTxWarp: { preset: textWarp } } } : {}),
+      ...(floating ? { floating } : {}),
     },
   };
 }
