@@ -58,6 +58,8 @@ export const enum RecordCode {
   Obj = 0x005d,
   CondFmt = 0x01b0,
   ConditionalFormat = 0x01b1,
+  Dval = 0x01b2,
+  Dv = 0x01be,
   RefreshAll = 0x01b7,
   Header = 0x0014,
   Footer = 0x0015,

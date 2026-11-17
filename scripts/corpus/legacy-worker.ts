@@ -54,12 +54,19 @@ function classify(error: unknown): Exclude<Outcome, "pass"> {
     reason === "duplicate-record" ||
     reason === "malformed-codename" ||
     reason === "invalid-codename-length" ||
-    reason === "misplaced-or-duplicate-codename"
+    reason === "misplaced-or-duplicate-codename" ||
+    reason?.startsWith("data-validation-") ||
+    reason === "invalid-data-validation-record" ||
+    reason === "invalid-data-validation-flags" ||
+    reason === "malformed-data-validation-record" ||
+    reason === "unexpected-data-validation-formula" ||
+    reason === "missing-data-validation-formula" ||
+    reason === "invalid-data-validation-text-length"
   ) {
     return "invalid";
   }
   if (
-    /(?:bad signature|truncated|must begin with|invalid CFB|invalid ODF|invalid zip|invalid URL|not a supported Compound|signature is not|malformed formula|unsupported formula token 0x00|unsupported formula token 0x58|unsupported RTF destination|objdata requires binary|Manifest does not declare|Manifest declares missing package path|embedded object subdocument is missing)/i.test(
+    /(?:bad signature|truncated|must begin with|content appears after the RTF root group|unexpected closing RTF group|RTF root group is not closed|invalid CFB|invalid ODF|invalid zip|invalid URL|not a supported Compound|signature is not|malformed formula|unsupported formula token 0x00|unsupported formula token 0x58|unsupported RTF destination|objdata requires binary|Manifest does not declare|Manifest declares missing package path|embedded object subdocument is missing)/i.test(
       message,
     ) ||
     /ODF package is missing or cannot read content\.xml/u.test(message)

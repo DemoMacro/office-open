@@ -37,7 +37,7 @@ function validateRootGroup(tokens: ReturnType<typeof tokenizeRtf>, source: strin
   let rootClosed = false;
   for (const token of tokens) {
     if (rootClosed) {
-      if (token.kind !== "text" || token.value.trim() !== "")
+      if (token.kind !== "text" || token.value.replaceAll(String.fromCharCode(0), "").trim() !== "")
         throw new RtfParseError("Content appears after the RTF root group", token.position, source);
       continue;
     }

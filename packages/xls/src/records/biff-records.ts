@@ -101,6 +101,8 @@ export const BIFF_RECORD_CLASSIFICATIONS: BiffRecordClassifications = new Map([
   canonical(0x00ec, "MSO Drawing", "sheet", "worksheet"),
   canonical(0x01b0, "Conditional Format Range", "sheet", "worksheet"),
   canonical(0x01b1, "Conditional Format Rule", "sheet", "worksheet"),
+  canonical(0x01b2, "Data Validation List", "sheet", "worksheet"),
+  canonical(0x01be, "Data Validation", "sheet", "worksheet"),
   canonical(0x01b7, "Refresh All", "globals", "workbook-globals"),
   canonical(0x0014, "Header", "sheet", "worksheet"),
   canonical(0x0015, "Footer", "sheet", "worksheet"),

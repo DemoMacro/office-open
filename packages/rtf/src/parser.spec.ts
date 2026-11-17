@@ -57,6 +57,10 @@ describe("parseDocument RTF text and formatting", () => {
     ).toEqual(parseDocument(source));
   });
 
+  it("accepts a NUL terminator after the root group", () => {
+    expect(parseDocument("{\\rtf1 Hello}\0")).toEqual(parseDocument("{\\rtf1 Hello}"));
+  });
+
   it("scopes bold formatting to its group and maps paragraph alignment", () => {
     const paragraph = firstParagraph(String.raw`{\rtf1{\b Bold} plain\par{\qc Centered\par}}`);
     expect(runs(paragraph)).toEqual([{ bold: true, text: "Bold" }, { text: " plain" }]);

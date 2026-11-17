@@ -47,6 +47,14 @@ function biff8String(value: string): Uint8Array {
   return bytes;
 }
 
+function compressedBiff8String(value: string): Uint8Array {
+  const bytes = new Uint8Array(3 + value.length);
+  const view = new DataView(bytes.buffer);
+  view.setUint16(0, value.length, true);
+  for (let index = 0; index < value.length; index++) bytes[index + 3] = value.charCodeAt(index);
+  return bytes;
+}
+
 function richBiff8String(
   value: string,
   runs: readonly { characterIndex: number; fontIndex: number }[],
@@ -721,6 +729,54 @@ function codeNameRecord(value: string): Uint8Array {
   return record(0x01ba, shortBiff8String(value));
 }
 
+function dataValidationFormula(tokens: Uint8Array): Uint8Array {
+  return concat([uint16Body([tokens.byteLength, 0]), tokens]);
+}
+
+function dataValidationRecord(options: {
+  flags: number;
+  formula1?: Uint8Array;
+  formula2?: Uint8Array;
+  ranges?: readonly [number, number, number, number][];
+  promptTitle?: string;
+  errorTitle?: string;
+  prompt?: string;
+  error?: string;
+}): Uint8Array {
+  const encodeText = (value: string | undefined): Uint8Array =>
+    value === undefined ? biff8String("\0") : compressedBiff8String(value);
+  const ranges = options.ranges ?? [[0, 0, 0, 0]];
+  return record(
+    0x01be,
+    concat([
+      new Uint8Array([
+        options.flags & 0xff,
+        (options.flags >> 8) & 0xff,
+        (options.flags >> 16) & 0xff,
+        (options.flags >> 24) & 0xff,
+      ]),
+      encodeText(options.promptTitle),
+      encodeText(options.errorTitle),
+      encodeText(options.prompt),
+      encodeText(options.error),
+      dataValidationFormula(options.formula1 ?? new Uint8Array()),
+      dataValidationFormula(options.formula2 ?? new Uint8Array()),
+      uint16Body([ranges.length]),
+      ...ranges.map((range) => uint16Body(range)),
+    ]),
+  );
+}
+
+function dataValidationListRecord(count: number, xWindow = 12, yWindow = 24): Uint8Array {
+  const body = new Uint8Array(18);
+  const view = new DataView(body.buffer);
+  view.setUint32(2, xWindow, true);
+  view.setUint32(6, yWindow, true);
+  view.setInt32(10, -1, true);
+  view.setUint32(14, count, true);
+  return record(0x01b2, body);
+}
+
 function boundSheet(version: 5 | 8, position: number, name: string, state = 0): Uint8Array {
   const body = new Uint8Array(6);
   const view = new DataView(body.buffer);
@@ -1264,6 +1320,139 @@ describe("parseWorkbook", () => {
       { name: "Sheet", cells: [scaleRecord(1, 1), scaleRecord(3, 2)] },
     ]);
     expect(() => parseWorkbook(xls(duplicate))).toThrow(/duplicate SCL/);
+  });
+
+  it("maps DV criteria and DVAL worksheet settings", () => {
+    const validation = dataValidationRecord({
+      flags: 1 | (1 << 4) | (1 << 8) | (1 << 9) | (1 << 18) | (1 << 19),
+      formula1: integerToken(5),
+      formula2: integerToken(10),
+      ranges: [
+        [0, 2, 0, 0],
+        [4, 4, 1, 2],
+      ],
+      promptTitle: "Input",
+      errorTitle: "Invalid",
+      prompt: "Enter a value",
+      error: "Out of range",
+    });
+    const data = workbook(8, [
+      {
+        name: "Sheet",
+        cells: [dataValidationListRecord(1, 300, 500), validation],
+      },
+    ]);
+    const worksheet = parseWorkbook(xls(data)).worksheets?.[0];
+    expect(worksheet?.dataValidations).toEqual([
+      {
+        sqref: "A1:A3 B5:C5",
+        type: "whole",
+        operator: "between",
+        formula1: "5",
+        formula2: "10",
+        allowBlank: true,
+        showErrorMessage: true,
+        showInputMessage: true,
+        errorStyle: "warning",
+        imeMode: "noControl",
+        promptTitle: "Input",
+        errorTitle: "Invalid",
+        prompt: "Enter a value",
+        error: "Out of range",
+      },
+    ]);
+    expect(worksheet?.dataValidationsXWindow).toBe(300);
+    expect(worksheet?.dataValidationsYWindow).toBe(500);
+  });
+
+  it("preserves the list validation dropdown suppression flag", () => {
+    const validation = dataValidationRecord({
+      flags: 3 | (1 << 7) | (1 << 9),
+      formula1: integerToken(5),
+    });
+    const data = workbook(8, [{ name: "Sheet", cells: [dataValidationListRecord(1), validation] }]);
+    expect(parseWorkbook(xls(data)).worksheets?.[0]?.dataValidations?.[0]).toMatchObject({
+      type: "list",
+      formula1: "5",
+      showDropDown: true,
+    });
+  });
+
+  it("maps DV IME mode and accepts the BIFF error-text limit", () => {
+    const error = "E".repeat(225);
+    const validation = dataValidationRecord({
+      flags: 3 | (3 << 10),
+      formula1: integerToken(5),
+      error,
+    });
+    const data = workbook(8, [{ name: "Sheet", cells: [dataValidationListRecord(1), validation] }]);
+    const parsed = parseWorkbook(xls(data)).worksheets?.[0]?.dataValidations?.[0];
+    expect(parsed?.error).toBe(error);
+    expect(parsed?.imeMode).toBe("disabled");
+  });
+
+  it("ignores undefined operators but rejects invalid numeric operators", () => {
+    const ignoredOperator = workbook(8, [
+      {
+        name: "Sheet",
+        cells: [
+          dataValidationListRecord(1),
+          dataValidationRecord({ flags: 3 | (15 << 20), formula1: integerToken(5) }),
+        ],
+      },
+    ]);
+    expect(
+      parseWorkbook(xls(ignoredOperator)).worksheets?.[0]?.dataValidations?.[0],
+    ).not.toHaveProperty("operator");
+
+    const invalidOperator = workbook(8, [
+      {
+        name: "Sheet",
+        cells: [
+          dataValidationListRecord(1),
+          dataValidationRecord({ flags: 1 | (8 << 20), formula1: integerToken(5) }),
+        ],
+      },
+    ]);
+    expect(() => parseWorkbook(xls(invalidOperator))).toThrow(XlsParseError);
+  });
+
+  it("rejects malformed DV records and DVAL count mismatches", () => {
+    const missingList = workbook(8, [
+      {
+        name: "Sheet",
+        cells: [dataValidationRecord({ flags: 1, formula1: integerToken(1) })],
+      },
+    ]);
+    const countMismatch = workbook(8, [
+      {
+        name: "Sheet",
+        cells: [
+          dataValidationListRecord(2),
+          dataValidationRecord({ flags: 1, formula1: integerToken(1) }),
+        ],
+      },
+    ]);
+    const malformedFormula = workbook(8, [
+      {
+        name: "Sheet",
+        cells: [
+          dataValidationListRecord(1),
+          dataValidationRecord({ flags: 1, formula1: new Uint8Array([0xff]) }),
+        ],
+      },
+    ]);
+    const validationBeforeList = workbook(8, [
+      {
+        name: "Sheet",
+        cells: [
+          dataValidationRecord({ flags: 1, formula1: integerToken(1) }),
+          dataValidationListRecord(1),
+        ],
+      },
+    ]);
+    for (const input of [missingList, countMismatch, malformedFormula, validationBeforeList])
+      expect(() => parseWorkbook(xls(input))).toThrow(XlsParseError);
   });
 
   it("maps FONT, FORMAT and XF to cell formatting", () => {

@@ -1,9 +1,14 @@
-import type { ConditionalFormatRule, NoteAnchorOptions, WorksheetOptions } from "@office-open/xlsx";
+import type {
+  ConditionalFormatRule,
+  DataValidationOptions,
+  NoteAnchorOptions,
+  WorksheetOptions,
+} from "@office-open/xlsx";
 
 import { XlsParseError } from "../errors";
 import type { BiffRecord } from "../records";
 import { RecordCode, isClearedFilePass, recordsFrom } from "../records";
-import { assertSupportedBiffRecord } from "../records/biff-records";
+import { assertSupportedBiffRecord, biffRecordContext } from "../records/biff-records";
 import { escherAnchors, escherDrawings } from "../records/escher";
 import { decodeFormula } from "../records/formula";
 import {
@@ -77,6 +82,269 @@ function parsePageSetup(record: BiffRecord): {
       header: view.getFloat64(16, true),
       footer: view.getFloat64(24, true),
     },
+  };
+}
+
+const DATA_VALIDATION_TYPES: Readonly<Record<number, DataValidationOptions["type"]>> = {
+  0: "none",
+  1: "whole",
+  2: "decimal",
+  3: "list",
+  4: "date",
+  5: "time",
+  6: "textLength",
+  7: "custom",
+};
+
+const DATA_VALIDATION_OPERATORS: Readonly<Record<number, DataValidationOptions["operator"]>> = {
+  0: "between",
+  1: "notBetween",
+  2: "equal",
+  3: "notEqual",
+  4: "greaterThan",
+  5: "lessThan",
+  6: "greaterThanOrEqual",
+  7: "lessThanOrEqual",
+};
+
+const DATA_VALIDATION_ERROR_STYLES: Readonly<
+  Record<number, NonNullable<DataValidationOptions["errorStyle"]>>
+> = {
+  0: "stop",
+  1: "warning",
+  2: "information",
+};
+
+const DATA_VALIDATION_IME_MODES: Readonly<
+  Record<number, NonNullable<DataValidationOptions["imeMode"]>>
+> = {
+  0: "noControl",
+  1: "on",
+  2: "off",
+  3: "disabled",
+  4: "hiragana",
+  5: "fullKatakana",
+  6: "halfKatakana",
+  7: "fullAlpha",
+  8: "halfAlpha",
+  9: "fullHangul",
+  10: "halfHangul",
+};
+
+interface DataValidationRange {
+  firstRow: number;
+  lastRow: number;
+  firstColumn: number;
+  lastColumn: number;
+}
+
+function parseDataValidationText(
+  body: Uint8Array,
+  offset: number,
+  state: WorkbookState,
+  description: string,
+): { value: string | undefined; offset: number } {
+  let decoded: ReturnType<typeof readBiff8String>;
+  try {
+    decoded = readBiff8String(body, offset, encodingForCodepage(state.codepage));
+  } catch (error) {
+    throw new XlsParseError(`Invalid legacy XLS file: malformed data validation ${description}`, {
+      part: "stream",
+      path: "worksheet/data-validations",
+      reason: "malformed-data-validation-text",
+      cause: error,
+    });
+  }
+  return { value: decoded.value === "\0" ? undefined : decoded.value, offset: decoded.offset };
+}
+
+function parseDataValidationFormula(
+  body: Uint8Array,
+  offset: number,
+  description: string,
+): { tokens: Uint8Array | undefined; offset: number; length: number } {
+  if (offset + 4 > body.byteLength)
+    throw new XlsParseError(`Invalid legacy XLS file: truncated data validation ${description}`, {
+      part: "stream",
+      path: "worksheet/data-validations",
+      reason: "truncated-data-validation-formula",
+    });
+  const view = dataView(body);
+  const length = view.getUint16(offset, true);
+  const formulaStart = offset + 4;
+  const formulaEnd = formulaStart + length;
+  if (formulaEnd > body.byteLength)
+    throw new XlsParseError(`Invalid legacy XLS file: truncated data validation ${description}`, {
+      part: "stream",
+      path: "worksheet/data-validations",
+      reason: "truncated-data-validation-formula",
+    });
+  return {
+    tokens: length === 0 ? undefined : body.subarray(formulaStart, formulaEnd),
+    offset: formulaEnd,
+    length,
+  };
+}
+
+function decodeDataValidationFormula(
+  tokens: Uint8Array | undefined,
+  range: DataValidationRange,
+  description: string,
+): string | undefined {
+  if (!tokens) return undefined;
+  try {
+    return decodeFormula(tokens, {
+      baseRow: range.firstRow,
+      baseColumn: range.firstColumn,
+    }).formula;
+  } catch (error) {
+    throw new XlsParseError(`Invalid legacy XLS file: malformed data validation ${description}`, {
+      part: "stream",
+      path: "worksheet/data-validations",
+      reason: "malformed-data-validation-formula",
+      cause: error,
+    });
+  }
+}
+
+function parseDataValidationRanges(
+  body: Uint8Array,
+  offset: number,
+): { ranges: DataValidationRange[]; reference: string; offset: number } {
+  if (offset + 2 > body.byteLength)
+    throw new XlsParseError("Invalid legacy XLS file: truncated data validation ranges", {
+      part: "stream",
+      path: "worksheet/data-validations",
+      reason: "truncated-data-validation-ranges",
+    });
+  const view = dataView(body);
+  const count = view.getUint16(offset, true);
+  offset += 2;
+  if (count === 0 || count > 432 || offset + count * 8 !== body.byteLength)
+    throw new XlsParseError("Invalid legacy XLS file: invalid data validation ranges", {
+      part: "stream",
+      path: "worksheet/data-validations",
+      reason: "invalid-data-validation-ranges",
+    });
+  const ranges: DataValidationRange[] = [];
+  for (let index = 0; index < count; index++) {
+    const firstRow = view.getUint16(offset, true);
+    const lastRow = view.getUint16(offset + 2, true);
+    const firstColumn = view.getUint16(offset + 4, true);
+    const lastColumn = view.getUint16(offset + 6, true);
+    if (firstRow > lastRow || firstColumn > lastColumn || lastColumn > 255)
+      throw new XlsParseError("Invalid legacy XLS file: invalid data validation range", {
+        part: "stream",
+        path: "worksheet/data-validations",
+        reason: "invalid-data-validation-range",
+      });
+    ranges.push({ firstRow, lastRow, firstColumn, lastColumn });
+    offset += 8;
+  }
+  return {
+    ranges,
+    reference: ranges
+      .map(
+        ({ firstRow, lastRow, firstColumn, lastColumn }) =>
+          `${reference(firstRow, firstColumn)}:${reference(lastRow, lastColumn)}`,
+      )
+      .join(" "),
+    offset,
+  };
+}
+
+function parseDataValidation(record: BiffRecord, state: WorkbookState): DataValidationOptions {
+  if (state.version !== 8 || record.body.byteLength < 4)
+    throw new XlsParseError("Invalid legacy XLS file: invalid DV record", {
+      ...biffRecordContext(record, "invalid-data-validation-record"),
+    });
+  const view = dataView(record.body);
+  const flags = view.getUint32(0, true);
+  const type = DATA_VALIDATION_TYPES[flags & 0x0f];
+  const errorStyle = DATA_VALIDATION_ERROR_STYLES[(flags >> 4) & 0x07];
+  const imeMode = DATA_VALIDATION_IME_MODES[(flags >> 10) & 0xff];
+  const operatorValue = DATA_VALIDATION_OPERATORS[(flags >> 20) & 0x0f];
+  const operatorIsDefined = type !== "none" && type !== "list" && type !== "custom";
+  if (!type || !errorStyle || !imeMode || (operatorIsDefined && !operatorValue))
+    throw new XlsParseError("Invalid legacy XLS file: invalid DV flags", {
+      ...biffRecordContext(record, "invalid-data-validation-flags"),
+    });
+  let offset = 4;
+  const promptTitle = parseDataValidationText(record.body, offset, state, "prompt title");
+  offset = promptTitle.offset;
+  const errorTitle = parseDataValidationText(record.body, offset, state, "error title");
+  offset = errorTitle.offset;
+  const prompt = parseDataValidationText(record.body, offset, state, "prompt");
+  offset = prompt.offset;
+  const error = parseDataValidationText(record.body, offset, state, "error");
+  offset = error.offset;
+  if (
+    (promptTitle.value?.length ?? 0) > 32 ||
+    (errorTitle.value?.length ?? 0) > 32 ||
+    (prompt.value?.length ?? 0) > 255 ||
+    (error.value?.length ?? 0) > 225
+  )
+    throw new XlsParseError("Invalid legacy XLS file: data validation text exceeds its limit", {
+      ...biffRecordContext(record, "invalid-data-validation-text-length"),
+    });
+  if (offset + 4 > record.body.byteLength)
+    throw new XlsParseError("Invalid legacy XLS file: truncated DV formula", {
+      ...biffRecordContext(record, "truncated-data-validation-formula"),
+    });
+  const formula1 = parseDataValidationFormula(record.body, offset, "formula1");
+  const formula2 = parseDataValidationFormula(record.body, formula1.offset, "formula2");
+  const ranges = parseDataValidationRanges(record.body, formula2.offset);
+  if (ranges.offset !== record.body.byteLength)
+    throw new XlsParseError("Invalid legacy XLS file: malformed DV record", {
+      ...biffRecordContext(record, "malformed-data-validation-record"),
+    });
+  if ((type === "none" || type === "list" || type === "custom") && formula2.length !== 0)
+    throw new XlsParseError("Invalid legacy XLS file: unexpected DV formula2", {
+      ...biffRecordContext(record, "unexpected-data-validation-formula"),
+    });
+  if (type === "none" && formula1.length !== 0)
+    throw new XlsParseError("Invalid legacy XLS file: unexpected DV formula1", {
+      ...biffRecordContext(record, "unexpected-data-validation-formula"),
+    });
+  if (type !== "none" && formula1.length === 0)
+    throw new XlsParseError("Invalid legacy XLS file: missing DV formula1", {
+      ...biffRecordContext(record, "missing-data-validation-formula"),
+    });
+  if (
+    type !== "none" &&
+    type !== "list" &&
+    type !== "custom" &&
+    (operatorValue === "between" || operatorValue === "notBetween") !== formula2.length > 0
+  )
+    throw new XlsParseError("Invalid legacy XLS file: invalid DV formula2 for operator", {
+      ...biffRecordContext(record, "invalid-data-validation-formula-pair"),
+    });
+  const decodedFormula1 = decodeDataValidationFormula(
+    formula1.tokens,
+    ranges.ranges[0]!,
+    "formula1",
+  );
+  const decodedFormula2 = decodeDataValidationFormula(
+    formula2.tokens,
+    ranges.ranges[0]!,
+    "formula2",
+  );
+  return {
+    sqref: ranges.reference,
+    type,
+    ...(type === "none" || decodedFormula1 === undefined ? {} : { formula1: decodedFormula1 }),
+    ...(decodedFormula2 === undefined ? {} : { formula2: decodedFormula2 }),
+    ...(operatorIsDefined ? { operator: operatorValue } : {}),
+    errorStyle,
+    imeMode,
+    allowBlank: (flags & 0x00000100) !== 0,
+    ...(type === "list" ? { showDropDown: (flags & 0x00000200) !== 0 } : {}),
+    showInputMessage: (flags & 0x00040000) !== 0,
+    showErrorMessage: (flags & 0x00080000) !== 0,
+    ...(promptTitle.value === undefined ? {} : { promptTitle: promptTitle.value }),
+    ...(errorTitle.value === undefined ? {} : { errorTitle: errorTitle.value }),
+    ...(prompt.value === undefined ? {} : { prompt: prompt.value }),
+    ...(error.value === undefined ? {} : { error: error.value }),
   };
 }
 
@@ -206,6 +474,8 @@ export function parseWorksheetStream(
   let sharedFormulaIndex = 0;
   const worksheetExtras: Partial<WorksheetOptions> = {};
   const noteAnchorsByObjectId = new Map<number, NoteAnchorOptions>();
+  let expectedDataValidationCount: number | undefined;
+  let dataValidationCount = 0;
 
   const addDrawings = (bytes: Uint8Array) => {
     const drawings = escherDrawings(bytes, state.drawingImages);
@@ -234,7 +504,22 @@ export function parseWorksheetStream(
     if (record.code === RecordCode.EndOfFile) {
       if (depth === 1 && currentDrawing) addDrawings(concatBytes(currentDrawing));
       depth--;
-      if (depth === 0) return { ...sheet, extras: worksheetExtras };
+      if (depth === 0) {
+        if (
+          (expectedDataValidationCount !== undefined &&
+            expectedDataValidationCount !== dataValidationCount) ||
+          (expectedDataValidationCount === undefined && dataValidationCount !== 0)
+        )
+          throw new XlsParseError(
+            "Invalid legacy XLS file: DVAL record count does not match DV records",
+            {
+              part: "stream",
+              path: "worksheet/data-validations",
+              reason: "data-validation-count-mismatch",
+            },
+          );
+        return { ...sheet, extras: worksheetExtras };
+      }
       continue;
     }
     if (depth !== 1) continue;
@@ -928,6 +1213,42 @@ export function parseWorksheetStream(
           ];
           conditional = undefined;
         }
+        break;
+      }
+      case RecordCode.Dv: {
+        if (expectedDataValidationCount === undefined)
+          throw new XlsParseError("Invalid legacy XLS file: DV record precedes DVAL", {
+            ...biffRecordContext(record, "data-validation-before-list"),
+          });
+        worksheetExtras.dataValidations = [
+          ...(worksheetExtras.dataValidations ?? []),
+          parseDataValidation(record, state),
+        ];
+        dataValidationCount += 1;
+        break;
+      }
+      case RecordCode.Dval: {
+        if (record.body.byteLength !== 18 || expectedDataValidationCount !== undefined)
+          throw new XlsParseError("Invalid legacy XLS file: invalid or duplicate DVAL record", {
+            ...biffRecordContext(record, "invalid-data-validation-list"),
+          });
+        const view = dataView(record.body);
+        const xWindow = view.getUint32(2, true);
+        const yWindow = view.getUint32(6, true);
+        const objectId = view.getInt32(10, true);
+        const count = view.getUint32(14, true);
+        if (
+          xWindow > 65535 ||
+          yWindow > 65535 ||
+          (objectId !== -1 && (objectId < 1 || objectId > 32767)) ||
+          count > 65534
+        )
+          throw new XlsParseError("Invalid legacy XLS file: invalid DVAL values", {
+            ...biffRecordContext(record, "invalid-data-validation-list"),
+          });
+        expectedDataValidationCount = count;
+        worksheetExtras.dataValidationsXWindow = xWindow;
+        worksheetExtras.dataValidationsYWindow = yWindow;
         break;
       }
       case RecordCode.Header: {

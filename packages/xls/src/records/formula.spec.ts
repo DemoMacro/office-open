@@ -26,7 +26,7 @@ describe("decodeFormula", () => {
       "#VALUE!",
     );
     expect(
-      decodeFormula(concat([bytes(0x17), uint16(2), bytes(0), bytes(0x61, 0x62)]), {
+      decodeFormula(concat([bytes(0x17, 2, 0), bytes(0x61, 0x62)]), {
         baseRow: 0,
         baseColumn: 0,
       }).formula,
