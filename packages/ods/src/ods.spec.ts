@@ -11,6 +11,29 @@ import {
 } from "./index";
 
 describe("ODS codec", () => {
+  it("projects and regenerates graphic gradient fills", async () => {
+    const source = generateOcf("application/vnd.oasis.opendocument.spreadsheet", {
+      "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:automatic-styles><style:style style:name="Gradient" style:family="graphic"><style:graphic-properties draw:fill="gradient" draw:fill-gradient-name="Blue"/></style:style></office:automatic-styles><office:body><office:spreadsheet><table:table table:name="Sheet1"><table:shapes><draw:rect draw:style-name="Gradient" svg:x="1cm" svg:y="1cm" svg:width="4cm" svg:height="2cm"/></table:shapes><table:table-row><table:table-cell/></table:table-row></table:table></office:spreadsheet></office:body></office:document-content>`,
+      "styles.xml": `<?xml version="1.0"?><office:document-styles ${ODF_NAMESPACES}><office:styles><draw:gradient draw:name="Blue" draw:style="linear" draw:start-color="#112233" draw:end-color="#AABBCC"/></office:styles></office:document-styles>`,
+    });
+    const parsed = await parseWorkbook(source);
+    expect(parsed.worksheets?.[0]?.shapes?.[0]?.properties?.fill).toMatchObject({
+      type: "gradient",
+      stops: [
+        { position: 0, color: "112233" },
+        { position: 100, color: "AABBCC" },
+      ],
+    });
+    const generated = await generateWorkbook(parsed);
+    const files = (await readOcf(generated, "application/vnd.oasis.opendocument.spreadsheet"))
+      .files;
+    expect(files["styles.xml"]).toContain('draw:gradient draw:name="gradient-1"');
+    const reread = await parseWorkbook(generated);
+    expect(reread.worksheets?.[0]?.shapes?.[0]?.properties?.fill).toMatchObject({
+      type: "gradient",
+    });
+  });
+
   it("rejects a content document without its required spreadsheet body", async () => {
     const source = generateOcf("application/vnd.oasis.opendocument.spreadsheet", {
       "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body/></office:document-content>`,
@@ -87,6 +110,58 @@ describe("ODS codec", () => {
 
     const roundTripped = await parseWorkbook(await generateWorkbook(parsed));
     expect(roundTripped.worksheets?.[0]?.groups?.[0]?.properties.rotation).toBe(15);
+  });
+
+  it("round-trips worksheet shape anchors, rotation, and end-cell offsets", async () => {
+    const source = generateOcf("application/vnd.oasis.opendocument.spreadsheet", {
+      "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:spreadsheet><table:table table:name="Sheet1"><table:shapes><draw:rect draw:name="Box" draw:transform="rotate(15deg)" svg:x="1cm" svg:y="2cm" svg:width="4cm" svg:height="3cm" table:end-cell-address="C4" table:end-x="5mm" table:end-y="6mm"/></table:shapes><table:table-row><table:table-cell/></table:table-row></table:table></office:spreadsheet></office:body></office:document-content>`,
+    });
+    const parsed = await parseWorkbook(source);
+    expect(parsed.worksheets?.[0]?.shapes?.[0]).toMatchObject({
+      toCol: 3,
+      toRow: 4,
+      toColOffset: 180000,
+      toRowOffset: 216000,
+      properties: { rotation: 15 },
+    });
+
+    const reread = await parseWorkbook(await generateWorkbook(parsed));
+    expect(reread.worksheets?.[0]?.shapes?.[0]).toMatchObject({
+      toCol: 3,
+      toRow: 4,
+      toColOffset: 180000,
+      toRowOffset: 216000,
+      properties: { rotation: 15 },
+    });
+  });
+
+  it("projects worksheet-level image frames into WorkbookOptions", async () => {
+    const source = generateOcf("application/vnd.oasis.opendocument.spreadsheet", {
+      "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:spreadsheet><table:table table:name="Sheet1"><table:shapes><draw:frame draw:name="Logo" draw:transform="rotate(15deg)" svg:x="1cm" svg:y="2cm" svg:width="4cm" svg:height="3cm" table:end-cell-address="C4" table:end-x="5mm" table:end-y="6mm"><draw:image xlink:href="Pictures/logo.png"/><svg:title>Logo title</svg:title><svg:desc>Logo description</svg:desc></draw:frame></table:shapes><table:table-row><table:table-cell/></table:table-row></table:table></office:spreadsheet></office:body></office:document-content>`,
+      "styles.xml": `<?xml version="1.0"?><office:document-styles ${ODF_NAMESPACES}><office:styles/></office:document-styles>`,
+      "Pictures/logo.png": new Uint8Array([1, 2, 3]),
+    });
+    const parsed = await parseWorkbook(source);
+    expect(parsed.worksheets?.[0]?.images?.[0]).toMatchObject({
+      type: "png",
+      sourcePath: "Pictures/logo.png",
+      anchorType: "twoCell",
+      col: 1,
+      row: 1,
+      colOffset: 360000,
+      rowOffset: 720000,
+      toCol: 3,
+      toRow: 4,
+      toColOffset: 180000,
+      toRowOffset: 216000,
+      properties: {
+        width: 1440000,
+        height: 1080000,
+        rotation: 15,
+      },
+    });
+    const regenerated = await parseWorkbook(await generateWorkbook(parsed));
+    expect(regenerated.worksheets?.[0]?.images).toEqual(parsed.worksheets?.[0]?.images);
   });
 
   it("projects worksheet group fills into canonical group properties", async () => {

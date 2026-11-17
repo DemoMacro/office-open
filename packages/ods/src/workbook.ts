@@ -14,8 +14,10 @@ import {
   attributeString,
   CHART_MIME,
   chartSubdocumentFiles,
+  bindGraphicStyleResources,
   childNamed,
   childrenNamed,
+  createGraphicStyleResources,
   descendantElements,
   generateOcf,
   hasOcfManifestOptions,
@@ -23,6 +25,8 @@ import {
   metaXml,
   OdfSchemaError,
   parseEmbeddedCharts,
+  graphicStyleFiles,
+  graphicStyleResourcesXml,
   officeFormsXml,
   parseOfficeForms,
   parseMeta,
@@ -69,7 +73,7 @@ import {
   parseTextStyles,
   styleResourcesXml,
 } from "./styles";
-import { worksheet, worksheetXml } from "./worksheet";
+import { worksheet, worksheetImagePath, worksheetXml } from "./worksheet";
 
 export const MIME = "application/vnd.oasis.opendocument.spreadsheet";
 export const TEMPLATE_MIME = "application/vnd.oasis.opendocument.spreadsheet-template";
@@ -108,6 +112,8 @@ function generateOdsPackage(options: OdsWorkbookOptions): Uint8Array {
   }
   const mimeType = packageMediaType ?? MIME;
   const styles: string[] = styleResourcesXml(styleResources);
+  const graphicResources = createGraphicStyleResources();
+  bindGraphicStyleResources(styles, graphicResources);
   let chartIndex = 0;
   const chartNames = new Set<string>();
   const chartFrames = (options.worksheets ?? []).flatMap((worksheet, worksheetIndex) =>
@@ -150,13 +156,27 @@ function generateOdsPackage(options: OdsWorkbookOptions): Uint8Array {
   );
   const files: OdfPackageFiles = {
     "content.xml": contentXml(sheets, styles, options),
-    "styles.xml": stylesXml(),
+    "styles.xml": stylesXml(graphicStyleResourcesXml(graphicResources)),
     "meta.xml": metaXml(options),
   };
   for (const member of packageMembers ?? []) addPackageFile(files, member);
+  for (const file of graphicStyleFiles(graphicResources)) files[file.path] = file.data;
   for (const entry of chartFrames)
     Object.assign(files, chartSubdocumentFiles(`${entry.path}/`, entry.chart));
-  for (const worksheet of options.worksheets ?? []) {
+  for (const [worksheetIndex, worksheet] of (options.worksheets ?? []).entries()) {
+    for (const [imageIndex, image] of (worksheet.images ?? []).entries()) {
+      if (image.data !== undefined) {
+        files[worksheetImagePath(image, worksheetIndex + 1, imageIndex)] = toUint8Array(image.data);
+      } else if (image.sourceUrl === undefined) {
+        throw new OdsGenerateError(
+          `content.xml: ${image.name ?? ""}: image data or source URL is missing`,
+          "content.xml",
+          "/office:document-content/office:body/office:spreadsheet/table:table/table:shapes/draw:frame/draw:image",
+          "draw:image",
+          "missing-image-source",
+        );
+      }
+    }
     for (const row of worksheet.rows ?? []) {
       for (const cell of row.cells ?? []) {
         for (const graphic of cell.graphics ?? []) {
@@ -308,7 +328,7 @@ function parseOdsPackage(data: Uint8Array): OdsWorkbookOptions {
   const commonStyles = childNamed(stylesDocument, "office:styles");
   const automaticCellStyles = parseNumberStyles(automaticStyles, [commonStyles]);
   const cellStyles = new Map([...commonCellStyles, ...automaticCellStyles]);
-  const graphicStyles = parseWorksheetGraphicStyles(automaticStyles, stylesDocument);
+  const graphicStyles = parseWorksheetGraphicStyles(automaticStyles, stylesDocument, binaries);
   const textStyles = parseTextStyles([
     automaticStyles,
     childNamed(stylesDocument, "office:automatic-styles"),
@@ -317,7 +337,16 @@ function parseOdsPackage(data: Uint8Array): OdsWorkbookOptions {
   const dxfs: DxfOptions[] = [];
   const localDefinedNames: NonNullable<WorkbookOptions["definedNames"]> = [];
   const worksheets = childrenNamed(body, "table:table").map((table, index) => {
-    const parsed = worksheet(table, index + 1, dimensions, cellStyles, graphicStyles, textStyles);
+    const parsed = worksheet(
+      table,
+      index + 1,
+      dimensions,
+      cellStyles,
+      graphicStyles,
+      textStyles,
+      binaries,
+      usedBinaryPaths,
+    );
     const name = attributeString(table, "table:name");
     const charts = embeddedCharts
       .filter((entry) => entry.worksheet === (name ?? `Sheet${index + 1}`))
@@ -386,7 +415,9 @@ function parseOdsPackage(data: Uint8Array): OdsWorkbookOptions {
     ...(dxfs.length > 0 ? { dxfs } : {}),
     worksheets,
   };
-  const styleResources = parseStyleResources(automaticStyles);
+  const styleResources = parseStyleResources(automaticStyles).filter(
+    (resource) => resource.family !== "graphic",
+  );
   const packageMembers = sourcePackageMembers(
     manifest,
     files,
@@ -710,8 +741,8 @@ export function definedNamesXml(definedNames: WorkbookOptions["definedNames"]): 
   );
 }
 
-export function stylesXml(): string {
-  return `<?xml version="1.0" encoding="UTF-8"?><office:document-styles ${NAMESPACES} office:version="1.3"><office:styles/></office:document-styles>`;
+export function stylesXml(graphicResources: readonly string[] = []): string {
+  return `<?xml version="1.0" encoding="UTF-8"?><office:document-styles ${NAMESPACES} office:version="1.3"><office:styles>${graphicResources.join("")}</office:styles></office:document-styles>`;
 }
 
 export function rejectUnknownSpreadsheetChildren(

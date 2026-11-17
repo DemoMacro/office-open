@@ -12,6 +12,7 @@ import {
   odfGroupTransform,
   parseOdfGroupTransform,
   parseGraphicStyles,
+  parseGraphicStyleResources,
   odfLengthToEmu,
   pushShapeStyle,
   spreadsheetColumnName,
@@ -77,10 +78,20 @@ export interface SheetAddress {
 export function parseWorksheetGraphicStyles(
   automaticStyles: Element | undefined,
   stylesDocument: Element | undefined,
+  binaries: Record<string, Uint8Array> = {},
 ): Map<string, GraphicStyle> {
+  const resources = parseGraphicStyleResources(
+    [automaticStyles, childNamed(stylesDocument, "office:styles")],
+    binaries,
+  );
+  const commonStyles = parseGraphicStyles(
+    childNamed(stylesDocument, "office:styles"),
+    "graphic",
+    resources,
+  );
   return new Map([
-    ...parseGraphicStyles(automaticStyles),
-    ...parseGraphicStyles(childNamed(stylesDocument, "office:styles")),
+    ...commonStyles,
+    ...parseGraphicStyles(automaticStyles, "graphic", resources, commonStyles),
   ]);
 }
 
@@ -123,6 +134,16 @@ export function parseDrawingShape(
     ["text:p", "svg:title", "svg:desc", "draw:enhanced-geometry", "office:event-listeners"],
   );
   const isLine = element.name === "draw:line" || element.name === "draw:measure";
+  const transformValue = attributeString(element, "draw:transform");
+  const transform = parseOdfGroupTransform(transformValue);
+  if (transform === null)
+    throw new OdsParseError(
+      "ODS shape transform cannot be projected to the canonical shape model",
+      "content.xml",
+      `${CONTENT_PATH}/table:table/table:shapes/${element.name ?? "draw:shape"}`,
+      "draw:transform",
+      "unsupported-shape-transform",
+    );
   const x1 = isLine
     ? lengthToEmu(attributeString(element, "svg:x1"))
     : lengthToEmu(attributeString(element, "svg:x"));
@@ -131,6 +152,8 @@ export function parseDrawingShape(
     : lengthToEmu(attributeString(element, "svg:y"));
   const x2 = isLine ? lengthToEmu(attributeString(element, "svg:x2")) : undefined;
   const y2 = isLine ? lengthToEmu(attributeString(element, "svg:y2")) : undefined;
+  const translatedX1 = (x1 ?? 0) + (transform?.x ?? 0);
+  const translatedY1 = (y1 ?? 0) + (transform?.y ?? 0);
   const width = isLine
     ? Math.abs((x2 ?? 0) - (x1 ?? 0))
     : (lengthToEmu(attributeString(element, "svg:width")) ?? 0);
@@ -147,12 +170,12 @@ export function parseDrawingShape(
     ...(absolute
       ? {
           anchorType: "absolute" as const,
-          absoluteX: x1,
-          absoluteY: y1,
+          absoluteX: translatedX1,
+          absoluteY: translatedY1,
         }
       : {
-          colOffset: x1,
-          rowOffset: y1,
+          colOffset: translatedX1,
+          rowOffset: translatedY1,
         }),
     ...(attributeString(element, "draw:control") === undefined
       ? {}
@@ -170,10 +193,11 @@ export function parseDrawingShape(
     name: attributeString(element, "draw:name") ?? `${element.name}:${column}:${row}`,
     zOrder: attributeNumber(element, "draw:z-index"),
     properties: {
-      x: x1,
-      y: y1,
+      x: translatedX1,
+      y: translatedY1,
       width,
       height,
+      ...(transform?.rotation === undefined ? {} : { rotation: transform.rotation }),
       geometry:
         element.name === "draw:rect" || element.name === "draw:control"
           ? "rect"
@@ -585,6 +609,15 @@ export function cellShapeXml(
                 "svg:width": emuToLength(shape.extentCx ?? 0),
                 "svg:height": emuToLength(shape.extentCy ?? 0),
               }),
+          "table:end-cell-address":
+            shape.toCol !== undefined && shape.toRow !== undefined
+              ? `${spreadsheetColumnName(shape.toCol)}${shape.toRow}`
+              : undefined,
+          "table:end-x":
+            shape.toColOffset === undefined ? undefined : emuToLength(shape.toColOffset),
+          "table:end-y":
+            shape.toRowOffset === undefined ? undefined : emuToLength(shape.toRowOffset),
+          "draw:transform": odfGroupTransform(shape.properties.rotation),
         },
         paragraphXml,
       );

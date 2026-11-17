@@ -5,8 +5,13 @@ import {
   childrenNamed,
   emuToLength,
   escapeText,
+  graphicFill,
+  graphicOutline,
   isExternalOdfUrl,
   lengthToEmu,
+  odfGroupTransform,
+  parseOdfGroupTransform,
+  pushShapeStyle,
   spreadsheetColumnName,
   spreadsheetColumnNumber,
   textOf,
@@ -29,6 +34,7 @@ import type {
   RichTextRunOptions,
   RichTextRunPropertiesOptions,
   SelectionOptions,
+  PictureOptions,
   StyleOptions,
   TableDetectiveOptions,
   WorksheetOptions,
@@ -482,6 +488,9 @@ export function worksheetXml(
         ],
       ),
     );
+  const imageFrames = (worksheet.images ?? []).map((image, imageIndex) =>
+    worksheetImageXml(image, index, imageIndex, styles),
+  );
   const topLevelShapes = (worksheet.shapes ?? [])
     .filter((shape) => shape.anchorType === "absolute")
     .flatMap((shape) =>
@@ -530,10 +539,11 @@ export function worksheetXml(
       tableSourceXml,
       scenarioXml,
       formsXml,
-      ...(frames.length || topLevelShapes.length || worksheet.groups?.length
+      ...(frames.length || imageFrames.length || topLevelShapes.length || worksheet.groups?.length
         ? [
             xmlElement("table:shapes", undefined, [
               ...frames,
+              ...imageFrames,
               ...topLevelShapes,
               ...(worksheet.groups ?? []).map((group) => drawingGroupXml(group, styles)),
             ]),
@@ -547,6 +557,196 @@ export function worksheetXml(
       ...selectionXml,
     ],
   );
+}
+
+export function worksheetImagePath(
+  image: PictureOptions,
+  worksheetIndex: number,
+  imageIndex: number,
+): string {
+  return image.sourcePath ?? `Pictures/sheet${worksheetIndex}-image${imageIndex + 1}.${image.type}`;
+}
+
+function worksheetImageXml(
+  image: PictureOptions,
+  worksheetIndex: number,
+  imageIndex: number,
+  styles: string[],
+): string {
+  const path = worksheetImagePath(image, worksheetIndex, imageIndex);
+  const x = image.anchorType === "absolute" ? image.absoluteX : image.colOffset;
+  const y = image.anchorType === "absolute" ? image.absoluteY : image.rowOffset;
+  const attributes = {
+    "draw:name": image.name,
+    "draw:style-name": pushShapeStyle(image.properties?.fill, image.properties?.outline, styles),
+    "svg:x": emuToLength(typeof x === "number" ? x : 0),
+    "svg:y": emuToLength(typeof y === "number" ? y : 0),
+    "svg:width": emuToLength(
+      typeof image.extentCx === "number" ? image.extentCx : (image.properties?.width ?? 0),
+    ),
+    "svg:height": emuToLength(
+      typeof image.extentCy === "number" ? image.extentCy : (image.properties?.height ?? 0),
+    ),
+    "table:end-cell-address":
+      image.toCol !== undefined && image.toRow !== undefined
+        ? cellAddress(image.toCol, image.toRow)
+        : undefined,
+    "table:end-x":
+      typeof image.toColOffset === "number" ? emuToLength(image.toColOffset) : image.toColOffset,
+    "table:end-y":
+      typeof image.toRowOffset === "number" ? emuToLength(image.toRowOffset) : image.toRowOffset,
+    "draw:transform": odfGroupTransform(image.properties?.rotation),
+  };
+  return xmlElement("draw:frame", attributes, [
+    xmlElement("draw:image", {
+      "xlink:href": image.sourceUrl && image.data === undefined ? image.sourceUrl : path,
+      "xlink:type": "simple",
+      "xlink:show": "embed",
+      "xlink:actuate": "onLoad",
+    }),
+    ...(image.title ? [xmlElement("svg:title", undefined, [escapeText(image.title)])] : []),
+    ...(image.description
+      ? [xmlElement("svg:desc", undefined, [escapeText(image.description)])]
+      : []),
+  ]);
+}
+
+function parseWorksheetImages(
+  table: Element,
+  graphicStyles: Map<string, GraphicStyle>,
+  binaries: Record<string, Uint8Array>,
+  usedBinaryPaths: Set<string>,
+): PictureOptions[] {
+  const shapes = childNamed(table, "table:shapes");
+  const frames = [...childrenNamed(table, "draw:frame"), ...childrenNamed(shapes, "draw:frame")];
+  return frames.flatMap((frame) => {
+    const image = childNamed(frame, "draw:image");
+    if (image === undefined || childNamed(frame, "draw:object") !== undefined) return [];
+    const href = attributeString(image, "xlink:href");
+    if (href === undefined) {
+      throw new OdsParseError(
+        "ODS image frame has no xlink:href",
+        "content.xml",
+        "/office:document-content/office:body/office:spreadsheet/table:table/draw:frame/draw:image",
+        "xlink:href",
+        "missing-image-reference",
+      );
+    }
+    const type = worksheetImageType(href);
+    const transform = parseOdfGroupTransform(attributeString(frame, "draw:transform"));
+    if (transform === null)
+      throw new OdsParseError(
+        "ODS image transform cannot be projected to the canonical picture model",
+        "content.xml",
+        "/office:document-content/office:body/office:spreadsheet/table:table/draw:frame",
+        "draw:transform",
+        "unsupported-image-transform",
+      );
+    const path = isExternalOdfUrl(href) ? undefined : odsPackagePath(href);
+    const data = path === undefined ? undefined : binaries[path];
+    if (path !== undefined && data === undefined)
+      throw new OdsParseError(
+        `ODS image package member is missing: ${path}`,
+        "content.xml",
+        "/office:document-content/office:body/office:spreadsheet/table:table/draw:frame/draw:image",
+        "draw:image",
+        "missing-package-part",
+      );
+    if (path !== undefined) usedBinaryPaths.add(path);
+    const x = (lengthToEmu(attributeString(frame, "svg:x")) ?? 0) + (transform?.x ?? 0);
+    const y = (lengthToEmu(attributeString(frame, "svg:y")) ?? 0) + (transform?.y ?? 0);
+    const width = lengthToEmu(attributeString(frame, "svg:width")) ?? 0;
+    const height = lengthToEmu(attributeString(frame, "svg:height")) ?? 0;
+    const graphic = graphicStyles.get(attributeString(frame, "draw:style-name") ?? "");
+    const fill = graphicFill(graphic);
+    const outline = graphicOutline(graphic);
+    const end = parseEndCell(frame);
+    return [
+      {
+        type,
+        ...(data === undefined ? {} : { data }),
+        ...(href && isExternalOdfUrl(href) ? { sourceUrl: href } : {}),
+        ...(path === undefined ? {} : { sourcePath: path }),
+        name: attributeString(frame, "draw:name"),
+        title: textOf(childNamed(frame, "svg:title")) || undefined,
+        description: textOf(childNamed(frame, "svg:desc")) || undefined,
+        anchorType: end === undefined ? ("absolute" as const) : ("twoCell" as const),
+        col: 1,
+        row: 1,
+        ...(end === undefined
+          ? {
+              absoluteX: x,
+              absoluteY: y,
+              extentCx: width,
+              extentCy: height,
+            }
+          : { colOffset: x, rowOffset: y, ...end }),
+        ...(fill || outline || transform?.rotation !== undefined || width || height
+          ? {
+              properties: {
+                ...(width ? { width } : {}),
+                ...(height ? { height } : {}),
+                ...(fill ? { fill } : {}),
+                ...(outline ? { outline } : {}),
+                ...(transform?.rotation === undefined ? {} : { rotation: transform.rotation }),
+              },
+            }
+          : {}),
+      },
+    ];
+  });
+}
+
+function parseEndCell(
+  frame: Element,
+): Pick<PictureOptions, "toCol" | "toRow" | "toColOffset" | "toRowOffset"> | undefined {
+  const match = /^([A-Z]+)([0-9]+)$/u.exec(attributeString(frame, "table:end-cell-address") ?? "");
+  if (!match) return undefined;
+  return {
+    toCol: columnNumber(match[1]!),
+    toRow: Number(match[2]),
+    toColOffset: lengthToEmu(attributeString(frame, "table:end-x")),
+    toRowOffset: lengthToEmu(attributeString(frame, "table:end-y")),
+  };
+}
+
+function worksheetImageType(href: string): PictureOptions["type"] {
+  const extension = href.split(/[?#]/u, 1)[0]?.split(".").pop()?.toLowerCase();
+  if (extension === "jpeg") return "jpg";
+  if (
+    extension === "png" ||
+    extension === "jpg" ||
+    extension === "gif" ||
+    extension === "webp" ||
+    extension === "wmf" ||
+    extension === "emf"
+  )
+    return extension;
+  throw new OdsParseError(
+    `ODS image type cannot be projected to WorkbookOptions: ${extension ?? "unknown"}`,
+    "content.xml",
+    "/office:document-content/office:body/office:spreadsheet/table:table/draw:frame/draw:image",
+    "draw:image",
+    "unsupported-image-type",
+  );
+}
+
+function odsPackagePath(href: string): string | undefined {
+  let decoded: string;
+  try {
+    decoded = decodeURIComponent(href.split(/[?#]/u, 1)[0] ?? "");
+  } catch {
+    return undefined;
+  }
+  const segments: string[] = [];
+  for (const segment of decoded.split("/")) {
+    if (segment === "" || segment === ".") continue;
+    if (segment === "..") {
+      if (segments.length === 0) return undefined;
+      segments.pop();
+    } else segments.push(segment);
+  }
+  return segments.join("/");
 }
 
 function concatenate(parts: readonly string[]): string {
@@ -861,6 +1061,8 @@ export function worksheet(
   cellStyles: Map<string, StyleOptions>,
   graphicStyles: Map<string, GraphicStyle> = new Map(),
   textStyles: Map<string, RichTextRunPropertiesOptions> = new Map(),
+  binaries: Record<string, Uint8Array> = {},
+  usedBinaryPaths: Set<string> = new Set(),
 ): OdsWorksheetOptions {
   const comments: CommentOptions[] = [];
   const hyperlinks: HyperlinkOptions[] = [];
@@ -868,6 +1070,7 @@ export function worksheet(
   const shapes: WorksheetOptions["shapes"] = [];
   const groups: WorksheetOptions["groups"] = [];
   const tableShapes = childNamed(table, "table:shapes");
+  const images = parseWorksheetImages(table, graphicStyles, binaries, usedBinaryPaths);
   for (const shape of tableShapes?.elements ?? []) {
     if (shape.name === "draw:g") {
       groups.push(parseDrawingGroup(shape, 1, 1, graphicStyles, textStyles, true));
@@ -955,6 +1158,7 @@ export function worksheet(
     ...(mergeCells.length ? { mergeCells } : {}),
     ...(shapes?.length ? { shapes } : {}),
     ...(groups.length ? { groups } : {}),
+    ...(images.length ? { images } : {}),
     ...(hyperlinks.length ? { hyperlinks } : {}),
   };
 }
