@@ -5,13 +5,14 @@ import { generateWorkbook, parseWorkbook } from "./index";
 
 const CALCEXT_NAMESPACE =
   'xmlns:calcext="urn:org:documentfoundation:names:experimental:calc:xmlns:calcext:1.0"';
+const GNUMERIC_NAMESPACE = 'xmlns:gnm="http://www.gnumeric.org/odf"';
 
 function packageWith(
   body: string,
   automaticStyles = "",
   commonStyles = "<office:styles/>",
 ): Uint8Array {
-  const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES} ${CALCEXT_NAMESPACE} office:version="1.3"><office:automatic-styles>${automaticStyles}</office:automatic-styles><office:body><office:spreadsheet>${body}</office:spreadsheet></office:body></office:document-content>`;
+  const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES} ${CALCEXT_NAMESPACE} ${GNUMERIC_NAMESPACE} office:version="1.3"><office:automatic-styles>${automaticStyles}</office:automatic-styles><office:body><office:spreadsheet>${body}</office:spreadsheet></office:body></office:document-content>`;
   const styles = `<?xml version="1.0"?><office:document-styles ${ODF_NAMESPACES} office:version="1.3">${commonStyles}</office:document-styles>`;
   return generateOcf("application/vnd.oasis.opendocument.spreadsheet", {
     "content.xml": content,
@@ -25,6 +26,26 @@ async function roundTrip(source: Uint8Array) {
 }
 
 describe("ODS spreadsheet semantics", () => {
+  it("round-trips Gnumeric pattern cell fills through the canonical fill model", async () => {
+    const { parsed, regenerated } = await roundTrip(
+      packageWith(
+        '<table:table table:name="Sheet1"><table:table-row><table:table-cell table:style-name="pattern" office:value-type="string"><text:p>Pattern</text:p></table:table-cell></table:table-row></table:table>',
+        '<style:style style:name="pattern" style:family="table-cell"><style:table-cell-properties gnm:pattern="7" gnm:pattern-colour="#ff0000" gnm:background-colour="#0000ff"/></style:style>',
+      ),
+    );
+    expect(parsed.worksheets?.[0]?.rows?.[0]?.cells?.[0]?.style).toEqual({
+      fill: {
+        type: "pattern",
+        patternType: "darkHorizontal",
+        foregroundColor: { rgb: "FFFF0000" },
+        backgroundColor: { rgb: "FF0000FF" },
+      },
+    });
+    expect(regenerated.worksheets?.[0]?.rows?.[0]?.cells?.[0]?.style).toEqual(
+      parsed.worksheets?.[0]?.rows?.[0]?.cells?.[0]?.style,
+    );
+  });
+
   it("writes schema-valid text decoration properties", async () => {
     const options = {
       worksheets: [

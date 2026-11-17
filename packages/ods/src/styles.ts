@@ -130,7 +130,7 @@ export function cellStyleChildren(style: StyleOptions): string[] {
   const paragraphAttributes = { "fo:text-align": odfHorizontal(alignment?.horizontal) };
   const children: string[] = [];
   const gnumericFill = gnumericFillAttributes(fill);
-  if (Object.values(cellAttributes).some((value) => value !== undefined))
+  if (Object.values({ ...gnumericFill, ...cellAttributes }).some((value) => value !== undefined))
     children.push(
       xmlElement("style:table-cell-properties", {
         ...gnumericFill,

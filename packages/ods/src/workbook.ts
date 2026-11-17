@@ -40,7 +40,7 @@ import type { Element } from "@office-open/xml";
 
 import { dataMappingsXml, parseDataMappings } from "./data-mappings";
 import { parseWorksheetCharts } from "./drawing-chart";
-import { OdsParseError } from "./error";
+import { OdsGenerateError, OdsParseError } from "./error";
 import { base64ToBytes, bytesToBase64, imageMediaType } from "./image-data";
 import { parseNumberStyles } from "./numbering";
 import type { OdsCalculationSettingsOptions, OdsWorkbookOptions } from "./options";
@@ -99,12 +99,28 @@ function generateOdsPackage(options: OdsWorkbookOptions): Uint8Array {
   const { packageManifest, packageMembers, styleResources, packageMediaType } = options;
   const mimeType = packageMediaType ?? MIME;
   const styles: string[] = styleResourcesXml(styleResources);
+  let chartIndex = 0;
+  const chartNames = new Set<string>();
   const chartFrames = (options.worksheets ?? []).flatMap((worksheet, worksheetIndex) =>
-    (worksheet.charts ?? []).map((chart, chartIndex) => ({
-      name: chart.name || `Object ${worksheetIndex + chartIndex + 1}`,
-      worksheet: worksheet.name ?? `Sheet${worksheetIndex + 1}`,
-      chart,
-    })),
+    (worksheet.charts ?? []).map((chart) => {
+      chartIndex += 1;
+      const name = chart.name || `Object ${chartIndex}`;
+      if (chartNames.has(name)) {
+        throw new OdsGenerateError(
+          `ODS chart subdocument path is duplicated: ${name}`,
+          "content.xml",
+          "/office:document-content/office:body/office:spreadsheet/table:table/table:shapes/draw:frame/draw:object",
+          "draw:object",
+          "duplicate-chart-path",
+        );
+      }
+      chartNames.add(name);
+      return {
+        name,
+        worksheet: worksheet.name ?? `Sheet${worksheetIndex + 1}`,
+        chart,
+      };
+    }),
   );
   const validationNames = contentValidationNames(options.worksheets ?? []);
   const sheets = (options.worksheets ?? []).map((worksheet, index) =>

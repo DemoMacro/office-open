@@ -15,7 +15,13 @@ import type {
 import type { Element } from "@office-open/xml";
 
 import { OdsParseError } from "./error";
-import { odfColor, parseBorder, parseOdfStrike, parseOdfUnderline } from "./styles";
+import {
+  odfColor,
+  parseBorder,
+  parseGnumericFill,
+  parseOdfStrike,
+  parseOdfUnderline,
+} from "./styles";
 
 /** Translates an Excel numFmt code into the matching ODF data style element. */
 export function numFmtDataStyle(numFmt: string): { name: string; children: string[] } {
@@ -142,11 +148,12 @@ export function parseNumberStyles(container: Element | undefined): Map<string, S
       ...parseOdfStrike(text),
     };
     if (Object.values(font).some((value) => value !== undefined)) options.font = font;
-    const background = odfColor(
-      attributeString(childNamed(style, "style:table-cell-properties"), "fo:background-color"),
-    );
-    if (background) options.fill = { type: "solid", foregroundColor: { rgb: `FF${background}` } };
     const cellProps = childNamed(style, "style:table-cell-properties");
+    const background = odfColor(attributeString(cellProps, "fo:background-color"));
+    const fill = cellProps === undefined ? undefined : parseGnumericFill(cellProps);
+    if (fill) options.fill = fill;
+    else if (background)
+      options.fill = { type: "solid", foregroundColor: { rgb: `FF${background}` } };
     const border: BorderSideOptions = {
       top: parseBorder(attributeString(cellProps, "fo:border-top")),
       bottom: parseBorder(attributeString(cellProps, "fo:border-bottom")),

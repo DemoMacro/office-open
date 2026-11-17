@@ -31,6 +31,18 @@ describe("ODS codec", () => {
     expect(parsed.worksheets?.[0]?.rows?.[0]?.cells).toEqual([{ reference: "A1", value: "ODS" }]);
   });
 
+  it("rejects worksheet chart frames whose chart subdocument is missing", async () => {
+    const source = generateOcf("application/vnd.oasis.opendocument.spreadsheet", {
+      "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:spreadsheet><table:table table:name="Sheet1"><table:shapes><draw:frame><draw:object xlink:href="Object 1"/></draw:frame></table:shapes><table:table-row><table:table-cell/></table:table-row></table:table></office:spreadsheet></office:body></office:document-content>`,
+    });
+
+    await expect(parseWorkbook(source)).rejects.toMatchObject({
+      name: "OdsParseError",
+      part: "content.xml",
+      reason: "missing-chart-subdocument",
+    });
+  });
+
   it("compresses identical adjacent rows without losing reparse positions", async () => {
     const row: WorksheetOptions["rows"] = [{ cells: [{ value: "Shared" }, { value: "Shared" }] }];
     const generated = await generateWorkbook({ worksheets: [{ rows: [...row, ...row, ...row] }] });
@@ -507,6 +519,47 @@ describe("ODS codec", () => {
     expect(charts[1]).toMatchObject({
       type: "scatter",
       series: [{ name: "Points", xValues: [1, 2], yValues: [2, 4] }],
+    });
+  });
+
+  it("assigns unique default chart subdocument paths across worksheets", async () => {
+    const parsed = await parseWorkbook(
+      await generateWorkbook({
+        worksheets: [
+          {
+            name: "First",
+            charts: [{ type: "bar", series: [{ values: [1] }], col: 1, row: 1 }],
+          },
+          {
+            name: "Second",
+            charts: [{ type: "line", series: [{ values: [2] }], col: 1, row: 1 }],
+          },
+        ],
+      }),
+    );
+    expect(parsed.worksheets?.map((worksheet) => worksheet.charts?.[0]?.name)).toEqual([
+      "Object 1",
+      "Object 2",
+    ]);
+  });
+
+  it("rejects duplicate explicit chart subdocument paths", async () => {
+    await expect(
+      generateWorkbook({
+        worksheets: [
+          {
+            name: "First",
+            charts: [{ name: "Shared", type: "bar", series: [], col: 1, row: 1 }],
+          },
+          {
+            name: "Second",
+            charts: [{ name: "Shared", type: "line", series: [], col: 1, row: 1 }],
+          },
+        ],
+      }),
+    ).rejects.toMatchObject({
+      name: "OdsGenerateError",
+      reason: "duplicate-chart-path",
     });
   });
 

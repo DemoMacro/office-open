@@ -12,6 +12,7 @@ import {
 import type { CellOptions, WorksheetChartOptions } from "@office-open/xlsx";
 import type { Element } from "@office-open/xml";
 
+import { OdsParseError } from "./error";
 import { columnNumber } from "./worksheet";
 
 /** A worksheet chart frame collected while serializing an ODS body. */
@@ -45,7 +46,15 @@ export function parseWorksheetCharts(
         .replace(/\/$/, "");
       const chart = href ? resolveEmbeddedChart(pool, href) : undefined;
       if (!href) continue;
-      if (!chart) continue;
+      if (!chart) {
+        throw new OdsParseError(
+          `content.xml: ${href}: embedded chart subdocument is missing or invalid`,
+          "content.xml",
+          "/office:document-content/office:body/office:spreadsheet/table:table/table:shapes/draw:frame/draw:object",
+          "draw:object",
+          "missing-chart-subdocument",
+        );
+      }
       charts.push({
         name: href,
         worksheet: worksheet ?? "",
