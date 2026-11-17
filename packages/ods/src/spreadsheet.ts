@@ -9,6 +9,8 @@ import {
   graphicFill,
   graphicOutline,
   lengthToEmu,
+  odfGroupTransform,
+  parseOdfGroupTransform,
   parseGraphicStyles,
   odfLengthToEmu,
   pushShapeStyle,
@@ -232,9 +234,11 @@ export function parseDrawingGroup(
       "draw:g",
     ],
   );
-  if (attributeString(element, "draw:transform") !== undefined)
+  const transformValue = attributeString(element, "draw:transform");
+  const groupTransform = parseOdfGroupTransform(transformValue);
+  if (groupTransform === null)
     throw new OdsParseError(
-      "ODS group transform has no equivalent in the canonical group transform model",
+      "ODS group transform cannot be projected to the canonical group transform model",
       "content.xml",
       path,
       "draw:transform",
@@ -251,6 +255,8 @@ export function parseDrawingGroup(
     );
   const x = lengthToEmu(attributeString(element, "svg:x"));
   const y = lengthToEmu(attributeString(element, "svg:y"));
+  const resolvedX = x === undefined ? groupTransform?.x : x + (groupTransform?.x ?? 0);
+  const resolvedY = y === undefined ? groupTransform?.y : y + (groupTransform?.y ?? 0);
   const width = lengthToEmu(attributeString(element, "svg:width"));
   const height = lengthToEmu(attributeString(element, "svg:height"));
   const title = childNamed(element, "svg:title");
@@ -308,22 +314,23 @@ export function parseDrawingGroup(
     ...(absolute
       ? {
           anchorType: "absolute" as const,
-          absoluteX: x,
-          absoluteY: y,
+          absoluteX: resolvedX,
+          absoluteY: resolvedY,
           extentCx: width,
           extentCy: height,
         }
-      : { colOffset: x, rowOffset: y, extentCx: width, extentCy: height }),
+      : { colOffset: resolvedX, rowOffset: resolvedY, extentCx: width, extentCy: height }),
     name: attributeString(element, "draw:name"),
     title: attributeString(element, "svg:title") ?? (title ? textOf(title) : undefined),
     description:
       attributeString(element, "svg:desc") ?? (description ? textOf(description) : undefined),
     zOrder: attributeNumber(element, "draw:z-index"),
     properties: {
-      ...(x === undefined ? {} : { x }),
-      ...(y === undefined ? {} : { y }),
+      ...(resolvedX === undefined ? {} : { x: resolvedX }),
+      ...(resolvedY === undefined ? {} : { y: resolvedY }),
       ...(width === undefined ? {} : { width, childExtentWidth: width }),
       ...(height === undefined ? {} : { height, childExtentHeight: height }),
+      ...(groupTransform?.rotation === undefined ? {} : { rotation: groupTransform.rotation }),
       childOffsetX: 0,
       childOffsetY: 0,
       childOffsetPresent: true,
@@ -624,6 +631,7 @@ export function drawingGroupXml(group: GroupOptions, styles: string[]): string {
     {
       "draw:name": group.name,
       "draw:z-index": group.zOrder,
+      "draw:transform": odfGroupTransform(group.properties.rotation),
       "svg:x": emuToLength(group.absoluteX ?? group.colOffset ?? group.properties.x ?? 0),
       "svg:y": emuToLength(group.absoluteY ?? group.rowOffset ?? group.properties.y ?? 0),
       "svg:width": emuToLength(group.extentCx ?? group.properties.width ?? 0),

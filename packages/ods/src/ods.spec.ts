@@ -78,6 +78,17 @@ describe("ODS codec", () => {
     expect(roundTripped.worksheets?.[0]?.groups).toEqual(parsed.worksheets?.[0]?.groups);
   });
 
+  it("projects worksheet group rotation into canonical group properties", async () => {
+    const source = generateOcf("application/vnd.oasis.opendocument.spreadsheet", {
+      "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:spreadsheet><table:table table:name="Sheet1"><table:shapes><draw:g draw:name="Rotated" draw:transform="rotate(15deg)" svg:x="1cm" svg:y="2cm" svg:width="4cm" svg:height="3cm"><draw:rect svg:x="0cm" svg:y="0cm" svg:width="1cm" svg:height="1cm"/></draw:g></table:shapes><table:table-row><table:table-cell/></table:table-row></table:table></office:spreadsheet></office:body></office:document-content>`,
+    });
+    const parsed = await parseWorkbook(source);
+    expect(parsed.worksheets?.[0]?.groups?.[0]?.properties.rotation).toBe(15);
+
+    const roundTripped = await parseWorkbook(await generateWorkbook(parsed));
+    expect(roundTripped.worksheets?.[0]?.groups?.[0]?.properties.rotation).toBe(15);
+  });
+
   it("rejects worksheet chart frames whose chart subdocument is missing", async () => {
     const source = generateOcf("application/vnd.oasis.opendocument.spreadsheet", {
       "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:spreadsheet><table:table table:name="Sheet1"><table:shapes><draw:frame><draw:object xlink:href="Object 1"/></draw:frame></table:shapes><table:table-row><table:table-cell/></table:table-row></table:table></office:spreadsheet></office:body></office:document-content>`,
