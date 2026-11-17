@@ -29,6 +29,7 @@ export const enum RecordCode {
   LabelSst = 0x00fd,
   SharedStringTable = 0x00fc,
   Xf = 0x00e0,
+  XfExt = 0x087d,
   RichLabel = 0x00d6,
   Name = 0x0018,
   ExternSheet = 0x0017,

@@ -8,7 +8,7 @@ import type {
 } from "@office-open/xlsx";
 
 import { XlsParseError } from "../errors";
-import type { BiffVersion } from "../records";
+import type { BiffRecord, BiffVersion } from "../records";
 import { decodeBiffString, readBiff5String, readBiff8String } from "./biff";
 import type { XfStyle } from "./models";
 export function parseFont(
@@ -162,6 +162,236 @@ export function parseXf(body: Uint8Array, version: BiffVersion, palette: string[
   if (!useOwn(style.usedAttributes.fill)) style.fill = undefined;
   if (!useOwn(style.usedAttributes.protection)) style.protection = undefined;
   return style;
+}
+
+export function applyXfExt(
+  record: BiffRecord,
+  styleTable: Map<number, XfStyle>,
+  palette: string[],
+): void {
+  const body = record.body;
+  if (body.byteLength < 20) throw invalidXfExt(record, "truncated-header");
+  const view = new DataView(body.buffer, body.byteOffset, body.byteLength);
+  if (view.getUint16(0, true) !== 0x087d) throw invalidXfExt(record, "invalid-record-type");
+  const index = view.getUint16(14, true);
+  const style = styleTable.get(index);
+  if (!style) throw invalidXfExt(record, `missing-XF-${index}`);
+  const extensionCount = view.getUint16(18, true);
+  let offset = 20;
+  for (let extensionIndex = 0; extensionIndex < extensionCount; extensionIndex++) {
+    if (offset + 4 > body.byteLength) throw invalidXfExt(record, "truncated-property-header");
+    const extensionType = view.getUint16(offset, true);
+    const length = view.getUint16(offset + 2, true);
+    if (length < 4 || offset + length > body.byteLength)
+      throw invalidXfExt(record, `invalid-property-length-${length}`);
+    const data = body.subarray(offset + 4, offset + length);
+    applyXfExtension(style, extensionType, data, palette, record);
+    offset += length;
+  }
+  if (offset !== body.byteLength) throw invalidXfExt(record, "trailing-property-data");
+}
+
+function applyXfExtension(
+  style: XfStyle,
+  extensionType: number,
+  data: Uint8Array,
+  palette: string[],
+  record: BiffRecord,
+): void {
+  switch (extensionType) {
+    case 0x0004:
+      style.fill = {
+        ...style.fill,
+        foregroundColor: parseFullColor(data, palette, record),
+      };
+      return;
+    case 0x0005:
+      style.fill = {
+        ...style.fill,
+        backgroundColor: parseFullColor(data, palette, record),
+      };
+      return;
+    case 0x0006:
+      style.fill = parseXfExtGradient(data, palette, record);
+      return;
+    case 0x0007:
+      style.border = setBorderColor(style.border, "top", parseFullColor(data, palette, record));
+      return;
+    case 0x0008:
+      style.border = setBorderColor(style.border, "bottom", parseFullColor(data, palette, record));
+      return;
+    case 0x0009:
+      style.border = setBorderColor(style.border, "left", parseFullColor(data, palette, record));
+      return;
+    case 0x000a:
+      style.border = setBorderColor(style.border, "right", parseFullColor(data, palette, record));
+      return;
+    case 0x000b:
+      style.border = setBorderColor(
+        style.border,
+        "diagonal",
+        parseFullColor(data, palette, record),
+      );
+      return;
+    case 0x000d:
+      style.font = { ...style.font, color: parseFullColor(data, palette, record) };
+      return;
+    case 0x000e:
+      style.font = { ...style.font, scheme: parseFontScheme(data, record) };
+      return;
+    case 0x000f:
+      style.alignment = {
+        ...style.alignment,
+        indent: parseIndent(data, record),
+      };
+      return;
+    default:
+      throw invalidXfExt(record, `unsupported-property-${extensionType}`);
+  }
+}
+
+function setBorderColor(
+  border: BorderSideOptions | undefined,
+  side: "top" | "bottom" | "left" | "right" | "diagonal",
+  color: ColorOptions,
+): BorderSideOptions {
+  return {
+    ...border,
+    [side]: { ...border?.[side], color },
+  };
+}
+
+function parseFullColor(body: Uint8Array, palette: string[], record: BiffRecord): ColorOptions {
+  if (body.byteLength < 16) throw invalidXfExt(record, "truncated-full-color");
+  const view = new DataView(body.buffer, body.byteOffset, body.byteLength);
+  const type = view.getUint16(0, true);
+  const tintShade = view.getInt16(2, true);
+  if (tintShade === -32768) throw invalidXfExt(record, "invalid-color-tint");
+  const value = view.getUint32(4, true);
+  const color: ColorOptions =
+    type === 0
+      ? { auto: true }
+      : type === 1
+        ? { indexed: value }
+        : type === 2
+          ? { rgb: rgbaToArgb(value) }
+          : type === 3
+            ? { theme: value }
+            : type === 4
+              ? {}
+              : (() => {
+                  throw invalidXfExt(record, `unsupported-color-type-${type}`);
+                })();
+  if (tintShade !== 0 && type !== 0 && type !== 4) color.tint = tintShade / 32767;
+  if (type === 1 && color.indexed !== undefined && color.indexed >= 8) {
+    const customColor = palette[color.indexed - 8];
+    if (customColor !== undefined) color.rgb = customColor as `FF${string}`;
+  }
+  return color;
+}
+
+function parseFontScheme(body: Uint8Array, record: BiffRecord): FontOptions["scheme"] {
+  if (body.byteLength < 1) throw invalidXfExt(record, "truncated-font-scheme");
+  const value =
+    body.byteLength >= 2
+      ? new DataView(body.buffer, body.byteOffset, body.byteLength).getUint16(0, true)
+      : body[0]!;
+  if (value === 1) return "major";
+  if (value === 2) return "minor";
+  if (value === 0 || value === 0xff) return "none";
+  throw invalidXfExt(record, `unsupported-font-scheme-${value}`);
+}
+
+function parseIndent(body: Uint8Array, record: BiffRecord): number {
+  if (body.byteLength < 2) throw invalidXfExt(record, "truncated-indent");
+  const indent = new DataView(body.buffer, body.byteOffset, body.byteLength).getUint16(0, true);
+  if (indent > 250) throw invalidXfExt(record, `invalid-indent-${indent}`);
+  return indent;
+}
+
+function parseXfExtGradient(
+  body: Uint8Array,
+  palette: string[],
+  record: BiffRecord,
+): CellFillOptions {
+  if (body.byteLength < 48) throw invalidXfExt(record, "truncated-gradient");
+  const view = new DataView(body.buffer, body.byteOffset, body.byteLength);
+  const gradientType = view.getUint32(0, true);
+  if (gradientType > 1) throw invalidXfExt(record, `unsupported-gradient-type-${gradientType}`);
+  const stopCount = view.getUint32(44, true);
+  if (stopCount > 256 || 48 + stopCount * 22 > body.byteLength)
+    throw invalidXfExt(record, "invalid-gradient-stops");
+  const stops: NonNullable<CellFillOptions["stops"]> = [];
+  let offset = 48;
+  for (let index = 0; index < stopCount; index++) {
+    const type = view.getUint16(offset, true);
+    const value = view.getUint32(offset + 2, true);
+    const position = view.getFloat64(offset + 6, true);
+    const tint = view.getFloat64(offset + 14, true);
+    if (position < 0 || position > 1 || tint < -1 || tint > 1)
+      throw invalidXfExt(record, "invalid-gradient-stop");
+    const color = parseCompactColor(type, value, palette, tint, record);
+    stops.push({ position, color });
+    offset += 22;
+  }
+  return {
+    type: "gradient",
+    gradientType: gradientType === 0 ? "linear" : "path",
+    gradientDegree: view.getFloat64(4, true),
+    gradientLeft: view.getFloat64(12, true),
+    gradientRight: view.getFloat64(20, true),
+    gradientTop: view.getFloat64(28, true),
+    gradientBottom: view.getFloat64(36, true),
+    stops,
+  };
+}
+
+function parseCompactColor(
+  type: number,
+  value: number,
+  palette: string[],
+  tint: number,
+  record: BiffRecord,
+): ColorOptions {
+  const color: ColorOptions =
+    type === 0
+      ? { auto: true }
+      : type === 1
+        ? { indexed: value }
+        : type === 2
+          ? { rgb: rgbaToArgb(value) }
+          : type === 3
+            ? { theme: value }
+            : type === 4
+              ? {}
+              : (() => {
+                  throw invalidXfExt(record, `unsupported-color-type-${type}`);
+                })();
+  if (type === 1 && color.indexed !== undefined && color.indexed >= 8) {
+    const customColor = palette[color.indexed - 8];
+    if (customColor !== undefined) color.rgb = customColor as `FF${string}`;
+  }
+  if (tint !== 0 && type !== 0 && type !== 4) color.tint = tint;
+  return color;
+}
+
+function rgbaToArgb(value: number): `FF${string}` {
+  const channel = (part: number): string => part.toString(16).padStart(2, "0");
+  return `${channel((value >>> 24) & 0xff)}${channel(value & 0xff)}${channel(
+    (value >>> 8) & 0xff,
+  )}${channel((value >>> 16) & 0xff)}`.toUpperCase() as `FF${string}`;
+}
+
+function invalidXfExt(record: BiffRecord, reason: string): XlsParseError {
+  return new XlsParseError(`Invalid legacy XLS file: ${reason}`, {
+    part: "stream" as const,
+    path: "Workbook/globals/XFExt",
+    recordType: record.code,
+    recordName: "XFExt",
+    offset: record.start,
+    length: record.body.byteLength,
+    reason,
+  });
 }
 
 function parseUsedAttributes(value: number): XfStyle["usedAttributes"] {

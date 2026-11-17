@@ -31,7 +31,7 @@ import {
 } from "./biff";
 import { reference } from "./cells";
 import type { BoundSheet, WorkbookState, XfStyle } from "./models";
-import { parseFont, parseFormat, parsePalette, parseXf } from "./styles";
+import { applyXfExt, parseFont, parseFormat, parsePalette, parseXf } from "./styles";
 export function readWorkbookGlobals(stream: Uint8Array): WorkbookState {
   const detected = detectBiffVersion(stream);
   if (detected.version <= 4) return readLegacyWorkbookGlobals(stream, detected);
@@ -55,6 +55,7 @@ export function readWorkbookGlobals(stream: Uint8Array): WorkbookState {
     | ReturnType<typeof parseExternSheet>
     | { supbookIndex: number; firstSheet: number; lastSheet: number }[] = [];
   const pendingNameRecords: BiffRecord[] = [];
+  const pendingXfExtRecords: BiffRecord[] = [];
   let externSheetReferenceCount = 0;
   let codepage = 1252;
   let date1904 = false;
@@ -239,6 +240,10 @@ export function readWorkbookGlobals(stream: Uint8Array): WorkbookState {
         styleTable.set(styleTable.size, parseXf(record.body, workbookVersion, palette));
         break;
       }
+      case RecordCode.XfExt: {
+        pendingXfExtRecords.push(record);
+        break;
+      }
       case RecordCode.MsoDrawingGroup: {
         drawingImages.push(...escherImages(record.body));
         break;
@@ -257,6 +262,8 @@ export function readWorkbookGlobals(stream: Uint8Array): WorkbookState {
         fonts,
       ),
     );
+
+  for (const record of pendingXfExtRecords) applyXfExt(record, styleTable, palette);
 
   if (workbookVersion === undefined)
     throw new XlsParseError("Invalid legacy XLS file: missing Begin Of File");

@@ -62,6 +62,7 @@ export interface XfStyle {
     fill: boolean;
     protection: boolean;
   };
+  font?: Partial<FontOptions>;
   alignment?: AlignmentOptions;
   border?: BorderSideOptions;
   fill?: CellFillOptions;

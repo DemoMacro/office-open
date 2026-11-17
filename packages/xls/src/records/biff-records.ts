@@ -55,6 +55,7 @@ export const BIFF_RECORD_CLASSIFICATIONS: BiffRecordClassifications = new Map([
   canonical(0x0017, "Extern Sheet", "globals", "workbook-globals"),
   canonical(0x0018, "Defined Name", "globals", "workbook-globals"),
   canonical(0x00e0, "Extended Format", "globals", "workbook-globals"),
+  canonical(0x087d, "Extended Format Extension", "globals", "workbook-globals"),
 
   canonical(0x0200, "Dimensions", "sheet", "worksheet"),
   canonical(0x0208, "Row", "sheet", "worksheet"),
@@ -135,7 +136,6 @@ export const BIFF_RECORD_CLASSIFICATIONS: BiffRecordClassifications = new Map([
   noop(0x0863, "Book Extension", "both", "workbook compatibility metadata is not projected"),
   noop(0x0867, "Shared Feature Header", "both", "feature container marker is not projected"),
   noop(0x087c, "Extended Format Checksum", "both", "style checksum metadata is not projected"),
-  noop(0x087d, "Extended Format Extension", "both", "XF extension properties are not projected"),
   noop(0x013d, "Tab Identifier", "globals", "change-tracking reference is not projected"),
   noop(0x0160, "Use Self References", "both", "formula compatibility marker is not projected"),
   noop(0x023e, "Window 2", "both", "sheet window state is not projected"),
