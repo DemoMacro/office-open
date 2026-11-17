@@ -1,4 +1,9 @@
-import type { DocumentOptions, SectionOptions } from "@office-open/docx";
+import type {
+  DocumentOptions,
+  ParagraphStylePropertiesOptions,
+  RunStylePropertiesOptions,
+  SectionOptions,
+} from "@office-open/docx";
 import {
   attributeString,
   childNamed,
@@ -10,6 +15,7 @@ import {
 import type { Element } from "@office-open/xml";
 
 import { NAMESPACES } from "./body";
+import { OdtParseError } from "./error";
 import { outlineStyleXml } from "./list";
 import { lengthToTwips, twipsToLength } from "./master-pages";
 import { notesConfigurationXml } from "./notes";
@@ -25,6 +31,18 @@ export type DocumentDefaults = NonNullable<
 type CommonStyle =
   | NonNullable<NonNullable<DocumentOptions["styles"]>["paragraphStyles"]>[number]
   | NonNullable<NonNullable<DocumentOptions["styles"]>["characterStyles"]>[number];
+
+type ParsedCommonStyle = {
+  id: string;
+  name: string;
+  family?: string;
+  alignment?: ParagraphStylePropertiesOptions["alignment"];
+  basedOn?: string;
+  next?: string;
+  indent?: ParagraphStylePropertiesOptions["indent"];
+  spacing?: ParagraphStylePropertiesOptions["spacing"];
+  run?: RunStylePropertiesOptions;
+};
 
 function textPropertiesXml(style: Pick<CommonStyle, "run">): string {
   const run = style.run;
@@ -293,20 +311,7 @@ export function parseDefaultStyle(files: OdfFiles): DocumentDefaults | undefined
 
 export function parseCommonStyles(files: OdfFiles): DocumentOptions["styles"] {
   const container = childNamed(readXml(files, "styles.xml"), "office:styles");
-  const parsed = new Map<
-    string,
-    {
-      id: string;
-      name?: string;
-      family?: string;
-      alignment?: string;
-      basedOn?: string;
-      next?: string;
-      indent?: { left?: number; right?: number };
-      spacing?: { before?: number; after?: number };
-      character: Record<string, unknown>;
-    }
-  >();
+  const parsed = new Map<string, ParsedCommonStyle>();
   for (const style of childrenNamed(container, "style:style")) {
     const id = attributeString(style, "style:name") ?? "";
     const character = childNamed(style, "style:text-properties");
@@ -329,36 +334,22 @@ export function parseCommonStyles(files: OdfFiles): DocumentOptions["styles"] {
             ...(spacingAfter !== undefined ? { after: spacingAfter } : {}),
           }
         : undefined;
-    const size = attributeString(character, "fo:font-size");
-    const color = attributeString(character, "fo:color");
-    const run = Object.fromEntries(
-      Object.entries({
-        bold: attributeString(character, "fo:font-weight") === "bold" || undefined,
-        italic: attributeString(character, "fo:font-style") === "italic" || undefined,
-        underline:
-          attributeString(character, "style:text-underline-style") === "solid"
-            ? { type: "single" as const }
-            : undefined,
-        strike:
-          attributeString(character, "style:text-line-through-style") === "solid" || undefined,
-        ...(size?.endsWith("pt") ? { size: Number(size.slice(0, -2)) } : {}),
-        color: color?.startsWith("#") ? color.slice(1) : undefined,
-        font: attributeString(character, "fo:font-family") || undefined,
-      }).filter(([, value]) => value !== undefined),
-    );
+    const run = parseRunProperties(character, id);
     parsed.set(id, {
       id,
       name: attributeString(style, "style:display-name") ?? id,
       family: attributeString(style, "style:family"),
-      alignment: attributeString(paragraph, "fo:text-align"),
+      alignment: parseAlignment(attributeString(paragraph, "fo:text-align"), id),
       basedOn: attributeString(style, "style:parent-style-name"),
       next: attributeString(style, "style:next-style-name"),
       indent,
       spacing,
-      character: run,
+      ...(run ? { run } : {}),
     });
   }
-  const paragraphStyles = [...parsed]
+  const paragraphStyles: NonNullable<NonNullable<DocumentOptions["styles"]>["paragraphStyles"]> = [
+    ...parsed,
+  ]
     .filter(([, style]) => style.family === "paragraph")
     .map(([name, style]) => ({
       id: style.id,
@@ -368,26 +359,92 @@ export function parseCommonStyles(files: OdfFiles): DocumentOptions["styles"] {
       ...(style.alignment !== undefined || style.indent !== undefined || style.spacing !== undefined
         ? {
             paragraph: {
-              alignment: style.alignment as never,
+              alignment: style.alignment,
               ...(style.indent ? { indent: style.indent } : {}),
               ...(style.spacing ? { spacing: style.spacing } : {}),
             },
           }
         : {}),
-      ...(Object.keys(style.character).length > 0 ? { run: style.character as never } : {}),
+      ...(style.run ? { run: style.run } : {}),
     }));
-  const characterStyles = [...parsed]
+  const characterStyles: NonNullable<NonNullable<DocumentOptions["styles"]>["characterStyles"]> = [
+    ...parsed,
+  ]
     .filter(([, style]) => style.family === "text")
     .map(([name, style]) => ({
       id: style.id,
       name: style.name ?? name,
       ...(style.basedOn ? { basedOn: style.basedOn } : {}),
       ...(style.next ? { next: style.next } : {}),
-      ...(Object.keys(style.character).length > 0 ? { run: style.character as never } : {}),
+      ...(style.run ? { run: style.run } : {}),
     }));
   const result = {
     ...(paragraphStyles.length > 0 ? { paragraphStyles } : {}),
     ...(characterStyles.length > 0 ? { characterStyles } : {}),
   };
   return Object.keys(result).length > 0 ? result : undefined;
+}
+
+function parseRunProperties(
+  element: Element | undefined,
+  styleName: string,
+): RunStylePropertiesOptions | undefined {
+  const size = attributeString(element, "fo:font-size");
+  const color = attributeString(element, "fo:color");
+  const weight = attributeString(element, "fo:font-weight");
+  const fontStyle = attributeString(element, "fo:font-style");
+  const underline = attributeString(element, "style:text-underline-style");
+  const strike = attributeString(element, "style:text-line-through-style");
+  const run: RunStylePropertiesOptions = {
+    ...(weight === undefined ? {} : { bold: weight === "bold" }),
+    ...(fontStyle === undefined ? {} : { italic: fontStyle === "italic" }),
+    ...(underline === undefined || underline === "none"
+      ? {}
+      : { underline: { type: "single" as const } }),
+    ...(strike === undefined || strike === "none" ? {} : { strike: true }),
+    ...(size === undefined ? {} : { size: parsePointSize(size, styleName) }),
+    ...(color?.startsWith("#") ? { color: color.slice(1) } : {}),
+    ...(attributeString(element, "fo:font-family")
+      ? { font: attributeString(element, "fo:font-family") }
+      : {}),
+  };
+  return Object.keys(run).length > 0 ? run : undefined;
+}
+
+function parsePointSize(value: string, styleName: string): number {
+  if (!value.endsWith("pt")) throw invalidStyle(styleName, "fo:font-size", "unsupported unit");
+  const size = Number(value.slice(0, -2));
+  if (!Number.isFinite(size) || size < 0)
+    throw invalidStyle(styleName, "fo:font-size", "invalid size");
+  return size;
+}
+
+function parseAlignment(
+  value: string | undefined,
+  styleName: string,
+): ParagraphStylePropertiesOptions["alignment"] {
+  switch (value) {
+    case undefined:
+      return undefined;
+    case "start":
+    case "end":
+    case "left":
+    case "right":
+    case "center":
+      return value;
+    case "justify":
+      return "both";
+    default:
+      throw invalidStyle(styleName, "fo:text-align", `unsupported value: ${value}`);
+  }
+}
+
+function invalidStyle(styleName: string, elementName: string, reason: string): OdtParseError {
+  return new OdtParseError(
+    `styles.xml: style ${styleName}: ${reason}`,
+    "styles.xml",
+    `/office:document-styles/office:styles/style:style[@style:name="${styleName}"]/${elementName}`,
+    elementName,
+    reason,
+  );
 }
