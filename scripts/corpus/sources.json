@@ -19,6 +19,12 @@
       "commit": "09f2f21a60e821ce7fb18ca3576b272e5dd6d921"
     },
     {
+      "id": "markitdown",
+      "repository": "https://github.com/microsoft/markitdown.git",
+      "destination": ".temp/corpus/markitdown",
+      "commit": "ed178952a6672abdfd35b5f9e76a80b6cefc086e"
+    },
+    {
       "id": "oletools",
       "repository": "https://github.com/decalage2/oletools.git",
       "destination": ".temp/corpus/oletools",

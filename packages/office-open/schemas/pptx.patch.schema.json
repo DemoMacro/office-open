@@ -43,6 +43,7 @@
         "view",
         "includeHandoutMaster",
         "includeNotesMaster",
+        "notesMasterIdListPresent",
         "handoutMasterOptions",
         "notesMasterOptions",
         "commentAuthors",
@@ -163,7 +164,7 @@
           "$ref": "pptx.schema.json#/definitions/CustomerDataOptions"
         },
         {
-          "$ref": "#/definitions/PresentationPatchValue/anyOf/34/anyOf/0"
+          "$ref": "#/definitions/PresentationPatchValue/anyOf/35/anyOf/0"
         },
         {
           "$ref": "pptx.schema.json#/definitions/AppPropertiesOptions"
@@ -481,6 +482,11 @@
                   "$ref": "pptx.schema.json#/definitions/ViewPropertiesOptions"
                 },
                 {
+                  "type": "boolean"
+                },
+                {
+                  "description": "Whether the source had p:notesMasterIdLst; round-trip only.",
+                  "readOnly": true,
                   "type": "boolean"
                 },
                 {
@@ -1046,6 +1052,18 @@
           "type": "boolean"
         },
         {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "not": {}
+            }
+          ],
+          "description": "Whether the source had p:notesMasterIdLst; round-trip only.",
+          "readOnly": true
+        },
+        {
           "$ref": "pptx.schema.json#/definitions/HandoutMasterOptions"
         },
         {
@@ -1323,7 +1341,7 @@
           "anyOf": [
             {
               "items": {
-                "$ref": "#/definitions/PresentationPatchCommand/anyOf/1/properties/value/anyOf/44/items"
+                "$ref": "#/definitions/PresentationPatchCommand/anyOf/1/properties/value/anyOf/45/items"
               },
               "type": "array"
             },
@@ -1664,7 +1682,7 @@
           "anyOf": [
             {
               "items": {
-                "$ref": "#/definitions/PresentationPatchCommand/anyOf/1/properties/value/anyOf/72/items"
+                "$ref": "#/definitions/PresentationPatchCommand/anyOf/1/properties/value/anyOf/73/items"
               },
               "type": "array"
             },

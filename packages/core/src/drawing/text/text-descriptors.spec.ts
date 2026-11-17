@@ -311,6 +311,12 @@ describe("paragraphDesc round-trip", () => {
     expect(xml).toContain("<a:t>there</a:t>");
   });
 
+  it("preserves an explicit empty text run", () => {
+    const parsed = roundTrip({ text: "" });
+    expect(parsed.text).toBe("");
+    expect(paragraphDesc.stringify(parsed, writeCtx)).toContain("<a:r><a:t></a:t></a:r>");
+  });
+
   it("round-trips mixed string and run children", () => {
     const r = roundTrip({
       children: ["lead ", { text: "run", bold: true }],

@@ -14844,6 +14844,11 @@
           "description": "Notes page height in EMU (`p:notesSz/@cy`, default 9144000).",
           "type": "number"
         },
+        "notesMasterIdListPresent": {
+          "description": "Whether the source had p:notesMasterIdLst; round-trip only.",
+          "readOnly": true,
+          "type": "boolean"
+        },
         "notesMasterOptions": {
           "$ref": "#/definitions/NotesMasterOptions"
         },

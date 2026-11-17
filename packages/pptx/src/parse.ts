@@ -757,6 +757,7 @@ function parsePresentationFromPptx(pptx: PptxDocument): PresentationOptions {
     if (presPart.slideSizeType) opts.slideSizeType = presPart.slideSizeType;
     if (presPart.notesWidth !== undefined) opts.notesWidth = presPart.notesWidth;
     if (presPart.notesHeight !== undefined) opts.notesHeight = presPart.notesHeight;
+    opts.notesMasterIdListPresent = presPart.notesMasterIdListPresent;
     opts.photoAlbum = presPart.photoAlbum;
     opts.defaultTextStyle = presPart.defaultTextStyle;
     if (presPart.kinsoku) opts.kinsoku = presPart.kinsoku;

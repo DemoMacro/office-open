@@ -331,6 +331,8 @@ export interface PresentationOptions extends CorePropertiesOptions {
   view?: ViewPropertiesOptions;
   includeHandoutMaster?: boolean;
   includeNotesMaster?: boolean;
+  /** Whether the source had p:notesMasterIdLst; round-trip only. */
+  notesMasterIdListPresent?: boolean;
   handoutMasterOptions?: HandoutMasterOptions;
   notesMasterOptions?: NotesMasterOptions;
   /** Canonical author list backing ppt/commentAuthors.xml; parsed sources preserve ids and extensions. */

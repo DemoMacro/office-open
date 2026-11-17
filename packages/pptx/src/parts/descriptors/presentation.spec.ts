@@ -47,6 +47,20 @@ describe("presentationDesc round-trip", () => {
     expect(result.masterCount).toBe(2);
   });
 
+  it("preserves an empty notes-master reference list", () => {
+    const xml = presentationDesc.stringify(
+      {
+        slideIds: [],
+        masterCount: 0,
+        notesMasterIdListPresent: true,
+      },
+      writeCtx,
+    )!;
+    expect(xml).toContain("<p:notesMasterIdLst/>");
+    const parsed = roundTrip({ slideIds: [], masterCount: 0, notesMasterIdListPresent: true });
+    expect(parsed.notesMasterIdListPresent).toBe(true);
+  });
+
   it("round-trips rtl", () => {
     const opts: PresentationDescriptorOptions = {
       slideIds: [256],

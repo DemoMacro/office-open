@@ -297,6 +297,9 @@ export function compilePresentation(
     masterCount: attachedMasters.length,
     sections,
     ...buildPresAttrOpts(options),
+    ...(options.notesMasterIdListPresent !== undefined
+      ? { notesMasterIdListPresent: options.notesMasterIdListPresent }
+      : {}),
     ...(options.ext !== undefined ? { ext: options.ext } : {}),
   };
   if (options.customerData?.data && customXmlRIds.size > 0) {

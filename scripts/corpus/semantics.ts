@@ -587,6 +587,13 @@ function canonicalNode(
     if (!(valueAttribute in attributes) || attributes[valueAttribute] === "")
       attributes[valueAttribute] = "1";
   }
+  if (
+    name === "w:zoom" &&
+    attributes["w:percent"] === undefined &&
+    ["bestFit", "textFit"].includes(attributes["w:val"] ?? "")
+  ) {
+    attributes["w:percent"] = "100";
+  }
   for (const [attributeName, value] of Object.entries(DEFAULT_ATTRIBUTES.get(name) ?? {})) {
     if (!(attributeName in attributes)) attributes[attributeName] = value;
   }

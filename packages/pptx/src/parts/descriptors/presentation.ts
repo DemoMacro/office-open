@@ -113,10 +113,12 @@ function stringifyPresentation(
   }
   parts.push("</p:sldMasterIdLst>");
 
-  if (opts.notesMasterRId) {
+  if (opts.notesMasterRId && opts.notesMasterIdListPresent !== false) {
     parts.push(
       `<p:notesMasterIdLst><p:notesMasterId r:id="rId${opts.notesMasterRId}"/></p:notesMasterIdLst>`,
     );
+  } else if (opts.notesMasterIdListPresent) {
+    parts.push("<p:notesMasterIdLst/>");
   }
   if (opts.handoutMasterRId) {
     parts.push(
@@ -393,6 +395,7 @@ function parsePresentation(el: XmlElement): PresentationPartOptions {
 
   // notesMasterIdLst
   const notesMasterIdLst = findChild(el, "p:notesMasterIdLst");
+  result.notesMasterIdListPresent = notesMasterIdLst !== undefined;
   if (notesMasterIdLst) {
     const nmId = findChild(notesMasterIdLst, "p:notesMasterId");
     if (nmId) {
