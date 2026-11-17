@@ -873,6 +873,16 @@ function parseDatabaseFilter(filter: Element, rangeReference: string): AutoFilte
       ],
       ["table:filter-set-item"],
     );
+    for (const name of ["table:case-sensitive", "table:data-type"]) {
+      if (attributeString(condition, name) !== undefined) {
+        throw unknownOdsElement(
+          condition,
+          CONTENT_PATH,
+          name,
+          "filter condition attribute has no canonical mapping",
+        );
+      }
+    }
     const field = attributeNumber(condition, "table:field-number");
     const operator = attributeString(condition, "table:operator");
     const values = childrenNamed(condition, "table:filter-set-item").map((item) => {
@@ -880,7 +890,11 @@ function parseDatabaseFilter(filter: Element, rangeReference: string): AutoFilte
       return attributeString(item, "table:value") ?? "";
     });
     const value = attributeString(condition, "table:value");
-    if (field === undefined || operator === undefined || value === undefined) {
+    if (
+      field === undefined ||
+      operator === undefined ||
+      (values.length === 0 && value === undefined)
+    ) {
       throw unknownOdsElement(
         condition,
         CONTENT_PATH,
@@ -888,6 +902,7 @@ function parseDatabaseFilter(filter: Element, rangeReference: string): AutoFilte
         "required filter data is missing",
       );
     }
+    const conditionValues = values.length > 0 ? values : [value!];
     if (values.length > 0 && operator !== "=" && operator !== "equal") {
       throw unknownOdsElement(
         condition,
@@ -896,7 +911,7 @@ function parseDatabaseFilter(filter: Element, rangeReference: string): AutoFilte
         "filter set only supports equality",
       );
     }
-    return { field, operator, values: values.length > 0 ? values : [value], group };
+    return { field, operator, values: conditionValues, group };
   });
   const byField = new Map<number, typeof conditions>();
   for (const condition of conditions) {
@@ -1854,6 +1869,13 @@ export function parseDataPilotTables(
           field: name,
           summarize,
         });
+      } else {
+        throw unknownOdsElement(
+          field,
+          CONTENT_PATH,
+          "table:orientation",
+          `unsupported data pilot field orientation: ${orientation}`,
+        );
       }
     }
     worksheet.pivotTables = [

@@ -279,6 +279,17 @@ describe("ODS spreadsheet semantics", () => {
     );
   });
 
+  it("accepts ODF set filters without a redundant scalar value", async () => {
+    const source = generateOcf("application/vnd.oasis.opendocument.spreadsheet", {
+      "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:spreadsheet><table:table table:name="Data"><table:table-row><table:table-cell/></table:table-row></table:table><table:database-ranges><table:database-range table:name="Database" table:target-range-address="Data.A1:A10"><table:filter><table:filter-condition table:field-number="0" table:operator="="><table:filter-set-item table:value="East"/><table:filter-set-item table:value="West"/></table:filter-condition></table:filter></table:database-range></table:database-ranges></office:spreadsheet></office:body></office:document-content>`,
+    });
+    const parsed = await parseWorkbook(source);
+    expect(parsed.worksheets?.[0]?.tables?.[0]?.autoFilter).toEqual({
+      ref: "A1:A10",
+      columns: [{ colId: 0, filters: { values: ["East", "West"] } }],
+    });
+  });
+
   it("rejects database range attributes without a canonical mapping", async () => {
     await expect(
       parseWorkbook(

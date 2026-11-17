@@ -467,23 +467,68 @@ export function parseDimensionStyles(container: Element | undefined): Map<string
         "unsupported-header-visibility",
       );
     }
+    const columnHidden = dimensionBoolean(column, "style:column-hidden");
+    const rowHidden = dimensionBoolean(row, "style:row-hidden");
+    const display = dimensionBoolean(table, "table:display");
+    const displayFormulas = dimensionBoolean(table, "gnm:display-formulas");
+    const displayColumnHeaders = dimensionBoolean(table, "gnm:display-col-header");
+    const displayRowHeaders = dimensionBoolean(table, "gnm:display-row-header");
     result.set(name, {
-      width: width?.endsWith("px") ? Number(width.slice(0, -2)) : undefined,
-      height: height?.endsWith("pt") ? Number(height.slice(0, -2)) : undefined,
-      hidden:
-        attributeString(column, "style:column-hidden") === "true" ||
-        attributeString(row, "style:row-hidden") === "true" ||
-        attributeString(table, "table:display") === "false" ||
-        undefined,
-      showFormulas:
-        attributeString(table, "gnm:display-formulas") === undefined
-          ? undefined
-          : attributeString(table, "gnm:display-formulas") === "true",
-      showColumnHeaders: showColumnHeaders === undefined ? undefined : showColumnHeaders === "true",
-      showRowHeaders: showRowHeaders === undefined ? undefined : showRowHeaders === "true",
+      width: width === undefined ? undefined : lengthToPixels(width, column),
+      height: height === undefined ? undefined : lengthToPoints(height, row),
+      hidden: columnHidden || rowHidden || display === false || undefined,
+      showFormulas: displayFormulas,
+      showColumnHeaders: displayColumnHeaders,
+      showRowHeaders: displayRowHeaders,
     });
   }
   return result;
+}
+
+function dimensionBoolean(element: Element | undefined, name: string): boolean | undefined {
+  const value = attributeString(element, name);
+  if (value === undefined) return undefined;
+  if (value === "true" || value === "1") return true;
+  if (value === "false" || value === "0") return false;
+  throw new OdsParseError(
+    `content.xml: invalid boolean value for ${name}: ${value}`,
+    "content.xml",
+    `/office:document-content/office:automatic-styles/style:style/${name}`,
+    name,
+    "invalid boolean value",
+  );
+}
+
+function lengthToPixels(value: string, element: Element | undefined): number | undefined {
+  const emu = lengthToEmu(value);
+  if (emu === undefined) return undefined;
+  const pixels = emu / 9525;
+  if (!Number.isFinite(pixels)) {
+    throw new OdsParseError(
+      `content.xml: invalid dimension value: ${value}`,
+      "content.xml",
+      "/office:document-content/office:automatic-styles/style:style",
+      element?.name ?? "style:table-column-properties",
+      "invalid dimension",
+    );
+  }
+  return pixels;
+}
+
+function lengthToPoints(value: string, element: Element | undefined): number | undefined {
+  const emu = lengthToEmu(value);
+  if (emu === undefined) return undefined;
+  const points = emu / 12700;
+  if (!Number.isFinite(points)) {
+    throw new OdsParseError(
+      `content.xml: invalid dimension value: ${value}`,
+      "content.xml",
+      "/office:document-content/office:automatic-styles/style:style",
+      element?.name ?? "style:table-row-properties",
+      "invalid dimension",
+    );
+  }
+  return points;
 }
 
 const ODS_STYLE_PROPERTIES: Record<string, string[]> = {

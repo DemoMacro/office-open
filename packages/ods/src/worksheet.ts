@@ -495,7 +495,7 @@ export function cellXml(
   const cached = cacheAttributes(cell.value);
   const styleOptions = typeof cell.style === "object" ? cell.style : undefined;
   const valueKind = numFmtKind(styleOptions?.numFmt);
-  let type = cached.type;
+  let type = cell.error === undefined ? cached.type : "error";
   if (valueKind === "time") type = "time";
   else if (valueKind === "currency") type = "currency";
   const children = [
@@ -530,6 +530,7 @@ export function cellXml(
         type === "time" ? serialToDuration(Number(cached.value ?? 0)) : undefined,
       "office:boolean-value": cached.type === "boolean" ? cached.value : undefined,
       "office:date-value": cached.type === "date" ? cached.value : undefined,
+      "office:string-value": type === "error" ? cell.error : undefined,
     },
     children,
   );
@@ -933,7 +934,12 @@ export function parseColumn(
   dimensions: Map<string, DimensionStyle>,
 ): ColumnOptions {
   const style = dimensions.get(attributeString(element, "table:style-name") ?? "");
-  return { min: column, max: column, width: style?.width, hidden: style?.hidden };
+  return {
+    min: column,
+    max: column,
+    width: style?.width,
+    hidden: tableVisibility(element, "table:visibility") !== "visible" || style?.hidden,
+  };
 }
 
 function parseRows(
@@ -1065,7 +1071,7 @@ export function parseRow(
   return {
     rowNumber,
     height: style?.height,
-    hidden: style?.hidden,
+    hidden: tableVisibility(row, "table:visibility") !== "visible" || style?.hidden,
     cells: (row.elements ?? [])
       .flatMap((cell, cellIndex) => {
         const repeat = repeatCount(cell, "table:number-columns-repeated");
@@ -1384,6 +1390,18 @@ export function parseRow(
   };
 }
 
+function tableVisibility(element: Element, name: string): "visible" | "collapse" | "filter" {
+  const value = attributeString(element, name);
+  if (value === undefined || value === "visible" || value === "collapse" || value === "filter")
+    return value ?? "visible";
+  throw unknownOdsElement(
+    element,
+    "/office:document-content/office:body/office:spreadsheet",
+    name,
+    `invalid visibility value: ${value}`,
+  );
+}
+
 export function parseCell(
   cell: Element,
   row: number,
@@ -1519,6 +1537,11 @@ export function parseCell(
     result.value = date;
   } else if (valueType === "string") {
     result.value = childrenNamed(cell, "text:p").map(textOf).join("\n");
+  } else if (valueType === "error") {
+    const error =
+      attributeString(cell, "office:string-value") ?? attributeString(cell, "office:value");
+    if (error === undefined) throw invalidCellValue(cell, row, column, "office:string-value");
+    result.error = error;
   } else if (valueType !== undefined) {
     throw unknownOdsElement(
       cell,

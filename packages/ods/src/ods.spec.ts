@@ -249,6 +249,21 @@ describe("ODS codec", () => {
     expect(worksheet.rows?.[0]?.cells?.[3]?.value).toBe(1);
   });
 
+  it("maps ODF dimension units and boolean lexemes", async () => {
+    const source = generateOcf("application/vnd.oasis.opendocument.spreadsheet", {
+      "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:automatic-styles><style:style style:name="Column" style:family="table-column"><style:table-column-properties style:column-width="2cm"/></style:style><style:style style:name="Row" style:family="table-row"><style:table-row-properties style:row-height="10mm"/></style:style></office:automatic-styles><office:body><office:spreadsheet><table:table table:name="Sheet1"><table:table-column table:style-name="Column" table:visibility="collapse"/><table:table-row table:style-name="Row" table:visibility="visible"><table:table-cell/></table:table-row></table:table></office:spreadsheet></office:body></office:document-content>`,
+    });
+    const parsed = await parseWorkbook(source);
+    expect(parsed.worksheets?.[0]?.columns?.[0]).toMatchObject({
+      width: expect.closeTo((2 * 96) / 2.54, 0.01),
+      hidden: true,
+    });
+    expect(parsed.worksheets?.[0]?.rows?.[0]).toMatchObject({
+      height: expect.closeTo((10 * 72) / 25.4, 0.01),
+      hidden: undefined,
+    });
+  });
+
   it("does not materialize very large empty repeats", async () => {
     const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:spreadsheet><table:table table:name="Sheet1"><table:table-row table:number-rows-repeated="999999999"><table:table-cell table:number-columns-repeated="16384"/></table:table-row></table:table></office:spreadsheet></office:body></office:document-content>`;
     const worksheet = (
@@ -796,6 +811,15 @@ describe("ODS codec", () => {
       reference: "B1",
       text: "covered",
     });
+  });
+
+  it("round-trips canonical spreadsheet error values", async () => {
+    const parsed = await parseWorkbook(
+      await generateWorkbook({
+        worksheets: [{ rows: [{ cells: [{ reference: "A1", error: "#DIV/0!" }] }] }],
+      }),
+    );
+    expect(parsed.worksheets?.[0]?.rows?.[0]?.cells?.[0]?.error).toBe("#DIV/0!");
   });
 
   it("rejects malformed office forms with structured ODS errors", async () => {
