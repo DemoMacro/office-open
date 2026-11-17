@@ -144,9 +144,13 @@ export function slideXml(
   const notesXml = notes
     ? xmlElement("presentation:notes", undefined, [
         xmlElement("draw:frame", undefined, [
-          xmlElement("draw:text-box", undefined, [
-            xmlElement("text:p", undefined, [escapeText(notes)]),
-          ]),
+          xmlElement(
+            "draw:text-box",
+            undefined,
+            notes
+              .split(/\r?\n/u)
+              .map((paragraph) => xmlElement("text:p", undefined, [escapeText(paragraph)])),
+          ),
         ]),
       ])
     : undefined;
@@ -295,8 +299,8 @@ export function slideChildXml(
     return shapeXml(child.shape, styles);
   }
   if ("table" in child) return slideTableXml(child.table, styles);
-  if ("connector" in child) return connectorXml(child.connector);
-  if ("line" in child) return lineXml(child.line);
+  if ("connector" in child) return connectorXml(child.connector, styles);
+  if ("line" in child) return lineXml(child.line, styles);
   if ("picture" in child) return pictureFrameXml(child.picture, images);
   if ("video" in child) return mediaFrameXml(child.video, mediaFiles, images);
   if ("audio" in child) return mediaFrameXml(child.audio, mediaFiles, images);
@@ -441,7 +445,11 @@ export function parseSlide(
     childNamed(childNamed(page, "presentation:notes"), "draw:frame"),
     "draw:text-box",
   );
-  const notesText = notes ? textOf(childNamed(notes, "text:p")) : undefined;
+  const notesText = notes
+    ? childrenNamed(notes, "text:p")
+        .map((paragraph) => textOf(paragraph))
+        .join("\n") || undefined
+    : undefined;
   const comments = childrenNamed(page, "officeooo:annotation").map(parseAnnotation);
   const children: SlideChild[] = [];
   const odpNodes: OdpSlideNodeOptions[] = [];
@@ -539,7 +547,7 @@ export function parseSlide(
       continue;
     }
     if (child.name === "draw:line") {
-      children.push(parseLine(child));
+      children.push(parseLine(child, graphicStyles));
       continue;
     }
     if (child.name === "draw:g") {
@@ -557,7 +565,7 @@ export function parseSlide(
       continue;
     }
     if (child.name === "draw:connector") {
-      children.push(parseConnector(child));
+      children.push(parseConnector(child, graphicStyles));
       continue;
     }
     if (child.name === "table:table") {

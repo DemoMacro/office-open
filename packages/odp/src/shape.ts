@@ -392,10 +392,16 @@ export function shapeXml(shape: ShapeOptions, styles: string[]): string {
 }
 
 /** Serializes a connector as a straight draw:connector with endpoint gluing. */
-export function connectorXml(connector: ConnectorOptions): string {
+export function connectorXml(connector: ConnectorOptions, styles: string[]): string {
   return xmlElement("draw:connector", {
+    "draw:id": odfShapeIdXml(connector.id),
     "draw:type": "line",
     "draw:name": connector.name,
+    "draw:style-name": pushShapeStyle(
+      connector.properties?.fill,
+      connector.properties?.outline,
+      styles,
+    ),
     "svg:x1": toOdfLength(connector.x1),
     "svg:y1": toOdfLength(connector.y1),
     "svg:x2": toOdfLength(connector.x2),
@@ -410,9 +416,11 @@ export function connectorXml(connector: ConnectorOptions): string {
 }
 
 /** Serializes a straight line as draw:line. */
-export function lineXml(line: LineShapeOptions): string {
+export function lineXml(line: LineShapeOptions, styles: string[]): string {
   return xmlElement("draw:line", {
+    "draw:id": odfShapeIdXml(line.id),
     "draw:name": line.name,
+    "draw:style-name": pushShapeStyle(line.properties?.fill, line.properties?.outline, styles),
     "svg:x1": toOdfLength(line.x1),
     "svg:y1": toOdfLength(line.y1),
     "svg:x2": toOdfLength(line.x2),
@@ -587,27 +595,45 @@ export function parsePrimitiveSlideShape(
 }
 
 /** Parses a draw:connector back to a pptx connector child. */
-export function parseConnector(element: Element): { connector: ConnectorOptions } {
+export function parseConnector(
+  element: Element,
+  graphicStyles: Map<string, GraphicStyle>,
+): { connector: ConnectorOptions } {
+  const graphic = graphicStyles.get(attributeString(element, "draw:style-name") ?? "");
   return {
     connector: {
+      ...(odfShapeId(element) === undefined ? {} : { id: odfShapeId(element) }),
+      name: attributeString(element, "draw:name"),
       x1: lengthToEmu(attributeString(element, "svg:x1")),
       y1: lengthToEmu(attributeString(element, "svg:y1")),
       x2: lengthToEmu(attributeString(element, "svg:x2")),
       y2: lengthToEmu(attributeString(element, "svg:y2")),
       startConnection: endpointConnection(element, "start"),
       endConnection: endpointConnection(element, "end"),
+      ...(graphicFill(graphic) || graphicOutline(graphic)
+        ? { properties: { fill: graphicFill(graphic), outline: graphicOutline(graphic) } }
+        : {}),
     },
   };
 }
 
 /** Parses a draw:line back to a pptx line child. */
-export function parseLine(element: Element): { line: LineShapeOptions } {
+export function parseLine(
+  element: Element,
+  graphicStyles: Map<string, GraphicStyle>,
+): { line: LineShapeOptions } {
+  const graphic = graphicStyles.get(attributeString(element, "draw:style-name") ?? "");
   return {
     line: {
+      ...(odfShapeId(element) === undefined ? {} : { id: odfShapeId(element) }),
+      name: attributeString(element, "draw:name"),
       x1: lengthToEmu(attributeString(element, "svg:x1")),
       y1: lengthToEmu(attributeString(element, "svg:y1")),
       x2: lengthToEmu(attributeString(element, "svg:x2")),
       y2: lengthToEmu(attributeString(element, "svg:y2")),
+      ...(graphicFill(graphic) || graphicOutline(graphic)
+        ? { properties: { fill: graphicFill(graphic), outline: graphicOutline(graphic) } }
+        : {}),
     },
   };
 }
@@ -675,10 +701,10 @@ export function parseGroup(
       return [{ shape: parseCustomSlideShape(child, textStyles, graphicStyles) }];
     if (child.name === "draw:control")
       return [{ shape: parseControlSlideShape(child, textStyles, graphicStyles) }];
-    if (child.name === "draw:line") return [parseLine(child)];
+    if (child.name === "draw:line") return [parseLine(child, graphicStyles)];
     if (isPrimitiveShape(child))
       return [{ shape: parsePrimitiveSlideShape(child, textStyles, graphicStyles) }];
-    if (child.name === "draw:connector") return [parseConnector(child)];
+    if (child.name === "draw:connector") return [parseConnector(child, graphicStyles)];
     if (child.name === "draw:g")
       return parseGroup(
         child,

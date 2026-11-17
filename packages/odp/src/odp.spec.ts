@@ -28,6 +28,63 @@ describe("ODP codec", () => {
     expect(parsed.slides?.[0]?.notes).toBe("ODP");
   });
 
+  it("round-trips notes paragraphs and line paint through canonical shapes", async () => {
+    const parsed = await parsePresentation(
+      await generatePresentation({
+        slides: [
+          {
+            notes: "First paragraph\nSecond paragraph",
+            children: [
+              {
+                line: {
+                  id: 7,
+                  name: "Divider",
+                  x1: 0,
+                  y1: 0,
+                  x2: 914400,
+                  y2: 0,
+                  properties: {
+                    outline: { type: "solidFill", color: "112233", width: 12700 },
+                  },
+                },
+              },
+              {
+                connector: {
+                  id: 8,
+                  name: "Link",
+                  x1: 0,
+                  y1: 0,
+                  x2: 914400,
+                  y2: 914400,
+                  properties: { outline: { type: "solidFill", color: "445566" } },
+                },
+              },
+            ],
+          },
+        ],
+      }),
+    );
+    expect(parsed.slides?.[0]?.notes).toBe("First paragraph\nSecond paragraph");
+    expect(parsed.slides?.[0]?.children).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          line: expect.objectContaining({
+            id: 7,
+            name: "Divider",
+            properties: { outline: { type: "solidFill", color: "112233", width: 12700 } },
+          }),
+        }),
+        expect.objectContaining({
+          connector: expect.objectContaining({
+            id: 8,
+            name: "Link",
+            properties: { outline: { type: "solidFill", color: "445566" } },
+          }),
+        }),
+      ]),
+    );
+  });
+
   it("round-trips slide names and master bindings", async () => {
     const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:presentation><draw:page draw:name="Overview" draw:master-page-name="Master"/></office:presentation></office:body></office:document-content>`;
     const source = await parsePresentation(
