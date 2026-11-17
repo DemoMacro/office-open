@@ -160,6 +160,7 @@ export function slideXml(
       "draw:name": slide.name ?? `Slide${index}`,
       "draw:master-page-name": slide.master ?? "Default",
       "draw:style-name": transitionStyleName,
+      "presentation:presentation-page-layout-name": slide.presentationPageLayoutName,
     },
     [
       ...(slide.forms === undefined ? [] : [formsXml(slide.forms)]),
@@ -620,6 +621,14 @@ export function parseSlide(
     ...(odpNodes.length > 0 ? { odpNodes } : {}),
     ...(transition !== undefined ? { transition } : {}),
     ...(pageStyleName ? { drawingPageStyleName: pageStyleName } : {}),
+    ...(attributeString(page, "presentation:presentation-page-layout-name")
+      ? {
+          presentationPageLayoutName: attributeString(
+            page,
+            "presentation:presentation-page-layout-name",
+          ),
+        }
+      : {}),
     ...(animations.length > 0 ? { animations } : {}),
     ...(comments.length > 0 ? { comments } : {}),
     ...(notesText ? { notes: notesText } : {}),

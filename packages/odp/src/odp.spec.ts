@@ -23,9 +23,14 @@ describe("ODP codec", () => {
 
   it("round-trips a presentation through canonical PresentationOptions", async () => {
     const parsed = await parsePresentation(
-      await generatePresentation({ slides: [{ notes: "ODP" }] }),
+      await generatePresentation({
+        slides: [{ notes: "ODP", presentationPageLayoutName: "Wide" }],
+      }),
     );
-    expect(parsed.slides?.[0]?.notes).toBe("ODP");
+    expect(parsed.slides?.[0]).toMatchObject({
+      notes: "ODP",
+      presentationPageLayoutName: "Wide",
+    });
   });
 
   it("round-trips notes paragraphs and line paint through canonical shapes", async () => {

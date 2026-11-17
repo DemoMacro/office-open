@@ -50,6 +50,8 @@ export interface OdpSlideOptions extends Omit<SlideOptions, "transition"> {
   animations?: SlideOptions["animations"];
   transition?: OdpTransitionOptions | string;
   drawingPageStyleName?: string;
+  /** ODF presentation page layout referenced directly by this slide. */
+  presentationPageLayoutName?: string;
   odpNodes?: OdpSlideNodeOptions[];
 }
 
