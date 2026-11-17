@@ -27,12 +27,13 @@ import { parseParagraph, textBodyXml, type OdpMeasureTextSegmentKind } from "./t
 
 type Length = number | `${number}${"mm" | "cm" | "in" | "pt" | "pc" | "pi" | "px"}`;
 type Distance = Length | `${number}%`;
+type VectorCoordinate = Length | `${number}`;
 
 /** ODF three-dimensional coordinate expressed as structured lengths. */
 export interface OdpVector3DOptions {
-  x: Length;
-  y: Length;
-  z: Length;
+  x: VectorCoordinate;
+  y: VectorCoordinate;
+  z: VectorCoordinate;
 }
 
 /** Shared drawing identity, geometry, style, anchoring, and presentation fields. */
@@ -1596,7 +1597,12 @@ function parseData(element: Element, path: string): OdpDataReferenceOptions {
 }
 
 function parseVector(value: string, path: string): OdpVector3DOptions {
-  const parts = value.trim().split(/\s+/u);
+  const normalized = value.trim();
+  const vector =
+    normalized.startsWith("(") && normalized.endsWith(")")
+      ? normalized.slice(1, -1).trim()
+      : normalized;
+  const parts = vector.split(/\s+/u);
   if (parts.length !== 3) {
     throw new OdpParseError(
       "Vector must contain three lengths",
@@ -1607,15 +1613,26 @@ function parseVector(value: string, path: string): OdpVector3DOptions {
     );
   }
   return {
-    x: parseLength(parts[0]!, path),
-    y: parseLength(parts[1]!, path),
-    z: parseLength(parts[2]!, path),
+    x: parseVectorCoordinate(parts[0]!, path),
+    y: parseVectorCoordinate(parts[1]!, path),
+    z: parseVectorCoordinate(parts[2]!, path),
   };
 }
 
 function vectorAttributes(value: OdpVector3DOptions | undefined): string | undefined {
   if (value === undefined) return undefined;
-  return [odfLength(value.x), odfLength(value.y), odfLength(value.z)].join(" ");
+  return `(${[vectorCoordinate(value.x), vectorCoordinate(value.y), vectorCoordinate(value.z)].join(" ")})`;
+}
+
+function parseVectorCoordinate(value: string, path: string): VectorCoordinate {
+  return /^-?(?:\d+(?:\.\d*)?|\.\d+)$/u.test(value)
+    ? (value as `${number}`)
+    : parseLength(value, path);
+}
+
+function vectorCoordinate(value: VectorCoordinate): string {
+  if (typeof value === "string" && /^-?(?:\d+(?:\.\d*)?|\.\d+)$/u.test(value)) return value;
+  return odfLength(value as Length)!;
 }
 
 function parseViewBox(element: Element, path: string): [number, number, number, number] {

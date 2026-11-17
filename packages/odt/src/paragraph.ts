@@ -32,7 +32,9 @@ import type { Element } from "@office-open/xml";
 import { addCharacterStyle, addParagraphStyle, characterProperties } from "./automatic-styles";
 import {
   assertElementNames,
+  closeBookmark,
   malformedOdtElement,
+  registerBookmarkStart,
   unknownOdtElement,
   type ParseContext,
 } from "./body";
@@ -1593,19 +1595,19 @@ export function parseRuns(
         const decoded = canonicalBookmarkName(sourceName, bookmarkDiagnostic);
         const name = decoded.name;
         if (!name) throw unknownOdtElement(child);
-        const existingId = context.bookmarkIds.get(name);
         const encodedId = /^(?:bookmark-)?(\d+)$/.exec(
-          attributeString(child, "text:id") ??
-            attributeString(child, "xml:id") ??
+          attributeString(child, "xml:id") ??
             (decoded.encodedId !== undefined ? String(decoded.encodedId) : ""),
         )?.[1];
-        if (existingId !== undefined && sourceName === name && encodedId !== String(existingId)) {
-          throw unknownOdtElement(child);
-        }
         if (encodedId !== undefined) parseBookmarkId(encodedId, bookmarkDiagnostic);
-        const id = decoded.encodedId ?? existingId ?? bookmarkRunId(context, name);
-        if (existingId === undefined) trackBookmarkId(context, name, id);
-        if (sourceName !== name) trackBookmarkId(context, sourceName, id);
+        const id = registerBookmarkStart(
+          context,
+          sourceName,
+          name,
+          encodedId === undefined
+            ? decoded.encodedId
+            : parseBookmarkId(encodedId, bookmarkDiagnostic),
+        );
         return [{ bookmarkStart: { id, name } }];
       }
       if (child.name === "text:bookmark-end" || child.name === "text:reference-mark-end") {
@@ -1614,8 +1616,9 @@ export function parseRuns(
           elementName: child.name,
         };
         const sourceName = attributeString(child, "text:name") ?? "";
-        const name = canonicalBookmarkName(sourceName, bookmarkDiagnostic).name;
-        const id = context.bookmarkIds.get(sourceName) ?? context.bookmarkIds.get(name);
+        const decoded = canonicalBookmarkName(sourceName, bookmarkDiagnostic);
+        const name = decoded.name;
+        const id = closeBookmark(context, sourceName, name, decoded.encodedId);
         if (!name) throw unknownOdtElement(child);
         if (id === undefined) {
           const allocated = bookmarkRunId(context, name);
@@ -1650,6 +1653,27 @@ export function parseRuns(
           };
           resumeAfter = endIndex;
           return formatChangeChildren(parseRuns(changedElement, context), revision);
+        }
+        if (change?.kind === "deletion") {
+          if (endIndex < 0) throw unknownOdtElement(child);
+          const changedElement: Element = {
+            ...nodes[endIndex]!,
+            elements: nodes.slice(index + 1, endIndex),
+          };
+          const parsedChildren = parseRuns(changedElement, context).filter(isTrackChangeChild);
+          if (parsedChildren.length !== (changedElement.elements ?? []).length)
+            throw unknownOdtElement(child);
+          resumeAfter = endIndex;
+          return [
+            {
+              deletion: {
+                id: change.id,
+                author: change.author,
+                date: change.date,
+                children: parsedChildren,
+              },
+            },
+          ];
         }
         if (change?.kind !== "insertion") throw unknownOdtElement(child);
         if (endIndex < 0) {
@@ -1712,9 +1736,17 @@ export function parseRuns(
       if (child.name === "text:change") {
         const id = attributeString(child, "text:change-id") ?? "";
         const change = context.changeAlternatives.get(`${id}:deletion`) ?? context.changes.get(id);
+        if (change === undefined && context.deletedContentDepth > 0)
+          return [{ deletion: { author: "", children: [] } }];
         if (change?.kind !== "deletion") throw unknownOdtElement(child);
         return (change.children ?? []).map((deletedParagraph) => {
-          const parsedRuns = parseRuns(deletedParagraph, context);
+          context.deletedContentDepth += 1;
+          let parsedRuns: (string | RunOptions | ParagraphChild)[];
+          try {
+            parsedRuns = parseRuns(deletedParagraph, context);
+          } finally {
+            context.deletedContentDepth -= 1;
+          }
           const parsedChildren = parsedRuns.filter(isTrackChangeChild);
           if (parsedChildren.length !== parsedRuns.length) throw unknownOdtElement(child);
           return {
@@ -1773,7 +1805,7 @@ export function parseRuns(
           throw new OdtParseError(
             `content.xml: variable ${value.name}: declared ${expected}, set ${value.valueType}`,
             "content.xml",
-            `/office:document-content/office:body/office:text/text:variable-set`,
+            "/office:document-content/office:body/office:text/text:variable-set",
             value.name,
             "invalid-variable-value-type",
           );

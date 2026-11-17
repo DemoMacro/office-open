@@ -43,6 +43,79 @@ describe("ODP codec", () => {
     expect(regenerated.slides?.[0]).toMatchObject({ name: "Overview", master: "Master" });
   });
 
+  it("round-trips canonical master children", async () => {
+    const source: OdpPresentationOptions = {
+      masters: [
+        {
+          name: "Master",
+          children: [
+            {
+              shape: {
+                id: 7,
+                name: "MasterBox",
+                x: 914400,
+                y: 914400,
+                width: 1828800,
+                height: 914400,
+                properties: { geometry: "rect" },
+              },
+            },
+          ],
+        },
+      ],
+      slides: [{ master: "Master" }],
+    };
+    const parsed = await parsePresentation(await generatePresentation(source));
+    expect(parsed.masters?.find((master) => master.name === "Master")?.children).toMatchObject([
+      { shape: { name: "MasterBox", id: 7, x: 914400, y: 914400 } },
+    ]);
+  });
+
+  it("rejects master headers without a canonical presentation mapping", async () => {
+    const source = generateOcf("application/vnd.oasis.opendocument.presentation", {
+      "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:presentation/></office:body></office:document-content>`,
+      "styles.xml": `<?xml version="1.0"?><office:document-styles ${ODF_NAMESPACES}><office:automatic-styles/><office:master-styles><style:master-page style:name="Master"><style:header><text:p>Header text</text:p></style:header></style:master-page></office:master-styles></office:document-styles>`,
+    });
+    await expect(parsePresentation(source)).rejects.toMatchObject({
+      part: "styles.xml",
+      path: "/office:document-styles/office:master-styles/style:master-page/style:header",
+      reason: "unsupported-master-header-footer",
+    });
+  });
+
+  it("rejects LibreOffice master theme extensions without an ODF mapping", async () => {
+    const source = generateOcf("application/vnd.oasis.opendocument.presentation", {
+      "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:presentation/></office:body></office:document-content>`,
+      "styles.xml": `<?xml version="1.0"?><office:document-styles ${ODF_NAMESPACES}><office:automatic-styles/><office:master-styles><style:master-page style:name="Master"><loext:theme loext:name="Office">\n<loext:theme-colors loext:name="LibreOffice">\n<loext:color loext:name="accent1" loext:color="#18a303"/><loext:color loext:name="followed-hyperlink" loext:color="#551a8b"/>\n</loext:theme-colors>\n</loext:theme></style:master-page></office:master-styles></office:document-styles>`,
+    });
+    await expect(parsePresentation(source)).rejects.toMatchObject({
+      reason: "unsupported-odf-theme",
+      part: "styles.xml",
+    });
+  });
+
+  it("rejects LibreOffice master theme extensions", async () => {
+    const source = generateOcf("application/vnd.oasis.opendocument.presentation", {
+      "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:presentation/></office:body></office:document-content>`,
+      "styles.xml": `<?xml version="1.0"?><office:document-styles ${ODF_NAMESPACES}><office:automatic-styles/><office:master-styles><style:master-page style:name="Master"><loext:theme loext:name="Office" loext:unknown="lost"><loext:theme-colors loext:name="LibreOffice"/></loext:theme></style:master-page></office:master-styles></office:document-styles>`,
+    });
+    await expect(parsePresentation(source)).rejects.toMatchObject({
+      part: "styles.xml",
+      reason: "unsupported-odf-theme",
+    });
+  });
+
+  it("reports unknown master children in styles.xml", async () => {
+    const source = generateOcf("application/vnd.oasis.opendocument.presentation", {
+      "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:presentation/></office:body></office:document-content>`,
+      "styles.xml": `<?xml version="1.0"?><office:document-styles ${ODF_NAMESPACES}><office:automatic-styles/><office:master-styles><style:master-page style:name="Master"><draw:unmapped/></style:master-page></office:master-styles></office:document-styles>`,
+    });
+    await expect(parsePresentation(source)).rejects.toMatchObject({
+      part: "styles.xml",
+      path: "/office:document-styles/office:master-styles/style:master-page/draw:unmapped",
+    });
+  });
+
   it("round-trips a typed slide transition", async () => {
     const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:presentation><draw:page><anim:par><anim:transitionFilter smil:type="fade" smil:subtype="crossfade" smil:dur="1s"/></anim:par></draw:page></office:presentation></office:body></office:document-content>`;
     const parsed = await parsePresentation(

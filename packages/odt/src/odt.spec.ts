@@ -591,7 +591,7 @@ describe("ODT canonical projection", () => {
     await expect(
       parseDocument(
         odtPackage(
-          "<text:bookmark-start text:id='9007199254740993' text:name='unsafe'/>" +
+          "<text:bookmark-start xml:id='bookmark-9007199254740993' text:name='unsafe'/>" +
             "<text:bookmark-end text:name='unsafe'/>",
         ),
       ),
@@ -607,7 +607,7 @@ describe("ODT canonical projection", () => {
     await expect(
       parseDocument(
         odtPackage(
-          "<text:bookmark-start text:id='9007199254740991' text:name='maximum'/>" +
+          "<text:bookmark-start xml:id='bookmark-9007199254740991' text:name='maximum'/>" +
             "<text:bookmark-start text:name='overflow'/>" +
             "<text:bookmark-end text:name='overflow'/>",
         ),
@@ -1184,11 +1184,11 @@ describe("ODT canonical projection", () => {
     expect(children).toEqual({
       paragraph: {
         children: [
-          { bookmarkStart: { id: 1, name: "inline target" } },
-          { bookmarkStart: { id: 2, name: "reference target" } },
+          { bookmarkStart: { id: 7, name: "inline target" } },
+          { bookmarkStart: { id: 8, name: "reference target" } },
           "marked",
-          { bookmarkEnd: { id: 2 } },
-          { bookmarkEnd: { id: 1 } },
+          { bookmarkEnd: { id: 8 } },
+          { bookmarkEnd: { id: 7 } },
         ],
       },
     });
@@ -1359,14 +1359,21 @@ describe("ODT canonical projection", () => {
         )
       ).reason,
     ).toContain("not allowed");
-    expect(
-      (
-        await parseBodyError(
-          "<text:bookmark-start text:name='same'/><text:bookmark-start text:name='same'/>",
-          "text:bookmark-start",
-        )
-      ).reason,
-    ).toContain("no canonical");
+    const duplicateBookmarks = await parseDocument(
+      odtPackage(
+        "<text:p><text:bookmark-start text:name='same'/><text:bookmark-start text:name='same'/><text:bookmark-end text:name='same'/><text:bookmark-end text:name='same'/></text:p>",
+      ),
+    );
+    expect(duplicateBookmarks.sections[0]?.children[0]).toMatchObject({
+      paragraph: {
+        children: [
+          { bookmarkStart: { id: 1, name: "same" } },
+          { bookmarkStart: { id: 2, name: "same" } },
+          { bookmarkEnd: { id: 1 } },
+          { bookmarkEnd: { id: 2 } },
+        ],
+      },
+    });
     expect(
       (await parseBodyError("<text:bookmark-end text:name='missing'/>", "text:bookmark-end"))
         .reason,
@@ -1414,7 +1421,7 @@ describe("ODT canonical projection", () => {
     );
     expect(parsed.sections[0]?.children[0]).toEqual({
       paragraph: {
-        children: [{ bookmarkStart: { id: 1, name: "bookmark-7" } }, { bookmarkEnd: { id: 1 } }],
+        children: [{ bookmarkStart: { id: 7, name: "bookmark-7" } }, { bookmarkEnd: { id: 7 } }],
       },
     });
   });
@@ -1599,15 +1606,10 @@ describe("ODT linked and revision boundaries", () => {
     });
     const regenerated = await parseDocument(await generateDocument(parsed));
     expect(regenerated.variableDeclarations).toEqual(parsed.variableDeclarations);
-    expect(
-      (
-        await parseBodyError(
-          body.replace("office:value-type='date'/>", "office:value-type='float'/>"),
-          "ReportDate",
-          "invalid-variable-value-type",
-        )
-      ).reason,
-    ).toBe("invalid-variable-value-type");
+    const mismatched = parseDocument(
+      odtPackage(body.replace("office:value-type='date'/>", "office:value-type='float'/>")),
+    );
+    await expect(mismatched).rejects.toMatchObject({ reason: "invalid-variable-value-type" });
   });
 
   it("round-trips a body-level format change range", async () => {

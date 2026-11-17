@@ -121,7 +121,9 @@ const ODT_DOCUMENT: DocumentOptions = {
           paragraph: {
             alignment: "center",
             children: [
+              { bookmarkStart: { id: 7, name: "Schema bookmark" } },
               { text: "Bold", bold: true },
+              { bookmarkEnd: { id: 7 } },
               { text: " and " },
               { text: "italic", italic: true },
             ],
@@ -158,6 +160,23 @@ const ODS_WORKBOOK: WorkbookOptions = {
 
 const ODP_PRESENTATION: PresentationOptions = {
   size: { width: 9144000, height: 6858000 },
+  masters: [
+    {
+      name: "Master",
+      children: [
+        {
+          shape: {
+            name: "Master shape",
+            x: 914400,
+            y: 914400,
+            width: 914400,
+            height: 457200,
+            properties: { geometry: "rect" },
+          },
+        },
+      ],
+    },
+  ],
   slides: [
     {
       forms: ODF_FORMS,

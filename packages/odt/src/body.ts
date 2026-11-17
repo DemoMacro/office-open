@@ -155,7 +155,9 @@ export interface ParseContext {
   comments: NonNullable<DocumentOptions["comments"]>;
   annotationIds: Map<string, number>;
   bookmarkIds: Map<string, number>;
+  bookmarkOpenIds: Map<string, number[]>;
   bookmarkIdAllocator: { value: number };
+  deletedContentDepth: number;
   indexAutoMarkFile?: import("./options").OdtIndexAutoMarkFileOptions;
   pendingFormatChanges: Map<string, import("./paragraph").ChangedProperties>;
   sectionSources: Map<string, import("./options").OdtSectionSourceOptions>;
@@ -509,7 +511,9 @@ function parseOdtPackage(data: Uint8Array): OdtDocumentOptions {
     comments: [],
     annotationIds: new Map(),
     bookmarkIds: new Map(),
+    bookmarkOpenIds: new Map(),
     bookmarkIdAllocator: { value: 0 },
+    deletedContentDepth: 0,
     pendingFormatChanges: new Map(),
     sectionSources: new Map(),
     changes: new Map(),
@@ -1037,21 +1041,19 @@ export function parseBlocks(
       const decoded = canonicalBookmarkName(sourceName, bookmarkDiagnostic);
       const name = decoded.name;
       if (!name) throw unknownOdtElement(element);
-      const existingId = context.bookmarkIds.get(name);
       const encodedId = /^(?:bookmark-)?(\d+)$/.exec(
-        attributeString(element, "text:id") ??
-          attributeString(element, "xml:id") ??
+        attributeString(element, "xml:id") ??
           (decoded.encodedId !== undefined ? String(decoded.encodedId) : ""),
       )?.[1];
-      if (existingId !== undefined && sourceName === name && encodedId !== String(existingId))
-        throw unknownOdtElement(element);
       if (encodedId !== undefined) parseBookmarkId(encodedId, bookmarkDiagnostic);
-      const id =
-        decoded.encodedId ??
-        existingId ??
-        (encodedId ? parseBookmarkId(encodedId, bookmarkDiagnostic) : nextBookmarkId(context));
-      if (existingId === undefined) trackBookmarkId(context, name, id);
-      if (sourceName !== name) trackBookmarkId(context, sourceName, id);
+      const id = registerBookmarkStart(
+        context,
+        sourceName,
+        name,
+        encodedId === undefined
+          ? decoded.encodedId
+          : parseBookmarkId(encodedId, bookmarkDiagnostic),
+      );
       push({
         bookmarkStart: { id, name },
       });
@@ -1063,8 +1065,9 @@ export function parseBlocks(
         elementName: element.name,
       };
       const sourceName = attributeString(element, "text:name") ?? "";
-      const name = canonicalBookmarkName(sourceName, bookmarkDiagnostic).name;
-      const id = context.bookmarkIds.get(sourceName) ?? context.bookmarkIds.get(name);
+      const decoded = canonicalBookmarkName(sourceName, bookmarkDiagnostic);
+      const name = decoded.name;
+      const id = closeBookmark(context, sourceName, name, decoded.encodedId);
       if (!name || id === undefined) throw unknownOdtElement(element);
       push({
         bookmarkEnd: { id },
@@ -1126,6 +1129,23 @@ export function parseBlocks(
       }
       if (endIndex < 0) endIndex = elements.length;
       const revision = { id: change.id, author: change.author, date: change.date };
+      if (change.kind === "deletion") {
+        if (endIndex < 0) throw unknownOdtElement(element);
+        const changed = parseBlocks(
+          elements.slice(elementIndex + 1, endIndex),
+          context,
+          listDepth,
+          listState,
+          `${sourcePath}/${element.name}`,
+        );
+        resumeAfter = endIndex;
+        if (changed.length === 0) {
+          push({ paragraph: { children: [{ deletion: { ...revision, children: [] } }] } });
+        } else {
+          push(...trackRevisionBlocks("deletion", revision, changed));
+        }
+        continue;
+      }
       const changed = parseBlocks(
         element.elements ?? hoistedElements.slice(elementIndex + 1, endIndex),
         context,
@@ -1291,6 +1311,39 @@ function parseFrame(element: Element, context: ParseContext): SectionChild | und
 
 export function blockChildren(children: SectionChild[]): BlockContentChild[] {
   return children.filter((child): child is BlockContentChild => !("altChunk" in child));
+}
+
+export function registerBookmarkStart(
+  context: ParseContext,
+  sourceName: string,
+  name: string,
+  encodedId?: number,
+): number {
+  const id = encodedId ?? nextBookmarkId(context);
+  trackBookmarkId(context, name, id);
+  if (sourceName !== name) trackBookmarkId(context, sourceName, id);
+  const openIds = context.bookmarkOpenIds.get(sourceName) ?? [];
+  openIds.push(id);
+  context.bookmarkOpenIds.set(sourceName, openIds);
+  return id;
+}
+
+export function closeBookmark(
+  context: ParseContext,
+  sourceName: string,
+  name: string,
+  encodedId?: number,
+): number | undefined {
+  const openIds = context.bookmarkOpenIds.get(sourceName);
+  if (openIds && openIds.length > 0) {
+    const index = encodedId === undefined ? 0 : openIds.indexOf(encodedId);
+    if (index >= 0) {
+      const [id] = openIds.splice(index, 1);
+      if (openIds.length === 0) context.bookmarkOpenIds.delete(sourceName);
+      return id;
+    }
+  }
+  return encodedId ?? context.bookmarkIds.get(sourceName) ?? context.bookmarkIds.get(name);
 }
 
 export function unknownOdtElement(element: Element): OdtParseError {
