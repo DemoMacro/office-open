@@ -742,7 +742,10 @@ export function definedNamesXml(definedNames: WorkbookOptions["definedNames"]): 
 }
 
 export function stylesXml(graphicResources: readonly string[] = []): string {
-  return `<?xml version="1.0" encoding="UTF-8"?><office:document-styles ${NAMESPACES} office:version="1.3"><office:styles>${graphicResources.join("")}</office:styles></office:document-styles>`;
+  const commonStyles = graphicResources.length
+    ? `<office:styles>${graphicResources.join("")}</office:styles>`
+    : "<office:styles/>";
+  return `<?xml version="1.0" encoding="UTF-8"?><office:document-styles ${NAMESPACES} office:version="1.3">${commonStyles}</office:document-styles>`;
 }
 
 export function rejectUnknownSpreadsheetChildren(
