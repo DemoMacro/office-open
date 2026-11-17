@@ -245,13 +245,14 @@ export function parseDrawingGroup(
       "unsupported-group-transform",
     );
   const style = graphicStyles.get(attributeString(element, "draw:style-name") ?? "");
-  if (graphicFill(style) || graphicOutline(style))
+  const groupFill = graphicFill(style);
+  if (graphicOutline(style))
     throw new OdsParseError(
-      "ODS group fill and outline have no equivalent in the canonical group model",
+      "ODS group outline has no equivalent in the canonical group model",
       "content.xml",
       path,
       "draw:style-name",
-      "unsupported-group-style",
+      "unsupported-group-outline",
     );
   const x = lengthToEmu(attributeString(element, "svg:x"));
   const y = lengthToEmu(attributeString(element, "svg:y"));
@@ -335,6 +336,7 @@ export function parseDrawingGroup(
       childOffsetY: 0,
       childOffsetPresent: true,
       childExtentPresent: width !== undefined || height !== undefined,
+      ...(groupFill === undefined ? {} : { fill: groupFill }),
     },
     ...(shapes.length ? { shapes } : {}),
     ...(groups.length ? { groups } : {}),
@@ -630,6 +632,7 @@ export function drawingGroupXml(group: GroupOptions, styles: string[]): string {
     "draw:g",
     {
       "draw:name": group.name,
+      "draw:style-name": pushShapeStyle(group.properties.fill, undefined, styles),
       "draw:z-index": group.zOrder,
       "draw:transform": odfGroupTransform(group.properties.rotation),
       "svg:x": emuToLength(group.absoluteX ?? group.colOffset ?? group.properties.x ?? 0),
