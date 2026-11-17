@@ -66,6 +66,25 @@ describe("ODS codec", () => {
     });
   });
 
+  it("rejects standalone OOXML pivot caches", async () => {
+    await expect(
+      generateWorkbook({
+        pivotCaches: [
+          {
+            mode: "definition",
+            cacheId: 1,
+            definitionPath: "xl/pivotCache/pivotCacheDefinition1.xml",
+            definition: {},
+          },
+        ],
+        worksheets: [],
+      }),
+    ).rejects.toMatchObject({
+      name: "OdsGenerateError",
+      reason: "pivot-cache-not-representable",
+    });
+  });
+
   it("compresses identical adjacent rows without losing reparse positions", async () => {
     const row: WorksheetOptions["rows"] = [{ cells: [{ value: "Shared" }, { value: "Shared" }] }];
     const generated = await generateWorkbook({ worksheets: [{ rows: [...row, ...row, ...row] }] });

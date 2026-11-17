@@ -97,6 +97,15 @@ export const NAMESPACES = [
 
 function generateOdsPackage(options: OdsWorkbookOptions): Uint8Array {
   const { packageManifest, packageMembers, styleResources, packageMediaType } = options;
+  if (options.pivotCaches?.length) {
+    throw new OdsGenerateError(
+      "ODS cannot represent OOXML pivot cache definitions independently of Data Pilot tables",
+      "content.xml",
+      "/office:document-content/office:body/office:spreadsheet/table:data-pilot-tables",
+      "table:data-pilot-tables",
+      "pivot-cache-not-representable",
+    );
+  }
   const mimeType = packageMediaType ?? MIME;
   const styles: string[] = styleResourcesXml(styleResources);
   let chartIndex = 0;

@@ -1362,6 +1362,30 @@ function odsFilterOperator(operator: CustomFilterOperator | undefined): string {
 
 function sortXml(table: TableOptions, worksheetName: string): string {
   const sortState = table.sortState!;
+  const unsupportedState =
+    sortState.columnSort !== undefined || sortState.sortMethod !== undefined
+      ? "sort state has fields that ODF cannot represent"
+      : sortState.conditions.some(
+            (condition) => condition.sortBy !== undefined && condition.sortBy !== "value",
+          ) ||
+          sortState.conditions.some(
+            (condition) =>
+              condition.customList !== undefined ||
+              condition.dxfId !== undefined ||
+              condition.iconSet !== undefined ||
+              condition.iconId !== undefined,
+          )
+        ? "sort condition has fields that ODF cannot represent"
+        : undefined;
+  if (unsupportedState) {
+    throw new OdsGenerateError(
+      unsupportedState,
+      "content.xml",
+      "/office:document-content/office:body/office:spreadsheet/table:database-ranges/table:database-range/table:sort",
+      "table:sort",
+      "sort-state-not-representable",
+    );
+  }
   const rangeStart = /^([A-Z]+)\d+/u.exec(sortState.ref || table.ref);
   if (!rangeStart) {
     throw new OdsGenerateError(
@@ -1443,6 +1467,14 @@ export function parseConditionalFormats(
     if (dataBar) rules.push(dataBarRule(dataBar));
     const iconSet = childNamed(format, "calcext:icon-set");
     if (iconSet) rules.push(iconSetRule(iconSet));
+    if (childNamed(format, "calcext:date-is")) {
+      throw unknownOdsElement(
+        format,
+        CONTENT_PATH,
+        "calcext:date-is",
+        "date-based conditional formatting has no canonical rule mapping",
+      );
+    }
     if (!rules.length) continue;
     result.push({ sqref: target?.address ?? sheetName, rules });
   }

@@ -324,6 +324,46 @@ describe("ODS spreadsheet semantics", () => {
     );
   });
 
+  it("rejects OOXML-only sort fields instead of silently dropping them", async () => {
+    await expect(
+      generateWorkbook({
+        worksheets: [
+          {
+            name: "Sheet1",
+            tables: [
+              {
+                displayName: "Database",
+                ref: "A1:B2",
+                columns: [],
+                sortState: {
+                  ref: "A1:B2",
+                  sortMethod: "pinYin",
+                  conditions: [{ ref: "A1", sortBy: "cellColor" }],
+                },
+              },
+            ],
+          },
+        ],
+      }),
+    ).rejects.toMatchObject({
+      name: "OdsGenerateError",
+      reason: "sort-state-not-representable",
+    });
+  });
+
+  it("rejects date-based conditional formatting without a canonical ODF mapping", async () => {
+    await expect(
+      parseWorkbook(
+        packageWith(
+          '<table:table table:name="Sheet1"><table:table-row><table:table-cell/></table:table-row><calcext:conditional-formats><calcext:conditional-format calcext:target-range-address="Sheet1.A1"><calcext:date-is calcext:date-is="today"/></calcext:conditional-format></calcext:conditional-formats></table:table>',
+        ),
+      ),
+    ).rejects.toMatchObject({
+      name: "OdsParseError",
+      reason: "date-based conditional formatting has no canonical rule mapping",
+    });
+  });
+
   it("accepts ODF set filters without a redundant scalar value", async () => {
     const source = generateOcf("application/vnd.oasis.opendocument.spreadsheet", {
       "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:spreadsheet><table:table table:name="Data"><table:table-row><table:table-cell/></table:table-row></table:table><table:database-ranges><table:database-range table:name="Database" table:target-range-address="Data.A1:A10"><table:filter><table:filter-condition table:field-number="0" table:operator="="><table:filter-set-item table:value="East"/><table:filter-set-item table:value="West"/></table:filter-condition></table:filter></table:database-range></table:database-ranges></office:spreadsheet></office:body></office:document-content>`,
