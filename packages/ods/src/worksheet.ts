@@ -39,6 +39,7 @@ import { cellDecorationXml } from "./comments";
 import { cellGraphicXml, type OdsChartFrame } from "./drawing-chart";
 import { OdsGenerateError, OdsParseError } from "./error";
 import { odfDateValue } from "./numbering";
+import type { OdsWorksheetOptions } from "./options";
 import {
   cellShapeXml,
   conditionalFormatsXml,
@@ -210,7 +211,7 @@ function isLargeEmptyRepeat(repeat: number, hasData: boolean): boolean {
 }
 
 export function worksheetXml(
-  worksheet: WorksheetOptions,
+  worksheet: OdsWorksheetOptions,
   index: number,
   styles: string[],
   embeddedCharts: OdsChartFrame[],
@@ -491,10 +492,37 @@ export function worksheetXml(
       ),
     );
   const selectionXml = worksheet.selection?.length ? gnumericSelectionXml(worksheet.selection) : [];
+  const tableSourceXml = worksheet.tableSource
+    ? xmlElement("table:table-source", {
+        "table:mode": worksheet.tableSource.mode,
+        "table:table-name": worksheet.tableSource.tableName,
+        "xlink:type": "simple",
+        "xlink:href": worksheet.tableSource.href,
+        "xlink:actuate": worksheet.tableSource.actuate,
+        "table:filter-name": worksheet.tableSource.filterName,
+        "table:filter-options": worksheet.tableSource.filterOptions,
+        "table:refresh-delay": worksheet.tableSource.refreshDelay,
+      })
+    : "";
+  const scenarioXml = worksheet.scenario
+    ? xmlElement("table:scenario", {
+        "table:scenario-ranges": worksheet.scenario.ranges,
+        "table:is-active": worksheet.scenario.active,
+        "table:display-border": worksheet.scenario.displayBorder,
+        "table:border-color": worksheet.scenario.borderColor,
+        "table:copy-back": worksheet.scenario.copyBack,
+        "table:copy-styles": worksheet.scenario.copyStyles,
+        "table:copy-formulas": worksheet.scenario.copyFormulas,
+        "table:comment": worksheet.scenario.comment,
+        "table:protected": worksheet.scenario.protected,
+      })
+    : "";
   return xmlElement(
     "table:table",
     { "table:name": sheetName, "table:style-name": tableStyleName },
     [
+      tableSourceXml,
+      scenarioXml,
       formsXml,
       ...(frames.length || topLevelShapes.length || worksheet.groups?.length
         ? [
@@ -827,7 +855,7 @@ export function worksheet(
   cellStyles: Map<string, StyleOptions>,
   graphicStyles: Map<string, GraphicStyle> = new Map(),
   textStyles: Map<string, RichTextRunPropertiesOptions> = new Map(),
-): WorksheetOptions {
+): OdsWorksheetOptions {
   const comments: CommentOptions[] = [];
   const hyperlinks: HyperlinkOptions[] = [];
   const mergeCells: MergeCellOptions[] = [];
@@ -915,6 +943,7 @@ export function worksheet(
   const selection = gnumericSelection(table);
   return {
     ...worksheetOptions,
+    ...parseTableFeatures(table),
     ...(selection ? { selection } : {}),
     ...(comments.length ? { comments } : {}),
     ...(mergeCells.length ? { mergeCells } : {}),
@@ -922,6 +951,88 @@ export function worksheet(
     ...(groups.length ? { groups } : {}),
     ...(hyperlinks.length ? { hyperlinks } : {}),
   };
+}
+
+function parseTableFeatures(table: Element): Pick<OdsWorksheetOptions, "scenario" | "tableSource"> {
+  const scenario = childNamed(table, "table:scenario");
+  const source = childNamed(table, "table:table-source");
+  return {
+    ...(scenario
+      ? {
+          scenario: {
+            ranges: requiredAttribute(scenario, "table:scenario-ranges"),
+            active: requiredBoolean(scenario, "table:is-active"),
+            ...optionalBoolean(scenario, "table:display-border", "displayBorder"),
+            ...(attributeString(scenario, "table:border-color")
+              ? { borderColor: attributeString(scenario, "table:border-color") }
+              : {}),
+            ...optionalBoolean(scenario, "table:copy-back", "copyBack"),
+            ...optionalBoolean(scenario, "table:copy-styles", "copyStyles"),
+            ...optionalBoolean(scenario, "table:copy-formulas", "copyFormulas"),
+            ...(attributeString(scenario, "table:comment")
+              ? { comment: attributeString(scenario, "table:comment") }
+              : {}),
+            ...optionalBoolean(scenario, "table:protected", "protected"),
+          },
+        }
+      : {}),
+    ...(source
+      ? {
+          tableSource: {
+            href: requiredAttribute(source, "xlink:href"),
+            ...(attributeString(source, "table:mode")
+              ? { mode: attributeString(source, "table:mode") as "copy-all" | "copy-results-only" }
+              : {}),
+            ...(attributeString(source, "table:table-name")
+              ? { tableName: attributeString(source, "table:table-name") }
+              : {}),
+            ...(attributeString(source, "xlink:actuate")
+              ? { actuate: attributeString(source, "xlink:actuate") as "onRequest" }
+              : {}),
+            ...(attributeString(source, "table:filter-name")
+              ? { filterName: attributeString(source, "table:filter-name") }
+              : {}),
+            ...(attributeString(source, "table:filter-options")
+              ? { filterOptions: attributeString(source, "table:filter-options") }
+              : {}),
+            ...(attributeString(source, "table:refresh-delay")
+              ? { refreshDelay: attributeString(source, "table:refresh-delay") }
+              : {}),
+          },
+        }
+      : {}),
+  };
+}
+
+function requiredAttribute(element: Element, name: string): string {
+  const value = attributeString(element, name);
+  if (value === undefined)
+    throw unknownOdsElement(element, "/table:table", name, "required attribute is missing");
+  return value;
+}
+
+function requiredBoolean(element: Element, name: string): boolean {
+  const value = optionalBooleanValue(element, name);
+  if (value === undefined)
+    throw unknownOdsElement(element, "/table:table", name, "required boolean is missing");
+  return value;
+}
+
+function optionalBoolean(
+  element: Element,
+  attribute: string,
+  property: "displayBorder" | "copyBack" | "copyStyles" | "copyFormulas" | "protected",
+): Record<string, boolean> {
+  const value = optionalBooleanValue(element, attribute);
+  return value === undefined ? {} : { [property]: value };
+}
+
+function optionalBooleanValue(element: Element, name: string): boolean | undefined {
+  const value = attributeString(element, name);
+  if (value === undefined) return undefined;
+  if (value === "true" || value === "1") return true;
+  if (value === "false" || value === "0") return false;
+  throw unknownOdsElement(element, "/table:table", name, "invalid boolean value");
 }
 
 function gnumericSelection(table: Element): SelectionOptions[] | undefined {
@@ -1084,6 +1195,10 @@ export function validateTableChildren(table: Element): void {
     if (
       child.name === "table:table-column" ||
       child.name === "table:table-row" ||
+      child.name === "table:title" ||
+      child.name === "table:desc" ||
+      child.name === "table:table-source" ||
+      child.name === "table:scenario" ||
       child.name === "office:forms" ||
       child.name === "table:shapes" ||
       child.name === "table:named-expressions" ||

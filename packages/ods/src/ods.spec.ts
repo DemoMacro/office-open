@@ -535,6 +535,36 @@ describe("ODS codec", () => {
     expect(regenerated.worksheets?.[0]?.hyperlinks).toEqual(parsed.worksheets?.[0]?.hyperlinks);
   });
 
+  it("round-trips ODF table scenarios and linked sources", async () => {
+    const source = generateOcf("application/vnd.oasis.opendocument.spreadsheet", {
+      "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:automatic-styles/><office:body><office:spreadsheet><table:table table:name="Sheet1"><table:table-source table:mode="copy-results-only" table:table-name="Remote" xlink:type="simple" xlink:href="https://example.com/data.csv" xlink:actuate="onRequest" table:filter-name="Rows" table:filter-options="active" table:refresh-delay="PT1H"/><table:scenario table:scenario-ranges="Sheet1.A1:B2" table:is-active="true" table:display-border="false" table:border-color="#112233" table:copy-back="true" table:copy-styles="false" table:copy-formulas="true" table:comment="Scenario" table:protected="true"/><table:table-row><table:table-cell/></table:table-row></table:table></office:spreadsheet></office:body></office:document-content>`,
+    });
+    const parsed = await parseWorkbook(source);
+    expect(parsed.worksheets?.[0]?.tableSource).toEqual({
+      href: "https://example.com/data.csv",
+      mode: "copy-results-only",
+      tableName: "Remote",
+      actuate: "onRequest",
+      filterName: "Rows",
+      filterOptions: "active",
+      refreshDelay: "PT1H",
+    });
+    expect(parsed.worksheets?.[0]?.scenario).toEqual({
+      ranges: "Sheet1.A1:B2",
+      active: true,
+      displayBorder: false,
+      borderColor: "#112233",
+      copyBack: true,
+      copyStyles: false,
+      copyFormulas: true,
+      comment: "Scenario",
+      protected: true,
+    });
+    const regenerated = await parseWorkbook(await generateWorkbook(parsed));
+    expect(regenerated.worksheets?.[0]?.tableSource).toEqual(parsed.worksheets?.[0]?.tableSource);
+    expect(regenerated.worksheets?.[0]?.scenario).toEqual(parsed.worksheets?.[0]?.scenario);
+  });
+
   it("round-trips Gnumeric selection state through canonical selections", async () => {
     const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:automatic-styles><style:style style:name="Table" style:family="table"><style:table-properties table:display="true" style:writing-mode="lr-tb" gnm:display-formulas="false" gnm:display-col-header="true" gnm:display-row-header="true"/></style:style></office:automatic-styles><office:body><office:spreadsheet><table:table table:name="Sheet1" table:style-name="Table"><table:table-row><table:table-cell/></table:table-row><gnm:selections gnm:cursor-col="8" gnm:cursor-row="176"><gnm:selection gnm:start-col="8" gnm:start-row="176" gnm:end-col="9" gnm:end-row="177"/></gnm:selections></table:table></office:spreadsheet></office:body></office:document-content>`;
     const parsed = await parseWorkbook(
