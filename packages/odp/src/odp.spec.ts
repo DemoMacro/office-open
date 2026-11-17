@@ -60,6 +60,49 @@ describe("ODP codec", () => {
     });
   });
 
+  it("maps ODF paragraph styles to canonical text paragraph properties", async () => {
+    const source = generateOcf("application/vnd.oasis.opendocument.presentation", {
+      "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:automatic-styles><style:style style:name="Centered" style:family="paragraph"><style:paragraph-properties fo:text-align="center" fo:margin-left="1cm" fo:margin-top="2pt" fo:line-height="150%"/></style:style></office:automatic-styles><office:body><office:presentation><draw:page><draw:custom-shape svg:x="1cm" svg:y="1cm" svg:width="4cm" svg:height="2cm"><draw:enhanced-geometry draw:type="rectangle"/><text:p text:style-name="Centered">Styled text</text:p></draw:custom-shape></draw:page></office:presentation></office:body></office:document-content>`,
+    });
+    const parsed = await parsePresentation(source);
+    expect(parsed.slides?.[0]?.children?.[0]).toMatchObject({
+      shape: {
+        textBody: {
+          paragraphs: [
+            {
+              text: "Styled text",
+              properties: {
+                alignment: "center",
+                marginIndent: 360000,
+                spaceBefore: 2,
+                lineSpacingPercent: 150,
+              },
+            },
+          ],
+        },
+      },
+    });
+
+    const regenerated = await parsePresentation(await generatePresentation(parsed));
+    expect(regenerated.slides?.[0]?.children?.[0]).toMatchObject({
+      shape: {
+        textBody: {
+          paragraphs: [
+            {
+              text: "Styled text",
+              properties: {
+                alignment: "center",
+                marginIndent: 360000,
+                spaceBefore: 2,
+                lineSpacingPercent: 150,
+              },
+            },
+          ],
+        },
+      },
+    });
+  });
+
   it("round-trips notes paragraphs and line paint through canonical shapes", async () => {
     const parsed = await parsePresentation(
       await generatePresentation({

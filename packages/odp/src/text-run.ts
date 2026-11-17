@@ -4,12 +4,13 @@ import type {
   TextBreakOptions,
   TextBodyOptions,
   TextRunOptions,
+  TextParagraphPropertiesOptions,
 } from "@office-open/core";
 import { attributeNumber, attributeString, escapeText, textOf, xmlElement } from "@office-open/odf";
 import type { Element } from "@office-open/xml";
 
 import { OdpGenerateError, unknownSlideChild } from "./error";
-import { addTextStyle } from "./styles";
+import { addParagraphStyle, addTextStyle } from "./styles";
 
 export interface TextProperties {
   bold?: boolean;
@@ -20,6 +21,7 @@ export interface TextProperties {
   fill?: string;
   /** Latin font family (fo:font-family). */
   font?: string;
+  paragraph?: TextParagraphPropertiesOptions;
 }
 
 /** Semantic segment of a measurement text run inside draw:measure. */
@@ -29,6 +31,9 @@ export function textBodyXml(body: TextBodyOptions | undefined, styles: string[])
   const paragraphs = body?.paragraphs ?? (body?.text !== undefined ? [body.text] : [""]);
   return paragraphs.map((paragraph) => {
     const value = typeof paragraph === "string" ? { text: paragraph } : paragraph;
+    const paragraphStyle = value.properties
+      ? addParagraphStyle(value.properties, styles)
+      : undefined;
     const children =
       value.text !== undefined && value.children === undefined
         ? [escapeText(value.text)]
@@ -47,7 +52,7 @@ export function textBodyXml(body: TextBodyOptions | undefined, styles: string[])
               ? xmlElement("text:a", { "xlink:href": textRun.hyperlink.url }, [span])
               : span;
           });
-    return xmlElement("text:p", undefined, children);
+    return xmlElement("text:p", { "text:style-name": paragraphStyle }, children);
   });
 }
 
@@ -220,6 +225,7 @@ export function parseParagraph(
   textStyles: Map<string, TextProperties>,
 ): ParagraphDescriptorOptions {
   const children: (string | TextRunOptions | TextBreakOptions)[] = [];
+  const properties = textStyles.get(attributeString(paragraph, "text:style-name") ?? "")?.paragraph;
   for (const child of paragraph.elements ?? []) {
     if (child.type === "text") children.push(String(child.text ?? ""));
     else if (child.name === "text:line-break")
@@ -263,6 +269,9 @@ export function parseParagraph(
       throw unknownSlideChild(child, `/${paragraph.name ?? "text:p"}`);
     }
   }
-  if (children.length === 1 && typeof children[0] === "string") return { text: children[0] };
-  return children.length ? { children } : { text: "" };
+  if (children.length === 1 && typeof children[0] === "string")
+    return { text: children[0], ...(properties ? { properties } : {}) };
+  return children.length
+    ? { children, ...(properties ? { properties } : {}) }
+    : { text: "", ...(properties ? { properties } : {}) };
 }

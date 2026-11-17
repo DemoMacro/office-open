@@ -1,8 +1,10 @@
+import type { TextParagraphPropertiesOptions } from "@office-open/core";
 import {
   attributeString,
   childNamed,
   childrenNamed,
   emuToLength,
+  lengthToEmu,
   parseStyleMaps,
   parseStyleProperty,
   removeStylePropertyAttributes,
@@ -28,6 +30,37 @@ export function addTextStyle(properties: TextProperties, styles: string[]): stri
         "fo:font-size": properties.size ? `${properties.size}pt` : undefined,
         "fo:color": properties.fill ? `#${properties.fill}` : undefined,
         "fo:font-family": properties.font ? fontFamilyValue(properties.font) : undefined,
+      }),
+    ]),
+  );
+  return name;
+}
+
+export function addParagraphStyle(
+  properties: TextParagraphPropertiesOptions,
+  styles: string[],
+): string {
+  const name = `P${styles.length + 1}`;
+  styles.push(
+    xmlElement("style:style", { "style:name": name, "style:family": "paragraph" }, [
+      xmlElement("style:paragraph-properties", {
+        "fo:text-align": properties.alignment,
+        "fo:margin-left":
+          properties.marginIndent === undefined ? undefined : emuToLength(properties.marginIndent),
+        "fo:margin-right":
+          properties.marginRight === undefined ? undefined : emuToLength(properties.marginRight),
+        "fo:text-indent":
+          properties.indent === undefined ? undefined : emuToLength(properties.indent),
+        "fo:margin-top":
+          properties.spaceBefore === undefined ? undefined : `${properties.spaceBefore}pt`,
+        "fo:margin-bottom":
+          properties.spaceAfter === undefined ? undefined : `${properties.spaceAfter}pt`,
+        "fo:line-height":
+          properties.lineSpacingPercent === undefined
+            ? properties.lineSpacingPoints === undefined
+              ? undefined
+              : `${properties.lineSpacingPoints}pt`
+            : `${properties.lineSpacingPercent}%`,
       }),
     ]),
   );
@@ -63,13 +96,21 @@ export function addColumnStyle(width: number | string, styles: string[]): string
 
 export function parseTextStyles(container: Element | undefined): Map<string, TextProperties> {
   const result = new Map<string, TextProperties>();
+  const paragraphStyles = parseParagraphStyles([container]);
   for (const style of childrenNamed(container, "style:style")) {
-    if (attributeString(style, "style:family") !== "text") continue;
+    const familyName = attributeString(style, "style:family");
+    const styleName = attributeString(style, "style:name") ?? "";
+    if (familyName === "paragraph") {
+      const paragraph = paragraphStyles.get(styleName);
+      if (paragraph) result.set(styleName, { paragraph });
+      continue;
+    }
+    if (familyName !== "text") continue;
     const properties = childNamed(style, "style:text-properties");
     const size = attributeString(properties, "fo:font-size");
     const color = attributeString(properties, "fo:color");
     const family = attributeString(properties, "fo:font-family");
-    result.set(attributeString(style, "style:name") ?? "", {
+    result.set(styleName, {
       bold: attributeString(properties, "fo:font-weight") === "bold",
       italic: attributeString(properties, "fo:font-style") === "italic",
       underline:
@@ -79,9 +120,65 @@ export function parseTextStyles(container: Element | undefined): Map<string, Tex
       size: size?.endsWith("pt") ? Number(size.slice(0, -2)) : undefined,
       ...(color && /^#[0-9a-f]{6}$/i.test(color) ? { fill: color.slice(1) } : {}),
       ...(family ? { font: family.replace(/^(['"])(.*)\1$/, "$2") } : {}),
+      ...(paragraphStyles.has(attributeString(style, "style:name") ?? "")
+        ? { paragraph: paragraphStyles.get(attributeString(style, "style:name") ?? "") }
+        : {}),
     });
   }
   return result;
+}
+
+export function parseParagraphStyles(
+  containers: readonly (Element | undefined)[],
+): Map<string, TextParagraphPropertiesOptions> {
+  const result = new Map<string, TextParagraphPropertiesOptions>();
+  for (const container of containers) {
+    for (const style of childrenNamed(container, "style:style")) {
+      if (attributeString(style, "style:family") !== "paragraph") continue;
+      const name = attributeString(style, "style:name");
+      const source = childNamed(style, "style:paragraph-properties");
+      if (!name || !source) continue;
+      const alignment = attributeString(source, "fo:text-align");
+      const margins = [
+        ["fo:margin-left", "marginIndent"],
+        ["fo:margin-right", "marginRight"],
+        ["fo:text-indent", "indent"],
+      ] as const;
+      const properties: TextParagraphPropertiesOptions = {};
+      if (alignment === "start" || alignment === "left") properties.alignment = "left";
+      else if (alignment === "center") properties.alignment = "center";
+      else if (alignment === "end" || alignment === "right") properties.alignment = "right";
+      else if (alignment === "both" || alignment === "justify") properties.alignment = "justify";
+      for (const [attribute, field] of margins) {
+        const value = lengthToEmu(attributeString(source, attribute));
+        if (value !== undefined) properties[field] = value;
+      }
+      const before = pointValue(attributeString(source, "fo:margin-top"));
+      const after = pointValue(attributeString(source, "fo:margin-bottom"));
+      if (before !== undefined) properties.spaceBefore = before;
+      if (after !== undefined) properties.spaceAfter = after;
+      const lineHeight = attributeString(source, "fo:line-height");
+      if (lineHeight?.endsWith("%")) {
+        const value = Number(lineHeight.slice(0, -1));
+        if (Number.isFinite(value)) properties.lineSpacingPercent = value;
+      } else {
+        const value = pointValue(lineHeight);
+        if (value !== undefined) properties.lineSpacingPoints = value;
+      }
+      if (Object.keys(properties).length > 0) result.set(name, properties);
+    }
+  }
+  return result;
+}
+
+function pointValue(value: string | undefined): number | undefined {
+  if (value === undefined) return undefined;
+  if (value.endsWith("pt")) {
+    const points = Number(value.slice(0, -2));
+    return Number.isFinite(points) ? points : undefined;
+  }
+  const emu = lengthToEmu(value);
+  return emu === undefined ? undefined : emu / 12700;
 }
 
 const ODP_STYLE_PROPERTIES: Record<string, string[]> = {
