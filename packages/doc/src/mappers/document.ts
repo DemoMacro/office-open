@@ -148,7 +148,10 @@ export function parseInternal(data: Uint8Array, password?: string): DocumentOpti
   const legacy = readUint16(word, 0, "Invalid Word document: FIB is truncated") === 0xa5dc;
   if (legacy) {
     const fib = parseLegacyFib(word);
-    return { sections: [{ children: legacyChildren(parseLegacyText(word, fib)) }] };
+    return {
+      ...readSummaryInformation(reader),
+      sections: [{ children: legacyChildren(parseLegacyText(word, fib)) }],
+    };
   }
   const flags = readUint16(word, 10, "Invalid Word document: FIB is truncated");
   let tablePath = (flags & FLAG_TABLE_ONE) !== 0 ? "1Table" : "0Table";

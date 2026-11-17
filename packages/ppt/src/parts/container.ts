@@ -1,12 +1,22 @@
-import { CompoundFileReader, parseSummaryInformation } from "@office-open/core/cfb";
+import {
+  CompoundFileReader,
+  parseDocumentSummaryInformation,
+  parseSummaryInformation,
+} from "@office-open/core/cfb";
 import type { PresentationOptions } from "@office-open/pptx";
 
 import { PptParseError } from "../errors";
 
 export function readSummaryInformation(reader: CompoundFileReader): PresentationOptions {
   const path = `${String.fromCharCode(5)}SummaryInformation`;
+  const documentPath = `${String.fromCharCode(5)}DocumentSummaryInformation`;
   try {
-    return reader.entry(path) ? parseSummaryInformation(reader.read(path)) : {};
+    return {
+      ...(reader.entry(path) ? parseSummaryInformation(reader.read(path)) : {}),
+      ...(reader.entry(documentPath)
+        ? parseDocumentSummaryInformation(reader.read(documentPath))
+        : {}),
+    };
   } catch (error) {
     throw new PptParseError(
       `Invalid legacy PowerPoint summary information: ${(error as Error).message}`,

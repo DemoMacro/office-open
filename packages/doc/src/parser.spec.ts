@@ -593,7 +593,7 @@ function drawingStream(): Uint8Array {
   return data;
 }
 
-function buildLegacyDocument(): Uint8Array {
+function buildLegacyDocument(extraStreams: { path: string; data: Uint8Array }[] = []): Uint8Array {
   const word = new Uint8Array(STREAM_SIZE);
   const view = new DataView(word.buffer);
   view.setUint16(0, 0xa5dc, true);
@@ -602,7 +602,25 @@ function buildLegacyDocument(): Uint8Array {
   view.setUint32(28, 812, true);
   view.setUint32(52, 44, true);
   word.set(new TextEncoder().encode("The quick brown fox jumps over the lazy dog\r"), 768);
-  return buildContainer([{ path: "WordDocument", data: word }]);
+  return buildContainer([{ path: "WordDocument", data: word }, ...extraStreams]);
+}
+
+function documentSummaryInformation(category: string): Uint8Array {
+  const value = new Uint8Array(STREAM_SIZE);
+  const view = new DataView(value.buffer);
+  view.setUint16(0, 0xfffe, true);
+  view.setUint32(24, 1, true);
+  view.setUint32(44, 48, true);
+  view.setUint32(48, 32, true);
+  view.setUint32(52, 1, true);
+  view.setUint32(56, 2, true);
+  view.setUint32(60, 16, true);
+  view.setUint32(64, 30, true);
+  view.setUint32(68, category.length + 1, true);
+  for (let index = 0; index < category.length; index += 1) {
+    value[72 + index] = category.charCodeAt(index);
+  }
+  return value;
 }
 
 describe("legacy DOC parser", () => {
@@ -1098,6 +1116,15 @@ describe("legacy DOC parser", () => {
       { paragraph: "The quick brown fox jumps over the lazy dog" },
       { paragraph: "" },
     ]);
+  });
+
+  it("reads document summary metadata from Word 6.0/95 files", () => {
+    const path = `${String.fromCharCode(5)}DocumentSummaryInformation`;
+    const document = parseDocument(
+      buildLegacyDocument([{ path, data: documentSummaryInformation("Reports") }]),
+    );
+
+    expect(document.category).toBe("Reports");
   });
 });
 
