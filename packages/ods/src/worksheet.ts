@@ -22,6 +22,7 @@ import type {
   DetectiveOperationOptions,
   DxfOptions,
   FormulaOptions,
+  HyperlinkOptions,
   MergeCellOptions,
   RowOptions,
   RichTextOptions,
@@ -216,6 +217,7 @@ export function worksheetXml(
   dxfs: DxfOptions[] = [],
   formsXml = "",
 ): string {
+  const hyperlinks = new Map((worksheet.hyperlinks ?? []).map((link) => [link.cell, link]));
   const conditionalStyleNames = new Map<number, string>();
   for (const rule of (worksheet.conditionalFormats ?? []).flatMap((format) => format.rules)) {
     const dxfId = rule.dxfId;
@@ -368,6 +370,7 @@ export function worksheetXml(
           ...cellShapeXml(shapesByCell.get(cell.reference ?? ""), cell.reference ?? "", styles),
         ],
         validationNames.get(`${tableSheetName}:${cell.reference ?? ""}`),
+        hyperlinks.get(cell.reference ?? ""),
         start
           ? {
               columnsSpanned: start.lastColumn - start.firstColumn + 1,
@@ -509,6 +512,7 @@ export function cellXml(
   styles: string[],
   decorations: string[] = [],
   contentValidationName?: string,
+  hyperlink?: HyperlinkOptions,
   span?: { columnsSpanned: number; rowsSpanned: number },
 ): string {
   if (cell.covered) {
@@ -546,10 +550,16 @@ export function cellXml(
     ...(cell.detective ? [tableDetectiveXml(cell.detective)] : []),
     ...(cached.type === "string"
       ? isRichText(cell.value)
-        ? richTextXml(cell.value, styles)
+        ? richTextXml(cell.value, styles, hyperlink)
         : String(cached.value ?? "")
             .split("\n")
-            .map((paragraph) => xmlElement("text:p", undefined, odfTextNodes(paragraph)))
+            .map((paragraph) =>
+              xmlElement(
+                "text:p",
+                undefined,
+                hyperlinkXml(hyperlink, odfTextNodes(hyperlink?.display ?? paragraph)),
+              ),
+            )
       : []),
     ...(cell.graphics ?? []).map((graphic) => cellGraphicXml(graphic)),
   ];
@@ -714,7 +724,11 @@ function isRichText(value: CellOptions["value"]): value is RichTextOptions {
   return typeof value === "object" && value !== null && !(value instanceof Date);
 }
 
-function richTextXml(value: RichTextOptions, styles: string[]): string[] {
+function richTextXml(
+  value: RichTextOptions,
+  styles: string[],
+  hyperlink?: HyperlinkOptions,
+): string[] {
   const runs = value.runs ?? (value.text === undefined ? [] : [{ text: value.text }]);
   const paragraphs: string[][] = [[]];
   for (const run of runs) {
@@ -724,7 +738,16 @@ function richTextXml(value: RichTextOptions, styles: string[]): string[] {
       if (index < parts.length - 1) paragraphs.push([]);
     }
   }
-  return paragraphs.map((paragraph) => xmlElement("text:p", undefined, paragraph));
+  return paragraphs.map((paragraph) =>
+    xmlElement("text:p", undefined, hyperlinkXml(hyperlink, paragraph)),
+  );
+}
+
+function hyperlinkXml(hyperlink: HyperlinkOptions | undefined, children: string[]): string[] {
+  const href = hyperlink?.url ?? (hyperlink?.location ? `#${hyperlink.location}` : undefined);
+  return href === undefined
+    ? children
+    : [xmlElement("text:a", { "xlink:href": href, "xlink:type": "simple" }, children)];
 }
 
 function richRunXml(run: RichTextRunOptions, text: string, styles: string[]): string {
@@ -786,6 +809,7 @@ export function worksheet(
   textStyles: Map<string, RichTextRunPropertiesOptions> = new Map(),
 ): WorksheetOptions {
   const comments: CommentOptions[] = [];
+  const hyperlinks: HyperlinkOptions[] = [];
   const mergeCells: MergeCellOptions[] = [];
   const shapes: WorksheetOptions["shapes"] = [];
   validateTableChildren(table);
@@ -822,6 +846,7 @@ export function worksheet(
     mergeCells,
     shapes,
     textStyles,
+    hyperlinks,
   );
   const tableStyle = dimensions.get(attributeString(table, "table:style-name") ?? "");
   const sheetView =
@@ -852,6 +877,7 @@ export function worksheet(
     ...(comments.length ? { comments } : {}),
     ...(mergeCells.length ? { mergeCells } : {}),
     ...(shapes?.length ? { shapes } : {}),
+    ...(hyperlinks.length ? { hyperlinks } : {}),
   };
 }
 
@@ -1078,6 +1104,7 @@ function parseRows(
   mergeCells: MergeCellOptions[],
   shapes: WorksheetOptions["shapes"],
   textStyles: Map<string, RichTextRunPropertiesOptions>,
+  hyperlinks: HyperlinkOptions[],
 ): { rows: RowOptions[]; defaultRowHeight?: number } {
   const rows: RowOptions[] = [];
   let defaultRowHeight: number | undefined;
@@ -1095,6 +1122,7 @@ function parseRows(
       mergeCells,
       shapes,
       textStyles,
+      hyperlinks,
     );
     const hasRowData = (parsed.cells ?? []).some(hasCellContent) || parsed.hidden === true;
     if (repeat > MAX_ROWS && hasRowData) {
@@ -1195,6 +1223,7 @@ export function parseRow(
   mergeCells: MergeCellOptions[] = [],
   shapes: WorksheetOptions["shapes"] = [],
   textStyles: Map<string, RichTextRunPropertiesOptions> = new Map(),
+  hyperlinks: HyperlinkOptions[] = [],
 ): RowOptions {
   const style = dimensions.get(attributeString(row, "table:style-name") ?? "");
   const cellStartColumns: number[] = [];
@@ -1315,6 +1344,7 @@ export function parseRow(
         return Array.from({ length: repeat }, (_, repeatedIndex) => {
           const column = startColumn + repeatedIndex;
           const parsed = parseCell(cell, rowNumber, column, cellStyles, mergeCells, textStyles);
+          hyperlinks.push(...parseCellHyperlinks(cell, parsed.reference ?? ""));
           for (const child of cell.elements ?? []) {
             if (child.name === "office:annotation") {
               comments.push({
@@ -1705,7 +1735,7 @@ function parseCellText(
     (paragraph.elements ?? []).some(
       (child) =>
         child.type === "element" &&
-        ["text:span", "text:s", "text:tab", "text:line-break"].includes(child.name ?? ""),
+        ["text:span", "text:s", "text:tab", "text:line-break", "text:a"].includes(child.name ?? ""),
     ),
   );
   if (!hasStructuredText) return paragraphs.map(textOf).join("\n");
@@ -1749,8 +1779,27 @@ function appendTextRuns(
       const styleName = attributeString(child, "text:style-name");
       const properties = styleName ? { ...inherited, ...textStyles.get(styleName) } : inherited;
       appendTextRuns(child, textStyles, runs, properties);
+      continue;
     }
+    if (child.name === "text:a") appendTextRuns(child, textStyles, runs, inherited);
   }
+}
+
+function parseCellHyperlinks(cell: Element, reference: string): HyperlinkOptions[] {
+  return childrenNamed(cell, "text:p").flatMap((paragraph) =>
+    (paragraph.elements ?? []).flatMap((child) => {
+      if (child.type !== "element" || child.name !== "text:a") return [];
+      const href = attributeString(child, "xlink:href");
+      if (href === undefined) return [];
+      return [
+        {
+          cell: reference,
+          ...(href.startsWith("#") ? { location: href.slice(1) } : { url: href }),
+          display: textOf(child),
+        },
+      ];
+    }),
+  );
 }
 
 function pushTextRun(

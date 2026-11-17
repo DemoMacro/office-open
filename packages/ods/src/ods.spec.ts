@@ -444,6 +444,20 @@ describe("ODS codec", () => {
     expect(regenerated.worksheets?.[0]?.columns?.[0]?.width).toBeUndefined();
   });
 
+  it("projects cell hyperlinks into the canonical worksheet model", async () => {
+    const source = generateOcf("application/vnd.oasis.opendocument.spreadsheet", {
+      "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:automatic-styles/><office:body><office:spreadsheet><table:table table:name="Sheet1"><table:table-row><table:table-cell office:value-type="string"><text:p><text:a xlink:type="simple" xlink:href="https://example.com">Open</text:a></text:p></table:table-cell></table:table-row></table:table></office:spreadsheet></office:body></office:document-content>`,
+      "styles.xml": `<?xml version="1.0"?><office:document-styles ${ODF_NAMESPACES}><office:styles/></office:document-styles>`,
+    });
+    const parsed = await parseWorkbook(source);
+    expect(parsed.worksheets?.[0]?.hyperlinks).toEqual([
+      { cell: "A1", url: "https://example.com", display: "Open" },
+    ]);
+
+    const regenerated = await parseWorkbook(await generateWorkbook(parsed));
+    expect(regenerated.worksheets?.[0]?.hyperlinks).toEqual(parsed.worksheets?.[0]?.hyperlinks);
+  });
+
   it("round-trips Gnumeric selection state through canonical selections", async () => {
     const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:automatic-styles><style:style style:name="Table" style:family="table"><style:table-properties table:display="true" style:writing-mode="lr-tb" gnm:display-formulas="false" gnm:display-col-header="true" gnm:display-row-header="true"/></style:style></office:automatic-styles><office:body><office:spreadsheet><table:table table:name="Sheet1" table:style-name="Table"><table:table-row><table:table-cell/></table:table-row><gnm:selections gnm:cursor-col="8" gnm:cursor-row="176"><gnm:selection gnm:start-col="8" gnm:start-row="176" gnm:end-col="9" gnm:end-row="177"/></gnm:selections></table:table></office:spreadsheet></office:body></office:document-content>`;
     const parsed = await parseWorkbook(
