@@ -49,7 +49,12 @@ function classify(error: unknown): Exclude<Outcome, "pass"> {
     reason === "invalid-style-coverage-total" ||
     reason === "malformed-formula" ||
     reason === "invalid-rich-text-run-position" ||
-    reason === "missing-rich-text-font"
+    reason === "missing-rich-text-font" ||
+    reason === "invalid-scale" ||
+    reason === "duplicate-record" ||
+    reason === "malformed-codename" ||
+    reason === "invalid-codename-length" ||
+    reason === "misplaced-or-duplicate-codename"
   ) {
     return "invalid";
   }

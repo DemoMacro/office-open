@@ -21,6 +21,7 @@ export type {
   AlignmentOptions,
   CustomTableStyleOptions,
   CustomCellStyleOptions,
+  CellStyleCategory,
   CellStyleXfOptions,
   StyleExtensionOptions,
 } from "./styles";

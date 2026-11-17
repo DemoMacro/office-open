@@ -53,6 +53,7 @@ export const BIFF_RECORD_CLASSIFICATIONS: BiffRecordClassifications = new Map([
   canonical(0x0085, "Bound Sheet", "globals", "workbook-globals"),
   canonical(0x0042, "Code Page", "globals", "workbook-globals"),
   canonical(0x0022, "Date Mode", "globals", "workbook-globals"),
+  canonical(0x01ba, "Code Name", "both", "workbook-globals"),
   canonical(0x0031, "Font", "globals", "workbook-globals"),
   canonical(0x041e, "Number Format", "globals", "workbook-globals"),
   canonical(0x0092, "Palette", "globals", "workbook-globals"),
@@ -62,6 +63,7 @@ export const BIFF_RECORD_CLASSIFICATIONS: BiffRecordClassifications = new Map([
   canonical(0x0018, "Defined Name", "globals", "workbook-globals"),
   canonical(0x00e0, "Extended Format", "globals", "workbook-globals"),
   canonical(0x087d, "Extended Format Extension", "globals", "workbook-globals"),
+  canonical(0x0892, "Named Cell Style Extension", "globals", "workbook-globals"),
 
   canonical(0x0200, "Dimensions", "sheet", "worksheet"),
   canonical(0x0208, "Row", "sheet", "worksheet"),
@@ -107,6 +109,7 @@ export const BIFF_RECORD_CLASSIFICATIONS: BiffRecordClassifications = new Map([
   canonical(0x0028, "Top Margin", "sheet", "worksheet"),
   canonical(0x0029, "Bottom Margin", "sheet", "worksheet"),
   canonical(0x00a1, "Page Setup", "sheet", "worksheet"),
+  canonical(0x00a0, "Scale", "sheet", "worksheet"),
   canonical(0x0007, "Cached Formula String", "sheet", "worksheet"),
   canonical(0x00da, "Workbook Boolean", "globals", "workbook-globals"),
 
@@ -130,7 +133,7 @@ export const BIFF_RECORD_CLASSIFICATIONS: BiffRecordClassifications = new Map([
   noop(0x003d, "Window 1", "both", "workbook window state is not projected"),
   noop(0x00c1, "Menu Set", "both", "transitional menu metadata is not projected"),
   noop(0x008c, "Country", "both", "locale metadata is not projected"),
-  noop(0x0293, "Style", "both", "built-in style metadata is not projected"),
+  canonical(0x0293, "Style", "globals", "workbook-globals"),
   noop(0x0161, "Double Stream File", "both", "format-version marker is not projected"),
   noop(0x01af, "Revision Protection", "both", "protection metadata is not projected"),
   noop(0x01bc, "Revision Protection Password", "both", "password hash is not projected"),

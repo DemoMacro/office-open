@@ -42,7 +42,7 @@ export function decodeBiffString(
   const raw = body.subarray(cursor, cursor + byteLength);
   const value = highByte
     ? new TextDecoder("utf-16le").decode(raw)
-    : new TextDecoder(encoding).decode(raw);
+    : new TextDecoder(encoding === "utf-16le" ? "windows-1252" : encoding).decode(raw);
   cursor += byteLength;
   let richRuns: { characterIndex: number; fontIndex: number }[] | undefined;
   if (richRunCount > 0) {

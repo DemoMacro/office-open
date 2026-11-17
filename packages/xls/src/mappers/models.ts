@@ -8,6 +8,8 @@ import type {
   FontOptions,
   RichTextOptions,
   CellOptions,
+  CellStyleXfOptions,
+  CustomCellStyleOptions,
   RowOptions,
   StyleOptions,
   WorksheetOptions,
@@ -43,10 +45,13 @@ export interface WorkbookState {
   definedNames: DefinedNameOptions[];
   externSheetNames: Map<number, string>;
   styleTable: Map<number, XfStyle>;
+  cellStyles: CustomCellStyleOptions[];
+  cellStyleXfs: CellStyleXfOptions[];
   drawingImages: { data: Uint8Array; type: "png" | "jpg" | "wmf" | "emf" }[];
   saveExternalLinkValues?: boolean;
   refreshAllConnections?: boolean;
   builtInGroupCount?: number;
+  codeName?: string;
 }
 
 export interface XfStyle {

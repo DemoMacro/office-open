@@ -95,6 +95,8 @@ export function parseWorkbook(data: Uint8Array, options?: LegacyParseOptions): W
     worksheets,
     ...metadata,
     cellXfs: legacyCellXfs(worksheets),
+    cellStyles: state.cellStyles.length > 0 ? state.cellStyles : undefined,
+    cellStyleXfs: state.cellStyleXfs.length > 0 ? state.cellStyleXfs : undefined,
     fonts: state.fonts.length > 0 ? state.fonts : undefined,
     numFmts:
       state.numberFormats.size > 0
@@ -117,6 +119,7 @@ export function parseWorkbook(data: Uint8Array, options?: LegacyParseOptions): W
       ...(state.builtInGroupCount === undefined
         ? {}
         : { builtInGroupCount: state.builtInGroupCount }),
+      ...(state.codeName === undefined ? {} : { codeName: state.codeName }),
     },
   };
 }

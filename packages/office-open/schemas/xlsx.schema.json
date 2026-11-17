@@ -3021,6 +3021,18 @@
       "required": ["reference", "smartTags"],
       "type": "object"
     },
+    "CellStyleCategory": {
+      "description": "Custom cell style — a named reference to a cell-style XF.",
+      "enum": [
+        "custom",
+        "goodBadNeutral",
+        "dataModel",
+        "titleAndHeading",
+        "themedCell",
+        "numberFormat"
+      ],
+      "type": "string"
+    },
     "CellStyleXfOptions": {
       "additionalProperties": false,
       "description": "Named cell-style template — a cellStyleXfs entry. Structured definitions (not indices); source order keeps cellStyle.xfId stable on round-trip. Alignment/protection and applyXxx flags preserved verbatim, unlike cellXfs which derives applyXxx.",
@@ -8407,10 +8419,13 @@
     },
     "CustomCellStyleOptions": {
       "additionalProperties": false,
-      "description": "Custom cell style — a named reference to a cell-style XF.",
       "properties": {
         "builtinId": {
           "type": "number"
+        },
+        "category": {
+          "$ref": "#/definitions/CellStyleCategory",
+          "description": "Gallery category recorded by legacy workbook formats."
         },
         "customBuiltin": {
           "description": "Custom built-in",

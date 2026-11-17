@@ -957,6 +957,84 @@ export function parseWorksheetStream(
         worksheetExtras.pageMargins = { ...worksheetExtras.pageMargins, ...headerFooterMargins };
         break;
       }
+      case RecordCode.Scl: {
+        if (record.body.byteLength !== 4)
+          throw new XlsParseError("Invalid legacy XLS file: invalid SCL length", {
+            part: "stream",
+            recordType: record.code,
+            recordName: "SCL",
+            offset: record.start,
+            reason: "invalid-record-length",
+          });
+        const view = dataView(record.body);
+        const numerator = view.getInt16(0, true);
+        const denominator = view.getInt16(2, true);
+        const zoomScale = Math.round((numerator * 100) / denominator);
+        if (
+          numerator === 0 ||
+          denominator === 0 ||
+          numerator < 1 ||
+          denominator < 1 ||
+          numerator * 10 < denominator ||
+          numerator > denominator * 4
+        )
+          throw new XlsParseError("Invalid legacy XLS file: invalid SCL scale", {
+            part: "stream",
+            recordType: record.code,
+            recordName: "SCL",
+            offset: record.start,
+            reason: "invalid-scale",
+          });
+        if (worksheetExtras.sheetView?.zoomScale !== undefined)
+          throw new XlsParseError("Invalid legacy XLS file: duplicate SCL record", {
+            part: "stream",
+            recordType: record.code,
+            recordName: "SCL",
+            offset: record.start,
+            reason: "duplicate-record",
+          });
+        worksheetExtras.sheetView = {
+          ...worksheetExtras.sheetView,
+          zoomScale,
+        };
+        break;
+      }
+      case RecordCode.CodeName: {
+        if (state.version !== 8 || worksheetExtras.properties?.codeName !== undefined)
+          throw new XlsParseError("Invalid legacy XLS file: misplaced or duplicate CODENAME", {
+            part: "stream",
+            recordType: record.code,
+            recordName: "CODENAME",
+            offset: record.start,
+            reason: "misplaced-or-duplicate-codename",
+          });
+        let decoded: { value: string; offset: number };
+        try {
+          decoded = readShortBiff8String(record.body, 0, encodingForCodepage(state.codepage));
+        } catch (error) {
+          throw new XlsParseError("Invalid legacy XLS file: malformed worksheet CODENAME", {
+            part: "stream",
+            recordType: record.code,
+            recordName: "CODENAME",
+            offset: record.start,
+            reason: "malformed-codename",
+            cause: error,
+          });
+        }
+        if (decoded.offset !== record.body.byteLength || decoded.value.length > 31)
+          throw new XlsParseError("Invalid legacy XLS file: invalid worksheet CODENAME length", {
+            part: "stream",
+            recordType: record.code,
+            recordName: "CODENAME",
+            offset: record.start,
+            reason: "invalid-codename-length",
+          });
+        worksheetExtras.properties = {
+          ...worksheetExtras.properties,
+          codeName: decoded.value,
+        };
+        break;
+      }
       default:
         assertSupportedBiffRecord(record);
         break;

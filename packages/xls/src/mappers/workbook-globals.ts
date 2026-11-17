@@ -4,6 +4,8 @@ import type {
   FontOptions,
   HyperlinkOptions,
   RichTextOptions,
+  CellStyleXfOptions,
+  CustomCellStyleOptions,
 } from "@office-open/xlsx";
 
 import { XlsParseError } from "../errors";
@@ -31,7 +33,18 @@ import {
 } from "./biff";
 import { reference } from "./cells";
 import type { BoundSheet, WorkbookState, XfStyle } from "./models";
-import { applyXfExt, parseFont, parseFormat, parsePalette, parseXf } from "./styles";
+import {
+  applyXfExt,
+  parseFont,
+  parseFormat,
+  parsePalette,
+  parseStyle,
+  parseStyleExt,
+  parseXf,
+  styleXfOptions,
+  type LegacyStyleExtension,
+  type LegacyStyleRecord,
+} from "./styles";
 export function readWorkbookGlobals(stream: Uint8Array): WorkbookState {
   const detected = detectBiffVersion(stream);
   if (detected.version <= 4) return readLegacyWorkbookGlobals(stream, detected);
@@ -46,10 +59,14 @@ export function readWorkbookGlobals(stream: Uint8Array): WorkbookState {
   const definedNames: DefinedNameOptions[] = [];
   const externSheetNames = new Map<number, string>();
   const styleTable = new Map<number, XfStyle>();
+  const pendingStyleRecords: LegacyStyleRecord[] = [];
+  const pendingStyleExtensions: LegacyStyleExtension[] = [];
+  let lastStyleRecordIndex = -1;
   const drawingImages: { data: Uint8Array; type: "png" | "jpg" | "wmf" | "emf" }[] = [];
   let saveExternalLinkValues: boolean | undefined;
   let refreshAllConnections: boolean | undefined;
   let builtInGroupCount: number | undefined;
+  let codeName: string | undefined;
   const pendingSupbooks: Supbook[] = [];
   const pendingExternSheetReferences:
     | ReturnType<typeof parseExternSheet>
@@ -161,6 +178,27 @@ export function readWorkbookGlobals(stream: Uint8Array): WorkbookState {
           ).getUint16(0, true) === 1;
         break;
       }
+      case RecordCode.CodeName: {
+        if (workbookVersion !== 8 || codeName !== undefined)
+          throw new XlsParseError("Invalid legacy XLS file: misplaced or duplicate CODENAME", {
+            ...biffRecordContext(record, "misplaced-or-duplicate-codename"),
+          });
+        let decoded: { value: string; offset: number };
+        try {
+          decoded = readShortBiff8String(record.body, 0, encodingForCodepage(codepage));
+        } catch (error) {
+          throw new XlsParseError("Invalid legacy XLS file: malformed CODENAME", {
+            ...biffRecordContext(record, "malformed-codename"),
+            cause: error,
+          });
+        }
+        if (decoded.offset !== record.body.byteLength || decoded.value.length > 31)
+          throw new XlsParseError("Invalid legacy XLS file: invalid CODENAME length", {
+            ...biffRecordContext(record, "invalid-codename-length"),
+          });
+        codeName = decoded.value;
+        break;
+      }
       case RecordCode.Font: {
         const font = parseFont(record.body, workbookVersion === 8, encodingForCodepage(codepage));
         if (font) fonts.push(font);
@@ -240,8 +278,22 @@ export function readWorkbookGlobals(stream: Uint8Array): WorkbookState {
         styleTable.set(styleTable.size, parseXf(record.body, workbookVersion, palette));
         break;
       }
+      case RecordCode.Style: {
+        pendingStyleRecords.push(
+          parseStyle(record.body, workbookVersion === 8, encodingForCodepage(codepage), record),
+        );
+        lastStyleRecordIndex = pendingStyleRecords.length - 1;
+        break;
+      }
       case RecordCode.XfExt: {
         pendingXfExtRecords.push(record);
+        break;
+      }
+      case RecordCode.StyleExt: {
+        pendingStyleExtensions.push({
+          ...parseStyleExt(record.body, palette, record),
+          styleRecordIndex: lastStyleRecordIndex >= 0 ? lastStyleRecordIndex : undefined,
+        });
         break;
       }
       case RecordCode.MsoDrawingGroup: {
@@ -264,6 +316,60 @@ export function readWorkbookGlobals(stream: Uint8Array): WorkbookState {
     );
 
   for (const record of pendingXfExtRecords) applyXfExt(record, styleTable, palette);
+
+  const styleXfIndexes = [...styleTable].filter(([, xf]) => xf.isStyle).map(([index]) => index);
+  const styleXfIndex = new Map(styleXfIndexes.map((index, styleIndex) => [index, styleIndex]));
+  const cellStyleXfs: CellStyleXfOptions[] = styleXfIndexes.map((index) =>
+    styleXfOptions(styleTable.get(index)!, fonts, numberFormats),
+  );
+  const cellStyles: CustomCellStyleOptions[] = [];
+  const styleExtensions = new Map<number, LegacyStyleExtension>();
+  const matchedStyleRecords = new Set<number>();
+  for (const extension of pendingStyleExtensions) {
+    const directIndex = extension.styleRecordIndex;
+    const directRecord = directIndex === undefined ? undefined : pendingStyleRecords[directIndex];
+    const index =
+      directIndex !== undefined &&
+      directRecord !== undefined &&
+      !matchedStyleRecords.has(directIndex) &&
+      styleRecordMatchesExtension(directRecord, extension)
+        ? directIndex
+        : pendingStyleRecords.findIndex(
+            (styleRecord, styleRecordIndex) =>
+              !matchedStyleRecords.has(styleRecordIndex) &&
+              styleRecordMatchesExtension(styleRecord, extension),
+          );
+    if (index < 0) throw invalidStyleExtension(extension);
+    matchedStyleRecords.add(index);
+    styleExtensions.set(index, extension);
+  }
+  for (const [styleRecordIndex, styleRecord] of pendingStyleRecords.entries()) {
+    const xf = styleTable.get(styleRecord.xfIndex);
+    const xfId = styleXfIndex.get(styleRecord.xfIndex);
+    if (!xf || xfId === undefined)
+      throw new XlsParseError("Invalid legacy XLS file: Style references a missing XF", {
+        path: "Workbook/globals/Style",
+        recordName: "Style",
+        recordType: RecordCode.Style,
+        reason: "missing-style-xf",
+      });
+    const styleXf = cellStyleXfs[xfId]!;
+    const extension = styleExtensions.get(styleRecordIndex);
+    if (extension) mergeStyleXf(styleXf, extension.style);
+    const name = extension?.name || styleRecord.name;
+    if (name === undefined) continue;
+    cellStyles.push({
+      name,
+      xfId,
+      ...((extension?.builtinId ?? styleRecord.builtinId) === undefined
+        ? {}
+        : { builtinId: extension?.builtinId ?? styleRecord.builtinId }),
+      ...(extension?.customBuiltin ? { customBuiltin: true } : {}),
+      ...(extension?.hidden ? { hidden: true } : {}),
+      ...(extension ? { category: extension.category } : {}),
+      ...(styleRecord.iLevel === undefined ? {} : { iLevel: styleRecord.iLevel }),
+    });
+  }
 
   if (workbookVersion === undefined)
     throw new XlsParseError("Invalid legacy XLS file: missing Begin Of File");
@@ -338,10 +444,13 @@ export function readWorkbookGlobals(stream: Uint8Array): WorkbookState {
     definedNames,
     externSheetNames,
     styleTable,
+    cellStyles,
+    cellStyleXfs,
     drawingImages,
     saveExternalLinkValues,
     refreshAllConnections,
     builtInGroupCount,
+    codeName,
     stream,
   };
 }
@@ -386,6 +495,8 @@ export function readLegacyWorkbookGlobals(
         definedNames: [],
         externSheetNames: new Map(),
         styleTable: new Map(),
+        cellStyles: [],
+        cellStyleXfs: [],
         drawingImages: [],
         stream,
       };
@@ -434,6 +545,8 @@ export function readLegacyWorkbookGlobals(
     definedNames: [],
     externSheetNames: new Map(),
     styleTable: new Map(),
+    cellStyles: [],
+    cellStyleXfs: [],
     drawingImages: [],
     stream,
   };
@@ -632,6 +745,39 @@ export function parseName(
     function: (flags & 0x0002) !== 0,
     vbProcedure: (flags & 0x0004) !== 0,
   };
+}
+
+function mergeStyleXf(target: CellStyleXfOptions, source: CellStyleXfOptions): void {
+  if (source.font) target.font = { ...target.font, ...source.font };
+  if (source.fill) target.fill = { ...target.fill, ...source.fill };
+  if (source.border) target.border = { ...target.border, ...source.border };
+  if (source.alignment) target.alignment = { ...target.alignment, ...source.alignment };
+  if (source.protection) target.protection = { ...target.protection, ...source.protection };
+  if (source.numFmt !== undefined) target.numFmt = source.numFmt;
+  if (source.numFmtId !== undefined) target.numFmtId = source.numFmtId;
+  if (source.quotePrefix !== undefined) target.quotePrefix = source.quotePrefix;
+}
+
+function invalidStyleExtension(extension: LegacyStyleExtension): XlsParseError {
+  return new XlsParseError("Invalid legacy XLS file: StyleExt does not match a Style record", {
+    path: "Workbook/globals/StyleExt",
+    recordName: "StyleExt",
+    recordType: RecordCode.StyleExt,
+    reason: "style-record-mismatch",
+    offset: extension.record.start,
+    length: extension.record.body.byteLength,
+    ...(extension.styleRecordIndex === undefined
+      ? {}
+      : { styleRecordIndex: extension.styleRecordIndex }),
+  });
+}
+
+function styleRecordMatchesExtension(
+  styleRecord: LegacyStyleRecord,
+  extension: LegacyStyleExtension,
+): boolean {
+  if (styleRecord.builtIn) return styleRecord.builtInData === extension.builtInData;
+  return styleRecord.name === extension.name;
 }
 
 export function readCString(body: Uint8Array): string {

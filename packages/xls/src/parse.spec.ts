@@ -513,6 +513,42 @@ function styleXfRecord(fontIndex: number): Uint8Array {
   return record(0x00e0, body);
 }
 
+function styleRecord(xfIndex: number, name: string): Uint8Array {
+  return record(0x0293, concat([uint16Body([xfIndex]), biff8String(name)]));
+}
+
+function styleExtensionRecord(
+  name: string,
+  properties: readonly Uint8Array[],
+  options: { flags?: number; category?: number; builtInData?: number } = {},
+): Uint8Array {
+  const header = new Uint8Array(16);
+  const view = new DataView(header.buffer);
+  view.setUint16(0, 0x0892, true);
+  header[12] = options.flags ?? 0x02;
+  header[13] = options.category ?? 0x04;
+  view.setUint16(14, options.builtInData ?? 0xffff, true);
+  const encodedName = new Uint8Array(2 + name.length * 2);
+  const encodedView = new DataView(encodedName.buffer);
+  encodedView.setUint16(0, name.length, true);
+  Array.from(name).forEach((character, index) =>
+    encodedView.setUint16(2 + index * 2, character.charCodeAt(0), true),
+  );
+  const propertiesHeader = uint16Body([0, properties.length]);
+  return record(0x0892, concat([header, encodedName, propertiesHeader, ...properties]));
+}
+
+function builtInStyleRecord(xfIndex: number, builtInId: number, level: number): Uint8Array {
+  return record(
+    0x0293,
+    concat([uint16Body([0x8000 | xfIndex]), new Uint8Array([builtInId, level])]),
+  );
+}
+
+function styleProperty(type: number, data: Uint8Array): Uint8Array {
+  return concat([uint16Body([type, data.byteLength + 4]), data]);
+}
+
 function nameRecord(name: string, tokens: Uint8Array): Uint8Array {
   const encodedName = shortBiff8String(name).slice(1);
   const body = new Uint8Array(14);
@@ -677,6 +713,14 @@ function shortBiff8String(value: string): Uint8Array {
   return bytes;
 }
 
+function scaleRecord(numerator: number, denominator: number): Uint8Array {
+  return record(0x00a0, uint16Body([numerator, denominator]));
+}
+
+function codeNameRecord(value: string): Uint8Array {
+  return record(0x01ba, shortBiff8String(value));
+}
+
 function boundSheet(version: 5 | 8, position: number, name: string, state = 0): Uint8Array {
   const body = new Uint8Array(6);
   const view = new DataView(body.buffer);
@@ -748,6 +792,12 @@ describe("parseWorkbook", () => {
     const bytes = new Uint8Array([1, 0, 5, 2, 0, 0, 0, 0x41, 0, 0x58, 0x59]);
 
     expect(readBiff8String(bytes)).toEqual({ value: "A", offset: bytes.byteLength });
+  });
+
+  it("decodes compressed BIFF8 strings with a UTF-16 workbook code page", () => {
+    const bytes = new Uint8Array([1, 0, 0, 0x41]);
+
+    expect(readBiff8String(bytes, 0, "utf-16le")).toEqual({ value: "A", offset: bytes.byteLength });
   });
 
   it("reports truncated BIFF8 extension data as a parse error", () => {
@@ -1154,6 +1204,68 @@ describe("parseWorkbook", () => {
     expect(parsed.properties?.date1904).toBe(true);
   });
 
+  it("maps workbook and worksheet CODENAME records to workbook properties", () => {
+    const data = workbook(
+      8,
+      [{ name: "Sheet", cells: [codeNameRecord("SheetCode")] }],
+      [],
+      [],
+      [codeNameRecord("BookCode")],
+    );
+    const parsed = parseWorkbook(xls(data));
+    expect(parsed.properties?.codeName).toBe("BookCode");
+    expect(parsed.worksheets?.[0]?.properties?.codeName).toBe("SheetCode");
+  });
+
+  it("rejects malformed, misplaced, duplicate, and overlong CODENAME records", () => {
+    const badGlobal = workbook(8, [{ name: "Sheet", cells: [] }], [], [], [record(0x01ba)]);
+    const duplicateGlobal = workbook(
+      8,
+      [{ name: "Sheet", cells: [] }],
+      [],
+      [],
+      [codeNameRecord("One"), codeNameRecord("Two")],
+    );
+    const badSheet = workbook(8, [{ name: "Sheet", cells: [record(0x01ba)] }]);
+    const longName = workbook(
+      8,
+      [{ name: "Sheet", cells: [] }],
+      [],
+      [],
+      [codeNameRecord("x".repeat(32))],
+    );
+    for (const input of [badGlobal, duplicateGlobal, badSheet, longName])
+      expect(() => parseWorkbook(xls(input))).toThrow(XlsParseError);
+  });
+
+  it("maps SCL fractions to worksheet zoom percentages", () => {
+    const data = workbook(8, [
+      { name: "Sheet", cells: [scaleRecord(3, 2)] },
+      { name: "Other", cells: [scaleRecord(4, 3)] },
+    ]);
+    expect(
+      parseWorkbook(xls(data)).worksheets?.map((worksheet) => worksheet.sheetView?.zoomScale),
+    ).toEqual([150, 133]);
+  });
+
+  it("rejects invalid and duplicate SCL records", () => {
+    const invalidScales = [
+      scaleRecord(0, 100),
+      scaleRecord(1, 0),
+      scaleRecord(1, 11),
+      scaleRecord(5, 1),
+      record(0x00a0, new Uint8Array([1, 0])),
+    ];
+    for (const invalidScale of invalidScales) {
+      const data = workbook(8, [{ name: "Sheet", cells: [invalidScale] }]);
+      expect(() => parseWorkbook(xls(data))).toThrow(XlsParseError);
+    }
+    const duplicate = workbook(8, [
+      { name: "Sheet", cells: [scaleRecord(1, 1), scaleRecord(3, 2)] },
+    ]);
+    expect(() => parseWorkbook(xls(duplicate))).toThrow(/duplicate SCL/);
+  });
+
   it("maps FONT, FORMAT and XF to cell formatting", () => {
     const data = workbook(
       8,
@@ -1169,6 +1281,100 @@ describe("parseWorkbook", () => {
       font: parsed.fonts?.[0],
       numFmt: "0.0%",
     });
+  });
+
+  it("maps STYLE and STYLEEXT to named cell styles and cell-style XFs", () => {
+    const color = new Uint8Array([0x07, 0x01, 0, 0, 0, 0, 0, 0xff]);
+    const data = workbook(
+      8,
+      [{ name: "Sheet", cells: [] }],
+      [],
+      [],
+      [
+        fontRecord("Arial"),
+        styleXfRecord(0),
+        styleRecord(0, "Accent 1"),
+        styleExtensionRecord("Accent 1", [
+          styleProperty(0x05, color),
+          styleProperty(0x12, uint16Body([3])),
+        ]),
+      ],
+    );
+    const parsed = parseWorkbook(xls(data));
+    expect(parsed.cellStyles).toEqual([
+      { name: "Accent 1", xfId: 0, hidden: true, category: "themedCell" },
+    ]);
+    expect(parsed.cellStyleXfs?.[0]).toMatchObject({
+      font: { color: { theme: 1 } },
+      alignment: { indent: 3 },
+    });
+  });
+
+  it("matches built-in STYLEEXT records by their complete built-in data", () => {
+    const data = workbook(
+      8,
+      [{ name: "Sheet", cells: [] }],
+      [],
+      [],
+      [
+        styleXfRecord(0),
+        builtInStyleRecord(0, 1, 2),
+        styleExtensionRecord("RowLevel_3", [], {
+          flags: 0x03,
+          category: 0x01,
+          builtInData: 0x0201,
+        }),
+      ],
+    );
+    expect(parseWorkbook(xls(data)).cellStyles).toEqual([
+      {
+        name: "RowLevel_3",
+        xfId: 0,
+        builtinId: 1,
+        hidden: true,
+        category: "goodBadNeutral",
+        iLevel: 2,
+      },
+    ]);
+  });
+
+  it("rejects STYLEEXT records that do not match their preceding STYLE", () => {
+    const data = workbook(
+      8,
+      [{ name: "Sheet", cells: [] }],
+      [],
+      [],
+      [styleXfRecord(0), styleRecord(0, "Accent 1"), styleExtensionRecord("Accent 2", [])],
+    );
+    expect(() => parseWorkbook(xls(data))).toThrow(/StyleExt does not match a Style record/);
+  });
+
+  it("rejects invalid STYLEEXT categories and reserved text rotations", () => {
+    const invalidCategory = workbook(
+      8,
+      [{ name: "Sheet", cells: [] }],
+      [],
+      [],
+      [
+        styleXfRecord(0),
+        styleRecord(0, "Accent 1"),
+        styleExtensionRecord("Accent 1", [], { category: 6 }),
+      ],
+    );
+    expect(() => parseWorkbook(xls(invalidCategory))).toThrow(/invalid-style-category/);
+
+    const invalidRotation = workbook(
+      8,
+      [{ name: "Sheet", cells: [] }],
+      [],
+      [],
+      [
+        styleXfRecord(0),
+        styleRecord(0, "Accent 1"),
+        styleExtensionRecord("Accent 1", [styleProperty(0x11, new Uint8Array([0xb5]))]),
+      ],
+    );
+    expect(() => parseWorkbook(xls(invalidRotation))).toThrow(/invalid-text-rotation/);
   });
 
   it("rejects malformed style metadata records structurally", () => {
