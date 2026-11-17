@@ -506,8 +506,12 @@ function parseOdtPackage(data: Uint8Array): OdtDocumentOptions {
     );
   }
   const styleContainer = childNamed(content, "office:automatic-styles");
-  const styleMap = parseStyles(styleContainer);
-  const graphicStyles = parseGraphicStyles(styleContainer);
+  const commonStyleContainer = childNamed(readXml(files, "styles.xml"), "office:styles");
+  const styleMap = parseStyles(commonStyleContainer, styleContainer);
+  const graphicStyles = new Map([
+    ...parseGraphicStyles(commonStyleContainer),
+    ...parseGraphicStyles(styleContainer),
+  ]);
   const chartBodies = parseEmbeddedCharts(manifest, files, binaries, files["styles.xml"]);
   const objectMediaTypes = new Map(
     manifest.entries
@@ -589,7 +593,8 @@ function parseOdtPackage(data: Uint8Array): OdtDocumentOptions {
   );
   if (embeddedObjects.size > 0) result.embeddedObjects = [...embeddedObjects.values()];
   if (packageMembers.length > 0) result.packageMembers = packageMembers;
-  const styleResources: OdtAutomaticStyleResource[] = [...styleMap]
+  const automaticStyles = parseStyles(styleContainer);
+  const styleResources: OdtAutomaticStyleResource[] = [...automaticStyles]
     .filter(([, style]) => (style.properties ?? []).some(hasStyleProjection))
     .map(([name, style]) => ({
       name,

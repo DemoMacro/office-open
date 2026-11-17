@@ -801,6 +801,8 @@ export function simpleFieldXml(field: CanonicalSimpleField, notes: NotesContext)
     );
   if (instruction === "SAVEDATE")
     return xmlElement("text:modification-date", undefined, [escapeText(field.cachedValue ?? "")]);
+  if (instruction === "SAVETIME")
+    return xmlElement("text:modification-time", undefined, [escapeText(field.cachedValue ?? "")]);
   if (instruction.startsWith("ODF USERFIELD "))
     return xmlElement("text:user-field-get", { "text:name": argument.value }, [
       escapeText(field.cachedValue ?? ""),
@@ -2006,7 +2008,7 @@ export function parseRuns(
         return [
           {
             simpleField: {
-              instruction: "SAVEDATE",
+              instruction: child.name === "text:modification-date" ? "SAVEDATE" : "SAVETIME",
               cachedValue: textOf(child) || undefined,
             },
           },

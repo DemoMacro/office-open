@@ -164,6 +164,34 @@ describe("ODT canonical projection", () => {
     expect(parsed.styles?.paragraphStyles?.[0]).toEqual(options.styles?.paragraphStyles?.[0]);
   });
 
+  it("applies common style parents to automatic styles", async () => {
+    const source = generateOcf("application/vnd.oasis.opendocument.text", {
+      "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES} ${FORM_NAMESPACE}><office:automatic-styles><style:style style:name="P1" style:family="paragraph" style:parent-style-name="Standard"/><style:style style:name="C1" style:family="text" style:parent-style-name="Emphasis"/></office:automatic-styles><office:body><office:text><text:p text:style-name="P1"><text:span text:style-name="C1">Inherited</text:span></text:p></office:text></office:body></office:document-content>`,
+      "styles.xml": `<?xml version="1.0"?><office:document-styles ${ODF_NAMESPACES}><office:styles><style:style style:name="Standard" style:family="paragraph"><style:paragraph-properties fo:text-align="center"/></style:style><style:style style:name="Emphasis" style:family="text"><style:text-properties fo:font-style="italic"/></style:style></office:styles></office:document-styles>`,
+    });
+    const parsed = await parseDocument(source);
+    const paragraph = sectionParagraph(parsed.sections[0]?.children?.[0]);
+    expect(paragraph).toMatchObject({ alignment: "center" });
+    expect(paragraph?.children?.[0]).toMatchObject({ text: "Inherited", italic: true });
+  });
+
+  it("keeps modification date and time fields distinct", async () => {
+    const parsed = await parseDocument(
+      odtPackage(
+        "<text:p><text:modification-date>2026-01-02</text:modification-date><text:modification-time>03:04:05</text:modification-time></text:p>",
+      ),
+    );
+    const paragraph = sectionParagraph(parsed.sections[0]?.children?.[0]);
+    expect(paragraph?.children).toEqual([
+      { simpleField: { instruction: "SAVEDATE", cachedValue: "2026-01-02" } },
+      { simpleField: { instruction: "SAVETIME", cachedValue: "03:04:05" } },
+    ]);
+    const regenerated = await parseDocument(await generateDocument(parsed));
+    expect(sectionParagraph(regenerated.sections[0]?.children?.[0])?.children).toEqual(
+      paragraph?.children,
+    );
+  });
+
   it("rejects invalid packages with a structured error", async () => {
     await expect(parseDocument(new Uint8Array([1, 2, 3]))).rejects.toThrow(OdtParseError);
   });
