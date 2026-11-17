@@ -36,6 +36,7 @@ import {
   malformedOdtElement,
   registerBookmarkStart,
   unknownOdtElement,
+  blockXml,
   type ParseContext,
 } from "./body";
 import { calculationSettingsXml } from "./calculation-settings";
@@ -764,12 +765,43 @@ export function runXml(
     if ("tab" in child) return "<text:tab/>";
     if ("picture" in child)
       return pictureFrameXml((child as { picture: PictureOptions }).picture, images);
-    if ("wpsShape" in child)
-      return wpsShapeFrameXml(
-        (child as { wpsShape: ShapeOptions }).wpsShape,
-        styles,
-        embeddedObjects,
-      );
+    if ("wpsShape" in child) {
+      const shape = (child as { wpsShape: ShapeOptions }).wpsShape;
+      const shapeChildren = shape.children.map((shapeChild) => {
+        if (typeof shapeChild === "string")
+          return xmlElement("text:p", undefined, [spacesXml(shapeChild)]);
+        if (
+          "paragraph" in shapeChild ||
+          "table" in shapeChild ||
+          "textbox" in shapeChild ||
+          "sdt" in shapeChild ||
+          "toc" in shapeChild ||
+          "bookmarkStart" in shapeChild ||
+          "bookmarkEnd" in shapeChild ||
+          "rawXml" in shapeChild
+        ) {
+          return blockXml(
+            shapeChild as SectionChild,
+            styles,
+            images,
+            notes,
+            numbering,
+            charts,
+            embeddedObjects,
+          );
+        }
+        return paragraphXml(
+          shapeChild as ParagraphOptions,
+          styles,
+          images,
+          notes,
+          numbering,
+          charts,
+          embeddedObjects,
+        );
+      });
+      return wpsShapeFrameXml(shape, styles, embeddedObjects, shapeChildren);
+    }
     if ("chart" in child) {
       return chartFrameXml((child as { chart: ChartOptions }).chart, charts);
     }
@@ -2028,6 +2060,10 @@ export function parseRuns(
       if (child.name === "office:annotation") return parseAnnotationStart(child, context);
       if (child.name === "office:annotation-end") return parseAnnotationEnd(child, context);
       if (child.name === "draw:a") return [parseShapeHyperlink(child)];
+      if (child.name === "draw:custom-shape") {
+        const shape = parseCustomShape(child, context);
+        return shape ? [shape] : [];
+      }
       if (isShapeElement(child.name)) return [{ wpsShape: parseShape(child) }];
       if (child.name === "text:span") {
         const styleEntry = context.styles.get(attributeString(child, "text:style-name") ?? "");
@@ -2059,10 +2095,6 @@ export function parseRuns(
       }
       if (child.name === "draw:object") return parseChartFrame(child, context);
       if (child.name === "draw:g") return [parseGroup(child, context)];
-      if (child.name === "draw:custom-shape") {
-        const shape = parseCustomShape(child, context);
-        return shape ? [shape] : [];
-      }
       if (child.name) throw unknownOdtElement(child);
       return [];
     },

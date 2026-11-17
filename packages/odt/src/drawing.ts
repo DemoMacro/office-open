@@ -137,6 +137,7 @@ export function wpsShapeFrameXml(
   shape: ShapeOptions,
   styles: string[],
   embeddedObjects: OdtEmbeddedObjectOptions[] = [],
+  text: string[] = [],
 ): string {
   const geometry = typeof shape.geometry === "string" ? { preset: shape.geometry } : shape.geometry;
   const offset = shape.transformation.offset;
@@ -160,7 +161,7 @@ export function wpsShapeFrameXml(
         "svg:height": transformationHeight(shape.transformation),
         "draw:name": shape.altText?.name,
       },
-      [],
+      text,
     );
   }
   if (object) {
@@ -177,7 +178,7 @@ export function wpsShapeFrameXml(
       "svg:y": transformationOffset(offset, "y"),
       "svg:width": transformationWidth(shape.transformation),
       "svg:height": transformationHeight(shape.transformation),
-      "draw:name": shape.altText?.name,
+      "draw:name": shape.nonVisualProperties?.name ?? shape.altText?.name,
     },
     [
       xmlElement(
@@ -189,6 +190,23 @@ export function wpsShapeFrameXml(
         },
         [],
       ),
+      ...(shape.altText?.title || shape.nonVisualProperties?.title
+        ? [
+            xmlElement("svg:title", undefined, [
+              escapeText(shape.altText?.title ?? shape.nonVisualProperties?.title ?? ""),
+            ]),
+          ]
+        : []),
+      ...(shape.altText?.description || shape.nonVisualProperties?.description
+        ? [
+            xmlElement("svg:desc", undefined, [
+              escapeText(
+                shape.altText?.description ?? shape.nonVisualProperties?.description ?? "",
+              ),
+            ]),
+          ]
+        : []),
+      ...text,
     ],
   );
 }
@@ -335,12 +353,28 @@ export function parseShapeElement(
   const fill = graphic ? graphicFill(graphic) : undefined;
   const outline = graphic ? graphicOutline(graphic) : undefined;
   const controlId = attributeString(element, "draw:control");
+  const title = textOf(childNamed(element, "svg:title"));
+  const description = textOf(childNamed(element, "svg:desc"));
+  const children =
+    context === undefined
+      ? []
+      : [...childrenNamed(element, "text:p"), ...childrenNamed(element, "text:h")].map(
+          (paragraph) => ({ paragraph: parseParagraph(paragraph, context) }),
+        );
   return {
-    children: [],
+    children,
     ...(controlId === undefined ? {} : { controlId }),
     ...(geometry ? { geometry } : {}),
     ...(geometryOverlay ? { odfGeometryType: geometryOverlay } : {}),
-    ...(name ? { altText: { name } } : {}),
+    ...(name
+      ? {
+          altText: {
+            name,
+            ...(title ? { title } : {}),
+            ...(description ? { description } : {}),
+          },
+        }
+      : {}),
     transformation: {
       ...(x || y ? { offset: { ...(x ? { x } : {}), ...(y ? { y } : {}) } } : {}),
       width,
@@ -654,15 +688,46 @@ export function parseCustomShape(
   const fill: FillOptions | undefined = graphicFill(graphic);
   const outline: OutlineOptions | undefined = graphicOutline(graphic);
   const name = attributeString(element, "draw:name");
+  const title = textOf(childNamed(element, "svg:title"));
+  const description = textOf(childNamed(element, "svg:desc"));
+  const children = (element.elements ?? []).flatMap((child) => {
+    if (child.type !== "element") return [];
+    if (child.name === "text:p" || child.name === "text:h")
+      return [{ paragraph: parseParagraph(child, context) }];
+    if (
+      child.name === "draw:enhanced-geometry" ||
+      child.name === "svg:title" ||
+      child.name === "svg:desc"
+    )
+      return [];
+    throw unknownOdtElement(child);
+  });
   return {
     wpsShape: {
-      children: [],
+      children,
       transformation: {
         ...(x || y ? { offset: { ...(x ? { x } : {}), ...(y ? { y } : {}) } } : {}),
         width,
         height,
       },
-      ...(name ? { altText: { name } } : {}),
+      ...(name
+        ? {
+            altText: {
+              name,
+              ...(title ? { title } : {}),
+              ...(description ? { description } : {}),
+            },
+          }
+        : {}),
+      ...(title || description
+        ? {
+            nonVisualProperties: {
+              ...(name ? { name } : {}),
+              ...(title ? { title } : {}),
+              ...(description ? { description } : {}),
+            },
+          }
+        : {}),
       ...(preset ? { geometry: preset } : {}),
       ...(geometryOverlay ? { odfGeometryType: geometryOverlay } : {}),
       ...(fill ? { fill } : {}),

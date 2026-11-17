@@ -93,6 +93,47 @@ describe("ODT canonical projection", () => {
     });
   });
 
+  it("round-trips canonical paragraphs inside custom shapes", async () => {
+    const options: DocumentOptions = {
+      sections: [
+        {
+          children: [
+            {
+              paragraph: {
+                children: [
+                  {
+                    wpsShape: {
+                      children: [{ paragraph: { text: "Shape paragraph" } }],
+                      transformation: { width: 914400, height: 457200 },
+                      altText: { name: "Shape", description: "Accessible shape" },
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      ],
+    };
+    const generated = await generateDocument(options);
+    const content = strFromU8(unzipSync(generated)["content.xml"]!);
+    expect(content).toContain("<text:p>Shape paragraph</text:p>");
+    expect(content).toContain("<svg:desc>Accessible shape</svg:desc>");
+    const parsed = await parseDocument(generated);
+    expect(parsed.sections[0]?.children?.[0]).toMatchObject({
+      paragraph: {
+        children: [
+          {
+            wpsShape: {
+              children: [{ paragraph: { text: "Shape paragraph" } }],
+              altText: { name: "Shape", description: "Accessible shape" },
+            },
+          },
+        ],
+      },
+    });
+  });
+
   it("rejects a content document without its required text body", async () => {
     const source = generateOcf("application/vnd.oasis.opendocument.text", {
       "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body/></office:document-content>`,
