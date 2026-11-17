@@ -60,6 +60,7 @@ function cacheName(
 export interface DimensionStyle {
   width?: number;
   height?: number;
+  bestFit?: boolean;
   hidden?: boolean;
   showFormulas?: boolean;
   showRowHeaders?: boolean;
@@ -523,8 +524,8 @@ export function addDimensionStyle(
   const properties =
     family === "column"
       ? xmlElement("style:table-column-properties", {
-          "style:column-width": `${style.width ?? 0}px`,
-          "style:use-optimal-column-width": style.hidden ? undefined : "true",
+          "style:column-width": style.width === undefined ? undefined : `${style.width}px`,
+          "style:use-optimal-column-width": style.bestFit,
         })
       : xmlElement("style:table-row-properties", {
           "style:row-height": style.height ? `${style.height}pt` : undefined,
@@ -586,6 +587,7 @@ export function parseDimensionStyles(container: Element | undefined): Map<string
       );
     }
     const columnHidden = dimensionBoolean(column, "style:column-hidden");
+    const bestFit = dimensionBoolean(column, "style:use-optimal-column-width");
     const rowHidden = dimensionBoolean(row, "style:row-hidden");
     const display = dimensionBoolean(table, "table:display");
     const displayFormulas = dimensionBoolean(table, "gnm:display-formulas");
@@ -594,6 +596,7 @@ export function parseDimensionStyles(container: Element | undefined): Map<string
     result.set(name, {
       width: width === undefined ? undefined : lengthToPixels(width, column),
       height: height === undefined ? undefined : lengthToPoints(height, row),
+      bestFit,
       hidden: columnHidden || rowHidden || display === false || undefined,
       showFormulas: displayFormulas,
       showColumnHeaders: displayColumnHeaders,

@@ -250,15 +250,7 @@ export function parseEmbeddedCharts(
     );
     const body = childNamed(childNamed(contentRoot, "office:body"), "office:chart");
     const chartElement = childNamed(body, "chart:chart");
-    if (!chartElement && entry.mediaType !== MIME && body?.name !== "office:chart") continue;
-    if (!chartElement) {
-      throw unsupported(
-        `${fullPath}content.xml`,
-        "/office:document-content/office:body/office:chart/chart:chart",
-        "chart:chart",
-        "chart subdocument is missing its chart element",
-      );
-    }
+    if (!chartElement) continue;
     const chart = parseChart(chartElement, context, fullPath);
     if (chart && entry.mediaType !== undefined && entry.mediaType !== MIME) {
       throw unsupported(

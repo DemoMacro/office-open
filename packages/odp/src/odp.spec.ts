@@ -33,6 +33,33 @@ describe("ODP codec", () => {
     });
   });
 
+  it("round-trips text-box fill and outline through canonical shape properties", async () => {
+    const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:automatic-styles><style:style style:name="TextBox" style:family="graphic"><style:graphic-properties draw:fill="solid" draw:fill-color="#112233" draw:stroke="solid" svg:stroke-width="0.5pt" svg:stroke-color="#445566"/></style:style></office:automatic-styles><office:body><office:presentation><draw:page><draw:frame draw:style-name="TextBox" svg:x="1cm" svg:y="1cm" svg:width="4cm" svg:height="2cm"><draw:text-box><text:p>Styled</text:p></draw:text-box></draw:frame></draw:page></office:presentation></office:body></office:document-content>`;
+    const source = generateOcf("application/vnd.oasis.opendocument.presentation", {
+      "content.xml": content,
+    });
+
+    const parsed = await parsePresentation(source);
+    expect(parsed.slides?.[0]?.children?.[0]).toMatchObject({
+      shape: {
+        properties: {
+          fill: { type: "solid", color: "112233" },
+          outline: { type: "solidFill", color: "445566", width: 6350 },
+        },
+      },
+    });
+
+    const regenerated = await parsePresentation(await generatePresentation(parsed));
+    expect(regenerated.slides?.[0]?.children?.[0]).toMatchObject({
+      shape: {
+        properties: {
+          fill: { type: "solid", color: "112233" },
+          outline: { type: "solidFill", color: "445566", width: 6350 },
+        },
+      },
+    });
+  });
+
   it("round-trips notes paragraphs and line paint through canonical shapes", async () => {
     const parsed = await parsePresentation(
       await generatePresentation({
@@ -1395,7 +1422,7 @@ describe("ODP codec", () => {
   });
 
   it("maps primitive ODF shapes to canonical pptx shapes", async () => {
-    const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:presentation><draw:page><draw:rect svg:x="1cm" svg:y="1cm" svg:width="2cm" svg:height="1cm" draw:name="Box"><text:p>Box</text:p></draw:rect><draw:path svg:x="4cm" svg:y="1cm" svg:width="2cm" svg:height="1cm" svg:viewBox="0 0 2 1" svg:d="M 0 0 L 2 0 L 2 1 Z"/><draw:g><draw:custom-shape svg:x="1cm" svg:y="3cm" svg:width="1cm" svg:height="1cm" draw:name="Grouped"/></draw:g></draw:page></office:presentation></office:body></office:document-content>`;
+    const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:automatic-styles><style:style style:name="GroupStyle" style:family="graphic"><style:graphic-properties draw:fill="solid" draw:fill-color="#112233"/></style:style></office:automatic-styles><office:body><office:presentation><draw:page><draw:rect svg:x="1cm" svg:y="1cm" svg:width="2cm" svg:height="1cm" draw:name="Box"><text:p>Box</text:p></draw:rect><draw:path svg:x="4cm" svg:y="1cm" svg:width="2cm" svg:height="1cm" svg:viewBox="0 0 2 1" svg:d="M 0 0 L 2 0 L 2 1 Z"/><draw:g draw:style-name="GroupStyle" svg:x="2cm" svg:y="1cm" svg:width="4cm" svg:height="3cm"><draw:custom-shape svg:x="1cm" svg:y="3cm" svg:width="1cm" svg:height="1cm" draw:name="Grouped"/></draw:g></draw:page></office:presentation></office:body></office:document-content>`;
     const parsed = await parsePresentation(
       generateOcf("application/vnd.oasis.opendocument.presentation", { "content.xml": content }),
     );
@@ -1429,7 +1456,14 @@ describe("ODP codec", () => {
       },
     });
     expect(children[2]).toMatchObject({
-      group: { children: [{ shape: { name: "Grouped" } }] },
+      group: {
+        x: 720000,
+        y: 360000,
+        width: 1440000,
+        height: 1080000,
+        fill: { type: "solid", color: "112233" },
+        children: [{ shape: { name: "Grouped" } }],
+      },
     });
     const regenerated = await parsePresentation(await generatePresentation(parsed));
     expect(regenerated.slides?.[0]?.children).toEqual(parsed.slides?.[0]?.children);

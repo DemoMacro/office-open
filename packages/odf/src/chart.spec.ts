@@ -11,7 +11,7 @@ import {
 const decoder = new TextDecoder();
 
 describe("ODF chart inline decorations", () => {
-  it("rejects manifest-declared chart documents without a chart model", async () => {
+  it("leaves chart subdocuments without a chart model for opaque preservation", async () => {
     const manifest = {
       version: "1.3",
       entries: [
@@ -19,11 +19,11 @@ describe("ODF chart inline decorations", () => {
         { fullPath: "Object 1/", mediaType: "application/vnd.oasis.opendocument.chart" },
       ],
     };
-    expect(() =>
+    expect(
       parseEmbeddedCharts(manifest, {
         "Object 1/content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:chart/></office:body></office:document-content>`,
       }),
-    ).toThrow("chart subdocument is missing its chart element");
+    ).toEqual(new Map());
   });
 
   it("round-trips custom shapes and polylines", async () => {

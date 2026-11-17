@@ -744,6 +744,21 @@ export function blockXml(
   charts: OdtChart[],
   embeddedObjects: OdtEmbeddedObjectOptions[] = [],
 ): string {
+  if ("textbox" in child) {
+    return xmlElement("draw:frame", { "text:anchor-type": "as-char" }, [
+      xmlElement("draw:text-box", undefined, [
+        blocksXml(
+          child.textbox.children ?? [],
+          styles,
+          images,
+          notes,
+          numbering,
+          charts,
+          embeddedObjects,
+        ),
+      ]),
+    ]);
+  }
   if ("toc" in child)
     return indexXml(child.toc, styles, images, notes, numbering, charts, embeddedObjects);
   if ("sdt" in child && child.sdt.properties.bibliography) return bibliographyIndexXml(child.sdt);

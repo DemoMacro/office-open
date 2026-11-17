@@ -1,4 +1,5 @@
 import { attributeString, childNamed, isExternalOdfUrl, xmlElement } from "@office-open/odf";
+import type { GraphicStyle } from "@office-open/odf";
 import type { ShapeOptions } from "@office-open/pptx";
 import type { Element } from "@office-open/xml";
 
@@ -39,6 +40,7 @@ export function parseEmbeddedObjectFrame(
   mediaTypes: Map<string, string | undefined>,
   nextShapeId: () => number,
   textStyles: Map<string, TextProperties>,
+  graphicStyles: Map<string, GraphicStyle>,
 ): { shape: ShapeOptions } | undefined {
   const reference = childNamed(frame, "draw:object");
   const sourceHref = attributeString(reference, "xlink:href");
@@ -114,7 +116,7 @@ export function parseEmbeddedObjectFrame(
   if (replacementSourceUrl) frameOptions.replacementSourceUrl = replacementSourceUrl;
   object.frames = [...(object.frames ?? []), frameOptions];
   return {
-    shape: parseShape(frame, textStyles, shapeId),
+    shape: parseShape(frame, textStyles, graphicStyles, shapeId),
   };
 }
 

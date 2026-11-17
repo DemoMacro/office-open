@@ -409,6 +409,39 @@ describe("ODS codec", () => {
     ).worksheets?.[0];
     expect(worksheet?.rows).toEqual([]);
     expect(worksheet?.sheetFormat).toEqual({ defaultRowHeight: 15 });
+    const regenerated = await parseWorkbook(await generateWorkbook({ worksheets: [worksheet!] }));
+    expect(regenerated.worksheets?.[0]?.sheetFormat).toEqual({ defaultRowHeight: 15 });
+    expect(regenerated.worksheets?.[0]?.rows).toEqual([]);
+  });
+
+  it("preserves default row height alongside explicit rows", async () => {
+    const workbook = {
+      worksheets: [
+        {
+          name: "Sheet1",
+          sheetFormat: { defaultRowHeight: 18 },
+          rows: [{ rowNumber: 1, cells: [{ reference: "A1", value: "value" }] }],
+        },
+      ],
+    } satisfies OdsWorkbookOptions;
+
+    const parsed = await parseWorkbook(await generateWorkbook(workbook));
+    expect(parsed.worksheets?.[0]?.sheetFormat).toEqual({ defaultRowHeight: 18 });
+    expect(parsed.worksheets?.[0]?.rows?.[0]?.height).toBeUndefined();
+    expect(parsed.worksheets?.[0]?.rows?.[0]?.cells?.[0]?.value).toBe("value");
+  });
+
+  it("round-trips optimal column width", async () => {
+    const source = generateOcf("application/vnd.oasis.opendocument.spreadsheet", {
+      "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:automatic-styles><style:style style:name="Optimal" style:family="table-column"><style:table-column-properties style:use-optimal-column-width="true"/></style:style></office:automatic-styles><office:body><office:spreadsheet><table:table table:name="Sheet1"><table:table-column table:style-name="Optimal"/><table:table-row><table:table-cell/></table:table-row></table:table></office:spreadsheet></office:body></office:document-content>`,
+    });
+    const parsed = await parseWorkbook(source);
+    expect(parsed.worksheets?.[0]?.columns?.[0]).toMatchObject({ bestFit: true });
+    expect(parsed.worksheets?.[0]?.columns?.[0]?.width).toBeUndefined();
+
+    const regenerated = await parseWorkbook(await generateWorkbook(parsed));
+    expect(regenerated.worksheets?.[0]?.columns?.[0]).toMatchObject({ bestFit: true });
+    expect(regenerated.worksheets?.[0]?.columns?.[0]?.width).toBeUndefined();
   });
 
   it("round-trips Gnumeric selection state through canonical selections", async () => {

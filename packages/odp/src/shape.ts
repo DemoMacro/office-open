@@ -376,6 +376,7 @@ export function shapeXml(shape: ShapeOptions, styles: string[]): string {
     {
       "draw:id": odfShapeIdXml(shape.id),
       "draw:name": shape.name,
+      "draw:style-name": pushShapeStyle(shape.properties?.fill, shape.properties?.outline, styles),
       "svg:x": emuToLength(shape.x),
       "svg:y": emuToLength(shape.y),
       "svg:width": emuToLength(shape.width),
@@ -437,11 +438,15 @@ export function toOdfLength(value: number | string | undefined): string | undefi
 export function parseShape(
   frame: Element,
   textStyles: Map<string, TextProperties>,
+  graphicStyles: Map<string, GraphicStyle> = new Map(),
   id?: number,
 ): ShapeOptions {
   const textBox = childNamed(frame, "draw:text-box");
   const paragraphs = childrenNamed(textBox, "text:p");
   const shapeId = id ?? odfShapeId(frame);
+  const graphic = graphicStyles.get(attributeString(frame, "draw:style-name") ?? "");
+  const fill = graphicFill(graphic);
+  const outline = graphicOutline(graphic);
   return {
     name: attributeString(frame, "draw:name"),
     x: lengthToEmu(attributeString(frame, "svg:x")),
@@ -449,6 +454,7 @@ export function parseShape(
     width: lengthToEmu(attributeString(frame, "svg:width")),
     height: lengthToEmu(attributeString(frame, "svg:height")),
     ...(shapeId === undefined ? {} : { id: shapeId }),
+    ...(fill || outline ? { properties: { fill, outline } } : {}),
     ...(paragraphs.length > 0
       ? {
           textBody: {
@@ -649,6 +655,11 @@ export function parseGroup(
   usedBinaryPaths: Set<string>,
 ): { group: GroupOptions & { odpNodes?: OdpSlideNodeOptions[] } }[] {
   const odpNodes: OdpSlideNodeOptions[] = [];
+  const groupStyle = graphicStyles.get(attributeString(element, "draw:style-name") ?? "");
+  const groupX = lengthToEmu(attributeString(element, "svg:x"));
+  const groupY = lengthToEmu(attributeString(element, "svg:y"));
+  const groupWidth = lengthToEmu(attributeString(element, "svg:width"));
+  const groupHeight = lengthToEmu(attributeString(element, "svg:height"));
   const children = (element.elements ?? []).flatMap((child): SlideChild[] => {
     if (child.name === "draw:frame") {
       const chart = parseChartFrame(child, chartPool);
@@ -690,7 +701,8 @@ export function parseGroup(
       }
       const picture = parsePictureFrame(child, binaries, usedBinaryPaths);
       if (picture) return [picture];
-      if (childNamed(child, "draw:text-box")) return [{ shape: parseShape(child, textStyles) }];
+      if (childNamed(child, "draw:text-box"))
+        return [{ shape: parseShape(child, textStyles, graphicStyles) }];
       odpNodes.push({
         position: visibleChildIndex(element, child),
         node: parseSlideNode(child),
@@ -731,6 +743,18 @@ export function parseGroup(
         ...(odfShapeId(element) === undefined ? {} : { id: odfShapeId(element) }),
         name: attributeString(element, "draw:name"),
         children,
+        ...(groupX === undefined &&
+        groupY === undefined &&
+        groupWidth === undefined &&
+        groupHeight === undefined
+          ? {}
+          : {
+              x: groupX,
+              y: groupY,
+              width: groupWidth,
+              height: groupHeight,
+            }),
+        ...(graphicFill(groupStyle) ? { fill: graphicFill(groupStyle) } : {}),
         ...(odpNodes.length > 0 ? { odpNodes } : {}),
       },
     },

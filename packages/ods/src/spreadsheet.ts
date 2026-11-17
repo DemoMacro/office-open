@@ -1441,40 +1441,44 @@ export function parseConditionalFormats(
         "calcext:color-scale",
         "calcext:data-bar",
         "calcext:icon-set",
-        "calcext:date-is",
+        "calcext:date",
       ],
     );
     const target = parseSheetAddress(attributeString(format, "calcext:target-range-address"));
-    const rules: ConditionalFormatRule[] = childrenNamed(format, "calcext:condition").map(
-      (condition) => {
-        assertElementNames(condition, [
+    let priority = 0;
+    const rules: ConditionalFormatRule[] = (format.elements ?? []).flatMap((rule) => {
+      if (rule.type !== "element") return [];
+      const rulePriority = ++priority;
+      if (rule.name === "calcext:condition") {
+        assertElementNames(rule, [
           "calcext:apply-style-name",
           "calcext:base-cell-address",
           "calcext:value",
         ]);
-        const styleName = attributeString(condition, "calcext:apply-style-name") ?? "";
+        const styleName = attributeString(rule, "calcext:apply-style-name") ?? "";
         const style: StyleOptions = styles.get(styleName) ?? {};
-        return {
-          ...conditionalRule(attributeString(condition, "calcext:value") ?? ""),
-          priority: result.length + rulesPrioritySeed(format),
-          dxfId: dxfIndex(style, dxfs),
-        };
-      },
-    );
-    const colorScale = childNamed(format, "calcext:color-scale");
-    if (colorScale) rules.push(colorScaleRule(colorScale));
-    const dataBar = childNamed(format, "calcext:data-bar");
-    if (dataBar) rules.push(dataBarRule(dataBar));
-    const iconSet = childNamed(format, "calcext:icon-set");
-    if (iconSet) rules.push(iconSetRule(iconSet));
-    if (childNamed(format, "calcext:date-is")) {
-      throw unknownOdsElement(
-        format,
-        CONTENT_PATH,
-        "calcext:date-is",
-        "date-based conditional formatting has no canonical rule mapping",
-      );
-    }
+        return [
+          {
+            ...conditionalRule(attributeString(rule, "calcext:value") ?? ""),
+            priority: rulePriority,
+            dxfId: dxfIndex(style, dxfs),
+          },
+        ];
+      }
+      if (rule.name === "calcext:color-scale") {
+        return [{ ...colorScaleRule(rule), priority: rulePriority }];
+      }
+      if (rule.name === "calcext:data-bar") {
+        return [{ ...dataBarRule(rule), priority: rulePriority }];
+      }
+      if (rule.name === "calcext:icon-set") {
+        return [{ ...iconSetRule(rule), priority: rulePriority }];
+      }
+      if (rule.name === "calcext:date") {
+        return [dateIsRule(rule, styles, dxfs, rulePriority)];
+      }
+      return [];
+    });
     if (!rules.length) continue;
     result.push({ sqref: target?.address ?? sheetName, rules });
   }
@@ -1492,6 +1496,12 @@ export function conditionalFormatsXml(
     undefined,
     formats.flatMap((format) => {
       const rules = format.rules.map((rule) => {
+        if (rule.type === "timePeriod") {
+          return xmlElement("calcext:date", {
+            "calcext:date": dateIsValue(rule.timePeriod),
+            "calcext:style": styleNames.get(rule.dxfId ?? -1) ?? "Default",
+          });
+        }
         if (rule.type === "colorScale") {
           return xmlElement(
             "calcext:color-scale",
@@ -1586,10 +1596,6 @@ function conditionValue(rule: ConditionalFormatRule): string {
     return `${rule.operator === "between" ? "" : "not-"}between(${rule.formulas?.join(",") ?? ""})`;
   }
   return `${operator}${rule.formulas?.[0] ?? ""}`;
-}
-
-function rulesPrioritySeed(format: Element): number {
-  return (format.elements ?? []).filter((child) => child.type === "element").length;
 }
 
 const dxfKeyCache = new WeakMap<DxfOptions[], string[]>();
@@ -1774,6 +1780,60 @@ function iconSetRule(element: Element): ConditionalFormatRule {
       iconSet: iconSetType(element, attributeString(element, "calcext:icon-set-type")),
     },
   };
+}
+
+function dateIsRule(
+  element: Element,
+  styles: Map<string, StyleOptions>,
+  dxfs: DxfOptions[],
+  priority: number,
+): ConditionalFormatRule {
+  assertElementNames(element, ["calcext:date", "calcext:style"]);
+  const value = attributeString(element, "calcext:date");
+  const timePeriod = Object.entries(dateIsPeriods).find(([candidate]) => candidate === value)?.[1];
+  if (!timePeriod) {
+    throw unknownOdsElement(
+      element,
+      CONTENT_PATH,
+      "calcext:date",
+      `unsupported date period: ${value ?? "missing"}`,
+    );
+  }
+  const styleName = attributeString(element, "calcext:style");
+  const style = styleName === undefined ? undefined : styles.get(styleName);
+  return {
+    type: "timePeriod",
+    timePeriod,
+    priority,
+    ...(style ? { dxfId: dxfIndex(style, dxfs) } : {}),
+  };
+}
+
+const dateIsPeriods = {
+  today: "today",
+  yesterday: "yesterday",
+  tomorrow: "tomorrow",
+  "last-7-days": "last7Days",
+  "this-week": "thisWeek",
+  "last-week": "lastWeek",
+  "next-week": "nextWeek",
+  "this-month": "thisMonth",
+  "last-month": "lastMonth",
+  "next-month": "nextMonth",
+} satisfies Record<string, NonNullable<ConditionalFormatRule["timePeriod"]>>;
+
+function dateIsValue(timePeriod: ConditionalFormatRule["timePeriod"]): string {
+  const value = Object.entries(dateIsPeriods).find(([, period]) => period === timePeriod)?.[0];
+  if (value === undefined) {
+    throw new OdsGenerateError(
+      `ODS date conditional formatting does not support time period: ${timePeriod ?? "missing"}`,
+      CONTENT_PATH,
+      "/office:body/office:spreadsheet/table:table/calcext:conditional-formats/calcext:date",
+      "calcext:date",
+      "date-period-not-representable",
+    );
+  }
+  return value;
 }
 
 export function parseDataPilotTables(

@@ -8,6 +8,7 @@ import {
   escapeText,
   lengthToEmu,
   parseXmlElement,
+  pushShapeStyle,
   textOf,
   unknownAttributeNames,
   unknownChildElement,
@@ -341,7 +342,15 @@ export function slideChildXml(
   if ("group" in child)
     return xmlElement(
       "draw:g",
-      { "draw:id": odfShapeIdXml(child.group.id), "draw:name": child.group.name },
+      {
+        "draw:id": odfShapeIdXml(child.group.id),
+        "draw:name": child.group.name,
+        "draw:style-name": pushShapeStyle(child.group.fill, undefined, styles),
+        "svg:x": toOdfLength(child.group.x),
+        "svg:y": toOdfLength(child.group.y),
+        "svg:width": toOdfLength(child.group.width),
+        "svg:height": toOdfLength(child.group.height),
+      },
       (() => {
         const children = child.group.children.map((nested) =>
           slideChildXml(nested, styles, images, mediaFiles, embeddedObjects, charts),
@@ -513,6 +522,7 @@ export function parseSlide(
         manifestMediaTypes,
         () => nextEmbeddedShapeId.value++,
         textStyles,
+        graphicStyles,
       );
       if (embeddedObject) {
         children.push(embeddedObject);
@@ -529,7 +539,7 @@ export function parseSlide(
         continue;
       }
       if (childNamed(child, "draw:text-box")) {
-        children.push({ shape: parseShape(child, textStyles) });
+        children.push({ shape: parseShape(child, textStyles, graphicStyles) });
         continue;
       }
       typedSources.add(child);
@@ -660,7 +670,7 @@ function parseNotes(
     if (child.type !== "element") continue;
     if (child.name === "draw:frame") {
       if (childNamed(child, "draw:text-box")) {
-        children.push({ shape: parseShape(child, textStyles) });
+        children.push({ shape: parseShape(child, textStyles, graphicStyles) });
         continue;
       }
     } else if (child.name === "draw:custom-shape") {

@@ -268,9 +268,13 @@ export function worksheetXml(
   const explicitColumns = (worksheet.columns ?? []).flatMap((column) => {
     const count = Math.max(1, (column.max ?? column.min) - column.min + 1);
     const styleName =
-      column.width === undefined && !column.hidden
+      column.width === undefined && !column.hidden && column.bestFit === undefined
         ? undefined
-        : addDimensionStyle({ width: column.width, hidden: column.hidden }, styles, "column");
+        : addDimensionStyle(
+            { width: column.width, hidden: column.hidden, bestFit: column.bestFit },
+            styles,
+            "column",
+          );
     return Array.from({ length: count }, () =>
       xmlElement("table:table-column", { "table:style-name": styleName }),
     );
@@ -311,7 +315,16 @@ export function worksheetXml(
     mergeStartsByCell.set(`${merge.firstRow}:${merge.firstColumn}`, merge);
   }
   const repeatedRows = groupRepeatedRows(rowsForOutput, canShareRepeatedRows);
-  const emptyRow = { repeat: 1, xml: xmlElement("table:table-row") };
+  const defaultRowHeight =
+    typeof worksheet.sheetFormat === "object" ? worksheet.sheetFormat.defaultRowHeight : undefined;
+  const defaultRowStyle =
+    defaultRowHeight === undefined
+      ? undefined
+      : addDimensionStyle({ height: defaultRowHeight }, styles, "row");
+  const emptyRow = {
+    repeat: 1,
+    xml: xmlElement("table:table-row", { "table:style-name": defaultRowStyle }),
+  };
   const bodyRows: Array<{ repeat: number; xml: string }> = [];
   let expectedRowNumber = 1;
   for (const { row, rowIndex, repeat } of repeatedRows) {
@@ -321,10 +334,13 @@ export function worksheetXml(
       expectedRowNumber += 1;
     }
     const styleName =
-      row.height === undefined && !row.hidden
+      row.height === undefined && !row.hidden && defaultRowStyle === undefined
         ? undefined
         : addDimensionStyle(
-            { height: typeof row.height === "number" ? row.height : undefined, hidden: row.hidden },
+            {
+              height: typeof row.height === "number" ? row.height : defaultRowHeight,
+              hidden: row.hidden,
+            },
             styles,
             "row",
           );
@@ -397,8 +413,20 @@ export function worksheetXml(
                 `<table:table-row table:number-rows-repeated="${repeat}"`,
               ),
         )
-      : [xmlElement("table:table-row", undefined, [xmlElement("table:table-cell")])],
+      : defaultRowStyle
+        ? []
+        : [xmlElement("table:table-row", undefined, [xmlElement("table:table-cell")])],
   );
+  const lastWrittenRow = rowsForOutput.length === 0 ? 0 : expectedRowNumber - 1;
+  const defaultRepeat = Math.max(0, MAX_ROWS - lastWrittenRow);
+  const defaultRows =
+    defaultRowStyle && defaultRepeat > 0
+      ? xmlElement(
+          "table:table-row",
+          { "table:style-name": defaultRowStyle, "table:number-rows-repeated": defaultRepeat },
+          [xmlElement("table:table-cell")],
+        )
+      : "";
   const sheetName = worksheet.name ?? `Sheet${index}`;
   const tableStyleName =
     worksheet.sheetView?.showFormulas !== undefined ||
@@ -456,7 +484,7 @@ export function worksheetXml(
       ...(frames.length ? [xmlElement("table:shapes", undefined, frames)] : []),
       tableProtectionXml(worksheet),
       columns,
-      rows,
+      `${rows}${defaultRows}`,
       conditionalFormatsXml(worksheet.conditionalFormats ?? [], sheetName, conditionalStyleNames),
       localNamedExpressions,
       ...selectionXml,
@@ -775,6 +803,7 @@ export function worksheet(
         previous &&
         previous.max === columnNumber - 1 &&
         previous.width === parsed.width &&
+        previous.bestFit === parsed.bestFit &&
         previous.hidden === parsed.hidden
       ) {
         previous.max = parsed.max;
@@ -990,8 +1019,6 @@ export function validateTableChildren(table: Element): void {
       child.name === "table:shapes" ||
       child.name === "table:named-expressions" ||
       child.name === "loext:table-protection" ||
-      child.name === "table:table-source" ||
-      child.name === "table:scenario" ||
       child.name === "calcext:conditional-formats" ||
       child.name === "calcext:sparkline-groups" ||
       child.name === "table:detective" ||
@@ -1037,6 +1064,7 @@ export function parseColumn(
     min: column,
     max: column,
     width: style?.width,
+    bestFit: style?.bestFit,
     hidden: tableVisibility(element, "table:visibility") !== "visible" || style?.hidden,
   };
 }
@@ -1112,7 +1140,14 @@ function parseRows(
     rows.push(parsed);
     rowNumber += repeat;
   }
-  return { rows, defaultRowHeight };
+  return {
+    rows: rows.map((row) => {
+      if (row.height !== defaultRowHeight) return row;
+      const { height: _height, ...normalized } = row;
+      return normalized;
+    }),
+    defaultRowHeight,
+  };
 }
 
 function renumberCell(cell: CellOptions, rowNumber: number): CellOptions {

@@ -351,17 +351,29 @@ describe("ODS spreadsheet semantics", () => {
     });
   });
 
-  it("rejects date-based conditional formatting without a canonical ODF mapping", async () => {
-    await expect(
-      parseWorkbook(
-        packageWith(
-          '<table:table table:name="Sheet1"><table:table-row><table:table-cell/></table:table-row><calcext:conditional-formats><calcext:conditional-format calcext:target-range-address="Sheet1.A1"><calcext:date-is calcext:date-is="today"/></calcext:conditional-format></calcext:conditional-formats></table:table>',
-        ),
-      ),
-    ).rejects.toMatchObject({
-      name: "OdsParseError",
-      reason: "date-based conditional formatting has no canonical rule mapping",
-    });
+  it("round-trips date conditional formatting and rule order", async () => {
+    const source = packageWith(
+      '<table:table table:name="Sheet1"><table:table-row><table:table-cell/></table:table-row><calcext:conditional-formats><calcext:conditional-format calcext:target-range-address="Sheet1.A1"><calcext:date calcext:date="today" calcext:style="Highlight"/><calcext:condition calcext:value="=1"/><calcext:date calcext:date="last-week" calcext:style="Highlight"/></calcext:conditional-format></calcext:conditional-formats></table:table>',
+      '<style:style style:name="Highlight" style:family="table-cell"><style:table-cell-properties fo:background-color="#ff0000"/></style:style>',
+    );
+    const parsed = await parseWorkbook(source);
+    expect(parsed.worksheets?.[0]?.conditionalFormats?.[0]?.rules).toMatchObject([
+      { type: "timePeriod", timePeriod: "today", priority: 1, dxfId: 0 },
+      { type: "cellIs", operator: "equal", formulas: ["1"] },
+      { type: "timePeriod", timePeriod: "lastWeek", priority: 3, dxfId: 0 },
+    ]);
+    const regenerated = await parseWorkbook(await generateWorkbook(parsed));
+    expect(regenerated.worksheets?.[0]?.conditionalFormats?.[0]?.rules ?? []).toMatchObject(
+      parsed.worksheets?.[0]?.conditionalFormats?.[0]?.rules ?? [],
+    );
+    const generatedArchive = await readOcf(
+      await generateWorkbook(parsed),
+      "application/vnd.oasis.opendocument.spreadsheet",
+    );
+    const generatedContent = generatedArchive.files["content.xml"];
+    expect(generatedContent).toContain('calcext:date="today"');
+    expect(generatedContent).toContain("calcext:style=");
+    expect(generatedContent).toContain("<calcext:date ");
   });
 
   it("accepts ODF set filters without a redundant scalar value", async () => {

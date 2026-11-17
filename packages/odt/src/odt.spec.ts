@@ -67,6 +67,26 @@ async function parseBodyError(body: string, name: string, reason?: string): Prom
 }
 
 describe("ODT canonical projection", () => {
+  it("generates textbox section children instead of dropping them", async () => {
+    const generated = await generateDocument({
+      sections: [
+        {
+          children: [
+            {
+              textbox: {
+                text: "Text box",
+                children: [{ paragraph: "Nested paragraph" }],
+              },
+            },
+          ],
+        },
+      ],
+    });
+    const content = strFromU8(unzipSync(generated)["content.xml"]!);
+    expect(content).toContain("<draw:text-box>");
+    expect(content).toContain("Nested paragraph");
+  });
+
   it("rejects a content document without its required text body", async () => {
     const source = generateOcf("application/vnd.oasis.opendocument.text", {
       "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body/></office:document-content>`,
