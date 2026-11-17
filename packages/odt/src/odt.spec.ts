@@ -231,6 +231,21 @@ describe("ODT canonical projection", () => {
     expect(parsed.styles?.paragraphStyles?.[0]).toEqual(options.styles?.paragraphStyles?.[0]);
   });
 
+  it("resolves relative common-style font sizes against the parent style", async () => {
+    const source = generateOcf("application/vnd.oasis.opendocument.text", {
+      "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:text/></office:body></office:document-content>`,
+      "styles.xml": `<?xml version="1.0"?><office:document-styles ${ODF_NAMESPACES}><office:styles><style:default-style style:family="paragraph"><style:text-properties fo:font-size="12pt"/></style:default-style><style:style style:name="Heading" style:family="paragraph"><style:text-properties fo:font-size="14pt"/></style:style><style:style style:name="Heading_20_1" style:family="paragraph" style:parent-style-name="Heading"><style:text-properties fo:font-size="115%" fo:font-weight="bold"/></style:style></office:styles></office:document-styles>`,
+    });
+    const parsed = await parseDocument(source);
+    expect(
+      parsed.styles?.paragraphStyles?.find((style) => style.id === "Heading_20_1")?.run,
+    ).toEqual({ bold: true, size: 16.1 });
+    const regenerated = await parseDocument(await generateDocument(parsed));
+    expect(
+      regenerated.styles?.paragraphStyles?.find((style) => style.id === "Heading_20_1")?.run?.size,
+    ).toBe(16.1);
+  });
+
   it("applies common style parents to automatic styles", async () => {
     const source = generateOcf("application/vnd.oasis.opendocument.text", {
       "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES} ${FORM_NAMESPACE}><office:automatic-styles><style:style style:name="P1" style:family="paragraph" style:parent-style-name="Standard"/><style:style style:name="C1" style:family="text" style:parent-style-name="Emphasis"/></office:automatic-styles><office:body><office:text><text:p text:style-name="P1"><text:span text:style-name="C1">Inherited</text:span></text:p></office:text></office:body></office:document-content>`,

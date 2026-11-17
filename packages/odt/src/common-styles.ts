@@ -42,6 +42,7 @@ type ParsedCommonStyle = {
   indent?: ParagraphStylePropertiesOptions["indent"];
   spacing?: ParagraphStylePropertiesOptions["spacing"];
   run?: RunStylePropertiesOptions;
+  relativeFontSize?: number;
 };
 
 function textPropertiesXml(style: Pick<CommonStyle, "run">): string {
@@ -344,8 +345,31 @@ export function parseCommonStyles(files: OdfFiles): DocumentOptions["styles"] {
       next: attributeString(style, "style:next-style-name"),
       indent,
       spacing,
-      ...(run ? { run } : {}),
+      ...(run.run ? { run: run.run } : {}),
+      ...(run.relativeFontSize === undefined ? {} : { relativeFontSize: run.relativeFontSize }),
     });
+  }
+  const defaultSize = parseDefaultStyle(files)?.run?.size ?? 12;
+  const resolvedSizes = new Map<string, number>();
+  function effectiveFontSize(name: string, path = new Set<string>()): number {
+    const cached = resolvedSizes.get(name);
+    if (cached !== undefined) return cached;
+    const style = parsed.get(name);
+    if (!style) return defaultSize;
+    if (path.has(name)) throw invalidStyle(name, "style:parent-style-name", "cyclic style chain");
+    const parentPath = new Set(path).add(name);
+    const inherited = style.basedOn ? effectiveFontSize(style.basedOn, parentPath) : defaultSize;
+    const size =
+      style.run?.size ??
+      (style.relativeFontSize === undefined
+        ? inherited
+        : (inherited * style.relativeFontSize) / 100);
+    resolvedSizes.set(name, size);
+    return size;
+  }
+  for (const [name, style] of parsed) {
+    if (style.relativeFontSize === undefined) continue;
+    style.run = { ...style.run, size: effectiveFontSize(name) };
   }
   const paragraphStyles: NonNullable<NonNullable<DocumentOptions["styles"]>["paragraphStyles"]> = [
     ...parsed,
@@ -388,13 +412,19 @@ export function parseCommonStyles(files: OdfFiles): DocumentOptions["styles"] {
 function parseRunProperties(
   element: Element | undefined,
   styleName: string,
-): RunStylePropertiesOptions | undefined {
+): { run?: RunStylePropertiesOptions; relativeFontSize?: number } {
   const size = attributeString(element, "fo:font-size");
   const color = attributeString(element, "fo:color");
   const weight = attributeString(element, "fo:font-weight");
   const fontStyle = attributeString(element, "fo:font-style");
   const underline = attributeString(element, "style:text-underline-style");
   const strike = attributeString(element, "style:text-line-through-style");
+  const relativeFontSize = size?.endsWith("%") ? Number(size.slice(0, -1)) : undefined;
+  if (
+    relativeFontSize !== undefined &&
+    (!Number.isFinite(relativeFontSize) || relativeFontSize < 0)
+  )
+    throw invalidStyle(styleName, "fo:font-size", "invalid relative size");
   const run: RunStylePropertiesOptions = {
     ...(weight === undefined ? {} : { bold: weight === "bold" }),
     ...(fontStyle === undefined ? {} : { italic: fontStyle === "italic" }),
@@ -402,18 +432,24 @@ function parseRunProperties(
       ? {}
       : { underline: { type: "single" as const } }),
     ...(strike === undefined || strike === "none" ? {} : { strike: true }),
-    ...(size === undefined ? {} : { size: parsePointSize(size, styleName) }),
+    ...(size === undefined || relativeFontSize !== undefined
+      ? {}
+      : { size: parsePointSize(size, styleName) }),
     ...(color?.startsWith("#") ? { color: color.slice(1) } : {}),
     ...(attributeString(element, "fo:font-family")
       ? { font: attributeString(element, "fo:font-family") }
       : {}),
   };
-  return Object.keys(run).length > 0 ? run : undefined;
+  return {
+    ...(Object.keys(run).length > 0 ? { run } : {}),
+    ...(relativeFontSize === undefined ? {} : { relativeFontSize }),
+  };
 }
 
 function parsePointSize(value: string, styleName: string): number {
-  if (!value.endsWith("pt")) throw invalidStyle(styleName, "fo:font-size", "unsupported unit");
-  const size = Number(value.slice(0, -2));
+  const size = value.endsWith("pt")
+    ? Number(value.slice(0, -2))
+    : (lengthToTwips(value) ?? Number.NaN) / 20;
   if (!Number.isFinite(size) || size < 0)
     throw invalidStyle(styleName, "fo:font-size", "invalid size");
   return size;
