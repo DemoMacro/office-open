@@ -397,7 +397,7 @@ export const LEGACY_CAPABILITY_PROBES: readonly LegacyCapabilityFormat[] = [
         {
           name: "Picture corruption isolation",
           assertion: "a corrupt picture does not discard valid pictures",
-          testId: "isolates a corrupt picture beside a valid embedded picture",
+          testId: "rejects a corrupt picture beside a valid embedded picture",
         },
         {
           name: "Grouped text tables",
