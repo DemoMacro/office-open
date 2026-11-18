@@ -93,6 +93,29 @@ describe("ODS spreadsheet semantics", () => {
     expect(regenerated.definedNames).toEqual(parsed.definedNames);
   });
 
+  it("compresses sparse rows instead of materializing the gap", async () => {
+    const options = {
+      worksheets: [
+        {
+          name: "Sparse",
+          rows: [
+            { rowNumber: 1, cells: [{ reference: "A1", value: 1 }] },
+            { rowNumber: 16777217, cells: [{ reference: "A16777217", value: 2 }] },
+          ],
+        },
+      ],
+    };
+
+    const archive = await readOcf(
+      await generateWorkbook(options),
+      "application/vnd.oasis.opendocument.spreadsheet",
+    );
+    const content = archive.files["content.xml"]!;
+    expect(content).toContain('table:number-rows-repeated="16777215"');
+    const parsed = await parseWorkbook(await generateWorkbook(options));
+    expect(parsed.worksheets?.[0]?.rows?.map((row) => row.rowNumber)).toEqual([1, 16777217]);
+  });
+
   it("round-trips matrix formula ranges", async () => {
     const formula = {
       formula: "TRANSPOSE([.A1:.B2])",
@@ -135,6 +158,47 @@ describe("ODS spreadsheet semantics", () => {
       name: "OdsGenerateError",
       reason: "unsupported-formula-type",
     });
+  });
+
+  it("emits a valid empty cache for formulas without a cached value", async () => {
+    const parsed = await parseWorkbook(
+      await generateWorkbook({
+        worksheets: [{ rows: [{ cells: [{ reference: "A1", formula: "SUM(B1:B2)" }] }] }],
+      }),
+    );
+
+    expect(parsed.worksheets?.[0]?.rows?.[0]?.cells?.[0]?.formula).toBe("SUM(B1:B2)");
+  });
+
+  it("does not emit typed numeric values for uncached formulas with value formats", async () => {
+    for (const [numFmt, value] of [
+      ["hh:mm:ss", undefined],
+      ["[$USD] #,##0.00", undefined],
+      [undefined, Number.NaN],
+    ] as const) {
+      const parsed = await parseWorkbook(
+        await generateWorkbook({
+          worksheets: [
+            {
+              rows: [
+                {
+                  cells: [
+                    {
+                      reference: "A1",
+                      formula: "SUM(B1:B2)",
+                      ...(numFmt === undefined ? {} : { style: { numFmt } }),
+                      ...(value === undefined ? {} : { value }),
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        }),
+      );
+
+      expect(parsed.worksheets?.[0]?.rows?.[0]?.cells?.[0]?.formula).toBe("SUM(B1:B2)");
+    }
   });
 
   it("preserves exact underline and strike patterns", async () => {

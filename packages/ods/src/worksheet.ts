@@ -348,8 +348,11 @@ export function worksheetXml(
   for (const { row, rowIndex, repeat } of repeatedRows) {
     const rowNumber = row.rowNumber ?? rowIndex + 1;
     while (expectedRowNumber < rowNumber) {
-      bodyRows.push(emptyRow);
-      expectedRowNumber += 1;
+      const repeat = rowNumber - expectedRowNumber;
+      const previous = bodyRows[bodyRows.length - 1];
+      if (previous?.xml === emptyRow.xml) previous.repeat += repeat;
+      else bodyRows.push({ repeat, xml: emptyRow.xml });
+      expectedRowNumber = rowNumber;
     }
     const styleName =
       row.height === undefined && !row.hidden && defaultRowStyle === undefined
@@ -825,7 +828,8 @@ export function cellXml(
   const valueKind = numFmtKind(styleOptions?.numFmt);
   let type = cell.error === undefined ? cached.type : "error";
   if (cell.error === undefined) {
-    if (valueKind === "time") type = "time";
+    if (formula !== undefined && cached.type === undefined) type = "string";
+    else if (valueKind === "time") type = "time";
     else if (valueKind === "currency") type = "currency";
   }
   const children = [
@@ -991,7 +995,7 @@ export function cacheAttributes(value: CellOptions["value"]): {
   type?: string;
   value?: string | number | boolean;
 } {
-  if (typeof value === "number") return { type: "float", value };
+  if (typeof value === "number") return Number.isFinite(value) ? { type: "float", value } : {};
   if (typeof value === "boolean") return { type: "boolean", value };
   if (value instanceof Date) return { type: "date", value: odfDateValue(value) };
   if (typeof value === "string") return { type: "string", value };
