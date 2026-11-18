@@ -803,15 +803,21 @@ export function parseSupbook(record: BiffRecord, encoding: string): Supbook {
       });
     }
   }
-  if (target.value.includes("|")) return { kind: "dde", target: target.value, sheetNames };
-  if (/^(ole:|package:)/i.test(target.value)) {
+  let targetValue = "";
+  for (let index = 0; index < target.value.length; index++) {
+    const character = target.value[index]!;
+    const code = character.charCodeAt(0);
+    targetValue += code < 0x20 ? `%${code.toString(16).padStart(2, "0").toUpperCase()}` : character;
+  }
+  if (targetValue.includes("|")) return { kind: "dde", target: targetValue, sheetNames };
+  if (/^(ole:|package:)/i.test(targetValue)) {
     return {
       kind: "ole",
-      target: target.value.replace(/^(ole:|package:)/i, ""),
+      target: targetValue.replace(/^(ole:|package:)/i, ""),
       sheetNames,
     };
   }
-  return { kind: "external", target: target.value, sheetNames };
+  return { kind: "external", target: targetValue, sheetNames };
 }
 
 export function parseExternSheet(
@@ -923,11 +929,32 @@ export function parseName(
   const flags = view.getUint16(0, true);
   const formulaLength = view.getUint16(4, true);
   const localSheetId = view.getUint16(8, true) === 0 ? undefined : view.getUint16(8, true) - 1;
-  const name = isBiff8
+  const decodedName = isBiff8
     ? readNoCchBiff8String(body, 14, body[3]!, encoding)
     : readNoCchBiff5String(body, 14, body[3]!, encoding);
-  let value = name.value;
-  const tokens = body.subarray(name.offset, name.offset + formulaLength);
+  const builtInNames: Record<number, string> = {
+    0x00: "_xlnm.Consolidate_Area",
+    0x01: "_xlnm.Auto_Open",
+    0x02: "_xlnm.Auto_Close",
+    0x03: "_xlnm.Extract",
+    0x04: "_xlnm.Database",
+    0x05: "_xlnm.Criteria",
+    0x06: "_xlnm.Print_Area",
+    0x07: "_xlnm.Print_Titles",
+    0x08: "_xlnm.Recorder",
+    0x09: "_xlnm.Data_Form",
+    0x0a: "_xlnm.Auto_Activate",
+    0x0b: "_xlnm.Auto_Deactivate",
+    0x0c: "_xlnm.Sheet_Title",
+    0x0d: "_xlnm._FilterDatabase",
+  };
+  const builtIn = (flags & 0x0020) !== 0;
+  const name =
+    builtIn && decodedName.value.length === 1 && builtInNames[decodedName.value.charCodeAt(0)]
+      ? builtInNames[decodedName.value.charCodeAt(0)]!
+      : decodedName.value;
+  let value = name;
+  const tokens = body.subarray(decodedName.offset, decodedName.offset + formulaLength);
   const decodeNameFormula = (formulaVersion: number, formulaData: Uint8Array) =>
     decodeFormula(formulaData, {
       baseRow: 0,
@@ -949,7 +976,7 @@ export function parseName(
     }
   }
   return {
-    name: name.value,
+    name,
     value,
     localSheetId,
     hidden: (flags & 0x0001) !== 0,

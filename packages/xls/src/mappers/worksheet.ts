@@ -354,7 +354,7 @@ function parseHeaderText(record: BiffRecord, state: WorkbookState): string {
   if (state.version === 2) return readBiff2String(record.body, 0, encoding).value;
   if (state.version <= 4) return readBiff35String(record.body, 0, encoding).value;
   if (state.version === 5) return readBiff5String(record.body, 0, encoding).value;
-  return readShortBiff8String(record.body, 0, encoding).value;
+  return readBiff8String(record.body).value;
 }
 
 function parseConditionalFormatRange(record: BiffRecord): { reference: string; remaining: number } {

@@ -675,8 +675,8 @@ function pageSetupRecords(): readonly Uint8Array[] {
   view.setFloat64(16, 0.5, true);
   view.setFloat64(24, 0.5, true);
   return [
-    record(0x0014, new Uint8Array([1, 0, 0x48])),
-    record(0x0015, new Uint8Array([1, 0, 0x46])),
+    record(0x0014, new Uint8Array([1, 0, 1, 0x75, 0x98])),
+    record(0x0015, new Uint8Array([1, 0, 0, 0x46])),
     record(0x0026, float64Bytes(0.75)),
     record(0x0027, float64Bytes(0.75)),
     record(0x0028, float64Bytes(0.75)),
@@ -1771,6 +1771,20 @@ describe("parseWorkbook", () => {
     });
   });
 
+  it("decodes built-in BIFF8 NAME identifiers", () => {
+    const tokens = referenceToken(0, 0);
+    const body = new Uint8Array(16 + tokens.byteLength);
+    const view = new DataView(body.buffer);
+    view.setUint16(0, 0x0020, true);
+    body[3] = 1;
+    view.setUint16(4, tokens.byteLength, true);
+    body[14] = 0;
+    body[15] = 0x06;
+    body.set(tokens, 16);
+    const data = workbook(8, [{ name: "Sheet", cells: [] }], [], [], [record(0x0018, body)]);
+    expect(parseWorkbook(xls(data)).definedNames?.[0]?.name).toBe("_xlnm.Print_Area");
+  });
+
   it("parses DDE and OLE SUPBOOK references", () => {
     const dde = workbook(
       8,
@@ -2167,7 +2181,7 @@ describe("parseWorkbook", () => {
   it("parses HEADER, FOOTER, margins and PAGESETUP", () => {
     const data = workbook(8, [{ name: "Sheet", cells: [...pageSetupRecords()] }]);
     const worksheet = (parseWorkbook(xls(data)).worksheets ?? [])[0]!;
-    expect(worksheet.headerFooter).toEqual({ oddHeader: "H", oddFooter: "F" });
+    expect(worksheet.headerFooter).toEqual({ oddHeader: "页", oddFooter: "F" });
     expect(worksheet.pageMargins).toEqual({
       left: 0.75,
       right: 0.75,
