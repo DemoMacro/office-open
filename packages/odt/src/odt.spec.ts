@@ -2104,6 +2104,16 @@ describe("ODT canonical projection", () => {
     });
   });
 
+  it("rejects external images without a canonical picture type", async () => {
+    await expect(
+      parseDocument(
+        odtPackage(
+          '<text:p><draw:frame svg:width="4cm" svg:height="3cm"><draw:image xlink:href="https://example.com/logo.avif"/></draw:frame></text:p>',
+        ),
+      ),
+    ).rejects.toMatchObject({ reason: "unsupported-image-type" });
+  });
+
   it("rejects pictures without embedded data or a source URL", async () => {
     await expect(
       generateDocument({

@@ -647,7 +647,14 @@ function pictureTypeFromPath(path: string): string {
 function pictureTypeFromUrl(value: string): RasterPictureType {
   const extension = value.split(/[?#]/, 1)[0]?.split("/").pop()?.split(".").pop()?.toLowerCase();
   if (extension === "jpeg") return "jpg";
-  return isRasterPictureType(extension ?? "") ? (extension as RasterPictureType) : "png";
+  if (isRasterPictureType(extension ?? "")) return extension as RasterPictureType;
+  throw new OdtParseError(
+    `content.xml: external image type is not supported: ${extension ?? "unknown"}`,
+    "content.xml",
+    "/office:document-content/office:body/office:text/draw:frame/draw:image",
+    "draw:image",
+    "unsupported-image-type",
+  );
 }
 
 /** draw:frame + draw:object resolves a typed embedded-object subdocument. */
