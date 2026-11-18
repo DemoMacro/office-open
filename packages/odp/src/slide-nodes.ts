@@ -21,7 +21,7 @@ import type { Element } from "@office-open/xml";
 
 import type { OdpChart } from "./drawing";
 import { chartFrameXml } from "./drawing";
-import { OdpParseError } from "./error";
+import { OdpGenerateError, OdpParseError } from "./error";
 import { parseSlideTable, slideTableXml } from "./slide";
 import { parseParagraph, textBodyXml, type OdpMeasureTextSegmentKind } from "./text-run";
 
@@ -595,7 +595,13 @@ export function slideNodeXml(
   if ("measure" in child) return measureXml(child.measure, styles);
   if ("pageThumbnail" in child) return pageThumbnailXml(child.pageThumbnail);
   if ("scene" in child) return sceneXml(child.scene);
-  return "";
+  throw new OdpGenerateError(
+    "ODP slide node has no canonical ODF mapping",
+    "content.xml",
+    "/office:document-content/office:body/office:presentation/draw:page",
+    "slide-node",
+    "unsupported-slide-node",
+  );
 }
 
 /** Parse any ODF-only slide node into its typed payload. */

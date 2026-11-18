@@ -397,7 +397,13 @@ export function slideChildXml(
     }
     return child.rawXml;
   }
-  return "";
+  throw new OdpGenerateError(
+    "ODP slide child has no canonical ODF mapping",
+    "content.xml",
+    "/office:document-content/office:body/office:presentation/draw:page",
+    "slide-child",
+    "unsupported-slide-child",
+  );
 }
 
 const ODF_RAW_PREFIXES = new Set([

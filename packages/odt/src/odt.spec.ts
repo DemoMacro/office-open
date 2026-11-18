@@ -1866,6 +1866,29 @@ describe("ODT canonical projection", () => {
     });
   });
 
+  it("rejects block children without an ODF projection", async () => {
+    const error = await generateDocument({
+      sections: [
+        {
+          children: [
+            {
+              customXml: {
+                element: "custom",
+                children: [{ paragraph: { text: "not representable in ODT" } }],
+              },
+            },
+          ],
+        },
+      ],
+    }).catch((caught: unknown) => caught);
+    expect(error).toBeInstanceOf(OdtGenerateError);
+    expect(error).toMatchObject({
+      part: "content.xml",
+      elementName: "customXml",
+      reason: "unsupported-block-child",
+    });
+  });
+
   it("round-trips duplicate bookmark names with distinct canonical ids", async () => {
     const options: DocumentOptions = {
       sections: [

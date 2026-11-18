@@ -82,7 +82,7 @@ import {
   type OdtImage,
 } from "./drawing";
 import type { OdtEmbeddedObjectOptions } from "./embedded-objects";
-import { OdtParseError } from "./error";
+import { OdtGenerateError, OdtParseError } from "./error";
 import {
   listParagraphLevel,
   listXml,
@@ -888,7 +888,21 @@ export function blockXml(
       ],
     );
   }
-  return "";
+  const elementName =
+    "altChunk" in child
+      ? "altChunk"
+      : "subDoc" in child
+        ? "subDoc"
+        : "customXml" in child
+          ? "customXml"
+          : "unknown";
+  throw new OdtGenerateError(
+    `ODT block child ${elementName} has no canonical ODF mapping`,
+    "content.xml",
+    "/office:document-content/office:body/office:text",
+    elementName,
+    "unsupported-block-child",
+  );
 }
 
 export function parseBlock(element: Element, context: ParseContext): SectionChild {
