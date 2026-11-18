@@ -1268,17 +1268,19 @@ describe("ODP codec", () => {
     ).rejects.toBeInstanceOf(OdpGenerateError);
   });
 
-  it("round-trips a missing package image as a linked-only picture", async () => {
+  it("rejects a missing package image", async () => {
     const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:presentation><draw:page><draw:frame svg:x="1cm" svg:y="1cm" svg:width="4cm" svg:height="3cm"><draw:image xlink:href="Pictures/missing.png" xlink:show="embed"/></draw:frame></draw:page></office:presentation></office:body></office:document-content>`;
-    const parsed = await parsePresentation(
-      generateOcf("application/vnd.oasis.opendocument.presentation", { "content.xml": content }),
-    );
-    expect(parsed.slides?.[0]?.children?.[0]).toMatchObject({
-      picture: { type: "png", sourceUrl: "Pictures/missing.png" },
-    });
-    expect(
-      (await parsePresentation(await generatePresentation(parsed))).slides?.[0]?.children?.[0],
-    ).toEqual(parsed.slides?.[0]?.children?.[0]);
+    await expect(
+      parsePresentation(
+        generateOcf("application/vnd.oasis.opendocument.presentation", { "content.xml": content }),
+      ),
+    ).rejects.toMatchObject({ reason: "missing-package-part" });
+  });
+
+  it("rejects empty opaque slide nodes", async () => {
+    await expect(
+      generatePresentation({ slides: [{ children: [{ rawXml: "" }] }] }),
+    ).rejects.toMatchObject({ reason: "empty-raw-xml" });
   });
 
   it("projects an embedded SVG picture into canonical slide children", async () => {

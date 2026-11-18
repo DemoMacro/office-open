@@ -240,13 +240,43 @@ export function parsePictureFrame(
 ): { picture: PictureOptions } | undefined {
   const image = childNamed(frame, "draw:image");
   if (!image) return undefined;
-  const path = attributeString(image, "xlink:href")?.replace(/^\//, "");
-  const data = path ? binaries[path] : undefined;
-  const type = path
-    ? data
-      ? embeddedPictureType(path)
-      : pictureTypeFromUrl(attributeString(image, "xlink:href") ?? "")
-    : undefined;
+  const href = attributeString(image, "xlink:href");
+  if (href === undefined) {
+    throw new OdpParseError(
+      "ODP image reference is missing",
+      "content.xml",
+      "/office:document-content/office:body/office:presentation/draw:page/draw:frame/draw:image",
+      "xlink:href",
+      "missing-required-attribute",
+    );
+  }
+  const external = isExternalOdfUrl(href);
+  const path = external ? undefined : packagePathFromReference(href);
+  if (!external && path === undefined) {
+    throw new OdpParseError(
+      "ODP image reference is not a valid package path",
+      "content.xml",
+      "/office:document-content/office:body/office:presentation/draw:page/draw:frame/draw:image",
+      "xlink:href",
+      "invalid-package-uri",
+    );
+  }
+  const data = path === undefined ? undefined : binaries[path];
+  if (!external && data === undefined) {
+    throw new OdpParseError(
+      `ODP image package member is missing: ${path}`,
+      "content.xml",
+      "/office:document-content/office:body/office:presentation/draw:page/draw:frame/draw:image",
+      "draw:image",
+      "missing-package-part",
+    );
+  }
+  let type: PictureOptions["type"] | undefined;
+  if (external) type = pictureTypeFromUrl(href);
+  else {
+    if (path === undefined) return undefined;
+    type = embeddedPictureType(path);
+  }
   if (type === undefined) return undefined;
   const graphic = graphicStyles.get(attributeString(frame, "draw:style-name") ?? "");
   const fill = graphicFill(graphic);
@@ -255,9 +285,7 @@ export function parsePictureFrame(
   const x = transformedLength(attributeString(frame, "svg:x"), transform.x);
   const y = transformedLength(attributeString(frame, "svg:y"), transform.y);
   if (data && path) usedBinaryPaths.add(path);
-  if (!data || !path) {
-    const href = attributeString(image, "xlink:href");
-    if (!href) return undefined;
+  if (external) {
     return {
       picture: {
         type,
@@ -273,6 +301,15 @@ export function parsePictureFrame(
       },
     };
   }
+  if (path === undefined || data === undefined) {
+    throw new OdpParseError(
+      "ODP embedded image data is unavailable",
+      "content.xml",
+      "/office:document-content/office:body/office:presentation/draw:page/draw:frame/draw:image",
+      "draw:image",
+      "missing-package-part",
+    );
+  }
   return {
     picture: {
       type,
@@ -287,6 +324,33 @@ export function parsePictureFrame(
       ...parseFrameMetadata(frame),
     },
   };
+}
+
+function packagePathFromReference(href: string): string | undefined {
+  let decoded: string;
+  try {
+    decoded = decodeURIComponent(href.split(/[?#]/u, 1)[0] ?? "");
+  } catch (cause) {
+    throw new OdpParseError(
+      "ODP image reference is not a valid package URI",
+      "content.xml",
+      "/office:document-content/office:body/office:presentation/draw:page/draw:frame/draw:image",
+      "xlink:href",
+      "invalid-package-uri",
+      { cause },
+    );
+  }
+  const segments: string[] = [];
+  for (const segment of decoded.split("/")) {
+    if (segment === "" || segment === ".") continue;
+    if (segment === "..") {
+      if (segments.length === 0) return undefined;
+      segments.pop();
+      continue;
+    }
+    segments.push(segment);
+  }
+  return segments.join("/");
 }
 
 function parsePictureTransform(element: Element): { x?: number; y?: number; rotation?: number } {

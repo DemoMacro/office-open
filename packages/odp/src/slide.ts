@@ -381,7 +381,15 @@ export function slideChildXml(
   if ("frame" in child || "measure" in child || "pageThumbnail" in child || "scene" in child)
     return slideNodeXml(child, styles, charts);
   if ("rawXml" in child) {
-    if (child.rawXml === "") return "";
+    if (child.rawXml === "") {
+      throw new OdpGenerateError(
+        "ODP opaque slide node cannot be empty",
+        "content.xml",
+        "/office:document-content/office:body/office:presentation/draw:page",
+        "rawXml",
+        "empty-raw-xml",
+      );
+    }
     const legacyShape = compatibilityLegacyShape(child.rawXml);
     if (legacyShape) return shapeXml(legacyShape, styles);
     const match = /<([A-Za-z_][\w.-]*)(?::([\w.-]+))?/u.exec(child.rawXml);
