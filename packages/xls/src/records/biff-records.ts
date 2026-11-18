@@ -178,20 +178,13 @@ export function biffRecordContext(
   };
 }
 
-export function assertSupportedBiffRecord(
-  record: BiffRecord,
-): BiffRecordClassification | undefined {
+export function assertSupportedBiffRecord(record: BiffRecord): BiffRecordClassification {
   const entry = BIFF_RECORD_CLASSIFICATIONS.get(record.code);
   if (!entry) {
-    // Real-world workbooks (all of which Excel opens) carry records outside
-    // any public classification table. Skipping with a structured warning keeps
-    // them readable; explicit classifications still control strict rejection.
-    console.warn(
-      `xls parse diagnostic: skipped unknown record (${JSON.stringify({
-        ...biffRecordContext(record, "unknown-record"),
-      })})`,
+    throw new XlsParseError(
+      `Unsupported legacy XLS record 0x${record.code.toString(16).padStart(4, "0")}`,
+      biffRecordContext(record, "unsupported-record"),
     );
-    return undefined;
   }
   if (entry.disposition.kind === "unsupported") {
     throw new XlsParseError(

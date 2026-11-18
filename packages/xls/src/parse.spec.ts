@@ -1809,42 +1809,32 @@ describe("parseWorkbook", () => {
     expect(() => parseWorkbook(xls(data))).toThrow(/truncated SUPBOOK sheet name/);
   });
 
-  it("tolerates unknown records but rejects malformed auxiliary structures", () => {
-    const warnings: string[] = [];
-    const warn = console.warn;
-    console.warn = (message: string) => warnings.push(message);
-    try {
-      const unknown = workbook(
-        8,
-        [{ name: "Sheet", cells: [] }],
-        [],
-        [],
-        [record(0xffff, new Uint8Array(1))],
-      );
-      const parsed = parseWorkbook(xls(unknown));
-      expect(parsed.worksheets?.[0]?.name).toBe("Sheet");
-      expect(warnings.some((message) => message.includes("unknown-record"))).toBe(true);
-      expect(warnings.some((message) => message.includes("0xffff"))).toBe(true);
+  it("rejects unknown records and malformed auxiliary structures", () => {
+    const unknown = workbook(
+      8,
+      [{ name: "Sheet", cells: [] }],
+      [],
+      [],
+      [record(0xffff, new Uint8Array(1))],
+    );
+    expect(() => parseWorkbook(xls(unknown))).toThrow(/unsupported legacy XLS record 0xffff/i);
 
-      const malformedSupbook = workbook(
-        8,
-        [{ name: "Sheet", cells: [] }],
-        [],
-        [],
-        [record(0x01ae, new Uint8Array(1))],
-      );
-      expect(() => parseWorkbook(xls(malformedSupbook))).toThrow(/truncated SUPBOOK/);
-      const malformedName = workbook(
-        8,
-        [{ name: "Sheet", cells: [] }],
-        [],
-        [],
-        [nameRecord("Broken", new Uint8Array([0xff]))],
-      );
-      expect(() => parseWorkbook(xls(malformedName))).toThrow(/unsupported formula token 0xff/);
-    } finally {
-      console.warn = warn;
-    }
+    const malformedSupbook = workbook(
+      8,
+      [{ name: "Sheet", cells: [] }],
+      [],
+      [],
+      [record(0x01ae, new Uint8Array(1))],
+    );
+    expect(() => parseWorkbook(xls(malformedSupbook))).toThrow(/truncated SUPBOOK/);
+    const malformedName = workbook(
+      8,
+      [{ name: "Sheet", cells: [] }],
+      [],
+      [],
+      [nameRecord("Broken", new Uint8Array([0xff]))],
+    );
+    expect(() => parseWorkbook(xls(malformedName))).toThrow(/unsupported formula token 0xff/);
   });
 
   it("skips registered structural no-op records", () => {
