@@ -30,7 +30,7 @@ import type {
 } from "@office-open/pptx";
 import type { Element } from "@office-open/xml";
 
-import { OdpParseError } from "./error";
+import { OdpGenerateError, OdpParseError } from "./error";
 import { toOdfLength } from "./shape";
 
 /** Binary image collected during generation — emitted as a Pictures/ entry. */
@@ -53,7 +53,15 @@ export function pictureFrameXml(
 ): string {
   let path: string;
   if (picture.data === undefined) {
-    if (!picture.sourceUrl) return "";
+    if (!picture.sourceUrl) {
+      throw new OdpGenerateError(
+        "ODP picture has neither embedded data nor an external source URL",
+        "content.xml",
+        "/office:document-content/office:body/office:presentation/draw:page/draw:frame/draw:image",
+        "draw:image",
+        "missing-picture-source",
+      );
+    }
     path = picture.sourceUrl;
   } else {
     const data = toUint8Array(picture.data);

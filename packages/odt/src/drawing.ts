@@ -44,7 +44,7 @@ import type {
   OdtEmbeddedObjectOptions,
   OdtFrameAnchorType,
 } from "./embedded-objects";
-import { OdtParseError } from "./error";
+import { OdtGenerateError, OdtParseError } from "./error";
 import { parseParagraph } from "./paragraph";
 
 export type PictureType = NonNullable<PictureOptions["type"]>;
@@ -352,7 +352,15 @@ export function pictureFrameXml(picture: PictureOptions, images: OdtImage[]): st
   const raster = picture.type === "svg" ? picture.fallback : picture;
   let path: string;
   if (raster.data === undefined) {
-    if (!picture.sourceUrl) return "";
+    if (!picture.sourceUrl) {
+      throw new OdtGenerateError(
+        "ODT picture has neither embedded data nor an external source URL",
+        "content.xml",
+        "/office:document-content/office:body/office:text/draw:frame/draw:image",
+        "draw:image",
+        "missing-picture-source",
+      );
+    }
     path = picture.sourceUrl;
   } else {
     const data = toUint8Array(raster.data);

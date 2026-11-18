@@ -3,7 +3,7 @@ import { generateOcf, ODF_NAMESPACES, readOcf } from "@office-open/odf";
 import type { TransitionOptions } from "@office-open/pptx";
 import { describe, expect, it } from "vite-plus/test";
 
-import { generatePresentation, OdpParseError, parsePresentation } from "./index";
+import { generatePresentation, OdpGenerateError, OdpParseError, parsePresentation } from "./index";
 import type { OdpPresentationOptions } from "./options";
 import type { OdpTransitionOptions } from "./transition";
 
@@ -1258,6 +1258,14 @@ describe("ODP codec", () => {
     expect(
       (await parsePresentation(await generatePresentation(options))).slides?.[0]?.children?.[0],
     ).toMatchObject({ picture: { sourceUrl: "../images/logo.png" } });
+  });
+
+  it("rejects pictures without embedded data or a source URL", async () => {
+    await expect(
+      generatePresentation({
+        slides: [{ children: [{ picture: { type: "png" } }] }],
+      }),
+    ).rejects.toBeInstanceOf(OdpGenerateError);
   });
 
   it("round-trips a missing package image as a linked-only picture", async () => {

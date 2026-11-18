@@ -2104,6 +2104,28 @@ describe("ODT canonical projection", () => {
     });
   });
 
+  it("rejects pictures without embedded data or a source URL", async () => {
+    await expect(
+      generateDocument({
+        sections: [
+          {
+            children: [
+              {
+                paragraph: {
+                  children: [{ picture: { type: "png", transformation: { width: 1, height: 1 } } }],
+                },
+              },
+            ],
+          },
+        ],
+      }),
+    ).rejects.toMatchObject({
+      part: "content.xml",
+      elementName: "draw:image",
+      reason: "missing-picture-source",
+    });
+  });
+
   it("rejects a frame with an unsupported payload and no image", async () => {
     const error = await parseBodyError(
       '<text:p>before<draw:frame svg:width="2cm" svg:height="1cm"><draw:plugin xlink:href="plugin:example" draw:mime-type="application/example"/></draw:frame>after</text:p>',
