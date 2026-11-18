@@ -2126,6 +2126,27 @@ describe("ODT canonical projection", () => {
     });
   });
 
+  it("rejects multiple sections with different page properties", async () => {
+    await expect(
+      generateDocument({
+        sections: [
+          {
+            properties: { pageSize: { width: 12000, height: 16000 } },
+            children: [{ paragraph: "Portrait" }],
+          },
+          {
+            properties: { pageSize: { width: 16000, height: 12000 } },
+            children: [{ paragraph: "Landscape" }],
+          },
+        ],
+      }),
+    ).rejects.toMatchObject({
+      part: "styles.xml",
+      elementName: "style:master-page",
+      reason: "multiple-sections-not-representable",
+    });
+  });
+
   it("rejects a frame with an unsupported payload and no image", async () => {
     const error = await parseBodyError(
       '<text:p>before<draw:frame svg:width="2cm" svg:height="1cm"><draw:plugin xlink:href="plugin:example" draw:mime-type="application/example"/></draw:frame>after</text:p>',

@@ -186,6 +186,7 @@ export interface ParseContext {
 
 function generateOdtPackage(options: OdtDocumentOptions): Uint8Array {
   const { packageManifest, embeddedObjects, packageMembers, styleResources } = options;
+  validateSectionProjection(options.sections);
   const styles: string[] = automaticStyleResourcesXml(styleResources);
   const graphicResources = createGraphicStyleResources();
   bindGraphicStyleResources(styles, graphicResources);
@@ -311,6 +312,32 @@ function generateOdtPackage(options: OdtDocumentOptions): Uint8Array {
     }
   }
   return generateOcf(options.packageMediaType ?? MIME, files, mediaTypes, packageManifest);
+}
+
+function validateSectionProjection(sections: OdtDocumentOptions["sections"]): void {
+  const first = sections[0];
+  if (first === undefined || sections.length < 2) return;
+  const firstProjection = JSON.stringify({
+    properties: first.properties,
+    headers: first.headers,
+    footers: first.footers,
+  });
+  const hasDifferentSection = sections.slice(1).some(
+    (section) =>
+      JSON.stringify({
+        properties: section.properties,
+        headers: section.headers,
+        footers: section.footers,
+      }) !== firstProjection,
+  );
+  if (!hasDifferentSection) return;
+  throw new OdtGenerateError(
+    "ODT cannot represent multiple canonical sections with different page or header/footer properties",
+    "styles.xml",
+    "/office:document-styles/office:master-styles/style:master-page",
+    "style:master-page",
+    "multiple-sections-not-representable",
+  );
 }
 
 export function generateDocumentSync<T extends OutputType = "uint8array">(
