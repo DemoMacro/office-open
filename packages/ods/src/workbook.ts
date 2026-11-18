@@ -40,7 +40,7 @@ import {
 } from "@office-open/odf";
 import type { PackageMemberOptions } from "@office-open/odf";
 import type { DxfOptions, WorkbookOptions } from "@office-open/xlsx";
-import { XmlParseError, type Element } from "@office-open/xml";
+import type { Element } from "@office-open/xml";
 
 import { dataMappingsXml, parseDataMappings } from "./data-mappings";
 import { parseWorksheetCharts } from "./drawing-chart";
@@ -105,7 +105,7 @@ function generateOdsPackage(options: OdsWorkbookOptions): Uint8Array {
   } catch (cause) {
     if (
       cause instanceof OdfSchemaError ||
-      (cause instanceof Error && cause.name === XmlParseError.name)
+      (cause instanceof Error && cause.name === "XmlParseError")
     )
       throw new OdsGenerateError(
         cause.message,

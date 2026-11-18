@@ -51,7 +51,7 @@ import {
   type OdfPackageFiles,
   type PackageMemberOptions,
 } from "@office-open/odf";
-import { XmlParseError, type Element } from "@office-open/xml";
+import type { Element } from "@office-open/xml";
 
 import {
   automaticStyleResourcesXml,
@@ -190,7 +190,7 @@ function generateOdtPackage(options: OdtDocumentOptions): Uint8Array {
   } catch (cause) {
     if (
       cause instanceof OdfSchemaError ||
-      (cause instanceof Error && cause.name === XmlParseError.name)
+      (cause instanceof Error && cause.name === "XmlParseError")
     )
       throw new OdtGenerateError(
         cause.message,

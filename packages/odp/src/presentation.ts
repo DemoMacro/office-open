@@ -47,7 +47,7 @@ import {
 } from "@office-open/odf";
 import type { PackageMemberOptions } from "@office-open/odf";
 import type { MasterDefinition, PresentationOptions, SlideOptions } from "@office-open/pptx";
-import { XmlParseError, type Element } from "@office-open/xml";
+import type { Element } from "@office-open/xml";
 
 import type { OdpChart, OdpImage } from "./drawing";
 import { normalizeEmbeddedObjectPath, type OdpEmbeddedObjectPool } from "./embedded-frames";
@@ -205,7 +205,7 @@ function generateOdpPackage(options: OdpPresentationOptions): Uint8Array {
   } catch (cause) {
     if (
       cause instanceof OdfSchemaError ||
-      (cause instanceof Error && cause.name === XmlParseError.name)
+      (cause instanceof Error && cause.name === "XmlParseError")
     )
       throw new OdpGenerateError(
         cause.message,
