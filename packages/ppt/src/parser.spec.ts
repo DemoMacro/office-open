@@ -777,7 +777,7 @@ describe("parsePresentation", () => {
     expect(parsePresentation(fixture).slides![0]!.notes).toBe("Speaker note");
   });
 
-  it("treats a dangling legacy notes identifier as absent notes", () => {
+  it("rejects a dangling legacy notes identifier", () => {
     const { document, currentUser } = buildDocument([anchoredTextShape()], ["Slide text"], {
       notes: "missing-container",
     });
@@ -786,7 +786,7 @@ describe("parsePresentation", () => {
       { name: "Current User", data: currentUser },
     ]);
 
-    expect(parsePresentation(fixture).slides![0]!.notes).toBeUndefined();
+    expect(() => parsePresentation(fixture)).toThrow("notes persist object is missing");
   });
 
   it("rejects a referenced notes container without a drawing", () => {
@@ -870,6 +870,19 @@ describe("parsePresentation", () => {
     expect(slide.animations).toEqual([
       { type: "fade", class: "entrance", trigger: "onClick", delay: 120, shapeId: 2050 },
     ]);
+  });
+
+  it("rejects unknown legacy animation effects instead of mapping them to appear", () => {
+    const { document, currentUser } = buildDocument(
+      [container(0xf004, [...anchoredTextShapeBody(), container(4116, [animationAtom(0xff)])])],
+      ["Slide text"],
+      { animation: true },
+    );
+    const fixture = buildCfb([
+      { name: "PowerPoint Document", data: document },
+      { name: "Current User", data: currentUser },
+    ]);
+    expect(() => parsePresentation(fixture)).toThrow(/Unsupported legacy animation effect: 255/);
   });
 
   it("projects legacy style text paragraph and character formatting", () => {
@@ -1242,7 +1255,7 @@ describe("parsePresentation", () => {
     expect(child.shape?.textBody?.paragraphs).toEqual([{ children: [{ text: "Filled" }] }]);
   });
 
-  it("isolates a corrupt picture beside a valid embedded picture", () => {
+  it("rejects a corrupt picture beside a valid embedded picture", () => {
     const png = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
     const bseBody = Array.from<number>({ length: 36 }).fill(0);
     bseBody[33] = 0;
@@ -1272,13 +1285,7 @@ describe("parsePresentation", () => {
       { name: "Pictures", data: pictureStream },
     ]);
 
-    const presentation = parsePresentation(fixture);
-    expect(presentation.slides).toHaveLength(1);
-    const child = presentation.slides![0]!.children![0]!;
-    if (!("picture" in child)) throw new TypeError("Expected a picture child");
-    expect(child.picture?.id).toBe(2051);
-    expect(child.picture?.type).toBe("png");
-    expect(child.picture?.data).toEqual(new Uint8Array(png));
+    expect(() => parsePresentation(fixture)).toThrow("malformed picture data");
   });
 
   it("projects a complete grouped-text grid as a table", () => {

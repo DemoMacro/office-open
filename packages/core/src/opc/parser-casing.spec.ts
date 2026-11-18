@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { ZipStreamWriter, zipSync } from "./packer";
-import { parseArchive } from "./parser";
+import { ParsedArchive, parseArchive } from "./parser";
 
 const enc = (s: string): Uint8Array => new TextEncoder().encode(s);
 
@@ -62,6 +62,21 @@ describe("ParsedArchive case-insensitive part names", () => {
         }),
       ),
     ).toThrow("duplicate ZIP part name");
+  });
+
+  it("enforces configured ZIP read limits", () => {
+    expect(() =>
+      parseArchive(zipSync({ "word/document.xml": [enc("<document/>"), { level: 0 }] }), {
+        maxEntries: 0,
+      }),
+    ).toThrow("ZIP entry count exceeds configured limit");
+  });
+
+  it("applies default ZIP read limits to direct archive construction", () => {
+    const archive = zipSync({ "word/document.xml": [enc("<document/>"), { level: 0 }] });
+    expect(() => new ParsedArchive(archive, undefined, { maxEntries: 0 })).toThrow(
+      "ZIP entry count exceeds configured limit",
+    );
   });
 
   it("rejects zero-byte members that collide as OPC part names", async () => {

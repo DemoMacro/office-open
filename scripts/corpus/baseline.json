@@ -61,12 +61,12 @@
       "malformed": 0
     },
     "xlsx": {
-      "total": 385,
-      "clean": 382,
+      "total": 384,
+      "clean": 383,
       "diff": 0,
       "parseFail": 0,
       "genFail": 0,
-      "malformed": 3
+      "malformed": 1
     },
     "pptx": {
       "total": 0,
@@ -158,11 +158,11 @@
   "apache-poi": {
     "docx": {
       "total": 190,
-      "clean": 172,
+      "clean": 173,
       "diff": 0,
       "parseFail": 0,
       "genFail": 0,
-      "malformed": 18
+      "malformed": 17
     },
     "xlsx": {
       "total": 387,
@@ -184,19 +184,19 @@
   "libreoffice-core": {
     "docx": {
       "total": 2313,
-      "clean": 2276,
+      "clean": 2278,
       "diff": 0,
       "parseFail": 0,
       "genFail": 0,
-      "malformed": 37
+      "malformed": 35
     },
     "xlsx": {
       "total": 571,
-      "clean": 562,
+      "clean": 564,
       "diff": 0,
       "parseFail": 0,
       "genFail": 0,
-      "malformed": 9
+      "malformed": 7
     },
     "pptx": {
       "total": 587,
@@ -205,6 +205,32 @@
       "parseFail": 0,
       "genFail": 0,
       "malformed": 3
+    }
+  },
+  "markitdown": {
+    "docx": {
+      "total": 10,
+      "clean": 10,
+      "diff": 0,
+      "parseFail": 0,
+      "genFail": 0,
+      "malformed": 0
+    },
+    "xlsx": {
+      "total": 6,
+      "clean": 6,
+      "diff": 0,
+      "parseFail": 0,
+      "genFail": 0,
+      "malformed": 0
+    },
+    "pptx": {
+      "total": 11,
+      "clean": 11,
+      "diff": 0,
+      "parseFail": 0,
+      "genFail": 0,
+      "malformed": 0
     }
   }
 }

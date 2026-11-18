@@ -306,6 +306,8 @@ export interface ShowOptions {
 
 /** Root options for a .pptx package — maps to presentation.xml plus its satellite parts. */
 export interface PresentationOptions extends CorePropertiesOptions {
+  /** Source path of the primary presentation part; round-trip only. */
+  presentationPath?: string;
   size?: SlideSize;
   /** Slide size class (`p:sldSz/@type`); cx/cy decide actual size. */
   slideSizeType?: SlideSizeType;
@@ -329,6 +331,8 @@ export interface PresentationOptions extends CorePropertiesOptions {
   view?: ViewPropertiesOptions;
   includeHandoutMaster?: boolean;
   includeNotesMaster?: boolean;
+  /** Whether the source had p:notesMasterIdLst; round-trip only. */
+  notesMasterIdListPresent?: boolean;
   handoutMasterOptions?: HandoutMasterOptions;
   notesMasterOptions?: NotesMasterOptions;
   /** Canonical author list backing ppt/commentAuthors.xml; parsed sources preserve ids and extensions. */

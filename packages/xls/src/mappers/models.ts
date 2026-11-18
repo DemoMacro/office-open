@@ -6,9 +6,15 @@ import type {
   DefinedNameOptions,
   ExternalLinkOptions,
   FontOptions,
+  RichTextOptions,
   CellOptions,
+  CellStyleXfOptions,
+  CustomCellStyleOptions,
+  CalculationPropertiesOptions,
+  FileSharingOptions,
   RowOptions,
   StyleOptions,
+  WorkbookProtectionOptions,
   WorksheetOptions,
 } from "@office-open/xlsx";
 
@@ -31,7 +37,7 @@ export interface WorkbookState {
   version: BiffVersion;
   workbookLayout: "standard" | "biff4w";
   stream: Uint8Array;
-  sharedStrings: string[];
+  sharedStrings: (string | RichTextOptions)[];
   sheets: readonly BoundSheet[];
   fonts: FontOptions[];
   numberFormats: Map<number, string>;
@@ -42,10 +48,18 @@ export interface WorkbookState {
   definedNames: DefinedNameOptions[];
   externSheetNames: Map<number, string>;
   styleTable: Map<number, XfStyle>;
+  cellStyles: CustomCellStyleOptions[];
+  cellStyleXfs: CellStyleXfOptions[];
   drawingImages: { data: Uint8Array; type: "png" | "jpg" | "wmf" | "emf" }[];
   saveExternalLinkValues?: boolean;
   refreshAllConnections?: boolean;
   builtInGroupCount?: number;
+  codeName?: string;
+  calculation?: CalculationPropertiesOptions;
+  workbookProtection?: WorkbookProtectionOptions;
+  fileSharing?: FileSharingOptions;
+  lastModifiedBy?: string;
+  backupFile?: boolean;
 }
 
 export interface XfStyle {
@@ -61,6 +75,7 @@ export interface XfStyle {
     fill: boolean;
     protection: boolean;
   };
+  font?: Partial<FontOptions>;
   alignment?: AlignmentOptions;
   border?: BorderSideOptions;
   fill?: CellFillOptions;

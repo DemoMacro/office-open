@@ -110,6 +110,8 @@ function setOnOffLexeme(
 export function parseRunProperties(el: Element): RunPropertiesOptions {
   const opts: Record<string, unknown> = {};
   let w14Parts: string[] | undefined;
+  let extensionAttributes: NonNullable<RunPropertiesOptions["extensionAttributes"]> | undefined;
+  const elementOccurrences = new Map<string, number>();
   let fontDuplicates: FontProperties[] | undefined;
 
   const children = el.elements;
@@ -117,6 +119,22 @@ export function parseRunProperties(el: Element): RunPropertiesOptions {
     for (let i = 0; i < children.length; i++) {
       const child = children[i];
       if (child === undefined || child.type !== "element") continue;
+      const occurrence = elementOccurrences.get(child.name ?? "") ?? 0;
+      elementOccurrences.set(child.name ?? "", occurrence + 1);
+      const namespacedAttributes = Object.entries(child.attributes ?? {}).filter(
+        ([name]) =>
+          (name.startsWith("w14:") || name.startsWith("w16du:")) &&
+          !(name === "w16du:dateUtc" && isTypedRevisionElement(child.name)),
+      );
+      if (child.name?.startsWith("w:") && namespacedAttributes.length > 0) {
+        (extensionAttributes ??= []).push({
+          element: child.name,
+          occurrence,
+          attributes: Object.fromEntries(
+            namespacedAttributes.map(([name, value]) => [name, String(value)]),
+          ),
+        });
+      }
       switch (child.name) {
         case "mc:AlternateContent": {
           const branches = child.elements ?? [];
@@ -320,6 +338,8 @@ export function parseRunProperties(el: Element): RunPropertiesOptions {
           if (author) rev.author = author;
           const date = attr(child, "w:date");
           if (date) rev.date = date;
+          const dateUtc = attr(child, "w16du:dateUtc");
+          if (dateUtc) rev.dateUtc = dateUtc;
           const id = attrNum(child, "w:id");
           if (id !== undefined) rev.id = id;
           const innerRPr = findChild(child, "w:rPr");
@@ -337,6 +357,7 @@ export function parseRunProperties(el: Element): RunPropertiesOptions {
                 id: attrNum(marker, "w:id") ?? 0,
                 author: attr(marker, "w:author") ?? "",
                 date: attr(marker, "w:date"),
+                dateUtc: attr(marker, "w16du:dateUtc"),
               };
             }
           }
@@ -370,6 +391,7 @@ export function parseRunProperties(el: Element): RunPropertiesOptions {
   }
 
   if (w14Parts !== undefined && w14Parts.length > 0) opts.w14RawXml = w14Parts.join("");
+  if (extensionAttributes !== undefined) opts.extensionAttributes = extensionAttributes;
   if (fontDuplicates !== undefined) opts.fontDuplicates = fontDuplicates;
 
   // A bare <w:rPr/> yields no fields — mark the presence so stringify
@@ -377,6 +399,16 @@ export function parseRunProperties(el: Element): RunPropertiesOptions {
   if (Object.keys(opts).length === 0) opts.emptyProperties = true;
 
   return opts as RunPropertiesOptions;
+}
+
+function isTypedRevisionElement(name: string | undefined): boolean {
+  return (
+    name === "w:rPrChange" ||
+    name === "w:ins" ||
+    name === "w:del" ||
+    name === "w:moveFrom" ||
+    name === "w:moveTo"
+  );
 }
 
 /**

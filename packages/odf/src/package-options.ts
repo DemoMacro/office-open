@@ -46,7 +46,6 @@ const PARAGRAPH_STYLE_ATTRIBUTES = [
   "fo:border-left",
   "fo:border-right",
   "fo:border-top",
-  "fo:border-top",
   "fo:break-after",
   "fo:break-before",
   "fo:hyphenation-keep",
@@ -295,6 +294,11 @@ const GRAPHIC_STYLE_ATTRIBUTES = [
   "draw:fill-image-ref-point-x",
   "draw:fill-image-ref-point-y",
   "draw:fill-image-width",
+  "draw:gradient-step-count",
+  "draw:opacity",
+  "draw:opacity-name",
+  "draw:secondary-fill-color",
+  "draw:tile-repeat-offset",
   "draw:fit-to-contour",
   "draw:fit-to-size",
   "draw:frame-display-border",
@@ -526,6 +530,22 @@ const SECTION_STYLE_ATTRIBUTES = [
   "text:dont-balance-text-columns",
 ] as const;
 const PAGE_LAYOUT_STYLE_ATTRIBUTES = [
+  "draw:fill",
+  "draw:fill-color",
+  "draw:fill-gradient-name",
+  "draw:fill-hatch-name",
+  "draw:fill-hatch-solid",
+  "draw:fill-image-height",
+  "draw:fill-image-name",
+  "draw:fill-image-ref-point",
+  "draw:fill-image-ref-point-x",
+  "draw:fill-image-ref-point-y",
+  "draw:fill-image-width",
+  "draw:gradient-step-count",
+  "draw:opacity",
+  "draw:opacity-name",
+  "draw:secondary-fill-color",
+  "draw:tile-repeat-offset",
   "fo:background-color",
   "fo:border",
   "fo:border-bottom",
@@ -578,6 +598,9 @@ const PAGE_LAYOUT_STYLE_ATTRIBUTES = [
   "style:shadow",
   "style:table-centering",
   "style:writing-mode",
+  "style:repeat",
+  "svg:fill-rule",
+  "loext:margin-gutter",
 ] as const;
 const HEADER_FOOTER_STYLE_ATTRIBUTES = [
   "fo:background-color",
@@ -2154,14 +2177,13 @@ function parseStyleChildValue(
 }
 
 function childAttributesXml(
-  attributes: Record<string, StylePropertyValue>,
+  attributes: Partial<Record<string, StylePropertyValue>>,
   scale: StylePropertyScale,
 ): XmlAttributes {
   return Object.fromEntries(
-    Object.entries(attributes).map(([name, value]) => [
-      name,
-      childAttributeXml(name, value, scale),
-    ]),
+    Object.entries(attributes).flatMap(([name, value]) =>
+      value === undefined ? [] : [[name, childAttributeXml(name, value, scale)]],
+    ),
   );
 }
 
@@ -2279,8 +2301,11 @@ function isAngleStyleAttribute(name: string): boolean {
 }
 
 function isLengthStyleAttribute(name: string): boolean {
-  return /(?:^|[-:])(?:width|height|margin|spacing|distance|indent|padding|position|x|y|depth|radius)(?:$|[-0-9])/.test(
-    name,
+  return (
+    name === "fo:column-gap" ||
+    /(?:^|[-:])(?:width|height|margin|spacing|distance|indent|padding|position|x|y|depth|radius)(?:$|[-0-9])/.test(
+      name,
+    )
   );
 }
 

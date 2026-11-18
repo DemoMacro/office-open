@@ -250,6 +250,12 @@ export interface SourcePivotTableOptions {
   columns?: string[];
   /** Data fields with aggregation settings */
   data: PivotDataField[];
+  /** Whether row grand totals are shown (defaults to true). */
+  rowGrandTotals?: boolean;
+  /** Whether column grand totals are shown (defaults to true). */
+  colGrandTotals?: boolean;
+  /** Source fields that are present but hidden from the pivot layout. */
+  hiddenFields?: string[];
   /** Pivot style name (default: "PivotStyleLight16") */
   style?: string;
   /** Pivot filters (CT_PivotFilters) */

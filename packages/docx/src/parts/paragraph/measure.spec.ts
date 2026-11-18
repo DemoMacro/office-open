@@ -2,19 +2,16 @@ import { parse as parseXml } from "@office-open/xml";
 import { describe, expect, it } from "vite-plus/test";
 
 import { parseParagraphProperties } from "../../body";
-import type { DocxReadContext } from "../../context";
 import { stringifyParagraphProperties } from "./stringify";
 
 const W_NS = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"';
-
-const readCtx = {} as unknown as DocxReadContext;
 
 function roundTrip(props: Record<string, unknown>): Record<string, unknown> {
   const { xml } = stringifyParagraphProperties(props as never);
   const doc = parseXml(xml!.replace("<w:pPr>", `<w:pPr ${W_NS}>`));
   const pPr = doc.elements?.[0];
   if (!pPr) throw new Error("parsed document has no root element");
-  return parseParagraphProperties(pPr, readCtx) as Record<string, unknown>;
+  return parseParagraphProperties(pPr) as Record<string, unknown>;
 }
 
 describe("paragraph properties measure round-trip", () => {
@@ -53,7 +50,7 @@ describe("paragraph properties measure round-trip", () => {
 
   it("reads a tolerated unprefixed indent left attribute", () => {
     const doc = parseXml(`<w:pPr ${W_NS}><w:ind left="2880"/></w:pPr>`);
-    const result = parseParagraphProperties(doc.elements![0]!, readCtx) as {
+    const result = parseParagraphProperties(doc.elements![0]!) as {
       indent?: Record<string, unknown>;
     };
     expect(result.indent?.left).toBe(2880);
@@ -86,7 +83,7 @@ describe("paragraph properties measure round-trip", () => {
 
   it("parses a negative w:firstLine as hanging", () => {
     const doc = parseXml(`<w:pPr ${W_NS}><w:ind w:left="720" w:firstLine="-720"/></w:pPr>`);
-    const result = parseParagraphProperties(doc.elements![0]!, readCtx) as {
+    const result = parseParagraphProperties(doc.elements![0]!) as {
       indent?: Record<string, unknown>;
     };
     expect(result.indent?.firstLineRaw).toBe("-720");
@@ -96,7 +93,7 @@ describe("paragraph properties measure round-trip", () => {
 
   it("parses a negative w:hanging as firstLine", () => {
     const doc = parseXml(`<w:pPr ${W_NS}><w:ind w:hanging="-720"/></w:pPr>`);
-    const result = parseParagraphProperties(doc.elements![0]!, readCtx) as {
+    const result = parseParagraphProperties(doc.elements![0]!) as {
       indent?: Record<string, unknown>;
     };
     expect(result.indent?.hangingRaw).toBe("-720");

@@ -449,7 +449,7 @@ export const paragraphDesc: CustomDescriptor<ParagraphDescriptorOptions> = {
     }
 
     // Simple text shorthand
-    if (opts.text) {
+    if (opts.text !== undefined) {
       parts.push(stringifyTextRun(opts.text));
     }
 

@@ -21,6 +21,8 @@ import type { FlateError, Zippable, ZipOptions } from "fflate";
 import type { ByteSource } from "./byte-source";
 import { OpcPackageError } from "./package-error";
 
+type ZlibModule = typeof ZlibNode;
+
 // ── CRC-32 lookup table ──
 
 const CRC_TABLE = new Int32Array(256);
@@ -84,7 +86,9 @@ if (typeof bunApi?.deflateSync === "function") {
 try {
   // top-level await — ESM standard. Resolves to zlib with deflateRawSync;
   // rejects (or yields a stub without it) on incomplete polyfills.
-  const zlib = await import("node:zlib");
+  // Split the specifier so browsers do not eagerly resolve `node:` as a URL;
+  // the runtime probe still resolves it unchanged in Node and Bun.
+  const zlib: ZlibModule = await import(["node", "zlib"].join(":"));
   if (typeof zlib.deflateRawSync !== "function") throw new Error("no native deflate");
   _zlibModule = zlib;
   if (_nativeDeflate === undefined) {
@@ -468,12 +472,32 @@ export function readCentralDirectory(buf: Uint8Array): ZipEntryMeta[] {
  * (Node/Bun), fflate `inflateSync` (check-free) elsewhere — the per-entry
  * work shared by the sync and source-backed inflate paths.
  */
-export function inflateRawWindow(raw: Uint8Array, entry: ZipEntryMeta): Uint8Array {
+export function inflateRawWindow(
+  raw: Uint8Array,
+  entry: ZipEntryMeta,
+  maxOutputSize?: number,
+): Uint8Array {
+  if (maxOutputSize !== undefined) {
+    if (entry.uncompSize > maxOutputSize) {
+      throw new OpcPackageError(
+        `ZIP uncompressed size exceeds limit: ${entry.name}`,
+        entry.name,
+        "size-limit",
+      );
+    }
+    return verifyCrc32(inflateSync(raw, { out: new Uint8Array(entry.uncompSize) }), entry);
+  }
   if (_nativeInflate) {
     const dec = _nativeInflate(raw);
-    return verifyCrc32(dec, entry);
+    return verifyCrc32(asUint8Array(dec), entry);
   }
   return verifyCrc32(inflateSync(raw), entry);
+}
+
+function asUint8Array(data: Uint8Array): Uint8Array {
+  return data.constructor === Uint8Array
+    ? data
+    : new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
 }
 
 /**
@@ -483,9 +507,20 @@ export function inflateRawWindow(raw: Uint8Array, entry: ZipEntryMeta): Uint8Arr
  * (Node/Bun), fflate `inflateSync` elsewhere (no CRC check — fflate parity).
  * STORE entries are copied out of the source buffer.
  */
-export function inflateZipEntry(buf: Uint8Array, entry: ZipEntryMeta): Uint8Array {
+export function inflateZipEntry(
+  buf: Uint8Array,
+  entry: ZipEntryMeta,
+  maxOutputSize?: number,
+): Uint8Array {
+  if (maxOutputSize !== undefined && entry.uncompSize > maxOutputSize) {
+    throw new OpcPackageError(
+      `ZIP uncompressed size exceeds limit: ${entry.name}`,
+      entry.name,
+      "size-limit",
+    );
+  }
   const raw = buf.subarray(entry.dataStart, entry.dataStart + entry.compSize);
-  const data = entry.method === 0 ? raw.slice() : inflateRawWindow(raw, entry);
+  const data = entry.method === 0 ? raw.slice() : inflateRawWindow(raw, entry, maxOutputSize);
   return entry.method === 0 ? verifyCrc32(data, entry) : data;
 }
 

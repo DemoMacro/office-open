@@ -3521,7 +3521,7 @@ const coverageLayoutDefinition: LayoutDefinitionOptions = {
         shape: {
           type: "rect",
           rotation: 30,
-          blip: null,
+          blipPath: null,
           zOrderOffset: 2,
           hideGeometry: true,
           lockTextEntry: true,

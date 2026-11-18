@@ -4,6 +4,9 @@ import { describe, expect, it } from "vitest";
 import { DocParseError } from "./errors";
 import { parseDocument } from "./index";
 import { parseCommentRanges } from "./mappers/document";
+import type { ParagraphRange, TextCharacter } from "./mappers/models";
+import { applyTables } from "./mappers/paragraph-projection";
+import { projectChildren } from "./mappers/projection";
 import {
   parseBookmarks,
   parseFields,
@@ -182,6 +185,7 @@ function buildDocument(
     fieldTable?: boolean;
     lists?: boolean;
     paragraphGrpprl?: readonly number[];
+    tableCells?: boolean;
     sectionProperties?: boolean;
     stylesheet?: boolean;
     textboxes?: { malformed?: boolean; reusableFirst?: boolean; missingAnchor?: boolean };
@@ -264,7 +268,10 @@ function buildDocument(
   setFibPair(73, options.lists ? 1216 : 0, options.lists ? 30 : 0);
   setFibPair(74, options.lists ? 1280 : 0, options.lists ? 10 : 0);
 
-  word.set(new TextEncoder().encode(options.drawing ? "Hi\x08\r" : "Hi\r"), 512);
+  word.set(
+    new TextEncoder().encode(options.drawing ? "Hi\x08\r" : options.tableCells ? "Hi\x07" : "Hi\r"),
+    512,
+  );
   if (fieldBytes) {
     word.set(fieldBytes, 512);
   }
@@ -289,7 +296,7 @@ function buildDocument(
   } else {
     unicodeView.setUint16(0, 0x4e16, true);
     unicodeView.setUint16(2, 0x754c, true);
-    unicodeView.setUint16(4, 0x000d, true);
+    unicodeView.setUint16(4, options.tableCells ? 0x0007 : 0x000d, true);
   }
   word.set(unicode, fieldBytes ? 576 : 516);
 
@@ -586,7 +593,7 @@ function drawingStream(): Uint8Array {
   return data;
 }
 
-function buildLegacyDocument(): Uint8Array {
+function buildLegacyDocument(extraStreams: { path: string; data: Uint8Array }[] = []): Uint8Array {
   const word = new Uint8Array(STREAM_SIZE);
   const view = new DataView(word.buffer);
   view.setUint16(0, 0xa5dc, true);
@@ -595,7 +602,25 @@ function buildLegacyDocument(): Uint8Array {
   view.setUint32(28, 812, true);
   view.setUint32(52, 44, true);
   word.set(new TextEncoder().encode("The quick brown fox jumps over the lazy dog\r"), 768);
-  return buildContainer([{ path: "WordDocument", data: word }]);
+  return buildContainer([{ path: "WordDocument", data: word }, ...extraStreams]);
+}
+
+function documentSummaryInformation(category: string): Uint8Array {
+  const value = new Uint8Array(STREAM_SIZE);
+  const view = new DataView(value.buffer);
+  view.setUint16(0, 0xfffe, true);
+  view.setUint32(24, 1, true);
+  view.setUint32(44, 48, true);
+  view.setUint32(48, 32, true);
+  view.setUint32(52, 1, true);
+  view.setUint32(56, 2, true);
+  view.setUint32(60, 16, true);
+  view.setUint32(64, 30, true);
+  view.setUint32(68, category.length + 1, true);
+  for (let index = 0; index < category.length; index += 1) {
+    value[72 + index] = category.charCodeAt(index);
+  }
+  return value;
 }
 
 describe("legacy DOC parser", () => {
@@ -804,19 +829,9 @@ describe("legacy DOC parser", () => {
     expect(textboxSections).toEqual([false, true]);
   });
 
-  it("tolerates malformed textbox boundary tables with a structured warning", () => {
+  it("rejects malformed textbox boundary tables with structured context", () => {
     const { data } = buildDocument({ textboxes: { malformed: true } });
-    const warnings: string[] = [];
-    const warn = console.warn;
-    console.warn = (message: string) => warnings.push(message);
-    try {
-      const document = parseDocument(data);
-      expect(document.sections[0]?.children.every((child) => !("textbox" in child))).toBe(true);
-    } finally {
-      console.warn = warn;
-    }
-    expect(warnings.some((message) => message.includes("PlcftxbxTxt"))).toBe(true);
-    expect(warnings.some((message) => message.includes("invalid-record-length"))).toBe(true);
+    expect(() => parseDocument(data)).toThrow(DocParseError);
   });
 
   it("projects individual footnote boundaries", () => {
@@ -900,6 +915,7 @@ describe("legacy DOC parser", () => {
 
   it("builds a table row from in-table PAPX and TAP", () => {
     const { data } = buildDocument({
+      tableCells: true,
       paragraphGrpprl: [
         0x16, 0x24, 0x01, 0x17, 0x24, 0x01, 0x08, 0xd6, 0x0d, 0x02, 0x00, 0x00, 0x00, 0x40, 0x00,
         0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -933,6 +949,36 @@ describe("legacy DOC parser", () => {
     });
   });
 
+  it("assigns multiple paragraphs to their source table cells", () => {
+    const characters: TextCharacter[] = [
+      { value: "A", cp: 0 },
+      { value: "", cp: 1, paragraphEnd: true, cellEnd: true },
+      { value: "B", cp: 2 },
+      { value: "", cp: 3, paragraphEnd: true },
+      { value: "C", cp: 4 },
+      { value: "", cp: 5, paragraphEnd: true, cellEnd: true },
+    ];
+    const row: ParagraphRange = {
+      cpStart: 0,
+      cpEnd: 6,
+      properties: { inTable: true, rowEnd: true, columnWidths: [100, 100] },
+    };
+    const children = applyTables(projectChildren(characters, []), [row], characters);
+
+    expect(children[0]).toMatchObject({
+      table: {
+        rows: [
+          {
+            cells: [
+              { children: [{ paragraph: "A" }] },
+              { children: [{ paragraph: "B" }, { paragraph: "C" }] },
+            ],
+          },
+        ],
+      },
+    });
+  });
+
   it("projects bookmark names and ranges", () => {
     const { data } = buildDocument({ bookmarks: true });
     const children = parseDocument(data).sections[0]!.children;
@@ -940,18 +986,25 @@ describe("legacy DOC parser", () => {
     expect(children.at(-1)).toEqual({ bookmarkEnd: { id: 1 } });
   });
 
-  it("projects annotation references as canonical revision ranges", () => {
+  it("does not treat annotation references as revision ranges", () => {
     const { data } = buildDocument({ annotations: true });
     const children = parseLegacyDocument(data).sections[0]!.children;
     const paragraph = extractParagraph(children[0]!);
-    expect(paragraph.children).toEqual([
-      {
-        insertion: {
-          author: "Unknown",
-          date: "1970-01-01T00:00:00Z",
-          children: [{ text: "Hi", bold: true, size: 12 }],
-        },
-      },
+    expect(paragraph.children).toEqual([{ text: "Hi", bold: true, size: 12 }]);
+  });
+
+  it("reads annotation CP values separately from fixed-size descriptors", () => {
+    const table = new Uint8Array(72);
+    const view = new DataView(table.buffer);
+    view.setUint32(0, 3, true);
+    view.setUint32(4, 11, true);
+    view.setUint32(8, 29, true);
+    table.fill(1, 12, 42);
+    table.fill(2, 42, 72);
+
+    expect(parseCommentRanges(table, { offset: 0, length: 72 })).toEqual([
+      { start: 3, end: 11, data: table.subarray(12, 42) },
+      { start: 11, end: 29, data: table.subarray(42, 72) },
     ]);
   });
 
@@ -1008,6 +1061,25 @@ describe("legacy DOC parser", () => {
     ]);
   });
 
+  it("advances past empty stylesheet slots before parsing later styles", () => {
+    const table = new Uint8Array(38);
+    const view = new DataView(table.buffer);
+    view.setUint16(0, 6, true);
+    view.setUint16(2, 2, true);
+    view.setUint16(4, 8, true);
+    view.setUint16(8, 0, true);
+    view.setUint16(10, 18, true);
+    view.setUint16(12, 0, true);
+    view.setUint16(18, 8, true);
+    view.setUint16(14, 0, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, 78, true);
+
+    const styles = parseStylesheet(table, { offset: 0, length: table.byteLength }).styles;
+    expect(styles).toHaveLength(1);
+    expect(styles[0]?.styleId).toBe(1);
+  });
+
   it("rejects malformed auxiliary structures with structured context", () => {
     const { table, word } = buildDocument({ sectionProperties: true });
     expect(() => parseSectionProperties(table, { offset: 800, length: 21 }, word)).toThrow(
@@ -1034,6 +1106,15 @@ describe("legacy DOC parser", () => {
       { paragraph: "The quick brown fox jumps over the lazy dog" },
       { paragraph: "" },
     ]);
+  });
+
+  it("reads document summary metadata from Word 6.0/95 files", () => {
+    const path = `${String.fromCharCode(5)}DocumentSummaryInformation`;
+    const document = parseDocument(
+      buildLegacyDocument([{ path, data: documentSummaryInformation("Reports") }]),
+    );
+
+    expect(document.category).toBe("Reports");
   });
 });
 

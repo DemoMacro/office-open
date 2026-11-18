@@ -1,10 +1,17 @@
-import type { FormControlOptions, SequenceDeclarationOptions } from "@office-open/core";
+import type {
+  FormControlOptions,
+  SequenceDeclarationOptions,
+  VariableDeclarationOptions,
+  VariableValueType,
+} from "@office-open/core";
 import type {
   ChartOptions,
   BlockContentChild,
   ComplexFieldOptions,
   DocumentOptions,
   FormFieldOptions,
+  GroupChildMediaData,
+  GroupOptions,
   ParagraphChild,
   ParagraphOptions,
   PictureOptions,
@@ -17,9 +24,12 @@ import {
   attributeString,
   childNamed,
   childrenNamed,
+  emuToLength,
   escapeText,
+  odfGroupTransform,
   textOf,
   officeFormsXml,
+  pushShapeStyle,
   xmlElement,
 } from "@office-open/odf";
 import type { Element } from "@office-open/xml";
@@ -27,12 +37,16 @@ import type { Element } from "@office-open/xml";
 import { addCharacterStyle, addParagraphStyle, characterProperties } from "./automatic-styles";
 import {
   assertElementNames,
+  closeBookmark,
   malformedOdtElement,
+  registerBookmarkStart,
   unknownOdtElement,
+  blockXml,
   type ParseContext,
 } from "./body";
 import { calculationSettingsXml } from "./calculation-settings";
 import {
+  assertSingleFramePayload,
   chartFrameXml,
   isShapeElement,
   parseGroup,
@@ -693,7 +707,15 @@ export function runXml(
         }
       ).hyperlink;
       const href = link.url ?? (link.anchor !== undefined ? `#${link.anchor}` : undefined);
-      if (href === undefined) return "";
+      if (href === undefined) {
+        throw new OdtGenerateError(
+          "ODT hyperlink has neither a URL nor an anchor",
+          "content.xml",
+          "/office:document-content/office:body/office:text/text:p/text:a",
+          "text:a",
+          "missing-hyperlink-target",
+        );
+      }
       const inner = link.children
         ? link.children
             .map((linkChild) =>
@@ -756,17 +778,181 @@ export function runXml(
     if ("tab" in child) return "<text:tab/>";
     if ("picture" in child)
       return pictureFrameXml((child as { picture: PictureOptions }).picture, images);
-    if ("wpsShape" in child)
-      return wpsShapeFrameXml(
-        (child as { wpsShape: ShapeOptions }).wpsShape,
+    if ("wpgGroup" in child)
+      return wpgGroupXml(
+        (child as { wpgGroup: GroupOptions }).wpgGroup,
         styles,
+        images,
+        notes,
+        numbering,
+        charts,
         embeddedObjects,
       );
+    if ("wpsShape" in child) {
+      const shape = (child as { wpsShape: ShapeOptions }).wpsShape;
+      const shapeChildren = shape.children.map((shapeChild) => {
+        if (typeof shapeChild === "string")
+          return xmlElement("text:p", undefined, [spacesXml(shapeChild)]);
+        if (
+          "paragraph" in shapeChild ||
+          "table" in shapeChild ||
+          "textbox" in shapeChild ||
+          "sdt" in shapeChild ||
+          "toc" in shapeChild ||
+          "bookmarkStart" in shapeChild ||
+          "bookmarkEnd" in shapeChild ||
+          "rawXml" in shapeChild
+        ) {
+          return blockXml(
+            shapeChild as SectionChild,
+            styles,
+            images,
+            notes,
+            numbering,
+            charts,
+            embeddedObjects,
+          );
+        }
+        return paragraphXml(
+          shapeChild as ParagraphOptions,
+          styles,
+          images,
+          notes,
+          numbering,
+          charts,
+          embeddedObjects,
+        );
+      });
+      return wpsShapeFrameXml(shape, styles, embeddedObjects, shapeChildren);
+    }
     if ("chart" in child) {
       return chartFrameXml((child as { chart: ChartOptions }).chart, charts);
     }
-    return "";
+    const childName = Object.keys(child)[0] ?? "unknown";
+    throw new OdtGenerateError(
+      `ODT inline child "${childName}" has no canonical ODF mapping`,
+      "content.xml",
+      "/office:document-content/office:body/office:text/text:p",
+      childName,
+      "unsupported-inline-child",
+    );
   });
+}
+
+function wpgGroupXml(
+  group: GroupOptions,
+  styles: string[],
+  images: OdtImage[],
+  notes: NotesContext,
+  numbering: DocumentOptions["numbering"],
+  charts: OdtChart[],
+  embeddedObjects: OdtEmbeddedObjectOptions[],
+): string {
+  return odfGroupXml(
+    group.transformation,
+    group.children,
+    group.fill,
+    undefined,
+    group.altText?.name,
+    group.altText?.title,
+    group.altText?.description,
+    styles,
+    images,
+    notes,
+    numbering,
+    charts,
+    embeddedObjects,
+  );
+}
+
+function odfGroupXml(
+  transformation: GroupOptions["transformation"],
+  children: GroupChildMediaData[],
+  fill: GroupOptions["fill"],
+  outline: GroupChildMediaData["outline"],
+  name: string | undefined,
+  title: string | undefined,
+  description: string | undefined,
+  styles: string[],
+  images: OdtImage[],
+  notes: NotesContext,
+  numbering: DocumentOptions["numbering"],
+  charts: OdtChart[],
+  embeddedObjects: OdtEmbeddedObjectOptions[],
+): string {
+  if (outline !== undefined)
+    throw new OdtGenerateError(
+      "ODT groups cannot represent a DrawingML group outline",
+      "content.xml",
+      "/office:document-content/office:body/office:text/draw:g",
+      "group outline",
+      "unsupported-group-outline",
+    );
+  const childXml = children.map((child) => {
+    if (child.type === "wps")
+      return runXml(
+        {
+          children: [
+            {
+              wpsShape: {
+                ...child.data,
+                transformation: child.transformation,
+                ...(child.fill === undefined ? {} : { fill: child.fill }),
+                ...(child.outline === undefined ? {} : { outline: child.outline }),
+              },
+            },
+          ],
+        },
+        styles,
+        images,
+        notes,
+        numbering,
+        charts,
+        embeddedObjects,
+      ).join("");
+    if (child.type === "wpg")
+      return odfGroupXml(
+        child.transformation,
+        child.children,
+        child.fill,
+        child.outline,
+        child.nonVisualProperties?.name,
+        child.nonVisualProperties?.title,
+        child.nonVisualProperties?.description,
+        styles,
+        images,
+        notes,
+        numbering,
+        charts,
+        embeddedObjects,
+      );
+    throw new OdtGenerateError(
+      `ODT groups cannot represent child type "${child.type}"`,
+      "content.xml",
+      "/office:document-content/office:body/office:text/draw:g",
+      child.type,
+      "unsupported-group-child",
+    );
+  });
+  return xmlElement(
+    "draw:g",
+    {
+      "draw:name": name,
+      "draw:style-name": pushShapeStyle(fill, undefined, styles),
+      "draw:transform": odfGroupTransform(transformation.rotation),
+      "svg:x": emuToLength(transformation.offset?.x),
+      "svg:y": emuToLength(transformation.offset?.y),
+      "svg:width": emuToLength(transformation.width),
+      "svg:height": emuToLength(transformation.height),
+    },
+    [
+      ...(title === undefined ? [] : [xmlElement("svg:title", undefined, [escapeText(title)])]),
+      ...(description === undefined
+        ? []
+        : [xmlElement("svg:desc", undefined, [escapeText(description)])]),
+      ...childXml,
+    ],
+  );
 }
 
 export function simpleFieldXml(field: CanonicalSimpleField, notes: NotesContext): string {
@@ -793,6 +979,8 @@ export function simpleFieldXml(field: CanonicalSimpleField, notes: NotesContext)
     );
   if (instruction === "SAVEDATE")
     return xmlElement("text:modification-date", undefined, [escapeText(field.cachedValue ?? "")]);
+  if (instruction === "SAVETIME")
+    return xmlElement("text:modification-time", undefined, [escapeText(field.cachedValue ?? "")]);
   if (instruction.startsWith("ODF USERFIELD "))
     return xmlElement("text:user-field-get", { "text:name": argument.value }, [
       escapeText(field.cachedValue ?? ""),
@@ -1096,27 +1284,20 @@ export function declarationsXml(options: OdtDocumentOptions, notes: NotesContext
       : "";
   const implicitVariableDeclarations = [...notes.variableTypes]
     .filter(
-      ([name]) =>
-        !options.variableDeclarations?.some((declaration) => declaration.name === name) &&
-        !options.odtVariableDeclarations?.some((declaration) => declaration.name === name),
+      ([name]) => !options.variableDeclarations?.some((declaration) => declaration.name === name),
     )
-    .map(([name, valueType]): OdtVariableDeclarationOptions => ({ name, valueType }));
+    .map(([name, valueType]): VariableDeclarationOptions => ({ name, valueType }));
   const variableDecls =
-    options.variableDeclarations?.length ||
-    options.odtVariableDeclarations?.length ||
-    implicitVariableDeclarations.length
+    options.variableDeclarations?.length || implicitVariableDeclarations.length
       ? xmlElement(
           "text:variable-decls",
           undefined,
-          [
-            ...(options.variableDeclarations ?? []),
-            ...(options.odtVariableDeclarations ?? []),
-            ...implicitVariableDeclarations,
-          ].map((declaration) =>
-            xmlElement("text:variable-decl", {
-              "text:name": declaration.name,
-              "office:value-type": declaration.valueType,
-            }),
+          [...(options.variableDeclarations ?? []), ...implicitVariableDeclarations].map(
+            (declaration) =>
+              xmlElement("text:variable-decl", {
+                "text:name": declaration.name,
+                "office:value-type": declaration.valueType,
+              }),
           ),
         )
       : "";
@@ -1206,7 +1387,7 @@ export function declarationsXml(options: OdtDocumentOptions, notes: NotesContext
 
 export function variableSetXml(value: {
   name: string;
-  valueType: OdtVariableValueType;
+  valueType: VariableValueType;
   value?: string;
   currency?: string;
   display?: "value" | "none";
@@ -1594,19 +1775,19 @@ export function parseRuns(
         const decoded = canonicalBookmarkName(sourceName, bookmarkDiagnostic);
         const name = decoded.name;
         if (!name) throw unknownOdtElement(child);
-        const existingId = context.bookmarkIds.get(name);
         const encodedId = /^(?:bookmark-)?(\d+)$/.exec(
-          attributeString(child, "text:id") ??
-            attributeString(child, "xml:id") ??
+          attributeString(child, "xml:id") ??
             (decoded.encodedId !== undefined ? String(decoded.encodedId) : ""),
         )?.[1];
-        if (existingId !== undefined && sourceName === name && encodedId !== String(existingId)) {
-          throw unknownOdtElement(child);
-        }
         if (encodedId !== undefined) parseBookmarkId(encodedId, bookmarkDiagnostic);
-        const id = decoded.encodedId ?? existingId ?? bookmarkRunId(context, name);
-        if (existingId === undefined) trackBookmarkId(context, name, id);
-        if (sourceName !== name) trackBookmarkId(context, sourceName, id);
+        const id = registerBookmarkStart(
+          context,
+          sourceName,
+          name,
+          encodedId === undefined
+            ? decoded.encodedId
+            : parseBookmarkId(encodedId, bookmarkDiagnostic),
+        );
         return [{ bookmarkStart: { id, name } }];
       }
       if (child.name === "text:bookmark-end" || child.name === "text:reference-mark-end") {
@@ -1615,8 +1796,9 @@ export function parseRuns(
           elementName: child.name,
         };
         const sourceName = attributeString(child, "text:name") ?? "";
-        const name = canonicalBookmarkName(sourceName, bookmarkDiagnostic).name;
-        const id = context.bookmarkIds.get(sourceName) ?? context.bookmarkIds.get(name);
+        const decoded = canonicalBookmarkName(sourceName, bookmarkDiagnostic);
+        const name = decoded.name;
+        const id = closeBookmark(context, sourceName, name, decoded.encodedId);
         if (!name) throw unknownOdtElement(child);
         if (id === undefined) {
           const allocated = bookmarkRunId(context, name);
@@ -1651,6 +1833,27 @@ export function parseRuns(
           };
           resumeAfter = endIndex;
           return formatChangeChildren(parseRuns(changedElement, context), revision);
+        }
+        if (change?.kind === "deletion") {
+          if (endIndex < 0) throw unknownOdtElement(child);
+          const changedElement: Element = {
+            ...nodes[endIndex]!,
+            elements: nodes.slice(index + 1, endIndex),
+          };
+          const parsedChildren = parseRuns(changedElement, context).filter(isTrackChangeChild);
+          if (parsedChildren.length !== (changedElement.elements ?? []).length)
+            throw unknownOdtElement(child);
+          resumeAfter = endIndex;
+          return [
+            {
+              deletion: {
+                id: change.id,
+                author: change.author,
+                date: change.date,
+                children: parsedChildren,
+              },
+            },
+          ];
         }
         if (change?.kind !== "insertion") throw unknownOdtElement(child);
         if (endIndex < 0) {
@@ -1713,9 +1916,17 @@ export function parseRuns(
       if (child.name === "text:change") {
         const id = attributeString(child, "text:change-id") ?? "";
         const change = context.changeAlternatives.get(`${id}:deletion`) ?? context.changes.get(id);
+        if (change === undefined && context.deletedContentDepth > 0)
+          return [{ deletion: { author: "", children: [] } }];
         if (change?.kind !== "deletion") throw unknownOdtElement(child);
         return (change.children ?? []).map((deletedParagraph) => {
-          const parsedRuns = parseRuns(deletedParagraph, context);
+          context.deletedContentDepth += 1;
+          let parsedRuns: (string | RunOptions | ParagraphChild)[];
+          try {
+            parsedRuns = parseRuns(deletedParagraph, context);
+          } finally {
+            context.deletedContentDepth -= 1;
+          }
           const parsedChildren = parsedRuns.filter(isTrackChangeChild);
           if (parsedChildren.length !== parsedRuns.length) throw unknownOdtElement(child);
           return {
@@ -1774,7 +1985,7 @@ export function parseRuns(
           throw new OdtParseError(
             `content.xml: variable ${value.name}: declared ${expected}, set ${value.valueType}`,
             "content.xml",
-            `/office:document-content/office:body/office:text/text:variable-set`,
+            "/office:document-content/office:body/office:text/text:variable-set",
             value.name,
             "invalid-variable-value-type",
           );
@@ -1975,7 +2186,7 @@ export function parseRuns(
         return [
           {
             simpleField: {
-              instruction: "SAVEDATE",
+              instruction: child.name === "text:modification-date" ? "SAVEDATE" : "SAVETIME",
               cachedValue: textOf(child) || undefined,
             },
           },
@@ -1995,7 +2206,11 @@ export function parseRuns(
       if (child.name === "office:annotation") return parseAnnotationStart(child, context);
       if (child.name === "office:annotation-end") return parseAnnotationEnd(child, context);
       if (child.name === "draw:a") return [parseShapeHyperlink(child)];
-      if (isShapeElement(child.name)) return [{ wpsShape: parseShape(child) }];
+      if (child.name === "draw:custom-shape") {
+        const shape = parseCustomShape(child, context);
+        return shape ? [shape] : [];
+      }
+      if (isShapeElement(child.name)) return [{ wpsShape: parseShape(child, context) }];
       if (child.name === "text:span") {
         const styleEntry = context.styles.get(attributeString(child, "text:style-name") ?? "");
         const properties = styleEntry?.character;
@@ -2013,18 +2228,19 @@ export function parseRuns(
       if (child.name === "text:ruby") return [{ text: "", children: [parseRuby(child, context)] }];
       if (child.name === "text:tab") return [{ text: "", children: [{ tab: true }] }];
       if (child.name === "draw:frame") {
-        if (childNamed(child, "draw:object-ole")) return [];
+        assertSingleFramePayload(child);
+        if (childNamed(child, "draw:object-ole")) throw unknownOdtElement(child);
         if (childNamed(child, "draw:text-box")) return [parseTextBoxFrame(child, context)];
-        return childNamed(child, "draw:object")
+        if (!childNamed(child, "draw:object") && !childNamed(child, "draw:image"))
+          throw unknownOdtElement(child);
+        const parsed = childNamed(child, "draw:object")
           ? parseChartFrame(child, context)
           : parsePictureFrame(child, context);
+        if (parsed.length === 0) throw unknownOdtElement(child);
+        return parsed;
       }
       if (child.name === "draw:object") return parseChartFrame(child, context);
       if (child.name === "draw:g") return [parseGroup(child, context)];
-      if (child.name === "draw:custom-shape") {
-        const shape = parseCustomShape(child, context);
-        return shape ? [shape] : [];
-      }
       if (child.name) throw unknownOdtElement(child);
       return [];
     },
@@ -2399,25 +2615,10 @@ export function conditionalTextField(value: {
   };
 }
 
-export type OdtVariableValueType =
-  | "float"
-  | "percentage"
-  | "currency"
-  | "date"
-  | "time"
-  | "boolean"
-  | "string";
-
-/** ODF-specific variable declaration for value types outside DOCX variables. */
-export interface OdtVariableDeclarationOptions {
-  name: string;
-  valueType: OdtVariableValueType;
-}
-
 /** Full ODF common value-and-type projection for `text:variable-set`. */
 export interface OdtVariableSetOptions {
   name: string;
-  valueType: OdtVariableValueType;
+  valueType: VariableValueType;
   value?: string;
   currency?: string;
   display?: "value" | "none";
@@ -2571,9 +2772,7 @@ export function parseVariableDeclarations(element: Element, context: ParseContex
     ) {
       throw unknownOdtElement(declaration);
     }
-    if (valueType === "float" || valueType === "string")
-      context.declaredVariables.push({ name, valueType });
-    else context.odtDeclaredVariables.push({ name, valueType });
+    context.declaredVariables.push({ name, valueType });
     context.pendingVariables.set(name, valueType);
   }
 }

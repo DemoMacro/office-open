@@ -12,11 +12,13 @@ import {
 import type { CellOptions, WorksheetChartOptions } from "@office-open/xlsx";
 import type { Element } from "@office-open/xml";
 
+import { OdsParseError } from "./error";
 import { columnNumber } from "./worksheet";
 
 /** A worksheet chart frame collected while serializing an ODS body. */
 export interface OdsChartFrame {
   name: string;
+  path?: string;
   worksheet: string;
   chart: OdsParsedChartOptions;
 }
@@ -45,13 +47,23 @@ export function parseWorksheetCharts(
         .replace(/\/$/, "");
       const chart = href ? resolveEmbeddedChart(pool, href) : undefined;
       if (!href) continue;
-      if (!chart) continue;
+      if (!chart) {
+        throw new OdsParseError(
+          `content.xml: ${href}: embedded chart subdocument is missing or invalid`,
+          "content.xml",
+          "/office:document-content/office:body/office:spreadsheet/table:table/table:shapes/draw:frame/draw:object",
+          "draw:object",
+          "missing-chart-subdocument",
+        );
+      }
+      const name = attributeString(frame, "draw:name") ?? href;
       charts.push({
-        name: href,
+        name,
         worksheet: worksheet ?? "",
         chart: {
           ...chart,
-          name: href,
+          name,
+          sourcePath: href,
           anchorType: "absolute",
           col: 1,
           row: 1,
@@ -67,13 +79,17 @@ export function parseWorksheetCharts(
   return charts;
 }
 
-export function endAnchor(frame: Element): Pick<WorksheetChartOptions, "toCol" | "toRow"> {
+export function endAnchor(
+  frame: Element,
+): Pick<WorksheetChartOptions, "toCol" | "toRow" | "toColOffset" | "toRowOffset"> {
   const address = attributeString(frame, "table:end-cell-address");
   const match = /^([A-Z]+)([0-9]+)$/.exec(address ?? "");
   if (!match) return {};
   return {
     toCol: columnNumber(match[1]!),
     toRow: Number(match[2]),
+    toColOffset: lengthToEmu(attributeString(frame, "table:end-x")),
+    toRowOffset: lengthToEmu(attributeString(frame, "table:end-y")),
   };
 }
 

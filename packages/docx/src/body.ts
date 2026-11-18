@@ -432,6 +432,7 @@ const DOC_NAMESPACE_KEYS = [
   "v",
   "wp14",
   "wp",
+  "a",
   "w10",
   "w",
   "w14",
@@ -453,6 +454,7 @@ const DOC_NAMESPACE_KEYS = [
   "am3d",
   "w16cex",
   "w16cid",
+  "w16du",
   "w16",
   "w16sdtdh",
   "w16se",
@@ -482,7 +484,7 @@ export function stringifyDocumentXml(ctx: DocxWriteContext, docCtx: BodyContext)
     DOC_NAMESPACE_KEYS,
     documentNamespaceDialect(ctx),
   );
-  parts.push(`<w:document ${docNs} mc:Ignorable="w14 w15 wp14"${conformanceAttr}>`);
+  parts.push(`<w:document ${docNs} mc:Ignorable="w14 w15 w16du wp14"${conformanceAttr}>`);
 
   // Background (if any)
   if (ctx._options.background) {
@@ -643,10 +645,7 @@ type PermStartInlineOptions = Extract<ParagraphChild, { permStart: unknown }>["p
 /**
  * Parse w:pPr element into paragraph properties (without children).
  */
-export function parseParagraphProperties(
-  el: Element,
-  ctx: DocxReadContext,
-): Partial<ParagraphPropertiesOptions> {
+export function parseParagraphProperties(el: Element): Partial<ParagraphPropertiesOptions> {
   const opts: Partial<ParagraphPropertiesOptions> = {};
 
   // Style / heading
@@ -675,24 +674,8 @@ export function parseParagraphProperties(
   if (spacing) {
     const sp: SpacingProperties = {};
     const before = attrMeasure(spacing, "w:before");
-    if (before !== undefined && isNegativeMeasure(before)) {
-      throw new DocxParseError(
-        "Paragraph spacing before cannot be negative",
-        ctx.currentPart,
-        "/w:spacing/@w:before",
-        "invalid-value",
-      );
-    }
     if (before !== undefined) sp.before = before as SpacingProperties["before"];
     const after = attrMeasure(spacing, "w:after");
-    if (after !== undefined && isNegativeMeasure(after)) {
-      throw new DocxParseError(
-        "Paragraph spacing after cannot be negative",
-        ctx.currentPart,
-        "/w:spacing/@w:after",
-        "invalid-value",
-      );
-    }
     if (after !== undefined) sp.after = after as SpacingProperties["after"];
     const line = attrMeasure(spacing, "w:line");
     if (line !== undefined) sp.line = line as SpacingProperties["line"];
@@ -789,17 +772,31 @@ export function parseParagraphProperties(
       } else if (insEl || numberingChangeEl) {
         const rev: {
           revisionOnly: true;
-          numberingChange?: { original: string; id: string; author: string; date?: string };
+          numberingChange?: {
+            original: string;
+            id: string;
+            author: string;
+            date?: string;
+            dateUtc?: string;
+          };
           insertion?: NumberingInsertionOptions;
         } = { revisionOnly: true };
         if (numberingChangeEl) {
-          const nc: { original: string; id: string; author: string; date?: string } = {
+          const nc: {
+            original: string;
+            id: string;
+            author: string;
+            date?: string;
+            dateUtc?: string;
+          } = {
             original: attr(numberingChangeEl, "w:original") ?? "",
             id: attr(numberingChangeEl, "w:id") ?? "",
             author: attr(numberingChangeEl, "w:author") ?? "",
           };
           const ncDate = attr(numberingChangeEl, "w:date");
           if (ncDate) nc.date = ncDate;
+          const ncDateUtc = attr(numberingChangeEl, "w16du:dateUtc");
+          if (ncDateUtc) nc.dateUtc = ncDateUtc;
           rev.numberingChange = nc;
         }
         if (insEl) {
@@ -809,6 +806,8 @@ export function parseParagraphProperties(
           };
           const insDate = attr(insEl, "w:date");
           if (insDate) ins.date = insDate;
+          const insDateUtc = attr(insEl, "w16du:dateUtc");
+          if (insDateUtc) ins.dateUtc = insDateUtc;
           rev.insertion = ins as NumberingInsertionOptions;
         }
         opts.numbering = rev;
@@ -821,7 +820,13 @@ export function parseParagraphProperties(
         sourceNumId?: number;
         level?: number;
         autoStyle: boolean;
-        numberingChange?: { original: string; id: string; author: string; date?: string };
+        numberingChange?: {
+          original: string;
+          id: string;
+          author: string;
+          date?: string;
+          dateUtc?: string;
+        };
         insertion?: NumberingInsertionOptions;
       } = {
         reference: `list_${numId}`,
@@ -832,13 +837,21 @@ export function parseParagraphProperties(
       // w:numberingChange (CT_TrackChangeNumbering) — child of w:numPr
       const numberingChangeEl = findChild(numPr, "w:numberingChange");
       if (numberingChangeEl) {
-        const nc: { original: string; id: string; author: string; date?: string } = {
+        const nc: {
+          original: string;
+          id: string;
+          author: string;
+          date?: string;
+          dateUtc?: string;
+        } = {
           original: attr(numberingChangeEl, "w:original") ?? "",
           id: attr(numberingChangeEl, "w:id") ?? "",
           author: attr(numberingChangeEl, "w:author") ?? "",
         };
         const ncDate = attr(numberingChangeEl, "w:date");
         if (ncDate) nc.date = ncDate;
+        const ncDateUtc = attr(numberingChangeEl, "w16du:dateUtc");
+        if (ncDateUtc) nc.dateUtc = ncDateUtc;
         numberingOpts.numberingChange = nc;
       }
       // w:ins (CT_TrackChange) — numbering applied as a revision
@@ -850,6 +863,8 @@ export function parseParagraphProperties(
         };
         const insDate = attr(insEl, "w:date");
         if (insDate) ins.date = insDate;
+        const insDateUtc = attr(insEl, "w16du:dateUtc");
+        if (insDateUtc) ins.dateUtc = insDateUtc;
         numberingOpts.insertion = ins as NumberingInsertionOptions;
       }
       opts.numbering = numberingOpts;
@@ -975,6 +990,7 @@ export function parseParagraphProperties(
         id: attrNum(ins, "w:id") ?? 0,
         author: attr(ins, "w:author") ?? "",
         date: attr(ins, "w:date"),
+        dateUtc: attr(ins, "w16du:dateUtc"),
       };
     }
     const del = findChild(rPr, "w:del");
@@ -983,6 +999,7 @@ export function parseParagraphProperties(
         id: attrNum(del, "w:id") ?? 0,
         author: attr(del, "w:author") ?? "",
         date: attr(del, "w:date"),
+        dateUtc: attr(del, "w16du:dateUtc"),
       };
     }
     const movedFrom = findChild(rPr, "w:moveFrom");
@@ -991,6 +1008,7 @@ export function parseParagraphProperties(
         id: attrNum(movedFrom, "w:id") ?? 0,
         author: attr(movedFrom, "w:author") ?? "",
         date: attr(movedFrom, "w:date"),
+        dateUtc: attr(movedFrom, "w16du:dateUtc"),
       };
     }
     const movedTo = findChild(rPr, "w:moveTo");
@@ -999,6 +1017,7 @@ export function parseParagraphProperties(
         id: attrNum(movedTo, "w:id") ?? 0,
         author: attr(movedTo, "w:author") ?? "",
         date: attr(movedTo, "w:date"),
+        dateUtc: attr(movedTo, "w16du:dateUtc"),
       };
     }
     opts.run = run;
@@ -1017,7 +1036,7 @@ export function parseParagraphProperties(
       anchor?: { horizontal?: string; vertical?: string };
       space?: { horizontal?: number | UniversalMeasure; vertical?: number | UniversalMeasure };
       dropCap?: string;
-      lines?: string;
+      lines?: number;
       wrap?: string;
       rule?: string;
       anchorLock?: boolean;
@@ -1028,13 +1047,14 @@ export function parseParagraphProperties(
     } = {};
     for (const [attrName, optName] of [
       ["w:dropCap", "dropCap"],
-      ["w:lines", "lines"],
       ["w:wrap", "wrap"],
       ["w:hRule", "rule"],
     ] as const) {
       const val = attr(framePr, attrName);
       if (val !== undefined) frame[optName] = val;
     }
+    const lines = attrNum(framePr, "w:lines");
+    if (lines !== undefined) frame.lines = lines;
     // Position: absolute coordinates (w:x/w:y) vs alignment (w:xAlign/w:yAlign)
     const x = attrMeasure(framePr, "w:x") as number | UniversalMeasure;
     const y = attrMeasure(framePr, "w:y") as number | UniversalMeasure;
@@ -1108,10 +1128,12 @@ export function parseParagraphProperties(
     if (author) rev.author = author;
     const revDate = attr(pPrChange, "w:date");
     if (revDate) rev.date = revDate;
+    const revDateUtc = attr(pPrChange, "w16du:dateUtc");
+    if (revDateUtc) rev.dateUtc = revDateUtc;
     const revId = attrNum(pPrChange, "w:id");
     if (revId !== undefined) rev.id = revId;
     const innerPPr = findChild(pPrChange, "w:pPr");
-    if (innerPPr) Object.assign(rev, parseParagraphProperties(innerPPr, ctx));
+    if (innerPPr) Object.assign(rev, parseParagraphProperties(innerPPr));
     if (Object.keys(rev).length > 0) opts.revision = rev as ParagraphPropertiesChangeOptions;
   }
 
@@ -1124,10 +1146,6 @@ export function parseParagraphProperties(
   }
 
   return opts;
-}
-
-function isNegativeMeasure(value: number | string): boolean {
-  return typeof value === "number" ? value < 0 : value.trimStart().startsWith("-");
 }
 
 // CT_Cnf attribute order — shared by parseCnfStyle (w:val digits + w: attrs).
@@ -2065,6 +2083,7 @@ function parseTrackChangeRuns(el: Element, ctx: DocxReadContext): TrackChangeChi
           id: attrNum(sub, "w:id") ?? 0,
           author: attr(sub, "w:author") ?? "",
           date: attr(sub, "w:date"),
+          dateUtc: attr(sub, "w16du:dateUtc"),
         };
         out.push(
           sub.name === "w:ins"
@@ -2258,6 +2277,8 @@ function parseMoveRangeStart(
   if (author !== undefined) m.author = author;
   const date = attr(el, "w:date");
   if (date !== undefined) m.date = date;
+  const dateUtc = attr(el, "w16du:dateUtc");
+  if (dateUtc !== undefined) m.dateUtc = dateUtc;
   const disp = attr(el, "w:displacedByCustomXml");
   if (disp === "next" || disp === "prev") m.displacedByCustomXml = disp as DisplacedByCustomXml;
   const colFirst = attrNum(el, "w:colFirst");
@@ -2271,14 +2292,16 @@ function parseMoveRangeStart(
 function parseCustomXmlRangeStart(
   el: Element,
   part = "word/document.xml",
-): { id: number; author?: string; date?: string } | null {
+): { id: number; author?: string; date?: string; dateUtc?: string } | null {
   const id = parseMarkerId(el, el.name ?? "w:customXmlRangeStart", part);
   if (id === undefined) return null;
-  const m: { id: number; author?: string; date?: string } = { id };
+  const m: { id: number; author?: string; date?: string; dateUtc?: string } = { id };
   const author = attr(el, "w:author");
   if (author !== undefined) m.author = author;
   const date = attr(el, "w:date");
   if (date !== undefined) m.date = date;
+  const dateUtc = attr(el, "w16du:dateUtc");
+  if (dateUtc !== undefined) m.dateUtc = dateUtc;
   return m;
 }
 
@@ -2423,6 +2446,7 @@ function parseHyperlinkChild(child: Element, ctx: DocxReadContext): ParagraphChi
           id: attrNum(sub, "w:id") ?? 0,
           author: attr(sub, "w:author") ?? "",
           date: attr(sub, "w:date"),
+          dateUtc: attr(sub, "w16du:dateUtc"),
         };
         linkRuns.push(
           sub.name === "w:ins"
@@ -2596,6 +2620,7 @@ function parseRunLevelChildren(
             id: attrNum(child, "w:id") ?? 0,
             author: attr(child, "w:author") ?? "",
             date: attr(child, "w:date"),
+            dateUtc: attr(child, "w16du:dateUtc"),
             children,
           },
         };
@@ -2628,6 +2653,7 @@ function parseRunLevelChildren(
             id: attrNum(child, "w:id") ?? 0,
             author: attr(child, "w:author") ?? "",
             date: attr(child, "w:date"),
+            dateUtc: attr(child, "w16du:dateUtc"),
             children,
           },
         };
@@ -2660,6 +2686,7 @@ function parseRunLevelChildren(
             id: attrNum(child, "w:id") ?? 0,
             author: attr(child, "w:author") ?? "",
             date: attr(child, "w:date"),
+            dateUtc: attr(child, "w16du:dateUtc"),
             children,
           },
         };
@@ -2692,6 +2719,7 @@ function parseRunLevelChildren(
             id: attrNum(child, "w:id") ?? 0,
             author: attr(child, "w:author") ?? "",
             date: attr(child, "w:date"),
+            dateUtc: attr(child, "w16du:dateUtc"),
             children,
           },
         };
@@ -2983,6 +3011,7 @@ function parseRunLevelChildren(
               id: attrNum(child, "w:id") ?? 0,
               author: attr(child, "w:author") ?? "",
               date: attr(child, "w:date"),
+              dateUtc: attr(child, "w16du:dateUtc"),
               children,
             },
           });
@@ -2997,6 +3026,7 @@ function parseRunLevelChildren(
               id: attrNum(child, "w:id") ?? 0,
               author: attr(child, "w:author") ?? "",
               date: attr(child, "w:date"),
+              dateUtc: attr(child, "w16du:dateUtc"),
               children,
             },
           });
@@ -3090,7 +3120,7 @@ export function parseParagraph(
 
   const pPr = findChild(el, "w:pPr");
   if (pPr) {
-    Object.assign(opts, parseParagraphProperties(pPr, ctx));
+    Object.assign(opts, parseParagraphProperties(pPr));
   }
 
   const childList = parseRunLevelChildren(el.elements, ctx, options);

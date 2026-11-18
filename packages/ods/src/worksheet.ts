@@ -5,8 +5,13 @@ import {
   childrenNamed,
   emuToLength,
   escapeText,
+  graphicFill,
+  graphicOutline,
   isExternalOdfUrl,
   lengthToEmu,
+  odfGroupTransform,
+  parseOdfGroupTransform,
+  pushShapeStyle,
   spreadsheetColumnName,
   spreadsheetColumnNumber,
   textOf,
@@ -21,9 +26,15 @@ import type {
   DetectiveHighlightedRangeOptions,
   DetectiveOperationOptions,
   DxfOptions,
+  FormulaOptions,
+  HyperlinkOptions,
   MergeCellOptions,
   RowOptions,
+  RichTextOptions,
+  RichTextRunOptions,
+  RichTextRunPropertiesOptions,
   SelectionOptions,
+  PictureOptions,
   StyleOptions,
   TableDetectiveOptions,
   WorksheetOptions,
@@ -32,15 +43,24 @@ import type { Element } from "@office-open/xml";
 
 import { cellDecorationXml } from "./comments";
 import { cellGraphicXml, type OdsChartFrame } from "./drawing-chart";
-import { OdsParseError } from "./error";
+import { OdsGenerateError, OdsParseError } from "./error";
 import { odfDateValue } from "./numbering";
+import type { OdsCellOptions, OdsRowOptions, OdsWorksheetOptions } from "./options";
 import {
   cellShapeXml,
   conditionalFormatsXml,
+  drawingGroupXml,
+  parseDrawingGroup,
   parseDrawingShape,
   tableProtectionXml,
 } from "./spreadsheet";
-import { addCellStyle, addDimensionStyle, addTableStyle, type DimensionStyle } from "./styles";
+import {
+  addCellStyle,
+  addDimensionStyle,
+  addTableStyle,
+  addTextStyle,
+  type DimensionStyle,
+} from "./styles";
 import { assertElementNames, unknownOdsElement } from "./workbook";
 
 export const COLUMN_CONTAINERS = new Set([
@@ -60,7 +80,7 @@ const MAX_ROWS = 1048576;
 const MAX_MATERIALIZED_EMPTY_REPEATS = 100;
 
 interface RepeatedRow {
-  readonly row: RowOptions;
+  readonly row: OdsRowOptions;
   readonly rowIndex: number;
   readonly repeat: number;
 }
@@ -105,8 +125,12 @@ function structuralEqual(left: unknown, right: unknown): boolean {
     );
   }
   if (typeof left === "object" && left !== null && typeof right === "object" && right !== null) {
-    const leftEntries = Object.entries(left).filter(([name]) => name !== "reference");
-    const rightEntries = Object.entries(right).filter(([name]) => name !== "reference");
+    const leftEntries = Object.entries(left).filter(
+      ([name]) => name !== "reference" && name !== "repeat",
+    );
+    const rightEntries = Object.entries(right).filter(
+      ([name]) => name !== "reference" && name !== "repeat",
+    );
     if (leftEntries.length !== rightEntries.length) return false;
     return leftEntries.every(([name, value]) => {
       const rightValue = (right as Record<string, unknown>)[name];
@@ -155,7 +179,7 @@ function graphicDisplay(element: Element): "printer" | undefined {
   return "printer";
 }
 
-function groupRepeatedRows(rows: readonly RowOptions[], canShareOutput: boolean): RepeatedRow[] {
+function groupRepeatedRows(rows: readonly OdsRowOptions[], canShareOutput: boolean): RepeatedRow[] {
   const groups: RepeatedRow[] = [];
   for (const [rowIndex, row] of rows.entries()) {
     const previous = groups[groups.length - 1];
@@ -166,6 +190,8 @@ function groupRepeatedRows(rows: readonly RowOptions[], canShareOutput: boolean)
     if (
       canShareOutput &&
       previous &&
+      previous.row.repeat === undefined &&
+      row.repeat === undefined &&
       previousRowNumber !== undefined &&
       rowNumber === previousRowNumber + 1 &&
       rowEqual(previous.row, row, previousRowNumber, rowNumber)
@@ -173,7 +199,7 @@ function groupRepeatedRows(rows: readonly RowOptions[], canShareOutput: boolean)
       groups[groups.length - 1] = { ...previous, repeat: previous.repeat + 1 };
       continue;
     }
-    groups.push({ row, rowIndex, repeat: 1 });
+    groups.push({ row, rowIndex, repeat: row.repeat ?? 1 });
   }
   return groups;
 }
@@ -197,7 +223,7 @@ function isLargeEmptyRepeat(repeat: number, hasData: boolean): boolean {
 }
 
 export function worksheetXml(
-  worksheet: WorksheetOptions,
+  worksheet: OdsWorksheetOptions,
   index: number,
   styles: string[],
   embeddedCharts: OdsChartFrame[],
@@ -206,6 +232,7 @@ export function worksheetXml(
   dxfs: DxfOptions[] = [],
   formsXml = "",
 ): string {
+  const hyperlinks = new Map((worksheet.hyperlinks ?? []).map((link) => [link.cell, link]));
   const conditionalStyleNames = new Map<number, string>();
   for (const rule of (worksheet.conditionalFormats ?? []).flatMap((format) => format.rules)) {
     const dxfId = rule.dxfId;
@@ -249,7 +276,7 @@ export function worksheetXml(
       (_, offset) => merge.firstRow + offset,
     ),
   );
-  const rowsForOutput: RowOptions[] = [
+  const rowsForOutput: OdsRowOptions[] = [
     ...sourceRows,
     ...mergeRows
       .filter((rowNumber) => !sourceRowNumbers.has(rowNumber))
@@ -258,9 +285,13 @@ export function worksheetXml(
   const explicitColumns = (worksheet.columns ?? []).flatMap((column) => {
     const count = Math.max(1, (column.max ?? column.min) - column.min + 1);
     const styleName =
-      column.width === undefined && !column.hidden
+      column.width === undefined && !column.hidden && column.bestFit === undefined
         ? undefined
-        : addDimensionStyle({ width: column.width, hidden: column.hidden }, styles, "column");
+        : addDimensionStyle(
+            { width: column.width, hidden: column.hidden, bestFit: column.bestFit },
+            styles,
+            "column",
+          );
     return Array.from({ length: count }, () =>
       xmlElement("table:table-column", { "table:style-name": styleName }),
     );
@@ -285,6 +316,7 @@ export function worksheetXml(
   for (const comment of worksheet.comments ?? []) commentsByCell.set(comment.cell, comment);
   const shapesByCell = new Map<string, NonNullable<WorksheetOptions["shapes"]>[number][]>();
   for (const shape of worksheet.shapes ?? []) {
+    if (shape.anchorType === "absolute") continue;
     const reference = `${cellAddress(shape.col, shape.row)}`;
     const cellShapes = shapesByCell.get(reference);
     if (cellShapes) cellShapes.push(shape);
@@ -301,20 +333,35 @@ export function worksheetXml(
     mergeStartsByCell.set(`${merge.firstRow}:${merge.firstColumn}`, merge);
   }
   const repeatedRows = groupRepeatedRows(rowsForOutput, canShareRepeatedRows);
-  const emptyRow = { repeat: 1, xml: xmlElement("table:table-row") };
+  const defaultRowHeight =
+    typeof worksheet.sheetFormat === "object" ? worksheet.sheetFormat.defaultRowHeight : undefined;
+  const defaultRowStyle =
+    defaultRowHeight === undefined
+      ? undefined
+      : addDimensionStyle({ height: defaultRowHeight }, styles, "row");
+  const emptyRow = {
+    repeat: 1,
+    xml: xmlElement("table:table-row", { "table:style-name": defaultRowStyle }),
+  };
   const bodyRows: Array<{ repeat: number; xml: string }> = [];
   let expectedRowNumber = 1;
   for (const { row, rowIndex, repeat } of repeatedRows) {
     const rowNumber = row.rowNumber ?? rowIndex + 1;
     while (expectedRowNumber < rowNumber) {
-      bodyRows.push(emptyRow);
-      expectedRowNumber += 1;
+      const repeat = rowNumber - expectedRowNumber;
+      const previous = bodyRows[bodyRows.length - 1];
+      if (previous?.xml === emptyRow.xml) previous.repeat += repeat;
+      else bodyRows.push({ repeat, xml: emptyRow.xml });
+      expectedRowNumber = rowNumber;
     }
     const styleName =
-      row.height === undefined && !row.hidden
+      row.height === undefined && !row.hidden && defaultRowStyle === undefined
         ? undefined
         : addDimensionStyle(
-            { height: typeof row.height === "number" ? row.height : undefined, hidden: row.hidden },
+            {
+              height: typeof row.height === "number" ? row.height : defaultRowHeight,
+              hidden: row.hidden,
+            },
             styles,
             "row",
           );
@@ -342,6 +389,7 @@ export function worksheetXml(
           ...cellShapeXml(shapesByCell.get(cell.reference ?? ""), cell.reference ?? "", styles),
         ],
         validationNames.get(`${tableSheetName}:${cell.reference ?? ""}`),
+        hyperlinks.get(cell.reference ?? ""),
         start
           ? {
               columnsSpanned: start.lastColumn - start.firstColumn + 1,
@@ -350,8 +398,9 @@ export function worksheetXml(
           : undefined,
       );
       const previous = groupedCellXml[groupedCellXml.length - 1];
-      if (previous?.xml === xml) previous.count += 1;
-      else groupedCellXml.push({ count: 1, xml });
+      const repeat = cell.repeat ?? 1;
+      if (previous?.xml === xml) previous.count += repeat;
+      else groupedCellXml.push({ count: repeat, xml });
     }
     const xml = xmlElement(
       "table:table-row",
@@ -375,7 +424,7 @@ export function worksheetXml(
         xml,
       });
     }
-    expectedRowNumber = rowNumber + 1;
+    expectedRowNumber = rowNumber + repeat;
   }
   const rows = concatenate(
     bodyRows.length
@@ -387,8 +436,20 @@ export function worksheetXml(
                 `<table:table-row table:number-rows-repeated="${repeat}"`,
               ),
         )
-      : [xmlElement("table:table-row", undefined, [xmlElement("table:table-cell")])],
+      : defaultRowStyle
+        ? []
+        : [xmlElement("table:table-row", undefined, [xmlElement("table:table-cell")])],
   );
+  const lastWrittenRow = rowsForOutput.length === 0 ? 0 : expectedRowNumber - 1;
+  const defaultRepeat = Math.max(0, MAX_ROWS - lastWrittenRow);
+  const defaultRows =
+    defaultRowStyle && defaultRepeat > 0
+      ? xmlElement(
+          "table:table-row",
+          { "table:style-name": defaultRowStyle, "table:number-rows-repeated": defaultRepeat },
+          [xmlElement("table:table-cell")],
+        )
+      : "";
   const sheetName = worksheet.name ?? `Sheet${index}`;
   const tableStyleName =
     worksheet.sheetView?.showFormulas !== undefined ||
@@ -429,7 +490,7 @@ export function worksheetXml(
         },
         [
           xmlElement("draw:object", {
-            "xlink:href": entry.name,
+            "xlink:href": entry.path ?? entry.name,
             "xlink:type": "simple",
             "xlink:show": "embed",
             "xlink:actuate": "onLoad",
@@ -437,21 +498,288 @@ export function worksheetXml(
         ],
       ),
     );
+  const imageFrames = (worksheet.images ?? []).map((image, imageIndex) =>
+    worksheetImageXml(image, index, imageIndex, styles),
+  );
+  const topLevelShapes = (worksheet.shapes ?? [])
+    .filter((shape) => shape.anchorType === "absolute")
+    .flatMap((shape) =>
+      cellShapeXml(
+        [{ ...shape, colOffset: shape.absoluteX, rowOffset: shape.absoluteY }],
+        "A1",
+        styles,
+      ),
+    );
   const selectionXml = worksheet.selection?.length ? gnumericSelectionXml(worksheet.selection) : [];
+  const tableSourceXml = worksheet.tableSource
+    ? xmlElement("table:table-source", {
+        "table:mode": worksheet.tableSource.mode,
+        "table:table-name": worksheet.tableSource.tableName,
+        "xlink:type": "simple",
+        "xlink:href": worksheet.tableSource.href,
+        "xlink:actuate": worksheet.tableSource.actuate,
+        "table:filter-name": worksheet.tableSource.filterName,
+        "table:filter-options": worksheet.tableSource.filterOptions,
+        "table:refresh-delay": worksheet.tableSource.refreshDelay,
+      })
+    : "";
+  const scenarioXml = worksheet.scenario
+    ? xmlElement("table:scenario", {
+        "table:scenario-ranges": worksheet.scenario.ranges,
+        "table:is-active": worksheet.scenario.active,
+        "table:display-border": worksheet.scenario.displayBorder,
+        "table:border-color": worksheet.scenario.borderColor,
+        "table:copy-back": worksheet.scenario.copyBack,
+        "table:copy-styles": worksheet.scenario.copyStyles,
+        "table:copy-formulas": worksheet.scenario.copyFormulas,
+        "table:comment": worksheet.scenario.comment,
+        "table:protected": worksheet.scenario.protected,
+      })
+    : "";
   return xmlElement(
     "table:table",
     { "table:name": sheetName, "table:style-name": tableStyleName },
     [
+      worksheet.tableTitle === undefined
+        ? ""
+        : xmlElement("table:title", undefined, [escapeText(worksheet.tableTitle)]),
+      worksheet.tableDescription === undefined
+        ? ""
+        : xmlElement("table:desc", undefined, [escapeText(worksheet.tableDescription)]),
+      tableSourceXml,
+      scenarioXml,
       formsXml,
-      ...(frames.length ? [xmlElement("table:shapes", undefined, frames)] : []),
+      ...(frames.length || imageFrames.length || topLevelShapes.length || worksheet.groups?.length
+        ? [
+            xmlElement("table:shapes", undefined, [
+              ...frames,
+              ...imageFrames,
+              ...topLevelShapes,
+              ...(worksheet.groups ?? []).map((group) => drawingGroupXml(group, styles)),
+            ]),
+          ]
+        : []),
       tableProtectionXml(worksheet),
       columns,
-      rows,
+      `${rows}${defaultRows}`,
       conditionalFormatsXml(worksheet.conditionalFormats ?? [], sheetName, conditionalStyleNames),
       localNamedExpressions,
       ...selectionXml,
     ],
   );
+}
+
+export function worksheetImagePath(
+  image: PictureOptions,
+  worksheetIndex: number,
+  imageIndex: number,
+): string {
+  return image.sourcePath ?? `Pictures/sheet${worksheetIndex}-image${imageIndex + 1}.${image.type}`;
+}
+
+function worksheetImageXml(
+  image: PictureOptions,
+  worksheetIndex: number,
+  imageIndex: number,
+  styles: string[],
+): string {
+  const path = worksheetImagePath(image, worksheetIndex, imageIndex);
+  const x = image.anchorType === "absolute" ? image.absoluteX : image.colOffset;
+  const y = image.anchorType === "absolute" ? image.absoluteY : image.rowOffset;
+  const attributes = {
+    "draw:name": image.name,
+    "draw:style-name": pushShapeStyle(image.properties?.fill, image.properties?.outline, styles),
+    "svg:x": emuToLength(typeof x === "number" ? x : 0),
+    "svg:y": emuToLength(typeof y === "number" ? y : 0),
+    "svg:width": emuToLength(
+      typeof image.extentCx === "number" ? image.extentCx : (image.properties?.width ?? 0),
+    ),
+    "svg:height": emuToLength(
+      typeof image.extentCy === "number" ? image.extentCy : (image.properties?.height ?? 0),
+    ),
+    "table:end-cell-address":
+      image.toCol !== undefined && image.toRow !== undefined
+        ? cellAddress(image.toCol, image.toRow)
+        : undefined,
+    "table:end-x":
+      typeof image.toColOffset === "number" ? emuToLength(image.toColOffset) : image.toColOffset,
+    "table:end-y":
+      typeof image.toRowOffset === "number" ? emuToLength(image.toRowOffset) : image.toRowOffset,
+    "draw:transform": odfGroupTransform(image.properties?.rotation),
+  };
+  return xmlElement("draw:frame", attributes, [
+    xmlElement("draw:image", {
+      "xlink:href": image.sourceUrl && image.data === undefined ? image.sourceUrl : path,
+      "xlink:type": "simple",
+      "xlink:show": "embed",
+      "xlink:actuate": "onLoad",
+    }),
+    ...(image.title ? [xmlElement("svg:title", undefined, [escapeText(image.title)])] : []),
+    ...(image.description
+      ? [xmlElement("svg:desc", undefined, [escapeText(image.description)])]
+      : []),
+  ]);
+}
+
+function parseWorksheetImages(
+  table: Element,
+  graphicStyles: Map<string, GraphicStyle>,
+  binaries: Record<string, Uint8Array>,
+  usedBinaryPaths: Set<string>,
+): PictureOptions[] {
+  const shapes = childNamed(table, "table:shapes");
+  const frames = [...childrenNamed(table, "draw:frame"), ...childrenNamed(shapes, "draw:frame")];
+  return frames.flatMap((frame) => {
+    const image = childNamed(frame, "draw:image");
+    if (image === undefined || childNamed(frame, "draw:object") !== undefined) return [];
+    const href = attributeString(image, "xlink:href");
+    if (href === undefined) {
+      throw new OdsParseError(
+        "ODS image frame has no xlink:href",
+        "content.xml",
+        "/office:document-content/office:body/office:spreadsheet/table:table/draw:frame/draw:image",
+        "xlink:href",
+        "missing-image-reference",
+      );
+    }
+    const type = worksheetImageType(href);
+    const transform = parseOdfGroupTransform(attributeString(frame, "draw:transform"));
+    if (transform === null)
+      throw new OdsParseError(
+        "ODS image transform cannot be projected to the canonical picture model",
+        "content.xml",
+        "/office:document-content/office:body/office:spreadsheet/table:table/draw:frame",
+        "draw:transform",
+        "unsupported-image-transform",
+      );
+    const path = isExternalOdfUrl(href) ? undefined : odsPackagePath(href);
+    const data = path === undefined ? undefined : binaries[path];
+    if (path !== undefined && data === undefined)
+      throw new OdsParseError(
+        `ODS image package member is missing: ${path}`,
+        "content.xml",
+        "/office:document-content/office:body/office:spreadsheet/table:table/draw:frame/draw:image",
+        "draw:image",
+        "missing-package-part",
+      );
+    if (path !== undefined) usedBinaryPaths.add(path);
+    const x = (lengthToEmu(attributeString(frame, "svg:x")) ?? 0) + (transform?.x ?? 0);
+    const y = (lengthToEmu(attributeString(frame, "svg:y")) ?? 0) + (transform?.y ?? 0);
+    const width = lengthToEmu(attributeString(frame, "svg:width")) ?? 0;
+    const height = lengthToEmu(attributeString(frame, "svg:height")) ?? 0;
+    const graphic = graphicStyles.get(attributeString(frame, "draw:style-name") ?? "");
+    const fill = graphicFill(graphic);
+    const outline = graphicOutline(graphic);
+    const end = parseEndCell(frame);
+    return [
+      {
+        type,
+        ...(data === undefined ? {} : { data }),
+        ...(href && isExternalOdfUrl(href) ? { sourceUrl: href } : {}),
+        ...(path === undefined ? {} : { sourcePath: path }),
+        name: attributeString(frame, "draw:name"),
+        title: textOf(childNamed(frame, "svg:title")) || undefined,
+        description: textOf(childNamed(frame, "svg:desc")) || undefined,
+        anchorType: end === undefined ? ("absolute" as const) : ("twoCell" as const),
+        col: 1,
+        row: 1,
+        ...(end === undefined
+          ? {
+              absoluteX: x,
+              absoluteY: y,
+              extentCx: width,
+              extentCy: height,
+            }
+          : { colOffset: x, rowOffset: y, ...end }),
+        ...(fill || outline || transform?.rotation !== undefined || width || height
+          ? {
+              properties: {
+                ...(width ? { width } : {}),
+                ...(height ? { height } : {}),
+                ...(fill ? { fill } : {}),
+                ...(outline ? { outline } : {}),
+                ...(transform?.rotation === undefined ? {} : { rotation: transform.rotation }),
+              },
+            }
+          : {}),
+      },
+    ];
+  });
+}
+
+function parseEndCell(
+  frame: Element,
+): Pick<PictureOptions, "toCol" | "toRow" | "toColOffset" | "toRowOffset"> | undefined {
+  const match = /^([A-Z]+)([0-9]+)$/u.exec(attributeString(frame, "table:end-cell-address") ?? "");
+  if (!match) return undefined;
+  return {
+    toCol: columnNumber(match[1]!),
+    toRow: Number(match[2]),
+    toColOffset: lengthToEmu(attributeString(frame, "table:end-x")),
+    toRowOffset: lengthToEmu(attributeString(frame, "table:end-y")),
+  };
+}
+
+function worksheetImageType(href: string): PictureOptions["type"] {
+  const extension = href.split(/[?#]/u, 1)[0]?.split(".").pop()?.toLowerCase();
+  if (extension === "jpeg") return "jpg";
+  if (
+    extension === "png" ||
+    extension === "jpg" ||
+    extension === "gif" ||
+    extension === "webp" ||
+    extension === "wmf" ||
+    extension === "emf"
+  )
+    return extension;
+  throw new OdsParseError(
+    `ODS image type cannot be projected to WorkbookOptions: ${extension ?? "unknown"}`,
+    "content.xml",
+    "/office:document-content/office:body/office:spreadsheet/table:table/draw:frame/draw:image",
+    "draw:image",
+    "unsupported-image-type",
+  );
+}
+
+export function odsPackagePath(href: string): string {
+  let decoded: string;
+  try {
+    decoded = decodeURIComponent(href.split(/[?#]/u, 1)[0] ?? "");
+  } catch (cause) {
+    throw new OdsParseError(
+      "ODS image reference is not a valid package URI",
+      "content.xml",
+      "/office:document-content/office:body/office:spreadsheet/table:table/draw:frame/draw:image",
+      "xlink:href",
+      "invalid-package-uri",
+      { cause },
+    );
+  }
+  const segments: string[] = [];
+  for (const segment of decoded.split("/")) {
+    if (segment === "" || segment === ".") continue;
+    if (segment === "..") {
+      if (segments.length === 0)
+        throw new OdsParseError(
+          "ODS image reference escapes the package root",
+          "content.xml",
+          "/office:document-content/office:body/office:spreadsheet/table:table/draw:frame/draw:image",
+          "xlink:href",
+          "invalid-package-uri",
+        );
+      segments.pop();
+    } else segments.push(segment);
+  }
+  const path = segments.join("/");
+  if (path === "")
+    throw new OdsParseError(
+      "ODS image reference does not identify a package member",
+      "content.xml",
+      "/office:document-content/office:body/office:spreadsheet/table:table/draw:frame/draw:image",
+      "xlink:href",
+      "invalid-package-uri",
+    );
+  return path;
 }
 
 function concatenate(parts: readonly string[]): string {
@@ -471,6 +799,7 @@ export function cellXml(
   styles: string[],
   decorations: string[] = [],
   contentValidationName?: string,
+  hyperlink?: HyperlinkOptions,
   span?: { columnsSpanned: number; rowsSpanned: number },
 ): string {
   if (cell.covered) {
@@ -491,19 +820,34 @@ export function cellXml(
       children,
     );
   }
-  const formula = typeof cell.formula === "string" ? { formula: cell.formula } : cell.formula;
+  const formula: FormulaOptions | undefined =
+    typeof cell.formula === "string" ? { formula: cell.formula } : cell.formula;
+  if (formula !== undefined) assertFormulaRepresentable(formula, cell.reference);
   const cached = cacheAttributes(cell.value);
   const styleOptions = typeof cell.style === "object" ? cell.style : undefined;
   const valueKind = numFmtKind(styleOptions?.numFmt);
-  let type = cached.type;
-  if (valueKind === "time") type = "time";
-  else if (valueKind === "currency") type = "currency";
+  let type = cell.error === undefined ? cached.type : "error";
+  if (cell.error === undefined) {
+    if (formula !== undefined && cached.type === undefined) type = "string";
+    else if (valueKind === "time") type = "time";
+    else if (valueKind === "currency") type = "currency";
+  }
   const children = [
     ...(cell.cellRangeSource ? [cellRangeSourceXml(cell.cellRangeSource)] : []),
     ...decorations,
     ...(cell.detective ? [tableDetectiveXml(cell.detective)] : []),
     ...(cached.type === "string"
-      ? [xmlElement("text:p", undefined, [escapeText(String(cached.value ?? ""))])]
+      ? isRichText(cell.value)
+        ? richTextXml(cell.value, styles, hyperlink)
+        : String(cached.value ?? "")
+            .split("\n")
+            .map((paragraph) =>
+              xmlElement(
+                "text:p",
+                undefined,
+                hyperlinkXml(hyperlink, odfTextNodes(hyperlink?.display ?? paragraph)),
+              ),
+            )
       : []),
     ...(cell.graphics ?? []).map((graphic) => cellGraphicXml(graphic)),
   ];
@@ -528,9 +872,53 @@ export function cellXml(
         type === "time" ? serialToDuration(Number(cached.value ?? 0)) : undefined,
       "office:boolean-value": cached.type === "boolean" ? cached.value : undefined,
       "office:date-value": cached.type === "date" ? cached.value : undefined,
+      "office:string-value": type === "error" ? cell.error : undefined,
     },
     children,
   );
+}
+
+function assertFormulaRepresentable(formula: FormulaOptions, reference: string | undefined): void {
+  if (formula.type === "array" && formula.reference === undefined) {
+    throw new OdsGenerateError(
+      "ODS array formulas require a reference range",
+      "content.xml",
+      `/office:document-content/office:body/office:spreadsheet/table:table/table:table-row/table:table-cell${reference ? `[@table:address="${reference}"]` : ""}`,
+      "table:formula",
+      "array-formula-reference-missing",
+    );
+  }
+  if (formula.type !== undefined && formula.type !== "normal" && formula.type !== "array") {
+    throw new OdsGenerateError(
+      `ODS cannot represent formula type: ${formula.type}`,
+      "content.xml",
+      "/office:document-content/office:body/office:spreadsheet/table:table/table:table-cell",
+      "table:formula",
+      "unsupported-formula-type",
+    );
+  }
+  const unsupported = [
+    "sharedIndex",
+    "aca",
+    "dt2D",
+    "dtr",
+    "del1",
+    "del2",
+    "inputCell1",
+    "inputCell2",
+    "calculateCell",
+    "arrayContext",
+  ] as const;
+  const property = unsupported.find((name) => formula[name] !== undefined);
+  if (property !== undefined) {
+    throw new OdsGenerateError(
+      `ODS cannot represent formula property: ${property}`,
+      "content.xml",
+      "/office:document-content/office:body/office:spreadsheet/table:table/table:table-cell",
+      "table:formula",
+      "unsupported-formula-property",
+    );
+  }
 }
 
 function matrixSpanAttributes(reference: string): {
@@ -607,11 +995,62 @@ export function cacheAttributes(value: CellOptions["value"]): {
   type?: string;
   value?: string | number | boolean;
 } {
-  if (typeof value === "number") return { type: "float", value };
+  if (typeof value === "number") return Number.isFinite(value) ? { type: "float", value } : {};
   if (typeof value === "boolean") return { type: "boolean", value };
   if (value instanceof Date) return { type: "date", value: odfDateValue(value) };
   if (typeof value === "string") return { type: "string", value };
+  if (isRichText(value)) {
+    return {
+      type: "string",
+      value: value.text ?? value.runs?.map((run) => run.text).join("") ?? "",
+    };
+  }
   return {};
+}
+
+function isRichText(value: CellOptions["value"]): value is RichTextOptions {
+  return typeof value === "object" && value !== null && !(value instanceof Date);
+}
+
+function richTextXml(
+  value: RichTextOptions,
+  styles: string[],
+  hyperlink?: HyperlinkOptions,
+): string[] {
+  const runs = value.runs ?? (value.text === undefined ? [] : [{ text: value.text }]);
+  const paragraphs: string[][] = [[]];
+  for (const run of runs) {
+    const parts = run.text.split("\n");
+    for (const [index, part] of parts.entries()) {
+      if (part.length > 0) paragraphs[paragraphs.length - 1]!.push(richRunXml(run, part, styles));
+      if (index < parts.length - 1) paragraphs.push([]);
+    }
+  }
+  return paragraphs.map((paragraph) =>
+    xmlElement("text:p", undefined, hyperlinkXml(hyperlink, paragraph)),
+  );
+}
+
+function hyperlinkXml(hyperlink: HyperlinkOptions | undefined, children: string[]): string[] {
+  const href = hyperlink?.url ?? (hyperlink?.location ? `#${hyperlink.location}` : undefined);
+  return href === undefined
+    ? children
+    : [xmlElement("text:a", { "xlink:href": href, "xlink:type": "simple" }, children)];
+}
+
+function richRunXml(run: RichTextRunOptions, text: string, styles: string[]): string {
+  const styleName = run.properties ? addTextStyle(run.properties, styles) : undefined;
+  return styleName
+    ? xmlElement("text:span", { "text:style-name": styleName }, odfTextNodes(text))
+    : odfTextNodes(text).join("");
+}
+
+function odfTextNodes(text: string): string[] {
+  return text.split(/( +)/u).flatMap((part) => {
+    if (!part) return [];
+    if (!/^ +$/u.test(part)) return [escapeText(part)];
+    return [xmlElement("text:s", part.length === 1 ? undefined : { "text:c": part.length })];
+  });
 }
 
 function styleWithNumFmt(style: CellOptions["style"], numFmt: string): CellOptions["style"] {
@@ -619,10 +1058,10 @@ function styleWithNumFmt(style: CellOptions["style"], numFmt: string): CellOptio
   return { ...style, numFmt: style?.numFmt ?? numFmt };
 }
 
-function durationToSerial(value: string | undefined): number {
-  if (value === undefined) return 0;
+function durationToSerial(value: string | undefined): number | undefined {
+  if (value === undefined) return undefined;
   const match = /^(-?)P(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?(?:([\d.]+)S)?)?$/u.exec(value);
-  if (!match) return 0;
+  if (!match) return undefined;
   const sign = match[1] === "-" ? -1 : 1;
   const days = Number(match[2] ?? 0);
   const hours = Number(match[3] ?? 0);
@@ -655,10 +1094,36 @@ export function worksheet(
   dimensions: Map<string, DimensionStyle>,
   cellStyles: Map<string, StyleOptions>,
   graphicStyles: Map<string, GraphicStyle> = new Map(),
-): WorksheetOptions {
+  textStyles: Map<string, RichTextRunPropertiesOptions> = new Map(),
+  binaries: Record<string, Uint8Array> = {},
+  usedBinaryPaths: Set<string> = new Set(),
+): OdsWorksheetOptions {
   const comments: CommentOptions[] = [];
+  const hyperlinks: HyperlinkOptions[] = [];
   const mergeCells: MergeCellOptions[] = [];
   const shapes: WorksheetOptions["shapes"] = [];
+  const groups: WorksheetOptions["groups"] = [];
+  const tableShapes = childNamed(table, "table:shapes");
+  const images = parseWorksheetImages(table, graphicStyles, binaries, usedBinaryPaths);
+  for (const shape of tableShapes?.elements ?? []) {
+    if (shape.name === "draw:g") {
+      groups.push(parseDrawingGroup(shape, 1, 1, graphicStyles, textStyles, true));
+    } else if (
+      [
+        "draw:rect",
+        "draw:control",
+        "draw:ellipse",
+        "draw:circle",
+        "draw:line",
+        "draw:measure",
+        "draw:polygon",
+        "draw:polyline",
+        "draw:custom-shape",
+      ].includes(shape.name ?? "")
+    ) {
+      shapes.push(parseDrawingShape(shape, 1, 1, graphicStyles, textStyles, true));
+    }
+  }
   validateTableChildren(table);
   const columns: ColumnOptions[] = [];
   let columnNumber = 1;
@@ -674,6 +1139,7 @@ export function worksheet(
         previous &&
         previous.max === columnNumber - 1 &&
         previous.width === parsed.width &&
+        previous.bestFit === parsed.bestFit &&
         previous.hidden === parsed.hidden
       ) {
         previous.max = parsed.max;
@@ -691,6 +1157,9 @@ export function worksheet(
     comments,
     mergeCells,
     shapes,
+    textStyles,
+    hyperlinks,
+    groups,
   );
   const tableStyle = dimensions.get(attributeString(table, "table:style-name") ?? "");
   const sheetView =
@@ -717,11 +1186,122 @@ export function worksheet(
   const selection = gnumericSelection(table);
   return {
     ...worksheetOptions,
+    ...parseTableFeatures(table),
     ...(selection ? { selection } : {}),
     ...(comments.length ? { comments } : {}),
     ...(mergeCells.length ? { mergeCells } : {}),
     ...(shapes?.length ? { shapes } : {}),
+    ...(groups.length ? { groups } : {}),
+    ...(images.length ? { images } : {}),
+    ...(hyperlinks.length ? { hyperlinks } : {}),
   };
+}
+
+function parseTableFeatures(
+  table: Element,
+): Pick<OdsWorksheetOptions, "tableTitle" | "tableDescription" | "scenario" | "tableSource"> {
+  const scenario = childNamed(table, "table:scenario");
+  const source = childNamed(table, "table:table-source");
+  const mode = attributeString(source, "table:mode");
+  if (mode !== undefined && mode !== "copy-all" && mode !== "copy-results-only") {
+    throw unknownOdsElement(source!, "/table:table", "table:mode", "invalid table source mode");
+  }
+  const actuate = attributeString(source, "xlink:actuate");
+  if (actuate !== undefined && actuate !== "onRequest") {
+    throw unknownOdsElement(
+      source!,
+      "/table:table",
+      "xlink:actuate",
+      "invalid table source actuation",
+    );
+  }
+  if (source && attributeString(source, "xlink:type") !== "simple") {
+    throw unknownOdsElement(
+      source,
+      "/table:table",
+      "xlink:type",
+      "table source link type must be simple",
+    );
+  }
+  return {
+    ...(childNamed(table, "table:title")
+      ? { tableTitle: textOf(childNamed(table, "table:title")) }
+      : {}),
+    ...(childNamed(table, "table:desc")
+      ? { tableDescription: textOf(childNamed(table, "table:desc")) }
+      : {}),
+    ...(scenario
+      ? {
+          scenario: {
+            ranges: requiredAttribute(scenario, "table:scenario-ranges"),
+            active: requiredBoolean(scenario, "table:is-active"),
+            ...optionalBoolean(scenario, "table:display-border", "displayBorder"),
+            ...(attributeString(scenario, "table:border-color")
+              ? { borderColor: attributeString(scenario, "table:border-color") }
+              : {}),
+            ...optionalBoolean(scenario, "table:copy-back", "copyBack"),
+            ...optionalBoolean(scenario, "table:copy-styles", "copyStyles"),
+            ...optionalBoolean(scenario, "table:copy-formulas", "copyFormulas"),
+            ...(attributeString(scenario, "table:comment")
+              ? { comment: attributeString(scenario, "table:comment") }
+              : {}),
+            ...optionalBoolean(scenario, "table:protected", "protected"),
+          },
+        }
+      : {}),
+    ...(source
+      ? {
+          tableSource: {
+            href: requiredAttribute(source, "xlink:href"),
+            ...(mode !== undefined ? { mode } : {}),
+            ...(attributeString(source, "table:table-name")
+              ? { tableName: attributeString(source, "table:table-name") }
+              : {}),
+            ...(actuate !== undefined ? { actuate } : {}),
+            ...(attributeString(source, "table:filter-name")
+              ? { filterName: attributeString(source, "table:filter-name") }
+              : {}),
+            ...(attributeString(source, "table:filter-options")
+              ? { filterOptions: attributeString(source, "table:filter-options") }
+              : {}),
+            ...(attributeString(source, "table:refresh-delay")
+              ? { refreshDelay: attributeString(source, "table:refresh-delay") }
+              : {}),
+          },
+        }
+      : {}),
+  };
+}
+
+function requiredAttribute(element: Element, name: string): string {
+  const value = attributeString(element, name);
+  if (value === undefined)
+    throw unknownOdsElement(element, "/table:table", name, "required attribute is missing");
+  return value;
+}
+
+function requiredBoolean(element: Element, name: string): boolean {
+  const value = optionalBooleanValue(element, name);
+  if (value === undefined)
+    throw unknownOdsElement(element, "/table:table", name, "required boolean is missing");
+  return value;
+}
+
+function optionalBoolean(
+  element: Element,
+  attribute: string,
+  property: "displayBorder" | "copyBack" | "copyStyles" | "copyFormulas" | "protected",
+): Record<string, boolean> {
+  const value = optionalBooleanValue(element, attribute);
+  return value === undefined ? {} : { [property]: value };
+}
+
+function optionalBooleanValue(element: Element, name: string): boolean | undefined {
+  const value = attributeString(element, name);
+  if (value === undefined) return undefined;
+  if (value === "true" || value === "1") return true;
+  if (value === "false" || value === "0") return false;
+  throw unknownOdsElement(element, "/table:table", name, "invalid boolean value");
 }
 
 function gnumericSelection(table: Element): SelectionOptions[] | undefined {
@@ -884,12 +1464,14 @@ export function validateTableChildren(table: Element): void {
     if (
       child.name === "table:table-column" ||
       child.name === "table:table-row" ||
+      child.name === "table:title" ||
+      child.name === "table:desc" ||
+      child.name === "table:table-source" ||
+      child.name === "table:scenario" ||
       child.name === "office:forms" ||
       child.name === "table:shapes" ||
       child.name === "table:named-expressions" ||
       child.name === "loext:table-protection" ||
-      child.name === "table:table-source" ||
-      child.name === "table:scenario" ||
       child.name === "calcext:conditional-formats" ||
       child.name === "calcext:sparkline-groups" ||
       child.name === "table:detective" ||
@@ -931,7 +1513,13 @@ export function parseColumn(
   dimensions: Map<string, DimensionStyle>,
 ): ColumnOptions {
   const style = dimensions.get(attributeString(element, "table:style-name") ?? "");
-  return { min: column, max: column, width: style?.width, hidden: style?.hidden };
+  return {
+    min: column,
+    max: column,
+    width: style?.width,
+    bestFit: style?.bestFit,
+    hidden: tableVisibility(element, "table:visibility") !== "visible" || style?.hidden,
+  };
 }
 
 function parseRows(
@@ -942,8 +1530,11 @@ function parseRows(
   comments: CommentOptions[],
   mergeCells: MergeCellOptions[],
   shapes: WorksheetOptions["shapes"],
-): { rows: RowOptions[]; defaultRowHeight?: number } {
-  const rows: RowOptions[] = [];
+  textStyles: Map<string, RichTextRunPropertiesOptions>,
+  hyperlinks: HyperlinkOptions[],
+  groups: WorksheetOptions["groups"],
+): { rows: OdsRowOptions[]; defaultRowHeight?: number } {
+  const rows: OdsRowOptions[] = [];
   let defaultRowHeight: number | undefined;
   let rowNumber = 1;
   for (const row of tableRows(table)) {
@@ -958,16 +1549,24 @@ function parseRows(
       comments,
       mergeCells,
       shapes,
+      textStyles,
+      hyperlinks,
+      groups,
     );
     const hasRowData = (parsed.cells ?? []).some(hasCellContent) || parsed.hidden === true;
     if (repeat > MAX_ROWS && hasRowData) {
-      throw new OdsParseError(
-        "Invalid OpenDocument spreadsheet repeat count",
-        "content.xml",
-        "office:body/office:spreadsheet/table:table",
-        "table:number-rows-repeated",
-        "invalid-repeat-count",
-      );
+      if (mergeCells.length !== mergeStart) {
+        throw new OdsParseError(
+          "Repeated rows with merged cells exceed the canonical worksheet limits",
+          "content.xml",
+          "office:body/office:spreadsheet/table:table",
+          "table:number-rows-repeated",
+          "unsupported-repeated-merge",
+        );
+      }
+      rows.push({ ...parsed, repeat });
+      rowNumber += repeat;
+      continue;
     }
     if (isLargeEmptyRepeat(repeat, hasRowData)) {
       if (typeof parsed.height === "number" && defaultRowHeight === undefined) {
@@ -1003,7 +1602,14 @@ function parseRows(
     rows.push(parsed);
     rowNumber += repeat;
   }
-  return { rows, defaultRowHeight };
+  return {
+    rows: rows.map((row) => {
+      if (row.height !== defaultRowHeight) return row;
+      const { height: _height, ...normalized } = row;
+      return normalized;
+    }),
+    defaultRowHeight,
+  };
 }
 
 function renumberCell(cell: CellOptions, rowNumber: number): CellOptions {
@@ -1050,7 +1656,10 @@ export function parseRow(
   comments: CommentOptions[],
   mergeCells: MergeCellOptions[] = [],
   shapes: WorksheetOptions["shapes"] = [],
-): RowOptions {
+  textStyles: Map<string, RichTextRunPropertiesOptions> = new Map(),
+  hyperlinks: HyperlinkOptions[] = [],
+  groups: WorksheetOptions["groups"] = [],
+): OdsRowOptions {
   const style = dimensions.get(attributeString(row, "table:style-name") ?? "");
   const cellStartColumns: number[] = [];
   let columnNumber = 1;
@@ -1063,7 +1672,7 @@ export function parseRow(
   return {
     rowNumber,
     height: style?.height,
-    hidden: style?.hidden,
+    hidden: tableVisibility(row, "table:visibility") !== "visible" || style?.hidden,
     cells: (row.elements ?? [])
       .flatMap((cell, cellIndex) => {
         const repeat = repeatCount(cell, "table:number-columns-repeated");
@@ -1091,7 +1700,7 @@ export function parseRow(
             ["text:p", "draw:frame"],
           );
           const coveredStyle = cellStyles.get(attributeString(cell, "table:style-name") ?? "");
-          const coveredCell: CellOptions = {
+          const coveredCell: OdsCellOptions = {
             reference: `${columnName(startColumn)}${rowNumber}`,
             covered: {
               reference: `${columnName(startColumn)}${rowNumber}`,
@@ -1116,20 +1725,7 @@ export function parseRow(
             : undefined;
           if (graphics) coveredCell.graphics = graphics;
           if (repeat > MAX_COLUMNS) {
-            if (
-              !childNamed(cell, "text:p") &&
-              !attributeString(cell, "office:value-type") &&
-              !hasVisibleCellStyle(coveredStyle)
-            ) {
-              return [];
-            }
-            throw new OdsParseError(
-              "Invalid OpenDocument spreadsheet repeat count",
-              "content.xml",
-              "office:body/office:spreadsheet/table:table",
-              "table:number-columns-repeated",
-              "invalid-repeat-count",
-            );
+            return [{ ...coveredCell, repeat }];
           }
           return Array.from({ length: repeat }, (_, repeatedIndex) => ({
             ...coveredCell,
@@ -1149,7 +1745,14 @@ export function parseRow(
             "element has no canonical CellOptions mapping",
           );
         }
-        const firstCell = parseCell(cell, rowNumber, startColumn, cellStyles, []);
+        const firstCell: OdsCellOptions = parseCell(
+          cell,
+          rowNumber,
+          startColumn,
+          cellStyles,
+          [],
+          textStyles,
+        );
         const hasMergeSpan =
           (attributeNumber(cell, "table:number-columns-spanned") ?? 1) > 1 ||
           (attributeNumber(cell, "table:number-rows-spanned") ?? 1) > 1;
@@ -1158,18 +1761,31 @@ export function parseRow(
           hasMergeSpan ||
           hasVisibleCellStyle(typeof firstCell.style === "number" ? undefined : firstCell.style);
         if (repeat > MAX_COLUMNS && hasCellSurface) {
-          throw new OdsParseError(
-            "Invalid OpenDocument spreadsheet repeat count",
-            "content.xml",
-            "office:body/office:spreadsheet/table:table",
-            "table:number-columns-repeated",
-            "invalid-repeat-count",
-          );
+          if (
+            hasMergeSpan ||
+            (cell.elements ?? []).some(
+              (child) =>
+                child.name === "office:annotation" ||
+                child.name === "draw:frame" ||
+                child.name === "draw:g",
+            ) ||
+            parseCellHyperlinks(cell, firstCell.reference ?? "").length > 0
+          ) {
+            throw new OdsParseError(
+              "Repeated cells with per-cell metadata exceed the canonical worksheet limits",
+              "content.xml",
+              "office:body/office:spreadsheet/table:table",
+              "table:number-columns-repeated",
+              "unsupported-repeated-cell-metadata",
+            );
+          }
+          return [{ ...firstCell, repeat }];
         }
         if (isLargeEmptyRepeat(repeat, hasCellSurface)) return [];
         return Array.from({ length: repeat }, (_, repeatedIndex) => {
           const column = startColumn + repeatedIndex;
-          const parsed = parseCell(cell, rowNumber, column, cellStyles, mergeCells);
+          const parsed = parseCell(cell, rowNumber, column, cellStyles, mergeCells, textStyles);
+          hyperlinks.push(...parseCellHyperlinks(cell, parsed.reference ?? ""));
           for (const child of cell.elements ?? []) {
             if (child.name === "office:annotation") {
               comments.push({
@@ -1337,42 +1953,10 @@ export function parseRow(
               child.name === "draw:polyline" ||
               child.name === "draw:custom-shape"
             ) {
-              shapes?.push(parseDrawingShape(child, rowNumber, column, graphicStyles));
+              shapes?.push(parseDrawingShape(child, rowNumber, column, graphicStyles, textStyles));
             }
             if (child.name === "draw:g") {
-              assertElementNames(
-                child,
-                ["draw:z-index"],
-                [
-                  "svg:title",
-                  "svg:desc",
-                  "draw:rect",
-                  "draw:control",
-                  "draw:ellipse",
-                  "draw:circle",
-                  "draw:line",
-                  "draw:measure",
-                  "draw:polygon",
-                  "draw:polyline",
-                  "draw:custom-shape",
-                ],
-              );
-              const groupTitle = textOf(childNamed(child, "svg:title"));
-              const groupDescription = textOf(childNamed(child, "svg:desc"));
-              const groupZIndex = attributeNumber(child, "draw:z-index");
-              for (const nested of child.elements ?? []) {
-                if (nested.name !== "svg:title" && nested.name !== "svg:desc") {
-                  const shape = parseDrawingShape(nested, rowNumber, column, graphicStyles);
-                  if (groupTitle && shape.title === undefined) shape.title = groupTitle;
-                  if (groupDescription && shape.description === undefined) {
-                    shape.description = groupDescription;
-                  }
-                  if (shape.zOrder === undefined && groupZIndex !== undefined) {
-                    shape.zOrder = groupZIndex;
-                  }
-                  shapes?.push(shape);
-                }
-              }
+              groups?.push(parseDrawingGroup(child, rowNumber, column, graphicStyles, textStyles));
             }
           }
           return parsed;
@@ -1382,12 +1966,25 @@ export function parseRow(
   };
 }
 
+function tableVisibility(element: Element, name: string): "visible" | "collapse" | "filter" {
+  const value = attributeString(element, name);
+  if (value === undefined || value === "visible" || value === "collapse" || value === "filter")
+    return value ?? "visible";
+  throw unknownOdsElement(
+    element,
+    "/office:document-content/office:body/office:spreadsheet",
+    name,
+    `invalid visibility value: ${value}`,
+  );
+}
+
 export function parseCell(
   cell: Element,
   row: number,
   column: number,
   cellStyles: Map<string, StyleOptions>,
   mergeCells: MergeCellOptions[] = [],
+  textStyles: Map<string, RichTextRunPropertiesOptions> = new Map(),
 ): CellOptions {
   const result: CellOptions = { reference: `${columnName(column)}${row}` };
   const columnSpan = attributeNumber(cell, "table:number-columns-spanned") ?? 1;
@@ -1466,20 +2063,43 @@ export function parseCell(
     }
   }
   const valueType = attributeString(cell, "office:value-type");
-  if (valueType === "float") result.value = attributeNumber(cell, "office:value");
-  else if (valueType === "percentage") {
-    result.value = attributeNumber(cell, "office:value");
+  if (valueType === "float") {
+    const value = attributeNumber(cell, "office:value");
+    if (value === undefined) throw invalidCellValue(cell, row, column, "office:value");
+    result.value = value;
+  } else if (valueType === "percentage") {
+    const value = attributeNumber(cell, "office:value");
+    if (value === undefined) throw invalidCellValue(cell, row, column, "office:value");
+    result.value = value;
     result.style = styleWithNumFmt(result.style, "0%");
   } else if (valueType === "currency") {
-    result.value = attributeNumber(cell, "office:value");
+    const value = attributeNumber(cell, "office:value");
+    if (value === undefined) throw invalidCellValue(cell, row, column, "office:value");
+    result.value = value;
     const currency = attributeString(cell, "office:currency");
     if (currency) result.style = styleWithNumFmt(result.style, `[$${currency}] #,##0.00`);
   } else if (valueType === "time") {
-    result.value = durationToSerial(attributeString(cell, "office:time-value"));
+    const value = durationToSerial(attributeString(cell, "office:time-value"));
+    if (value === undefined)
+      throw unknownOdsElement(
+        cell,
+        `/office:document-content/office:body/office:spreadsheet/table:table/table:table-row[${row}]/table:table-cell[${column}]`,
+        "office:time-value",
+        "invalid time duration",
+      );
+    result.value = value;
     result.style = styleWithNumFmt(result.style, "[hh]:mm:ss");
-  } else if (valueType === "boolean")
-    result.value = attributeString(cell, "office:boolean-value") === "true";
-  else if (valueType === "date") {
+  } else if (valueType === "boolean") {
+    const value = attributeString(cell, "office:boolean-value");
+    if (value !== "true" && value !== "false" && value !== "1" && value !== "0")
+      throw unknownOdsElement(
+        cell,
+        `/office:document-content/office:body/office:spreadsheet/table:table/table:table-row[${row}]/table:table-cell[${column}]`,
+        "office:boolean-value",
+        "invalid boolean value",
+      );
+    result.value = value === "true" || value === "1";
+  } else if (valueType === "date") {
     const source = attributeString(cell, "office:date-value");
     const normalized =
       source === undefined || /(?:Z|[+-]\d{2}:\d{2})$/u.test(source) ? source : `${source}Z`;
@@ -1492,8 +2112,125 @@ export function parseCell(
         "invalid date value",
       );
     result.value = date;
-  } else if (valueType === "string") result.value = textOf(childNamed(cell, "text:p"));
+  } else if (valueType === "string") {
+    result.value = parseCellText(cell, textStyles);
+  } else if (valueType === "error") {
+    const error =
+      attributeString(cell, "office:string-value") ?? attributeString(cell, "office:value");
+    if (error === undefined) throw invalidCellValue(cell, row, column, "office:string-value");
+    result.error = error;
+  } else if (valueType !== undefined) {
+    throw unknownOdsElement(
+      cell,
+      `/office:document-content/office:body/office:spreadsheet/table:table/table:table-row[${row}]/table:table-cell[${column}]`,
+      "office:value-type",
+      `unsupported value type: ${valueType}`,
+    );
+  }
   return result;
+}
+
+function parseCellText(
+  cell: Element,
+  textStyles: Map<string, RichTextRunPropertiesOptions>,
+): string | RichTextOptions {
+  const paragraphs = childrenNamed(cell, "text:p");
+  const hasStyledText = paragraphs.some((paragraph) =>
+    (paragraph.elements ?? []).some(
+      (child) => child.type === "element" && child.name === "text:span",
+    ),
+  );
+  const hasStructuredText = paragraphs.some((paragraph) =>
+    (paragraph.elements ?? []).some(
+      (child) =>
+        child.type === "element" &&
+        ["text:span", "text:s", "text:tab", "text:line-break", "text:a"].includes(child.name ?? ""),
+    ),
+  );
+  if (!hasStructuredText) return paragraphs.map(textOf).join("\n");
+  const runs: RichTextRunOptions[] = [];
+  for (const [paragraphIndex, paragraph] of paragraphs.entries()) {
+    if (paragraphIndex > 0) runs.push({ text: "\n" });
+    appendTextRuns(paragraph, textStyles, runs);
+  }
+  if (!hasStyledText) return runs.map((run) => run.text).join("");
+  return { runs };
+}
+
+function appendTextRuns(
+  element: Element,
+  textStyles: Map<string, RichTextRunPropertiesOptions>,
+  runs: RichTextRunOptions[],
+  inherited?: RichTextRunPropertiesOptions,
+): void {
+  for (const child of element.elements ?? []) {
+    if (child.type === "text") {
+      const text = String(child.text ?? "");
+      if (text.length > 0) pushTextRun(runs, text, inherited);
+      continue;
+    }
+    if (child.name === "text:s") {
+      const count = attributeNumber(child, "text:c") ?? 1;
+      if (!Number.isInteger(count) || count < 1)
+        throw unknownOdsElement(child, "/table:table-cell/text:p", "text:c", "invalid space count");
+      pushTextRun(runs, " ".repeat(count), inherited);
+      continue;
+    }
+    if (child.name === "text:tab") {
+      pushTextRun(runs, "\t", inherited);
+      continue;
+    }
+    if (child.name === "text:line-break") {
+      pushTextRun(runs, "\n", inherited);
+      continue;
+    }
+    if (child.name === "text:span") {
+      const styleName = attributeString(child, "text:style-name");
+      const properties = styleName ? { ...inherited, ...textStyles.get(styleName) } : inherited;
+      appendTextRuns(child, textStyles, runs, properties);
+      continue;
+    }
+    if (child.name === "text:a") appendTextRuns(child, textStyles, runs, inherited);
+  }
+}
+
+function parseCellHyperlinks(cell: Element, reference: string): HyperlinkOptions[] {
+  return childrenNamed(cell, "text:p").flatMap((paragraph) =>
+    (paragraph.elements ?? []).flatMap((child) => {
+      if (child.type !== "element" || child.name !== "text:a") return [];
+      const href = attributeString(child, "xlink:href");
+      if (href === undefined) return [];
+      return [
+        {
+          cell: reference,
+          ...(href.startsWith("#") ? { location: href.slice(1) } : { url: href }),
+          display: textOf(child),
+        },
+      ];
+    }),
+  );
+}
+
+function pushTextRun(
+  runs: RichTextRunOptions[],
+  text: string,
+  properties: RichTextRunPropertiesOptions | undefined,
+): void {
+  const previous = runs[runs.length - 1];
+  if (previous && JSON.stringify(previous.properties) === JSON.stringify(properties)) {
+    previous.text += text;
+    return;
+  }
+  runs.push({ text, ...(properties ? { properties } : {}) });
+}
+
+function invalidCellValue(cell: Element, row: number, column: number, name: string): OdsParseError {
+  return unknownOdsElement(
+    cell,
+    `/office:document-content/office:body/office:spreadsheet/table:table/table:table-row[${row}]/table:table-cell[${column}]`,
+    name,
+    "required cell value is missing or invalid",
+  );
 }
 
 function parseCellRangeSource(source: Element): CellRangeSourceOptions {

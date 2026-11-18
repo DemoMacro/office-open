@@ -12,9 +12,8 @@
  * cNvPr through pickNonVisualDrawingProperties (all four fields, not just name).
  *
  * Children recurse through their own converters — shapes via ./shape,
- * connectors via ./connector. docx has no standalone connector and xlsx groups
- * hold only shapes/connectors, so picture/table/chart/... children are dropped
- * with a warning on the legs that cannot host them.
+ * connectors via ./connector. Conversion fails when the target cannot
+ * represent a source group child, rather than silently dropping it.
  *
  * @module
  */
@@ -204,6 +203,15 @@ function docxChildToSpPr(data: ShapeCoreOptions, box: AbsoluteBox): ShapePropert
   return out;
 }
 
+function assertXlsxGroupContentSupported(source: XlsxGroupOptions, target: string): void {
+  if (source.images?.length) {
+    throw new Error("Cannot convert pictures inside an XLSX group to " + target);
+  }
+  if (source.groups?.length) {
+    throw new Error("Cannot convert nested groups inside an XLSX group to " + target);
+  }
+}
+
 /** xlsx group connector child → pptx connector. */
 function xlsxConnectorChildToPptx(c: GroupConnectorChildOptions): PptxConnectorOptions {
   const { x1, y1, x2, y2 } = boxToEndpoints(boxFromSpPr(c.properties));
@@ -230,6 +238,7 @@ export function toDocxGroup(source: PptxGroupOptions | XlsxGroupOptions): DocxGr
   let box: AbsoluteBox;
   let children: GroupChildMediaData[];
   if ("properties" in source) {
+    assertXlsxGroupContentSupported(source, "DOCX");
     const g = source.properties;
     box = boxFromXlsxAnchor(
       source,
@@ -272,9 +281,9 @@ function pptxGroupChildrenToDocx(children: SlideChild[] | undefined): GroupChild
         data: parts.data,
       });
     } else if ("connector" in child) {
-      console.warn("Connector in group → docx is unsupported; skipped.");
+      throw new Error("Cannot convert a connector inside a group to DOCX");
     } else {
-      console.warn(`Unsupported group child → docx (${Object.keys(child)[0]}); skipped.`);
+      throw new Error("Cannot convert " + Object.keys(child)[0] + " inside a group to DOCX");
     }
   }
   return out;
@@ -293,7 +302,7 @@ function xlsxGroupChildrenToDocx(
     });
   }
   if (connectors?.length) {
-    console.warn("Connector in group → docx is unsupported; skipped.");
+    throw new Error("Cannot convert a connector inside a group to DOCX");
   }
   return out;
 }
@@ -313,6 +322,7 @@ export function toPptxGroup(source: DocxGroupOptions | XlsxGroupOptions): PptxGr
       ? pickNonVisualDrawingProperties(source.altText)
       : pickGroupBase(source);
   if ("properties" in source) {
+    assertXlsxGroupContentSupported(source, "PPTX");
     const g = source.properties;
     box = boxFromXlsxAnchor(
       source,
@@ -327,7 +337,12 @@ export function toPptxGroup(source: DocxGroupOptions | XlsxGroupOptions): PptxGr
     box = boxFromDocx(source.transformation);
     children = docxGroupChildrenToPptx(source.children);
   }
-  return { ...boxToPptx(box), children, ...childCoordinateSystem(source), ...cnvPr };
+  return {
+    ...boxToPptx(box),
+    children,
+    ...childCoordinateSystem(source),
+    ...cnvPr,
+  };
 }
 
 function xlsxGroupChildrenToPptx(
@@ -358,7 +373,7 @@ function docxGroupChildrenToPptx(children: GroupChildMediaData[] | undefined): S
       Object.assign(shape, pickNonVisualDrawingProperties(child.data.nonVisualProperties));
       out.push({ shape });
     } else {
-      console.warn(`Unsupported docx group child → pptx (${child.type}); skipped.`);
+      throw new Error("Cannot convert DOCX group child type " + child.type + " to PPTX");
     }
   }
   return out;
@@ -435,7 +450,7 @@ function pptxGroupChildrenToXlsx(children: SlideChild[] | undefined): {
     } else if ("connector" in child) {
       connectors.push(pptxConnectorToXlsxChild(child.connector));
     } else {
-      console.warn(`Unsupported group child → xlsx (${Object.keys(child)[0]}); skipped.`);
+      throw new Error("Cannot convert " + Object.keys(child)[0] + " inside a group to XLSX");
     }
   }
   return { shapes, connectors };
@@ -481,7 +496,7 @@ function docxGroupChildrenToXlsx(children: GroupChildMediaData[] | undefined): {
         ...pickNonVisualDrawingProperties(child.data.nonVisualProperties),
       });
     } else {
-      console.warn(`Unsupported docx group child → xlsx (${child.type}); skipped.`);
+      throw new Error("Cannot convert DOCX group child type " + child.type + " to XLSX");
     }
   }
   return { shapes, connectors };

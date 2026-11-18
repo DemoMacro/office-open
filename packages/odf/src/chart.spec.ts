@@ -1,11 +1,31 @@
 import { unzipSync } from "@office-open/core";
 import { describe, expect, it } from "vite-plus/test";
 
-import { generateChartDocument, parseChartDocument } from "./index";
+import {
+  generateChartDocument,
+  parseChartDocument,
+  parseEmbeddedCharts,
+  ODF_NAMESPACES,
+} from "./index";
 
 const decoder = new TextDecoder();
 
 describe("ODF chart inline decorations", () => {
+  it("leaves chart subdocuments without a chart model for opaque preservation", async () => {
+    const manifest = {
+      version: "1.3",
+      entries: [
+        { fullPath: "/", mediaType: "application/vnd.oasis.opendocument.spreadsheet" },
+        { fullPath: "Object 1/", mediaType: "application/vnd.oasis.opendocument.chart" },
+      ],
+    };
+    expect(
+      parseEmbeddedCharts(manifest, {
+        "Object 1/content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:chart/></office:body></office:document-content>`,
+      }),
+    ).toEqual(new Map());
+  });
+
   it("round-trips custom shapes and polylines", async () => {
     const options = {
       chart: {

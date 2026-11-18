@@ -17,6 +17,7 @@
  */
 /* CSpell:disable */
 export const DocumentAttributeNamespaces = {
+  a: "http://schemas.openxmlformats.org/drawingml/2006/main",
   aink: "http://schemas.microsoft.com/office/drawing/2016/ink",
   am3d: "http://schemas.microsoft.com/office/drawing/2017/model3d",
   cp: "http://schemas.openxmlformats.org/package/2006/metadata/core-properties",
@@ -45,6 +46,7 @@ export const DocumentAttributeNamespaces = {
   w16: "http://schemas.microsoft.com/office/word/2018/wordml",
   w16cex: "http://schemas.microsoft.com/office/word/2018/wordml/cex",
   w16cid: "http://schemas.microsoft.com/office/word/2016/wordml/cid",
+  w16du: "http://schemas.microsoft.com/office/word/2023/wordml/word16du",
   w16sdtdh: "http://schemas.microsoft.com/office/word/2020/wordml/sdtdatahash",
   w16se: "http://schemas.microsoft.com/office/word/2015/wordml/symex",
   wne: "http://schemas.microsoft.com/office/word/2006/wordml",

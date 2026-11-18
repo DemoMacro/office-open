@@ -1,8 +1,14 @@
 import type {
   DefinedNameOptions,
   ExternalLinkOptions,
+  FileSharingOptions,
   FontOptions,
+  CalculationPropertiesOptions,
   HyperlinkOptions,
+  RichTextOptions,
+  CellStyleXfOptions,
+  CustomCellStyleOptions,
+  WorkbookProtectionOptions,
 } from "@office-open/xlsx";
 
 import { XlsParseError } from "../errors";
@@ -23,19 +29,32 @@ import {
   detectBiffVersion,
   encodingForCodepage,
   readBiff5String,
+  readBiff8String,
+  richTextValue,
   readNoCchBiff8String,
   readNoCchBiff5String,
   readShortBiff8String,
 } from "./biff";
 import { reference } from "./cells";
 import type { BoundSheet, WorkbookState, XfStyle } from "./models";
-import { parseFont, parseFormat, parsePalette, parseXf } from "./styles";
+import {
+  applyXfExt,
+  parseFont,
+  parseFormat,
+  parsePalette,
+  parseStyle,
+  parseStyleExt,
+  parseXf,
+  styleXfOptions,
+  type LegacyStyleExtension,
+  type LegacyStyleRecord,
+} from "./styles";
 export function readWorkbookGlobals(stream: Uint8Array): WorkbookState {
   const detected = detectBiffVersion(stream);
   if (detected.version <= 4) return readLegacyWorkbookGlobals(stream, detected);
 
   const workbookVersion = detected.version as 5 | 8;
-  const sharedStrings: string[] = [];
+  const sharedStrings: (string | RichTextOptions)[] = [];
   const sheets: BoundSheet[] = [];
   const fonts: FontOptions[] = [];
   const numberFormats = new Map<number, string>();
@@ -44,15 +63,25 @@ export function readWorkbookGlobals(stream: Uint8Array): WorkbookState {
   const definedNames: DefinedNameOptions[] = [];
   const externSheetNames = new Map<number, string>();
   const styleTable = new Map<number, XfStyle>();
+  const pendingStyleRecords: LegacyStyleRecord[] = [];
+  const pendingStyleExtensions: LegacyStyleExtension[] = [];
+  let lastStyleRecordIndex = -1;
   const drawingImages: { data: Uint8Array; type: "png" | "jpg" | "wmf" | "emf" }[] = [];
   let saveExternalLinkValues: boolean | undefined;
   let refreshAllConnections: boolean | undefined;
   let builtInGroupCount: number | undefined;
+  let codeName: string | undefined;
+  let calculation: CalculationPropertiesOptions | undefined;
+  let workbookProtection: WorkbookProtectionOptions | undefined;
+  let fileSharing: FileSharingOptions | undefined;
+  let lastModifiedBy: string | undefined;
+  let backupFile: boolean | undefined;
   const pendingSupbooks: Supbook[] = [];
   const pendingExternSheetReferences:
     | ReturnType<typeof parseExternSheet>
     | { supbookIndex: number; firstSheet: number; lastSheet: number }[] = [];
   const pendingNameRecords: BiffRecord[] = [];
+  const pendingXfExtRecords: BiffRecord[] = [];
   let externSheetReferenceCount = 0;
   let codepage = 1252;
   let date1904 = false;
@@ -90,6 +119,7 @@ export function readWorkbookGlobals(stream: Uint8Array): WorkbookState {
           sharedStringParts,
           workbookVersion === 8,
           encodingForCodepage(codepage),
+          fonts,
         ),
       );
       sharedStringParts = undefined;
@@ -155,6 +185,136 @@ export function readWorkbookGlobals(stream: Uint8Array): WorkbookState {
             record.body.byteOffset,
             record.body.byteLength,
           ).getUint16(0, true) === 1;
+        break;
+      }
+      case RecordCode.CalculationCount: {
+        const value = readGlobalUint16(record, "calculation count");
+        if (value < 1 || value > 32767)
+          throw invalidGlobalValue(record, "calculation count", "invalid-calculation-count");
+        calculation = { ...calculation, iterateCount: value };
+        break;
+      }
+      case RecordCode.CalculationMode: {
+        const value = readGlobalUint16(record, "calculation mode");
+        const calcMode: CalculationPropertiesOptions["calcMode"] =
+          value === 0
+            ? "manual"
+            : value === 1
+              ? "auto"
+              : value === 0xffff
+                ? "autoNoTable"
+                : undefined;
+        if (calcMode === undefined)
+          throw invalidGlobalValue(record, "calculation mode", "invalid-calculation-mode");
+        calculation = { ...calculation, calcMode };
+        break;
+      }
+      case RecordCode.CalculationPrecision: {
+        const value = readGlobalBoolean(record, "calculation precision");
+        calculation = { ...calculation, fullPrecision: value };
+        break;
+      }
+      case RecordCode.CalculationReferenceMode: {
+        const value = readGlobalBoolean(record, "calculation reference mode");
+        calculation = { ...calculation, refMode: value ? "A1" : "R1C1" };
+        break;
+      }
+      case RecordCode.CalculationDelta: {
+        if (record.body.byteLength !== 8)
+          throw invalidGlobalLength(record, "calculation delta", "invalid-calculation-delta");
+        const value = new DataView(
+          record.body.buffer,
+          record.body.byteOffset,
+          record.body.byteLength,
+        ).getFloat64(0, true);
+        if (!Number.isFinite(value) || value < 0)
+          throw invalidGlobalValue(record, "calculation delta", "invalid-calculation-delta");
+        calculation = { ...calculation, iterateDelta: value };
+        break;
+      }
+      case RecordCode.Iteration: {
+        calculation = { ...calculation, iterate: readGlobalBoolean(record, "iteration") };
+        break;
+      }
+      case RecordCode.CalculationSaveRecalc: {
+        calculation = {
+          ...calculation,
+          calcOnSave: readGlobalBoolean(record, "calculation save recalc"),
+        };
+        break;
+      }
+      case RecordCode.Protect: {
+        workbookProtection = {
+          ...workbookProtection,
+          lockStructure: readGlobalBoolean(record, "workbook protection"),
+        };
+        break;
+      }
+      case RecordCode.Password: {
+        const value = readGlobalUint16(record, "workbook password");
+        workbookProtection = {
+          ...workbookProtection,
+          workbookPasswordHashRaw: value.toString(16).padStart(4, "0").toUpperCase(),
+        };
+        break;
+      }
+      case RecordCode.WindowProtect: {
+        workbookProtection = {
+          ...workbookProtection,
+          lockWindows: readGlobalBoolean(record, "window protection"),
+        };
+        break;
+      }
+      case RecordCode.RevisionProtection: {
+        workbookProtection = {
+          ...workbookProtection,
+          lockRevision: readGlobalBoolean(record, "revision protection"),
+        };
+        break;
+      }
+      case RecordCode.RevisionProtectionPassword: {
+        const value = readGlobalUint16(record, "revision password");
+        workbookProtection = {
+          ...workbookProtection,
+          revisionsPasswordHashRaw: value.toString(16).padStart(4, "0").toUpperCase(),
+        };
+        break;
+      }
+      case RecordCode.Backup: {
+        backupFile = readGlobalBoolean(record, "backup");
+        break;
+      }
+      case RecordCode.FileSharing: {
+        fileSharing = parseFileSharing(
+          record,
+          encodingForCodepage(codepage),
+          workbookVersion === 8,
+        );
+        break;
+      }
+      case RecordCode.WriteAccess: {
+        lastModifiedBy = parseWriteAccess(record, encodingForCodepage(codepage));
+        break;
+      }
+      case RecordCode.CodeName: {
+        if (workbookVersion !== 8 || codeName !== undefined)
+          throw new XlsParseError("Invalid legacy XLS file: misplaced or duplicate CODENAME", {
+            ...biffRecordContext(record, "misplaced-or-duplicate-codename"),
+          });
+        let decoded: { value: string; offset: number };
+        try {
+          decoded = readShortBiff8String(record.body, 0, encodingForCodepage(codepage));
+        } catch (error) {
+          throw new XlsParseError("Invalid legacy XLS file: malformed CODENAME", {
+            ...biffRecordContext(record, "malformed-codename"),
+            cause: error,
+          });
+        }
+        if (decoded.offset !== record.body.byteLength || decoded.value.length > 31)
+          throw new XlsParseError("Invalid legacy XLS file: invalid CODENAME length", {
+            ...biffRecordContext(record, "invalid-codename-length"),
+          });
+        codeName = decoded.value;
         break;
       }
       case RecordCode.Font: {
@@ -236,6 +396,24 @@ export function readWorkbookGlobals(stream: Uint8Array): WorkbookState {
         styleTable.set(styleTable.size, parseXf(record.body, workbookVersion, palette));
         break;
       }
+      case RecordCode.Style: {
+        pendingStyleRecords.push(
+          parseStyle(record.body, workbookVersion === 8, encodingForCodepage(codepage), record),
+        );
+        lastStyleRecordIndex = pendingStyleRecords.length - 1;
+        break;
+      }
+      case RecordCode.XfExt: {
+        pendingXfExtRecords.push(record);
+        break;
+      }
+      case RecordCode.StyleExt: {
+        pendingStyleExtensions.push({
+          ...parseStyleExt(record.body, palette, record),
+          styleRecordIndex: lastStyleRecordIndex >= 0 ? lastStyleRecordIndex : undefined,
+        });
+        break;
+      }
       case RecordCode.MsoDrawingGroup: {
         drawingImages.push(...escherImages(record.body));
         break;
@@ -251,8 +429,65 @@ export function readWorkbookGlobals(stream: Uint8Array): WorkbookState {
         sharedStringParts,
         workbookVersion === 8,
         encodingForCodepage(codepage),
+        fonts,
       ),
     );
+
+  for (const record of pendingXfExtRecords) applyXfExt(record, styleTable, palette);
+
+  const styleXfIndexes = [...styleTable].filter(([, xf]) => xf.isStyle).map(([index]) => index);
+  const styleXfIndex = new Map(styleXfIndexes.map((index, styleIndex) => [index, styleIndex]));
+  const cellStyleXfs: CellStyleXfOptions[] = styleXfIndexes.map((index) =>
+    styleXfOptions(styleTable.get(index)!, fonts, numberFormats),
+  );
+  const cellStyles: CustomCellStyleOptions[] = [];
+  const styleExtensions = new Map<number, LegacyStyleExtension>();
+  const matchedStyleRecords = new Set<number>();
+  for (const extension of pendingStyleExtensions) {
+    const directIndex = extension.styleRecordIndex;
+    const directRecord = directIndex === undefined ? undefined : pendingStyleRecords[directIndex];
+    const index =
+      directIndex !== undefined &&
+      directRecord !== undefined &&
+      !matchedStyleRecords.has(directIndex) &&
+      styleRecordMatchesExtension(directRecord, extension)
+        ? directIndex
+        : pendingStyleRecords.findIndex(
+            (styleRecord, styleRecordIndex) =>
+              !matchedStyleRecords.has(styleRecordIndex) &&
+              styleRecordMatchesExtension(styleRecord, extension),
+          );
+    if (index < 0) throw invalidStyleExtension(extension);
+    matchedStyleRecords.add(index);
+    styleExtensions.set(index, extension);
+  }
+  for (const [styleRecordIndex, styleRecord] of pendingStyleRecords.entries()) {
+    const xf = styleTable.get(styleRecord.xfIndex);
+    const xfId = styleXfIndex.get(styleRecord.xfIndex);
+    if (!xf || xfId === undefined)
+      throw new XlsParseError("Invalid legacy XLS file: Style references a missing XF", {
+        path: "Workbook/globals/Style",
+        recordName: "Style",
+        recordType: RecordCode.Style,
+        reason: "missing-style-xf",
+      });
+    const styleXf = cellStyleXfs[xfId]!;
+    const extension = styleExtensions.get(styleRecordIndex);
+    if (extension) mergeStyleXf(styleXf, extension.style);
+    const name = extension?.name || styleRecord.name;
+    if (name === undefined) continue;
+    cellStyles.push({
+      name,
+      xfId,
+      ...((extension?.builtinId ?? styleRecord.builtinId) === undefined
+        ? {}
+        : { builtinId: extension?.builtinId ?? styleRecord.builtinId }),
+      ...(extension?.customBuiltin ? { customBuiltin: true } : {}),
+      ...(extension?.hidden ? { hidden: true } : {}),
+      ...(extension ? { category: extension.category } : {}),
+      ...(styleRecord.iLevel === undefined ? {} : { iLevel: styleRecord.iLevel }),
+    });
+  }
 
   if (workbookVersion === undefined)
     throw new XlsParseError("Invalid legacy XLS file: missing Begin Of File");
@@ -327,12 +562,108 @@ export function readWorkbookGlobals(stream: Uint8Array): WorkbookState {
     definedNames,
     externSheetNames,
     styleTable,
+    cellStyles,
+    cellStyleXfs,
     drawingImages,
     saveExternalLinkValues,
     refreshAllConnections,
     builtInGroupCount,
+    codeName,
+    calculation,
+    workbookProtection,
+    fileSharing,
+    lastModifiedBy,
+    backupFile,
     stream,
   };
+}
+
+function readGlobalUint16(record: BiffRecord, name: string): number {
+  if (record.body.byteLength !== 2)
+    throw invalidGlobalLength(record, name, "invalid-global-length");
+  return new DataView(record.body.buffer, record.body.byteOffset, 2).getUint16(0, true);
+}
+
+function readGlobalBoolean(record: BiffRecord, name: string): boolean {
+  const value = readGlobalUint16(record, name);
+  if (value !== 0 && value !== 1) throw invalidGlobalValue(record, name, "invalid-global-boolean");
+  return value === 1;
+}
+
+function invalidGlobalLength(record: BiffRecord, name: string, reason: string): XlsParseError {
+  return new XlsParseError(`Invalid legacy XLS file: invalid ${name} record length`, {
+    ...biffRecordContext(record, reason),
+  });
+}
+
+function invalidGlobalValue(record: BiffRecord, name: string, reason: string): XlsParseError {
+  return new XlsParseError(`Invalid legacy XLS file: invalid ${name} value`, {
+    ...biffRecordContext(record, reason),
+  });
+}
+
+function parseFileSharing(
+  record: BiffRecord,
+  encoding: string,
+  isBiff8: boolean,
+): FileSharingOptions {
+  if (record.body.byteLength < 6)
+    throw invalidGlobalLength(record, "file sharing", "truncated-file-sharing");
+  const view = new DataView(record.body.buffer, record.body.byteOffset, record.body.byteLength);
+  const readOnly = view.getUint16(0, true);
+  if (readOnly !== 0 && readOnly !== 1)
+    throw invalidGlobalValue(record, "file sharing read-only flag", "invalid-file-sharing-flag");
+  const options: FileSharingOptions = {
+    readOnlyRecommended: readOnly === 1,
+    reservationPasswordHashRaw: view.getUint16(2, true).toString(16).padStart(4, "0").toUpperCase(),
+  };
+  const characterCount = view.getUint16(4, true);
+  if (characterCount === 0) return options;
+  try {
+    const decoded = isBiff8
+      ? readBiff8String(record.body, 4, encoding)
+      : readNoCchBiff5String(record.body, 6, characterCount, encoding);
+    if (decoded.offset > record.body.byteLength)
+      throw new Error("file sharing username exceeds record");
+    if (decoded.value.length > 0) options.userName = decoded.value;
+  } catch (error) {
+    throw new XlsParseError("Invalid legacy XLS file: malformed file sharing username", {
+      ...biffRecordContext(record, "malformed-file-sharing-username"),
+      cause: error,
+    });
+  }
+  return options;
+}
+
+function parseWriteAccess(record: BiffRecord, encoding: string): string {
+  if (record.body.byteLength < 3 || record.body.byteLength > 112)
+    throw invalidGlobalLength(record, "write access", "invalid-write-access-length");
+  const view = new DataView(record.body.buffer, record.body.byteOffset, record.body.byteLength);
+  const characterCount = view.getUint16(0, true);
+  const flags = record.body[2]!;
+  if ((flags & 0xfe) !== 0 || characterCount > 109) {
+    if (record.body.byteLength !== 32 && record.body.byteLength !== 112)
+      throw invalidGlobalValue(record, "write access", "invalid-write-access-header");
+    const highByte = record.body[1] === 0;
+    const fallbackEncoding = encoding === "utf-16le" ? "windows-1252" : encoding;
+    return trimWriteAccess(
+      new TextDecoder(highByte ? "utf-16le" : fallbackEncoding).decode(record.body),
+    );
+  }
+  const highByte = (flags & 1) !== 0;
+  const byteLength = characterCount * (highByte ? 2 : 1);
+  if (3 + byteLength > record.body.byteLength)
+    throw invalidGlobalLength(record, "write access", "truncated-write-access");
+  const value = new TextDecoder(highByte ? "utf-16le" : encoding).decode(
+    record.body.subarray(3, 3 + byteLength),
+  );
+  return trimWriteAccess(value);
+}
+
+function trimWriteAccess(value: string): string {
+  let end = value.length;
+  while (end > 0 && (value.charCodeAt(end - 1) === 0 || value[end - 1] === " ")) end--;
+  return value.slice(0, end);
 }
 
 export function readLegacyWorkbookGlobals(
@@ -375,6 +706,8 @@ export function readLegacyWorkbookGlobals(
         definedNames: [],
         externSheetNames: new Map(),
         styleTable: new Map(),
+        cellStyles: [],
+        cellStyleXfs: [],
         drawingImages: [],
         stream,
       };
@@ -423,6 +756,8 @@ export function readLegacyWorkbookGlobals(
     definedNames: [],
     externSheetNames: new Map(),
     styleTable: new Map(),
+    cellStyles: [],
+    cellStyleXfs: [],
     drawingImages: [],
     stream,
   };
@@ -462,30 +797,27 @@ export function parseSupbook(record: BiffRecord, encoding: string): Supbook {
       sheetNames.push(value.value);
       target.offset = value.offset;
     } catch (error) {
-      if (sheetNames.length === 0)
-        throw new XlsParseError("Invalid legacy XLS file: truncated SUPBOOK sheet name", {
-          ...biffRecordContext(record, "truncated-supbook-sheet-name"),
-          cause: error,
-        });
-      console.warn(
-        `xls parse diagnostic: truncated SUPBOOK sheet list (${JSON.stringify({
-          ...biffRecordContext(record, "truncated-sheet-list"),
-          expectedSheetCount: sheetCount,
-          parsedSheetCount: sheetNames.length,
-        })})`,
-      );
-      break;
+      throw new XlsParseError("Invalid legacy XLS file: truncated SUPBOOK sheet name", {
+        ...biffRecordContext(record, "truncated-supbook-sheet-name"),
+        cause: error,
+      });
     }
   }
-  if (target.value.includes("|")) return { kind: "dde", target: target.value, sheetNames };
-  if (/^(ole:|package:)/i.test(target.value)) {
+  let targetValue = "";
+  for (let index = 0; index < target.value.length; index++) {
+    const character = target.value[index]!;
+    const code = character.charCodeAt(0);
+    targetValue += code < 0x20 ? `%${code.toString(16).padStart(2, "0").toUpperCase()}` : character;
+  }
+  if (targetValue.includes("|")) return { kind: "dde", target: targetValue, sheetNames };
+  if (/^(ole:|package:)/i.test(targetValue)) {
     return {
       kind: "ole",
-      target: target.value.replace(/^(ole:|package:)/i, ""),
+      target: targetValue.replace(/^(ole:|package:)/i, ""),
       sheetNames,
     };
   }
-  return { kind: "external", target: target.value, sheetNames };
+  return { kind: "external", target: targetValue, sheetNames };
 }
 
 export function parseExternSheet(
@@ -597,11 +929,32 @@ export function parseName(
   const flags = view.getUint16(0, true);
   const formulaLength = view.getUint16(4, true);
   const localSheetId = view.getUint16(8, true) === 0 ? undefined : view.getUint16(8, true) - 1;
-  const name = isBiff8
+  const decodedName = isBiff8
     ? readNoCchBiff8String(body, 14, body[3]!, encoding)
     : readNoCchBiff5String(body, 14, body[3]!, encoding);
-  let value = name.value;
-  const tokens = body.subarray(name.offset, name.offset + formulaLength);
+  const builtInNames: Record<number, string> = {
+    0x00: "_xlnm.Consolidate_Area",
+    0x01: "_xlnm.Auto_Open",
+    0x02: "_xlnm.Auto_Close",
+    0x03: "_xlnm.Extract",
+    0x04: "_xlnm.Database",
+    0x05: "_xlnm.Criteria",
+    0x06: "_xlnm.Print_Area",
+    0x07: "_xlnm.Print_Titles",
+    0x08: "_xlnm.Recorder",
+    0x09: "_xlnm.Data_Form",
+    0x0a: "_xlnm.Auto_Activate",
+    0x0b: "_xlnm.Auto_Deactivate",
+    0x0c: "_xlnm.Sheet_Title",
+    0x0d: "_xlnm._FilterDatabase",
+  };
+  const builtIn = (flags & 0x0020) !== 0;
+  const name =
+    builtIn && decodedName.value.length === 1 && builtInNames[decodedName.value.charCodeAt(0)]
+      ? builtInNames[decodedName.value.charCodeAt(0)]!
+      : decodedName.value;
+  let value = name;
+  const tokens = body.subarray(decodedName.offset, decodedName.offset + formulaLength);
   const decodeNameFormula = (formulaVersion: number, formulaData: Uint8Array) =>
     decodeFormula(formulaData, {
       baseRow: 0,
@@ -623,13 +976,46 @@ export function parseName(
     }
   }
   return {
-    name: name.value,
+    name,
     value,
     localSheetId,
     hidden: (flags & 0x0001) !== 0,
     function: (flags & 0x0002) !== 0,
     vbProcedure: (flags & 0x0004) !== 0,
   };
+}
+
+function mergeStyleXf(target: CellStyleXfOptions, source: CellStyleXfOptions): void {
+  if (source.font) target.font = { ...target.font, ...source.font };
+  if (source.fill) target.fill = { ...target.fill, ...source.fill };
+  if (source.border) target.border = { ...target.border, ...source.border };
+  if (source.alignment) target.alignment = { ...target.alignment, ...source.alignment };
+  if (source.protection) target.protection = { ...target.protection, ...source.protection };
+  if (source.numFmt !== undefined) target.numFmt = source.numFmt;
+  if (source.numFmtId !== undefined) target.numFmtId = source.numFmtId;
+  if (source.quotePrefix !== undefined) target.quotePrefix = source.quotePrefix;
+}
+
+function invalidStyleExtension(extension: LegacyStyleExtension): XlsParseError {
+  return new XlsParseError("Invalid legacy XLS file: StyleExt does not match a Style record", {
+    path: "Workbook/globals/StyleExt",
+    recordName: "StyleExt",
+    recordType: RecordCode.StyleExt,
+    reason: "style-record-mismatch",
+    offset: extension.record.start,
+    length: extension.record.body.byteLength,
+    ...(extension.styleRecordIndex === undefined
+      ? {}
+      : { styleRecordIndex: extension.styleRecordIndex }),
+  });
+}
+
+function styleRecordMatchesExtension(
+  styleRecord: LegacyStyleRecord,
+  extension: LegacyStyleExtension,
+): boolean {
+  if (styleRecord.builtIn) return styleRecord.builtInData === extension.builtInData;
+  return styleRecord.name === extension.name;
 }
 
 export function readCString(body: Uint8Array): string {
@@ -719,11 +1105,12 @@ export function parseSharedStrings(
   parts: readonly Uint8Array[],
   isBiff8: boolean,
   encoding = "windows-1252",
-): string[] {
+  fonts: readonly FontOptions[] = [],
+): (string | RichTextOptions)[] {
   const first = parts[0]!;
   const firstView = new DataView(first.buffer, first.byteOffset, first.byteLength);
   const stringCount = firstView.getUint32(4, true);
-  const strings: string[] = [];
+  const strings: (string | RichTextOptions)[] = [];
   let partIndex = 0;
   let offset = 8;
   let highByte = false;
@@ -753,7 +1140,7 @@ export function parseSharedStrings(
   for (let index = 0; index < stringCount; index++) {
     const currentPart = parts[partIndex];
     if (!currentPart || (offset >= currentPart.byteLength && partIndex + 1 >= parts.length)) {
-      break;
+      throw new XlsParseError("Invalid legacy XLS file: truncated shared string table");
     }
     const characterCount = takeUint16();
     const flags = takeByte();
@@ -768,10 +1155,15 @@ export function parseSharedStrings(
       characterBytes.push(firstByte);
       if (highByte) characterBytes.push(secondByte);
     }
-    skipBytes(richRunCount * 4 + extensionLength);
-    strings.push(
-      new TextDecoder(highByte ? "utf-16le" : encoding).decode(new Uint8Array(characterBytes)),
+    const value = new TextDecoder(highByte ? "utf-16le" : encoding).decode(
+      new Uint8Array(characterBytes),
     );
+    const richRuns = Array.from({ length: richRunCount }, () => ({
+      characterIndex: takeUint16(),
+      fontIndex: takeUint16(),
+    }));
+    skipBytes(extensionLength);
+    strings.push(richTextValue(value, richRuns, fonts));
   }
   return strings;
 }

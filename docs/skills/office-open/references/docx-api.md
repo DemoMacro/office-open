@@ -507,11 +507,12 @@ Used in TextRun children as a string — displays the page number where the refe
 Modify an existing `.docx` template with ordered, source-preserving commands:
 
 ```ts
+import { readFileSync } from "node:fs";
 import { patchDocument } from "@office-open/docx";
 
 const result = await patchDocument({
   outputType: "nodebuffer",
-  data: templateBuffer,
+  data: readFileSync("template.docx"),
   commands: [
     {
       type: "replace",
@@ -557,8 +558,9 @@ Each command uses `at: { field, route, text }`. `field` is a `DocumentOptions` r
 Scan a template to discover all placeholder keys:
 
 ```ts
+import { readFileSync } from "node:fs";
 import { patchDetector } from "@office-open/docx";
 
-const placeholderKeys = await patchDetector({ data: templateBuffer });
+const placeholderKeys = await patchDetector({ data: readFileSync("template.docx") });
 // ["name", "title", "content", ...]
 ```

@@ -54,12 +54,12 @@ const options = parsePresentation(data, { password: "secret" });
 
 - `parsePresentation(data, options?)` — read a `.ppt` file into `PresentationOptions`
 - `PptParseOptions` — parse-time options, including `password`
-- `PptParseError` — thrown for invalid, truncated, unsupported, or encrypted input, with canonical `context` fields
+- `PptParseError` — thrown for invalid, truncated, unsupported, or undecryptable input, with structured `context`
 
 ## Errors and Limitations
 
-- Invalid, truncated, unsupported, and encrypted files throw `PptParseError`.
-- Unsupported binary records are skipped without aborting the presentation; their omissions are visible in canonical context.
+- Invalid, truncated, and unsupported required structures throw `PptParseError`. Supported RC4-encrypted files can be read with a password; other encrypted inputs throw.
+- Unsupported binary records fail with `PptParseError`.
 - PPT generation is intentionally unavailable.
 
 ## Documentation

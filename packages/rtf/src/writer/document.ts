@@ -38,7 +38,7 @@ function writeDestinations(section: SectionOptions, path: string): string {
       const suffix = slot === "first" ? "f" : slot === "even" ? "l" : "";
       result += `{\\${kind.slice(0, -1)}${suffix} `;
       for (const [index, child] of blocks.entries()) {
-        if (!("paragraph" in child) || typeof child.paragraph === "string") {
+        if (!("paragraph" in child)) {
           reject(
             kind,
             `${path}.${kind}.${slot}[${index}]`,
@@ -46,7 +46,10 @@ function writeDestinations(section: SectionOptions, path: string): string {
             "RTF destination projections contain paragraphs",
           );
         }
-        result += destinationText(child.paragraph, `${path}.${kind}.${slot}[${index}].paragraph`);
+        result +=
+          typeof child.paragraph === "string"
+            ? rtfText(child.paragraph)
+            : destinationText(child.paragraph, `${path}.${kind}.${slot}[${index}].paragraph`);
         result += control("par");
       }
       result += "}";
@@ -318,7 +321,7 @@ function writeSections(
           ? content
           : content.slice(0, -boundary.length);
       const separator = index === options.sections.length - 1 ? "" : control("sect");
-      return `${writeSectionProperties(section, path)}${body}${separator}`;
+      return `${writeDestinations(section, path)}${writeSectionProperties(section, path)}${body}${separator}`;
     })
     .join("");
 }
@@ -383,7 +386,6 @@ export function writeRtf(options: DocumentOptions): string {
     }
     registerFont(context, font, "definition");
   }
-  const first = options.sections[0] ?? { children: [] };
   const body = [
     writeSettings(options.settings, "settings"),
     writeMetadata(options),
@@ -400,7 +402,6 @@ export function writeRtf(options: DocumentOptions): string {
       : writeTimestamp("printim", options.lastPrinted, "lastPrinted"),
     writeStyles(options.styles, context),
     writeNumberingTable(options.numbering, references),
-    writeDestinations(first, "sections[0]"),
     writeSections(options, references, context),
   ].join("");
   const tables = `${writeFontTable(context)}${writeColorTable(context)}`;

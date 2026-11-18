@@ -13,7 +13,7 @@ import type {
   BlipEffectsOptions,
   GraphicFrameLockingOptions,
   BlipCompression,
-  GroupTransform2DOptions,
+  GroupShapePropertiesOptions,
   NonVisualDrawingPropertiesOptions,
   PictureLockingOptions,
   ShapeLockingOptions,
@@ -420,7 +420,7 @@ export interface GroupOptions extends DrawingAnchorOptions, BaseGroupOptions {
    */
   hyperlink?: TextHyperlinkOptions;
   /** Group shape properties (a:CT_GroupShapeProperties: group xfrm + fill/ln). */
-  properties: GroupTransform2DOptions;
+  properties: GroupShapePropertiesOptions;
   /** Black/white mode (grpSpPr/@bwMode); absent = attribute omitted. */
   blackWhiteMode?: BlackWhiteMode;
   /** Nested shapes. */

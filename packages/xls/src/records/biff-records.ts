@@ -42,11 +42,43 @@ export const BIFF_RECORD_CLASSIFICATIONS: BiffRecordClassifications = new Map([
   canonical(0x0809, "Begin Of File", "both", "record-reader"),
   canonical(0x002f, "File Pass", "both", "record-reader"),
   canonical(0x003c, "Continue", "both", "record-reader"),
+  canonical(0x000c, "Calculation Count", "globals", "workbook-globals"),
+  canonical(0x000d, "Calculation Mode", "globals", "workbook-globals"),
+  canonical(0x000e, "Calculation Precision", "globals", "workbook-globals"),
+  canonical(0x000f, "Calculation Reference Mode", "globals", "workbook-globals"),
+  canonical(0x0010, "Calculation Delta", "globals", "workbook-globals"),
+  canonical(0x0011, "Iteration", "globals", "workbook-globals"),
+  canonical(0x0012, "Protect", "globals", "workbook-globals"),
+  canonical(0x0013, "Password", "globals", "workbook-globals"),
+  canonical(0x0019, "Window Protect", "globals", "workbook-globals"),
+  noop(0x0063, "Object Protect", "globals", "legacy object protection is not projected"),
+  noop(
+    0x001b,
+    "Horizontal Page Breaks",
+    "globals",
+    "legacy horizontal page breaks are not projected",
+  ),
+  noop(0x0016, "External Count", "globals", "legacy external-reference count is not projected"),
+  noop(0x001a, "Vertical Page Breaks", "globals", "legacy vertical page breaks are not projected"),
+  noop(0x004d, "PLS", "globals", "legacy printer settings are not projected"),
+  canonical(0x0040, "Backup", "globals", "workbook-globals"),
+  canonical(0x005b, "File Sharing", "globals", "workbook-globals"),
+  canonical(0x005c, "Write Access", "globals", "workbook-globals"),
+  noop(0x005e, "Uncalced", "globals", "recalculation scope marker is not projected"),
+  canonical(0x005f, "Save Recalculation", "globals", "workbook-globals"),
 
   canonical(0x00fc, "Shared String Table", "globals", "workbook-globals"),
+  noop(
+    0x00ff,
+    "Extended Shared String Table",
+    "globals",
+    "shared-string index cache is not projected",
+  ),
   canonical(0x0085, "Bound Sheet", "globals", "workbook-globals"),
+  noop(0x008e, "Sheet Offset", "globals", "BIFF4 sheet stream offset is not projected"),
   canonical(0x0042, "Code Page", "globals", "workbook-globals"),
   canonical(0x0022, "Date Mode", "globals", "workbook-globals"),
+  canonical(0x01ba, "Code Name", "both", "workbook-globals"),
   canonical(0x0031, "Font", "globals", "workbook-globals"),
   canonical(0x041e, "Number Format", "globals", "workbook-globals"),
   canonical(0x0092, "Palette", "globals", "workbook-globals"),
@@ -55,6 +87,8 @@ export const BIFF_RECORD_CLASSIFICATIONS: BiffRecordClassifications = new Map([
   canonical(0x0017, "Extern Sheet", "globals", "workbook-globals"),
   canonical(0x0018, "Defined Name", "globals", "workbook-globals"),
   canonical(0x00e0, "Extended Format", "globals", "workbook-globals"),
+  canonical(0x087d, "Extended Format Extension", "globals", "workbook-globals"),
+  canonical(0x0892, "Named Cell Style Extension", "globals", "workbook-globals"),
 
   canonical(0x0200, "Dimensions", "sheet", "worksheet"),
   canonical(0x0208, "Row", "sheet", "worksheet"),
@@ -62,6 +96,7 @@ export const BIFF_RECORD_CLASSIFICATIONS: BiffRecordClassifications = new Map([
   canonical(0x0201, "Blank", "sheet", "worksheet"),
   canonical(0x0005, "BIFF2 Boolean Or Error", "sheet", "worksheet"),
   canonical(0x0205, "Boolean Or Error", "sheet", "worksheet"),
+  canonical(0x0207, "String", "sheet", "worksheet"),
   canonical(0x00be, "Multiple Blank", "sheet", "worksheet"),
   canonical(0x0003, "BIFF2 Number", "sheet", "worksheet"),
   canonical(0x0203, "Number", "sheet", "worksheet"),
@@ -85,12 +120,47 @@ export const BIFF_RECORD_CLASSIFICATIONS: BiffRecordClassifications = new Map([
   canonical(0x00e5, "Merged Cells", "sheet", "worksheet"),
   canonical(0x01b8, "Hyperlink", "sheet", "worksheet"),
   canonical(0x005d, "Object", "sheet", "worksheet"),
+  noop(0x00bf, "Consolidate", "globals", "legacy consolidation metadata is not projected"),
+  noop(0x00c0, "Toolbar End", "globals", "legacy toolbar metadata is not projected"),
+  noop(0x00ab, "Global Column Width", "globals", "legacy global column width is not projected"),
+  noop(0x00d3, "ObProj", "globals", "legacy VBA project marker is opaque"),
+  noop(0x00dd, "Scenario Protect", "globals", "legacy scenario protection is not projected"),
+  noop(0x00ef, "Phonetic Properties", "globals", "legacy phonetic properties are not projected"),
+  noop(
+    0x00ed,
+    "MSO Drawing Selection",
+    "sheet",
+    "legacy drawing selection metadata is not projected",
+  ),
+  noop(0x01bd, "VBA Project Empty", "globals", "empty legacy VBA project marker is opaque"),
+  noop(0x088e, "Table Styles", "globals", "legacy table style metadata is not projected"),
+  noop(0x0896, "Theme", "globals", "legacy workbook theme metadata is not projected"),
+  noop(0x089a, "Metric Settings", "globals", "legacy metric settings are not projected"),
+  noop(0x08a3, "Force Full Calculation", "globals", "legacy calculation flag is not projected"),
+  noop(
+    0x089b,
+    "Compress Pictures",
+    "globals",
+    "legacy picture compression metadata is not projected",
+  ),
+  noop(0x088c, "Compatibility 12", "globals", "legacy compatibility metadata is not projected"),
+  noop(0x089c, "Header Footer", "globals", "legacy header/footer metadata is not projected"),
+  noop(0x088b, "PLV", "globals", "legacy page layout view metadata is not projected"),
+  noop(
+    0x0866,
+    "Header Footer Picture",
+    "globals",
+    "legacy header/footer picture metadata is not projected",
+  ),
+  noop(0x0897, "GUID Type Library", "globals", "legacy type library metadata is opaque"),
   canonical(0x01b6, "Text Object", "sheet", "worksheet"),
   canonical(0x001c, "Note", "sheet", "worksheet"),
   canonical(0x00eb, "MSO Drawing Group", "both", "workbook-globals"),
   canonical(0x00ec, "MSO Drawing", "sheet", "worksheet"),
   canonical(0x01b0, "Conditional Format Range", "sheet", "worksheet"),
   canonical(0x01b1, "Conditional Format Rule", "sheet", "worksheet"),
+  canonical(0x01b2, "Data Validation List", "sheet", "worksheet"),
+  canonical(0x01be, "Data Validation", "sheet", "worksheet"),
   canonical(0x01b7, "Refresh All", "globals", "workbook-globals"),
   canonical(0x0014, "Header", "sheet", "worksheet"),
   canonical(0x0015, "Footer", "sheet", "worksheet"),
@@ -99,31 +169,21 @@ export const BIFF_RECORD_CLASSIFICATIONS: BiffRecordClassifications = new Map([
   canonical(0x0028, "Top Margin", "sheet", "worksheet"),
   canonical(0x0029, "Bottom Margin", "sheet", "worksheet"),
   canonical(0x00a1, "Page Setup", "sheet", "worksheet"),
+  canonical(0x00a0, "Scale", "sheet", "worksheet"),
   canonical(0x0007, "Cached Formula String", "sheet", "worksheet"),
   canonical(0x00da, "Workbook Boolean", "globals", "workbook-globals"),
 
-  noop(0x005b, "File Sharing", "both", "file-sharing metadata is not projected"),
-  noop(0x005c, "Write Access", "both", "author metadata is not projected"),
-  noop(0x005e, "Uncalced", "both", "recalculation scope marker is not projected"),
-  noop(0x000c, "Calculation Count", "both", "calculation metadata is not projected"),
-  noop(0x000d, "Calculation Mode", "both", "calculation metadata is not projected"),
-  noop(0x000e, "Precision", "both", "calculation metadata is not projected"),
-  noop(0x000f, "Reference Mode", "both", "formula display metadata is not projected"),
-  noop(0x0010, "Iteration Delta", "both", "calculation metadata is not projected"),
-  noop(0x0011, "Iteration", "both", "calculation metadata is not projected"),
-  noop(0x0012, "Workbook Protection", "both", "protection metadata is not projected"),
-  noop(0x0013, "Password", "both", "password hash is not projected"),
-  noop(0x0019, "Window Protection", "both", "protection metadata is not projected"),
-  noop(0x0040, "Backup", "both", "backup metadata is not projected"),
+  noop(0x0059, "CRN Count", "globals", "external link cache metadata is not projected"),
+  noop(0x005a, "CRN", "globals", "external link cached values are not projected"),
   noop(0x008d, "Hidden Objects", "both", "legacy object visibility metadata is not projected"),
+  noop(0x0081, "Worksheet Boolean", "sheet", "legacy worksheet display metadata is not projected"),
   noop(0x003d, "Window 1", "both", "workbook window state is not projected"),
   noop(0x00c1, "Menu Set", "both", "transitional menu metadata is not projected"),
   noop(0x008c, "Country", "both", "locale metadata is not projected"),
-  noop(0x0293, "Style", "both", "built-in style metadata is not projected"),
+  canonical(0x0293, "Style", "globals", "workbook-globals"),
   noop(0x0161, "Double Stream File", "both", "format-version marker is not projected"),
-  noop(0x01af, "Revision Protection", "both", "protection metadata is not projected"),
-  noop(0x01bc, "Revision Protection Password", "both", "password hash is not projected"),
-  noop(0x005f, "Save Recalculation", "both", "calculation metadata is not projected"),
+  canonical(0x01af, "Revision Protection", "globals", "workbook-globals"),
+  canonical(0x01bc, "Revision Protection Password", "globals", "workbook-globals"),
   noop(0x0099, "Standard Width", "both", "legacy default-column metadata is not projected"),
   noop(0x0080, "Gutters", "both", "row and column gutter metadata is not projected"),
   noop(0x0225, "Default Row Height", "both", "default row formatting is not projected"),
@@ -141,6 +201,7 @@ export const BIFF_RECORD_CLASSIFICATIONS: BiffRecordClassifications = new Map([
   noop(0x001d, "Selection", "both", "editor selection state is not projected"),
   noop(0x00a4, "Sheet Properties", "both", "non-visual sheet metadata is not projected"),
   noop(0x0041, "Pane", "both", "editor split state is not projected"),
+  noop(0x020b, "Index", "sheet", "worksheet row index is not projected"),
 ]);
 
 export function biffRecordContext(
@@ -161,20 +222,13 @@ export function biffRecordContext(
   };
 }
 
-export function assertSupportedBiffRecord(
-  record: BiffRecord,
-): BiffRecordClassification | undefined {
+export function assertSupportedBiffRecord(record: BiffRecord): BiffRecordClassification {
   const entry = BIFF_RECORD_CLASSIFICATIONS.get(record.code);
   if (!entry) {
-    // Real-world workbooks (all of which Excel opens) carry records outside
-    // any public classification table. Skipping with a structured warning keeps
-    // them readable; explicit classifications still control strict rejection.
-    console.warn(
-      `xls parse diagnostic: skipped unknown record (${JSON.stringify({
-        ...biffRecordContext(record, "unknown-record"),
-      })})`,
+    throw new XlsParseError(
+      `Unsupported legacy XLS record 0x${record.code.toString(16).padStart(4, "0")}`,
+      biffRecordContext(record, "unsupported-record"),
     );
-    return undefined;
   }
   if (entry.disposition.kind === "unsupported") {
     throw new XlsParseError(

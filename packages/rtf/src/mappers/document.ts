@@ -235,7 +235,7 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
     return depth === 0 ? index : tokens.length;
   };
 
-  const decodeDestinationText = (start: number, end: number): string[] => {
+  const decodeDestinationText = (start: number, end: number, trim = true): string[] => {
     const lines: string[] = [];
     let line = "";
     let skip = 0;
@@ -286,11 +286,15 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
       }
     }
     lines.push(line);
-    return lines.map((value) => value.trim()).filter((value) => value.length > 0);
+    return lines
+      .map((value) => (trim ? value.trim() : value))
+      .filter((value) => value.trim().length > 0);
   };
 
   const blocksFromText = (start: number, end: number): SectionChild[] =>
-    decodeDestinationText(start, end).map((text) => ({ paragraph: { children: [{ text }] } }));
+    decodeDestinationText(start, end, false).map((text) => ({
+      paragraph: { children: [{ text }] },
+    }));
 
   const readPicture = (start: number, end: number) => {
     let type: "png" | "jpg" | "wmf" | "emf" = "png";
@@ -900,7 +904,10 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
         return;
       case "sect": {
         if (activeTable()) return;
-        flushParagraph(true);
+        flushParagraph();
+        applyStoryBlocks(activeSection, headerBlocks, footerBlocks);
+        headerBlocks.clear();
+        footerBlocks.clear();
         const next: SectionOptions = { children: [] };
         sections.push(next);
         activeSection = next;
@@ -1561,10 +1568,23 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
       if (destination === "font-table" && fontId !== undefined && fontName !== undefined) {
         appendTextBytes(fontNameBytes, token.value);
         if (token.value.includes(";")) {
-          const name = fontNameFromBytes(
-            fontNameBytes,
-            fontTableEncoding(fontCharset, ansiCodePage),
-          );
+          let encoding: string;
+          try {
+            encoding = fontTableEncoding(fontCharset, ansiCodePage);
+          } catch {
+            throw new RtfParseError(
+              `unsupported RTF font encoding ${fontCharset || ansiCodePage}`,
+              token.position,
+              source,
+              {
+                part: "RTF font table",
+                path: `\\f${fontId}`,
+                name: "fonttbl",
+                reason: "unsupported font character set",
+              },
+            );
+          }
+          const name = fontNameFromBytes(fontNameBytes, encoding);
           if (fontId !== undefined && name)
             fonts.set(fontId, {
               name,
@@ -1594,7 +1614,7 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
   flushParagraph();
   if (shapes.length > 0) activeSection.children.push({ paragraph: { children: shapes } });
 
-  applyStoryBlocks(sections[0], headerBlocks, footerBlocks);
+  applyStoryBlocks(activeSection, headerBlocks, footerBlocks);
 
   const numbering = numberingFromParsed(listDefinitions, numberingReferences);
 

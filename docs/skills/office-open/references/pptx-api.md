@@ -607,10 +607,14 @@ Add `class: "exit"`:
 
 ## Parsing
 
-```json
+```ts
+import { readFileSync } from "node:fs";
+import { generatePresentation, parsePresentation } from "@office-open/pptx";
+
 // parsePresentation accepts Uint8Array, ArrayBuffer, typed-array views, number[], base64 string
-parsePresentation(readFileSync("input.pptx"))
+const opts = await parsePresentation(readFileSync("input.pptx"));
 // Returns PresentationOptions — pass to generatePresentation(opts) to modify and re-export
+const buffer = await generatePresentation(opts);
 ```
 
 ## Patching
@@ -620,11 +624,12 @@ parsePresentation(readFileSync("input.pptx"))
 Modify an existing `.pptx` template with ordered, source-preserving commands:
 
 ```ts
+import { readFileSync } from "node:fs";
 import { patchPresentation } from "@office-open/pptx";
 
 const result = await patchPresentation({
   outputType: "nodebuffer",
-  data: templateBuffer,
+  data: readFileSync("template.pptx"),
   commands: [
     {
       type: "replace",

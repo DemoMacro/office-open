@@ -1,3 +1,4 @@
+import type { TextParagraphPropertiesOptions } from "@office-open/core";
 import {
   attributeString,
   childNamed,
@@ -12,7 +13,7 @@ import {
   xmlElement,
 } from "@office-open/odf";
 import type { StyleFamily, StyleResourceOptions } from "@office-open/odf";
-import type { TableCellOptions } from "@office-open/pptx";
+import type { BackgroundOptions, TableCellOptions } from "@office-open/pptx";
 import type { Element } from "@office-open/xml";
 
 import { OdpParseError } from "./error";
@@ -28,10 +29,48 @@ export function addTextStyle(properties: TextProperties, styles: string[]): stri
         "fo:font-style": properties.italic ? "italic" : undefined,
         "style:text-underline-style": properties.underline ? "solid" : undefined,
         "fo:font-size": properties.size ? `${properties.size}pt` : undefined,
+        "fo:color": properties.fill ? `#${properties.fill}` : undefined,
+        "fo:font-family": properties.font ? fontFamilyValue(properties.font) : undefined,
       }),
     ]),
   );
   return name;
+}
+
+export function addParagraphStyle(
+  properties: TextParagraphPropertiesOptions,
+  styles: string[],
+): string {
+  const name = `P${styles.length + 1}`;
+  styles.push(
+    xmlElement("style:style", { "style:name": name, "style:family": "paragraph" }, [
+      xmlElement("style:paragraph-properties", {
+        "fo:text-align": properties.alignment,
+        "fo:margin-left":
+          properties.marginIndent === undefined ? undefined : emuToLength(properties.marginIndent),
+        "fo:margin-right":
+          properties.marginRight === undefined ? undefined : emuToLength(properties.marginRight),
+        "fo:text-indent":
+          properties.indent === undefined ? undefined : emuToLength(properties.indent),
+        "fo:margin-top":
+          properties.spaceBefore === undefined ? undefined : `${properties.spaceBefore}pt`,
+        "fo:margin-bottom":
+          properties.spaceAfter === undefined ? undefined : `${properties.spaceAfter}pt`,
+        "fo:line-height":
+          properties.lineSpacingPercent === undefined
+            ? properties.lineSpacingPoints === undefined
+              ? undefined
+              : `${properties.lineSpacingPoints}pt`
+            : `${properties.lineSpacingPercent}%`,
+      }),
+    ]),
+  );
+  return name;
+}
+
+/** A family name with spaces or commas is quoted, as fo:font-family requires. */
+function fontFamilyValue(family: string): string {
+  return /[\s,]/.test(family) ? `'${family}'` : family;
 }
 
 export function styleResourcesXml(overlays: StyleResourceOptions[] | undefined): string[] {
@@ -223,11 +262,21 @@ export function parseCellStyles(container: Element | undefined): Map<string, Tab
 
 export function parseTextStyles(container: Element | undefined): Map<string, TextProperties> {
   const result = new Map<string, TextProperties>();
+  const paragraphStyles = parseParagraphStyles([container]);
   for (const style of childrenNamed(container, "style:style")) {
-    if (attributeString(style, "style:family") !== "text") continue;
+    const familyName = attributeString(style, "style:family");
+    const styleName = attributeString(style, "style:name") ?? "";
+    if (familyName === "paragraph") {
+      const paragraph = paragraphStyles.get(styleName);
+      if (paragraph) result.set(styleName, { paragraph });
+      continue;
+    }
+    if (familyName !== "text") continue;
     const properties = childNamed(style, "style:text-properties");
     const size = attributeString(properties, "fo:font-size");
-    result.set(attributeString(style, "style:name") ?? "", {
+    const color = attributeString(properties, "fo:color");
+    const family = attributeString(properties, "fo:font-family");
+    result.set(styleName, {
       bold: attributeString(properties, "fo:font-weight") === "bold",
       italic: attributeString(properties, "fo:font-style") === "italic",
       underline:
@@ -235,9 +284,86 @@ export function parseTextStyles(container: Element | undefined): Map<string, Tex
           ? "single"
           : undefined,
       size: size?.endsWith("pt") ? Number(size.slice(0, -2)) : undefined,
+      ...(color && /^#[0-9a-f]{6}$/i.test(color) ? { fill: color.slice(1) } : {}),
+      ...(family ? { font: family.replace(/^(['"])(.*)\1$/, "$2") } : {}),
+      ...(paragraphStyles.has(attributeString(style, "style:name") ?? "")
+        ? { paragraph: paragraphStyles.get(attributeString(style, "style:name") ?? "") }
+        : {}),
     });
   }
   return result;
+}
+
+export function parseParagraphStyles(
+  containers: readonly (Element | undefined)[],
+): Map<string, TextParagraphPropertiesOptions> {
+  const result = new Map<string, TextParagraphPropertiesOptions>();
+  for (const container of containers) {
+    for (const style of childrenNamed(container, "style:style")) {
+      if (attributeString(style, "style:family") !== "paragraph") continue;
+      const name = attributeString(style, "style:name");
+      const source = childNamed(style, "style:paragraph-properties");
+      if (!name || !source) continue;
+      const alignment = attributeString(source, "fo:text-align");
+      const margins = [
+        ["fo:margin-left", "marginIndent"],
+        ["fo:margin-right", "marginRight"],
+        ["fo:text-indent", "indent"],
+      ] as const;
+      const properties: TextParagraphPropertiesOptions = {};
+      if (alignment === "start" || alignment === "left") properties.alignment = "left";
+      else if (alignment === "center") properties.alignment = "center";
+      else if (alignment === "end" || alignment === "right") properties.alignment = "right";
+      else if (alignment === "both" || alignment === "justify") properties.alignment = "justify";
+      for (const [attribute, field] of margins) {
+        const value = lengthToEmu(attributeString(source, attribute));
+        if (value !== undefined) properties[field] = value;
+      }
+      const before = pointValue(attributeString(source, "fo:margin-top"));
+      const after = pointValue(attributeString(source, "fo:margin-bottom"));
+      if (before !== undefined) properties.spaceBefore = before;
+      if (after !== undefined) properties.spaceAfter = after;
+      const lineHeight = attributeString(source, "fo:line-height");
+      if (lineHeight?.endsWith("%")) {
+        const value = Number(lineHeight.slice(0, -1));
+        if (Number.isFinite(value)) properties.lineSpacingPercent = value;
+      } else {
+        const value = pointValue(lineHeight);
+        if (value !== undefined) properties.lineSpacingPoints = value;
+      }
+      if (Object.keys(properties).length > 0) result.set(name, properties);
+    }
+  }
+  return result;
+}
+
+export function parseDrawingPageBackground(
+  styleResources: readonly StyleResourceOptions[],
+  styleName: string | undefined,
+): BackgroundOptions | undefined {
+  if (!styleName) return undefined;
+  const resource = styleResources.find(
+    (style) => style.name === styleName && style.family === "drawing-page",
+  );
+  const properties = resource?.properties.find(
+    (property) => property.name === "style:drawing-page-properties",
+  );
+  const fill = properties?.attributes["draw:fill"];
+  const color = properties?.attributes["draw:fill-color"];
+  if (fill === "none") return { fill: { type: "none" } };
+  if (fill !== "solid" || typeof color !== "string" || !/^#[0-9a-f]{6}$/iu.test(color))
+    return undefined;
+  return { fill: { type: "solid", color: color.slice(1) } };
+}
+
+function pointValue(value: string | undefined): number | undefined {
+  if (value === undefined) return undefined;
+  if (value.endsWith("pt")) {
+    const points = Number(value.slice(0, -2));
+    return Number.isFinite(points) ? points : undefined;
+  }
+  const emu = lengthToEmu(value);
+  return emu === undefined ? undefined : emu / 12700;
 }
 
 const ODP_STYLE_PROPERTIES: Record<string, string[]> = {
@@ -319,9 +445,14 @@ export function parseStyleResources(container: Element | undefined): StyleResour
 function isMappedTextAttribute(element: string, attribute: string): boolean {
   return (
     element === "style:text-properties" &&
-    ["fo:font-weight", "fo:font-style", "style:text-underline-style", "fo:font-size"].includes(
-      attribute,
-    )
+    [
+      "fo:font-weight",
+      "fo:font-style",
+      "style:text-underline-style",
+      "fo:font-size",
+      "fo:color",
+      "fo:font-family",
+    ].includes(attribute)
   );
 }
 

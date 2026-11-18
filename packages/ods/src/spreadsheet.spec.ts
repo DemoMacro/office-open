@@ -5,13 +5,14 @@ import { generateWorkbook, parseWorkbook } from "./index";
 
 const CALCEXT_NAMESPACE =
   'xmlns:calcext="urn:org:documentfoundation:names:experimental:calc:xmlns:calcext:1.0"';
+const GNUMERIC_NAMESPACE = 'xmlns:gnm="http://www.gnumeric.org/odf"';
 
 function packageWith(
   body: string,
   automaticStyles = "",
   commonStyles = "<office:styles/>",
 ): Uint8Array {
-  const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES} ${CALCEXT_NAMESPACE} office:version="1.3"><office:automatic-styles>${automaticStyles}</office:automatic-styles><office:body><office:spreadsheet>${body}</office:spreadsheet></office:body></office:document-content>`;
+  const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES} ${CALCEXT_NAMESPACE} ${GNUMERIC_NAMESPACE} office:version="1.3"><office:automatic-styles>${automaticStyles}</office:automatic-styles><office:body><office:spreadsheet>${body}</office:spreadsheet></office:body></office:document-content>`;
   const styles = `<?xml version="1.0"?><office:document-styles ${ODF_NAMESPACES} office:version="1.3">${commonStyles}</office:document-styles>`;
   return generateOcf("application/vnd.oasis.opendocument.spreadsheet", {
     "content.xml": content,
@@ -25,6 +26,26 @@ async function roundTrip(source: Uint8Array) {
 }
 
 describe("ODS spreadsheet semantics", () => {
+  it("round-trips Gnumeric pattern cell fills through the canonical fill model", async () => {
+    const { parsed, regenerated } = await roundTrip(
+      packageWith(
+        '<table:table table:name="Sheet1"><table:table-row><table:table-cell table:style-name="pattern" office:value-type="string"><text:p>Pattern</text:p></table:table-cell></table:table-row></table:table>',
+        '<style:style style:name="pattern" style:family="table-cell"><style:table-cell-properties gnm:pattern="7" gnm:pattern-colour="#ff0000" gnm:background-colour="#0000ff"/></style:style>',
+      ),
+    );
+    expect(parsed.worksheets?.[0]?.rows?.[0]?.cells?.[0]?.style).toEqual({
+      fill: {
+        type: "pattern",
+        patternType: "darkHorizontal",
+        foregroundColor: { rgb: "FFFF0000" },
+        backgroundColor: { rgb: "FF0000FF" },
+      },
+    });
+    expect(regenerated.worksheets?.[0]?.rows?.[0]?.cells?.[0]?.style).toEqual(
+      parsed.worksheets?.[0]?.rows?.[0]?.cells?.[0]?.style,
+    );
+  });
+
   it("writes schema-valid text decoration properties", async () => {
     const options = {
       worksheets: [
@@ -72,6 +93,29 @@ describe("ODS spreadsheet semantics", () => {
     expect(regenerated.definedNames).toEqual(parsed.definedNames);
   });
 
+  it("compresses sparse rows instead of materializing the gap", async () => {
+    const options = {
+      worksheets: [
+        {
+          name: "Sparse",
+          rows: [
+            { rowNumber: 1, cells: [{ reference: "A1", value: 1 }] },
+            { rowNumber: 16777217, cells: [{ reference: "A16777217", value: 2 }] },
+          ],
+        },
+      ],
+    };
+
+    const archive = await readOcf(
+      await generateWorkbook(options),
+      "application/vnd.oasis.opendocument.spreadsheet",
+    );
+    const content = archive.files["content.xml"]!;
+    expect(content).toContain('table:number-rows-repeated="16777215"');
+    const parsed = await parseWorkbook(await generateWorkbook(options));
+    expect(parsed.worksheets?.[0]?.rows?.map((row) => row.rowNumber)).toEqual([1, 16777217]);
+  });
+
   it("round-trips matrix formula ranges", async () => {
     const formula = {
       formula: "TRANSPOSE([.A1:.B2])",
@@ -90,6 +134,71 @@ describe("ODS spreadsheet semantics", () => {
     const regenerated = await parseWorkbook(await generateWorkbook(parsed));
     expect(parsed.worksheets?.[0]?.rows?.[0]?.cells?.[0]?.formula).toEqual(formula);
     expect(regenerated.worksheets?.[0]?.rows?.[0]?.cells?.[0]?.formula).toEqual(formula);
+  });
+
+  it("rejects formula metadata without an ODF equivalent", async () => {
+    await expect(
+      generateWorkbook({
+        worksheets: [
+          {
+            rows: [
+              {
+                cells: [
+                  {
+                    reference: "A1",
+                    formula: { formula: "SUM(B1:B2)", type: "shared", sharedIndex: 1 },
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      }),
+    ).rejects.toMatchObject({
+      name: "OdsGenerateError",
+      reason: "unsupported-formula-type",
+    });
+  });
+
+  it("emits a valid empty cache for formulas without a cached value", async () => {
+    const parsed = await parseWorkbook(
+      await generateWorkbook({
+        worksheets: [{ rows: [{ cells: [{ reference: "A1", formula: "SUM(B1:B2)" }] }] }],
+      }),
+    );
+
+    expect(parsed.worksheets?.[0]?.rows?.[0]?.cells?.[0]?.formula).toBe("SUM(B1:B2)");
+  });
+
+  it("does not emit typed numeric values for uncached formulas with value formats", async () => {
+    for (const [numFmt, value] of [
+      ["hh:mm:ss", undefined],
+      ["[$USD] #,##0.00", undefined],
+      [undefined, Number.NaN],
+    ] as const) {
+      const parsed = await parseWorkbook(
+        await generateWorkbook({
+          worksheets: [
+            {
+              rows: [
+                {
+                  cells: [
+                    {
+                      reference: "A1",
+                      formula: "SUM(B1:B2)",
+                      ...(numFmt === undefined ? {} : { style: { numFmt } }),
+                      ...(value === undefined ? {} : { value }),
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        }),
+      );
+
+      expect(parsed.worksheets?.[0]?.rows?.[0]?.cells?.[0]?.formula).toBe("SUM(B1:B2)");
+    }
   });
 
   it("preserves exact underline and strike patterns", async () => {
@@ -226,7 +335,7 @@ describe("ODS spreadsheet semantics", () => {
   it("round-trips database ranges and source-mode data pilot tables", async () => {
     const { parsed, regenerated } = await roundTrip(
       packageWith(
-        `<table:table table:name="Data"><table:table-row><table:table-cell office:value-type="float" office:value="1"/></table:table-row></table:table><table:database-ranges><table:database-range table:name="Database" table:target-range-address="Data.A1:A10" table:contains-header="true"/></table:database-ranges><table:data-pilot-tables><table:data-pilot-table table:name="Pivot" table:target-range-address="Data.B1:B4"><table:source-cell-range table:cell-range-address="Data.A1:A10"/><table:data-pilot-field table:source-field-name="Region" table:orientation="row" table:function="auto"/><table:data-pilot-field table:source-field-name="Sales" table:orientation="data" table:function="sum"/></table:data-pilot-table></table:data-pilot-tables>`,
+        `<table:table table:name="Data"><table:table-row><table:table-cell office:value-type="float" office:value="1"/></table:table-row></table:table><table:database-ranges><table:database-range table:name="Database" table:target-range-address="Data.A1:A10" table:contains-header="true"/></table:database-ranges><table:data-pilot-tables><table:data-pilot-table table:name="Pivot" table:target-range-address="Data.B1:B4"><table:source-cell-range table:cell-range-address="Data.A1:A10"/><table:data-pilot-field table:source-field-name="Region" table:orientation="row" table:function="auto"/><table:data-pilot-field table:source-field-name="Year" table:orientation="page" table:function="auto"/><table:data-pilot-field table:source-field-name="Sales" table:orientation="data" table:function="sum"/></table:data-pilot-table></table:data-pilot-tables>`,
       ),
     );
     expect(parsed.worksheets?.[0]?.tables).toMatchObject([
@@ -240,6 +349,7 @@ describe("ODS spreadsheet semantics", () => {
         sourceSheet: "Data",
         location: "B1",
         rows: ["Region"],
+        pages: [{ field: "Year" }],
         data: [{ field: "Sales", summarize: "sum" }],
       },
     ]);
@@ -247,8 +357,255 @@ describe("ODS spreadsheet semantics", () => {
       { displayName: "Database", ref: "A1:A10" },
     ]);
     expect(regenerated.worksheets?.[0]?.pivotTables).toMatchObject([
-      { name: "Pivot", source: "A1:A10", rows: ["Region"] },
+      { name: "Pivot", source: "A1:A10", rows: ["Region"], pages: [{ field: "Year" }] },
     ]);
+  });
+
+  it("maps database filters and sort state to canonical table fields", async () => {
+    const source = packageWith(
+      `<table:table table:name="Data"><table:table-row><table:table-cell office:value-type="string"><text:p>Region</text:p></table:table-cell><table:table-cell office:value-type="string"><text:p>Sales</text:p></table:table-cell></table:table-row></table:table><table:database-ranges><table:database-range table:name="Database" table:target-range-address="Data.A1:B10"><table:filter table:target-range-address="Data.A1:B10"><table:filter-or><table:filter-condition table:field-number="0" table:value="East" table:operator="="/><table:filter-condition table:field-number="0" table:value="West" table:operator="="/></table:filter-or></table:filter><table:sort table:target-range-address="Data.A1:B10" table:case-sensitive="true"><table:sort-by table:field-number="1" table:order="descending"/><table:sort-by table:field-number="0" table:order="ascending"/></table:sort></table:database-range></table:database-ranges>`,
+    );
+    const { parsed, regenerated } = await roundTrip(source);
+    expect(parsed.worksheets?.[0]?.tables?.[0]).toMatchObject({
+      autoFilter: {
+        ref: "A1:B10",
+        columns: [{ colId: 0, filters: { values: ["East", "West"] } }],
+      },
+      sortState: {
+        ref: "A1:B10",
+        caseSensitive: true,
+        conditions: [
+          { ref: "B1", descending: true },
+          { ref: "A1", descending: false },
+        ],
+      },
+    });
+    expect(regenerated.worksheets?.[0]?.tables?.[0]?.autoFilter).toEqual(
+      parsed.worksheets?.[0]?.tables?.[0]?.autoFilter,
+    );
+    expect(regenerated.worksheets?.[0]?.tables?.[0]?.sortState).toEqual(
+      parsed.worksheets?.[0]?.tables?.[0]?.sortState,
+    );
+  });
+
+  it("rejects OOXML-only sort fields instead of silently dropping them", async () => {
+    await expect(
+      generateWorkbook({
+        worksheets: [
+          {
+            name: "Sheet1",
+            tables: [
+              {
+                displayName: "Database",
+                ref: "A1:B2",
+                columns: [],
+                sortState: {
+                  ref: "A1:B2",
+                  sortMethod: "pinYin",
+                  conditions: [{ ref: "A1", sortBy: "cellColor" }],
+                },
+              },
+            ],
+          },
+        ],
+      }),
+    ).rejects.toMatchObject({
+      name: "OdsGenerateError",
+      reason: "sort-state-not-representable",
+    });
+  });
+
+  it("round-trips date conditional formatting and rule order", async () => {
+    const source = packageWith(
+      '<table:table table:name="Sheet1"><table:table-row><table:table-cell/></table:table-row><calcext:conditional-formats><calcext:conditional-format calcext:target-range-address="Sheet1.A1"><calcext:date calcext:date="today" calcext:style="Highlight"/><calcext:condition calcext:value="=1"/><calcext:date calcext:date="last-week" calcext:style="Highlight"/></calcext:conditional-format></calcext:conditional-formats></table:table>',
+      '<style:style style:name="Highlight" style:family="table-cell"><style:table-cell-properties fo:background-color="#ff0000"/></style:style>',
+    );
+    const parsed = await parseWorkbook(source);
+    expect(parsed.worksheets?.[0]?.conditionalFormats?.[0]?.rules).toMatchObject([
+      { type: "timePeriod", timePeriod: "today", priority: 1, dxfId: 0 },
+      { type: "cellIs", operator: "equal", formulas: ["1"] },
+      { type: "timePeriod", timePeriod: "lastWeek", priority: 3, dxfId: 0 },
+    ]);
+    const regenerated = await parseWorkbook(await generateWorkbook(parsed));
+    expect(regenerated.worksheets?.[0]?.conditionalFormats?.[0]?.rules ?? []).toMatchObject(
+      parsed.worksheets?.[0]?.conditionalFormats?.[0]?.rules ?? [],
+    );
+    const generatedArchive = await readOcf(
+      await generateWorkbook(parsed),
+      "application/vnd.oasis.opendocument.spreadsheet",
+    );
+    const generatedContent = generatedArchive.files["content.xml"];
+    expect(generatedContent).toContain('calcext:date="today"');
+    expect(generatedContent).toContain("calcext:style=");
+    expect(generatedContent).toContain("<calcext:date ");
+  });
+
+  it("accepts ODF set filters without a redundant scalar value", async () => {
+    const source = generateOcf("application/vnd.oasis.opendocument.spreadsheet", {
+      "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:spreadsheet><table:table table:name="Data"><table:table-row><table:table-cell/></table:table-row></table:table><table:database-ranges><table:database-range table:name="Database" table:target-range-address="Data.A1:A10"><table:filter><table:filter-condition table:field-number="0" table:operator="="><table:filter-set-item table:value="East"/><table:filter-set-item table:value="West"/></table:filter-condition></table:filter></table:database-range></table:database-ranges></office:spreadsheet></office:body></office:document-content>`,
+    });
+    const parsed = await parseWorkbook(source);
+    expect(parsed.worksheets?.[0]?.tables?.[0]?.autoFilter).toEqual({
+      ref: "A1:A10",
+      columns: [{ colId: 0, filters: { values: ["East", "West"] } }],
+    });
+  });
+
+  it("rejects database range attributes without a canonical mapping", async () => {
+    await expect(
+      parseWorkbook(
+        packageWith(
+          '<table:table table:name="Data"/><table:database-ranges><table:database-range table:name="Database" table:target-range-address="Data.A1:A2" table:is-selection="true"/></table:database-ranges>',
+        ),
+      ),
+    ).rejects.toMatchObject({
+      elementName: "table:is-selection",
+      reason: "database range attribute has no canonical TableOptions mapping",
+    });
+  });
+
+  it("writes canonical multi-column and custom database filters", async () => {
+    const parsed = await parseWorkbook(
+      await generateWorkbook({
+        worksheets: [
+          {
+            name: "Data",
+            rows: [],
+            tables: [
+              {
+                displayName: "Database",
+                ref: "A1:C10",
+                columns: [],
+                autoFilter: {
+                  ref: "A1:C10",
+                  columns: [
+                    { colId: 0, filters: { values: ["East", "West"] } },
+                    {
+                      colId: 2,
+                      customFilters: {
+                        and: true,
+                        entries: [
+                          { operator: "greaterThan", val: "1" },
+                          { operator: "lessThan", val: "10" },
+                        ],
+                      },
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        ],
+      }),
+    );
+    expect(parsed.worksheets?.[0]?.tables?.[0]?.autoFilter).toEqual({
+      ref: "A1:C10",
+      columns: [
+        { colId: 0, filters: { values: ["East", "West"] } },
+        {
+          colId: 2,
+          customFilters: {
+            and: true,
+            entries: [
+              { operator: "greaterThan", val: "1" },
+              { operator: "lessThan", val: "10" },
+            ],
+          },
+        },
+      ],
+    });
+  });
+
+  it("maps Data Pilot totals, drill-down, page selection, and hidden fields", async () => {
+    const source = {
+      worksheets: [
+        {
+          name: "Data",
+          rows: [
+            {
+              cells: [
+                { reference: "A1", value: "Region" },
+                { reference: "B1", value: "Sales" },
+                { reference: "C1", value: "Internal" },
+              ],
+            },
+            {
+              cells: [
+                { reference: "A2", value: "East" },
+                { reference: "B2", value: 10 },
+                { reference: "C2", value: "yes" },
+              ],
+            },
+            {
+              cells: [
+                { reference: "A3", value: "West" },
+                { reference: "B3", value: 20 },
+                { reference: "C3", value: "no" },
+              ],
+            },
+          ],
+          pivotTables: [
+            {
+              mode: "source" as const,
+              name: "Pivot",
+              source: "A1:C3",
+              rows: ["Region"],
+              pages: [{ field: "Region", item: 1 }],
+              data: [{ field: "Sales", summarize: "sum" as const }],
+              hiddenFields: ["Internal"],
+              rowGrandTotals: false,
+              colGrandTotals: true,
+              enableDrill: true,
+            },
+          ],
+        },
+      ],
+    };
+    const parsed = await parseWorkbook(await generateWorkbook(source));
+    expect(parsed.worksheets?.[0]?.pivotTables?.[0]).toMatchObject({
+      mode: "source",
+      pages: [{ field: "Region", item: 1 }],
+      hiddenFields: ["Internal"],
+      rowGrandTotals: false,
+      colGrandTotals: true,
+      enableDrill: true,
+    });
+  });
+
+  it("accepts XML Schema boolean forms for Data Pilot drill-down", async () => {
+    const parsed = await parseWorkbook(
+      packageWith(
+        '<table:table table:name="Data"><table:table-row><table:table-cell office:value-type="string"><text:p>Region</text:p></table:table-cell></table:table-row></table:table><table:data-pilot-tables><table:data-pilot-table table:name="Pivot" table:target-range-address="Data.A1" table:drill-down-on-double-click="1"><table:source-cell-range table:cell-range-address="Data.A1:A1"/><table:data-pilot-field table:source-field-name="Region" table:orientation="row"/></table:data-pilot-table></table:data-pilot-tables>',
+      ),
+    );
+    expect(parsed.worksheets?.[0]?.pivotTables?.[0]).toMatchObject({ enableDrill: true });
+  });
+
+  it("rejects invalid Data Pilot boolean and total values", async () => {
+    await expect(
+      parseWorkbook(
+        packageWith(
+          '<table:table table:name="Data"/><table:data-pilot-tables><table:data-pilot-table table:name="Pivot" table:target-range-address="Data.A1" table:drill-down-on-double-click="yes"><table:source-cell-range table:cell-range-address="Data.A1:A1"/><table:data-pilot-field table:source-field-name="Region" table:orientation="row"/></table:data-pilot-table></table:data-pilot-tables>',
+        ),
+      ),
+    ).rejects.toMatchObject({ reason: "invalid boolean value: yes" });
+    await expect(
+      parseWorkbook(
+        packageWith(
+          '<table:table table:name="Data"/><table:data-pilot-tables><table:data-pilot-table table:name="Pivot" table:target-range-address="Data.A1" table:grand-total="invalid"><table:source-cell-range table:cell-range-address="Data.A1:A1"/><table:data-pilot-field table:source-field-name="Region" table:orientation="row"/></table:data-pilot-table></table:data-pilot-tables>',
+        ),
+      ),
+    ).rejects.toMatchObject({ reason: "invalid data pilot grand-total value: invalid" });
+  });
+
+  it("rejects a Data Pilot source range that names a missing sheet", async () => {
+    await expect(
+      parseWorkbook(
+        packageWith(
+          '<table:table table:name="Data"/><table:data-pilot-tables><table:data-pilot-table table:name="Pivot" table:target-range-address="Data.A1"><table:source-cell-range table:cell-range-address="Missing.A1:A2"/><table:data-pilot-field table:source-field-name="Region" table:orientation="row"/></table:data-pilot-table></table:data-pilot-tables>',
+        ),
+      ),
+    ).rejects.toMatchObject({ reason: "data pilot source worksheet is missing" });
   });
 
   it("preserves unsupported data pilot summary functions as typed overlays", async () => {
@@ -374,6 +731,46 @@ describe("ODS spreadsheet semantics", () => {
         "application/vnd.oasis.opendocument.spreadsheet",
       )
     ).files["content.xml"]!;
-    expect(content).toContain("<text:p>&lt; &amp; &gt;</text:p>");
+    expect(content).toContain("<text:p>&lt;<text:s/>&amp;<text:s/>&gt;</text:p>");
+  });
+
+  it("round-trips rich text inside cell-anchored shapes", async () => {
+    const source = packageWith(
+      '<table:table table:name="Sheet1"><table:table-row><table:table-cell>' +
+        '<draw:rect svg:x="0" svg:y="0" svg:width="2cm" svg:height="1cm">' +
+        '<text:p>A<text:span text:style-name="bold">bold</text:span><text:s text:c="2"/>' +
+        '<text:a xlink:href="https://example.com">link</text:a><text:line-break/>end</text:p>' +
+        "<text:p>Second paragraph</text:p></draw:rect></table:table-cell></table:table-row></table:table>",
+      '<style:style style:name="bold" style:family="text"><style:text-properties fo:font-weight="bold" fo:color="#3366ff"/></style:style>',
+    );
+    const { parsed, regenerated } = await roundTrip(source);
+    const textBody = parsed.worksheets?.[0]?.shapes?.[0]?.textBody;
+    expect(textBody?.paragraphs).toMatchObject([
+      {
+        children: [
+          { text: "A" },
+          { text: "bold", bold: true, fill: { type: "solid", color: { value: "FF3366FF" } } },
+          { text: "  " },
+          { text: "link", hyperlink: { url: "https://example.com" } },
+          { text: "\n" },
+          { text: "end" },
+        ],
+      },
+      { text: "Second paragraph" },
+    ]);
+    expect(regenerated.worksheets?.[0]?.shapes?.[0]?.textBody).toEqual(textBody);
+  });
+
+  it("rejects unknown shape text elements instead of dropping them", async () => {
+    await expect(
+      parseWorkbook(
+        packageWith(
+          '<table:table table:name="Sheet1"><table:table-row><table:table-cell>' +
+            '<draw:rect svg:x="0" svg:y="0" svg:width="2cm" svg:height="1cm">' +
+            "<text:p><text:unknown>Lost text</text:unknown></text:p></draw:rect>" +
+            "</table:table-cell></table:table-row></table:table>",
+        ),
+      ),
+    ).rejects.toThrow("unsupported shape text element");
   });
 });

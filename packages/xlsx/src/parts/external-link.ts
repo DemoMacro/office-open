@@ -9,6 +9,8 @@
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attrs, escapeXml, findChild } from "@office-open/xml";
 
+import { decodeSpreadsheetXml, escapeSpreadsheetXml } from "../shared/xml";
+
 // ── Types ──
 
 export interface ExternalDefinedNameOptions {
@@ -170,7 +172,7 @@ export const externalLinkDesc: CustomDescriptor<ExternalLinkOptions> = {
       if (book.sheetNames && book.sheetNames.length > 0) {
         bookParts.push("<sheetNames>");
         for (const name of book.sheetNames) {
-          bookParts.push(`<sheetName val="${escapeXml(name)}"/>`);
+          bookParts.push(`<sheetName val="${escapeSpreadsheetXml(name)}"/>`);
         }
         bookParts.push("</sheetNames>");
       }
@@ -308,7 +310,7 @@ export const externalLinkDesc: CustomDescriptor<ExternalLinkOptions> = {
         const names: string[] = [];
         for (const child of sheetNamesEl.elements ?? []) {
           if (child.name === "sheetName" && child.attributes?.["val"]) {
-            names.push(String(child.attributes["val"]));
+            names.push(decodeSpreadsheetXml(String(child.attributes["val"])));
           }
         }
         if (names.length > 0) book.sheetNames = names;

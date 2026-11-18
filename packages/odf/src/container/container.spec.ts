@@ -9,9 +9,11 @@ import {
   manifestXml,
   OcfManifestError,
   ODF_ELEMENT_NAMES,
+  OdfXmlError,
   parseManifestOptions,
   parseOdfNodes,
   readOcf,
+  readXml,
   stringifyOdfNodes,
   type OdfXmlNode,
 } from "../index";
@@ -96,6 +98,36 @@ describe("OCF runtime", () => {
     expect(parsed.files["content.xml"]).toContain("<office:document-content/>");
   });
 
+  it("normalizes ODF element prefixes by namespace URI", () => {
+    const root = readXml(
+      {
+        "content.xml":
+          '<o:document-content xmlns:o="urn:oasis:names:tc:opendocument:xmlns:office:1.0"><o:body/></o:document-content>',
+      },
+      "content.xml",
+    );
+
+    expect(root.name).toBe("office:document-content");
+    expect(root.elements?.[0]?.name).toBe("office:body");
+  });
+
+  it("rejects XML parts with multiple roots or text outside the root", () => {
+    for (const xml of ["<root/><extra/>", "text<root/>", "<root/>text"]) {
+      expect(() => readXml({ "content.xml": xml }, "content.xml")).toThrow(OdfXmlError);
+    }
+    expect(() =>
+      readXml({ "content.xml": "<!-- before -->\n  <root/>\n<!-- after -->" }, "content.xml"),
+    ).not.toThrow();
+  });
+
+  it("rejects manifests with multiple roots or text outside the root", () => {
+    const root =
+      '<manifest:manifest xmlns:manifest="urn:oasis:names:tc:opendocument:xmlns:manifest:1.0"><manifest:file-entry manifest:full-path="/" manifest:media-type="application/vnd.oasis.opendocument.text"/></manifest:manifest>';
+    for (const xml of [`${root}<extra/>`, `text${root}`, `${root}text`]) {
+      expect(() => parseManifestOptions(xml)).toThrow(OcfManifestError);
+    }
+  });
+
   it("round-trips explicit empty ZIP directories", async () => {
     const mimeType = "application/vnd.oasis.opendocument.text";
     const packageManifest = {
@@ -138,6 +170,37 @@ describe("OCF runtime", () => {
     );
   });
 
+  it("rejects ZIP members whose declared uncompressed size exceeds the ODF limit", async () => {
+    const archive = generateOcf("application/vnd.oasis.opendocument.text", {
+      "content.xml": "<a/>",
+    });
+    for (let offset = 0; offset < archive.length - 46; offset += 1) {
+      if (
+        archive[offset] !== 0x50 ||
+        archive[offset + 1] !== 0x4b ||
+        archive[offset + 2] !== 0x01 ||
+        archive[offset + 3] !== 0x02
+      ) {
+        continue;
+      }
+      const view = new DataView(archive.buffer, archive.byteOffset, archive.byteLength);
+      const nameLength = view.getUint16(offset + 28, true);
+      const name = strFromU8(archive.subarray(offset + 46, offset + 46 + nameLength));
+      if (name === "content.xml") {
+        view.setUint32(offset + 24, 256 * 1024 * 1024 + 1, true);
+        await expect(
+          readOcf(archive, "application/vnd.oasis.opendocument.text"),
+        ).rejects.toMatchObject({
+          cause: expect.objectContaining({ reason: "size-limit" }),
+        });
+        return;
+      }
+      offset +=
+        45 + nameLength + view.getUint16(offset + 30, true) + view.getUint16(offset + 32, true);
+    }
+    throw new Error("content.xml central directory entry was not found");
+  });
+
   it("accepts and retains auxiliary package members omitted by legacy manifests", async () => {
     const archive = zipSync({
       mimetype: strToU8("application/vnd.oasis.opendocument.text"),
@@ -175,6 +238,88 @@ describe("OCF runtime", () => {
     ).rejects.toThrow("Invalid ODF manifest path: ../content.xml");
   });
 
+  it.each([
+    "../outside.xml",
+    "/absolute.xml",
+    "C:/outside.xml",
+    "mimetype",
+    "META-INF/manifest.xml",
+  ])("rejects unsafe or reserved generated package member %s", (path) => {
+    expect(() =>
+      generateOcf("application/vnd.oasis.opendocument.text", { [path]: "<a/>" }),
+    ).toThrow("Invalid ODF package member path");
+  });
+
+  it("rejects unsafe package-manifest paths during generation", () => {
+    expect(() =>
+      generateOcf(
+        "application/vnd.oasis.opendocument.text",
+        { "content.xml": "<a/>" },
+        {},
+        { version: "1.3", entries: [{ fullPath: "../outside/", mediaType: "" }] },
+      ),
+    ).toThrow("Invalid ODF manifest path: ../outside/");
+  });
+
+  it("rejects file and directory path conflicts during generation", () => {
+    const mimeType = "application/vnd.oasis.opendocument.text";
+    expect(() =>
+      generateOcf(
+        mimeType,
+        { "Object 1": "file" },
+        {},
+        { version: "1.3", entries: [{ fullPath: "Object 1/", mediaType: "" }] },
+      ),
+    ).toThrow("ODF package file/directory path conflict: Object 1");
+    expect(() =>
+      generateOcf(mimeType, { "Object 1": "file", "Object 1/content.xml": "<a/>" }),
+    ).toThrow("ODF package file/directory path conflict: Object 1");
+    for (const directory of ["mimetype/", "META-INF/manifest.xml/"]) {
+      expect(() =>
+        generateOcf(
+          mimeType,
+          { "content.xml": "<a/>" },
+          {},
+          {
+            version: "1.3",
+            entries: [{ fullPath: directory, mediaType: "application/binary" }],
+          },
+        ),
+      ).toThrow(/ODF package file\/directory path conflict/u);
+    }
+  });
+
+  it("rejects file and directory path conflicts when reading", async () => {
+    const mimeType = "application/vnd.oasis.opendocument.text";
+    const archive = zipSync({
+      mimetype: strToU8(mimeType),
+      "Object 1": strToU8("file"),
+      "Object 1/": new Uint8Array(),
+      "META-INF/manifest.xml": strToU8(
+        `<?xml version="1.0"?><manifest:manifest xmlns:manifest="urn:oasis:names:tc:opendocument:xmlns:manifest:1.0"><manifest:file-entry manifest:full-path="/" manifest:media-type="${mimeType}"/><manifest:file-entry manifest:full-path="Object 1" manifest:media-type="application/binary"/><manifest:file-entry manifest:full-path="Object 1/" manifest:media-type="application/binary"/></manifest:manifest>`,
+      ),
+    });
+    await expect(readOcf(archive, mimeType)).rejects.toThrow(
+      "ODF package file/directory path conflict: Object 1",
+    );
+  });
+
+  it("rejects disagreement between ZIP mimetype and manifest root media type", async () => {
+    const archive = unzipSync(
+      generateOcf("application/vnd.oasis.opendocument.text", { "content.xml": "<a/>" }),
+    );
+    archive["META-INF/manifest.xml"] = strToU8(
+      strFromU8(archive["META-INF/manifest.xml"]!).replace(
+        /(manifest:full-path="\/"[^>]*manifest:media-type=")[^"]+"/,
+        '$1application/vnd.oasis.opendocument.spreadsheet"',
+      ),
+    );
+
+    await expect(
+      readOcf(zipSync(archive), "application/vnd.oasis.opendocument.text"),
+    ).rejects.toThrow("Unexpected ODF MIME type");
+  });
+
   it("rejects unknown manifest-namespaced attributes", async () => {
     const archive = zipSync({
       mimetype: strToU8("application/vnd.oasis.opendocument.text"),
@@ -185,6 +330,15 @@ describe("OCF runtime", () => {
     });
     await expect(readOcf(archive, "application/vnd.oasis.opendocument.text")).rejects.toThrow(
       "Unknown manifest attribute @manifest:unknown: manifest:file-entry",
+    );
+  });
+
+  it("rejects foreign attributes not allowed by the manifest schema", () => {
+    const xml =
+      '<manifest:manifest xmlns:manifest="urn:oasis:names:tc:opendocument:xmlns:manifest:1.0" xmlns:x="urn:extension"><manifest:file-entry manifest:full-path="/" manifest:media-type="application/vnd.oasis.opendocument.text" x:flag="true"/></manifest:manifest>';
+
+    expect(() => parseManifestOptions(xml)).toThrow(
+      "Unknown manifest attribute @x:flag: manifest:file-entry",
     );
   });
 
@@ -199,6 +353,98 @@ describe("OCF runtime", () => {
       keySize: 16,
     });
     expect(manifestOptionsXml(parsed)).toContain('manifest:iteration-count="1024"');
+  });
+
+  it("rejects duplicate file encryption and encryption parameter elements", () => {
+    const root =
+      '<manifest:manifest xmlns:manifest="urn:oasis:names:tc:opendocument:xmlns:manifest:1.0"><manifest:file-entry manifest:full-path="/" manifest:media-type="application/vnd.oasis.opendocument.text"/>';
+    const entry =
+      '<manifest:file-entry manifest:full-path="content.xml" manifest:media-type="text/xml">';
+    const encryption =
+      '<manifest:encryption-data manifest:checksum-type="SHA1/1K" manifest:checksum="aa=="><manifest:algorithm manifest:algorithm-name="Blowfish CFB" manifest:initialisation-vector="bb=="/><manifest:key-derivation manifest:key-derivation-name="PBKDF2"/></manifest:encryption-data>';
+    const close = "</manifest:file-entry></manifest:manifest>";
+
+    expect(() => parseManifestOptions(root + entry + encryption + encryption + close)).toThrow(
+      /Duplicate manifest encryption-data/u,
+    );
+    expect(() =>
+      parseManifestOptions(
+        root +
+          entry +
+          '<manifest:encryption-data manifest:checksum-type="SHA1/1K" manifest:checksum="aa=="><manifest:algorithm manifest:algorithm-name="Blowfish CFB" manifest:initialisation-vector="bb=="/><manifest:algorithm manifest:algorithm-name="AES" manifest:initialisation-vector="cc=="/><manifest:key-derivation manifest:key-derivation-name="PBKDF2"/></manifest:encryption-data>' +
+          close,
+      ),
+    ).toThrow(/Invalid manifest encryption-data/u);
+  });
+
+  it("preserves mixed foreign manifest content order", () => {
+    const parsed = parseManifestOptions(
+      '<?xml version="1.0"?><manifest:manifest xmlns:manifest="urn:oasis:names:tc:opendocument:xmlns:manifest:1.0" xmlns:x="urn:extension"><manifest:file-entry manifest:full-path="/" manifest:media-type="application/vnd.oasis.opendocument.text"/><manifest:file-entry manifest:full-path="content.xml" manifest:media-type="text/xml"><manifest:encryption-data manifest:checksum-type="SHA1/1K" manifest:checksum="aa=="><manifest:algorithm manifest:algorithm-name="Blowfish CFB" manifest:initialisation-vector="bb=="><x:extension>before<![CDATA[middle]]><x:child/>after</x:extension></manifest:algorithm><manifest:key-derivation manifest:key-derivation-name="PBKDF2" manifest:salt="cc==" manifest:iteration-count="1024" manifest:key-size="16"/></manifest:encryption-data></manifest:file-entry></manifest:manifest>',
+    );
+    const output = manifestOptionsXml(parsed);
+
+    expect(output.indexOf("before")).toBeLessThan(output.indexOf("<x:child"));
+    expect(output.indexOf("<x:child")).toBeLessThan(output.indexOf("after"));
+    expect(output.indexOf("before")).toBeLessThan(output.indexOf("<![CDATA[middle]]>"));
+    expect(output.indexOf("<![CDATA[middle]]>")).toBeLessThan(output.indexOf("<x:child"));
+    expect(output).toContain('xmlns:x="urn:extension"');
+    expect(() => parse(output)).not.toThrow();
+  });
+
+  it("preserves attributes inside manifest algorithm extensions", () => {
+    const parsed = parseManifestOptions(
+      '<manifest:manifest xmlns:manifest="urn:oasis:names:tc:opendocument:xmlns:manifest:1.0" xmlns:x="urn:extension"><manifest:file-entry manifest:full-path="/" manifest:media-type="application/vnd.oasis.opendocument.text"/><manifest:file-entry manifest:full-path="content.xml" manifest:media-type="text/xml"><manifest:encryption-data manifest:checksum-type="SHA1/1K" manifest:checksum="aa=="><manifest:algorithm manifest:algorithm-name="Blowfish CFB" manifest:initialisation-vector="bb=="><x:extension x:flag="value"/></manifest:algorithm><manifest:key-derivation manifest:key-derivation-name="PBKDF2"/></manifest:encryption-data></manifest:file-entry></manifest:manifest>',
+    );
+    const output = manifestOptionsXml(parsed);
+
+    expect(output).toContain('<x:extension x:flag="value"');
+    expect(() => parse(output)).not.toThrow();
+  });
+
+  it("rejects extension attributes on the manifest algorithm element", () => {
+    const xml =
+      '<manifest:manifest xmlns:manifest="urn:oasis:names:tc:opendocument:xmlns:manifest:1.0" xmlns:x="urn:extension"><manifest:file-entry manifest:full-path="/" manifest:media-type="application/vnd.oasis.opendocument.text"/><manifest:file-entry manifest:full-path="content.xml" manifest:media-type="text/xml"><manifest:encryption-data manifest:checksum-type="SHA1/1K" manifest:checksum="aa=="><manifest:algorithm manifest:algorithm-name="Blowfish CFB" manifest:initialisation-vector="bb==" x:flag="value"/><manifest:key-derivation manifest:key-derivation-name="PBKDF2"/></manifest:encryption-data></manifest:file-entry></manifest:manifest>';
+
+    expect(() => parseManifestOptions(xml)).toThrow("Unknown manifest attribute @x:flag");
+  });
+
+  it("rejects non-whitespace text at the manifest root", () => {
+    const xml =
+      '<manifest:manifest xmlns:manifest="urn:oasis:names:tc:opendocument:xmlns:manifest:1.0">unexpected<manifest:file-entry manifest:full-path="/" manifest:media-type="application/vnd.oasis.opendocument.text"/></manifest:manifest>';
+
+    expect(() => parseManifestOptions(xml)).toThrow("unexpected text in manifest root");
+  });
+
+  it("rejects foreign elements not allowed by the manifest schema", () => {
+    const xml =
+      '<manifest:manifest xmlns:manifest="urn:oasis:names:tc:opendocument:xmlns:manifest:1.0" xmlns:x="urn:extension"><manifest:file-entry manifest:full-path="/" manifest:media-type="application/vnd.oasis.opendocument.text"/><x:extension/></manifest:manifest>';
+
+    expect(() => parseManifestOptions(xml)).toThrow("Unknown manifest element: x:extension");
+  });
+
+  it("rejects encrypted-key entries missing required schema children", () => {
+    const xml =
+      '<manifest:manifest xmlns:manifest="urn:oasis:names:tc:opendocument:xmlns:manifest:1.0"><manifest:encrypted-key><manifest:keyinfo><manifest:PGPData><manifest:PGPKeyPacket>Ag==</manifest:PGPKeyPacket></manifest:PGPData></manifest:keyinfo><manifest:CipherData><manifest:CipherValue>Aw==</manifest:CipherValue></manifest:CipherData></manifest:encrypted-key><manifest:file-entry manifest:full-path="/" manifest:media-type="application/vnd.oasis.opendocument.text"/></manifest:manifest>';
+    expect(() => parseManifestOptions(xml)).toThrow(/encrypted-key structure/u);
+  });
+
+  it("rejects duplicate and incorrectly nested encrypted-key values", () => {
+    const root =
+      '<manifest:manifest xmlns:manifest="urn:oasis:names:tc:opendocument:xmlns:manifest:1.0">';
+    const suffix =
+      '<manifest:file-entry manifest:full-path="/" manifest:media-type="application/vnd.oasis.opendocument.text"/></manifest:manifest>';
+    const key = (pgp: string, cipher: string) =>
+      `<manifest:encrypted-key><manifest:keyinfo><manifest:PGPData>${pgp}</manifest:PGPData></manifest:keyinfo><manifest:CipherData>${cipher}</manifest:CipherData></manifest:encrypted-key>`;
+    const id = "<manifest:PGPKeyID>MQ==</manifest:PGPKeyID>";
+    const cipherValue = "<manifest:CipherValue>Aw==</manifest:CipherValue>";
+    for (const entry of [
+      key(`${id}${id}`, cipherValue),
+      key(`<manifest:wrapper>${id}</manifest:wrapper>`, cipherValue),
+    ]) {
+      expect(() => parseManifestOptions(`${root}${entry}${suffix}`)).toThrow(
+        /encrypted-key structure/u,
+      );
+    }
   });
 
   it("round-trips encrypted keys and file-entry encryption through one typed model", async () => {
@@ -234,6 +480,64 @@ describe("OCF runtime", () => {
       "application/vnd.oasis.opendocument.chart",
     );
     expect(reparsed.manifest).toEqual(packaged);
+  });
+
+  it("includes manifest encryption fields in the OCF semantic digest", () => {
+    const mimeType = "application/vnd.oasis.opendocument.text";
+    const createPackage = (iterationCount: number) =>
+      generateOcf(
+        mimeType,
+        { "content.xml": "<office:document-content/>" },
+        {},
+        {
+          version: "1.3",
+          entries: [
+            { fullPath: "/", mediaType: mimeType },
+            {
+              fullPath: "content.xml",
+              mediaType: "text/xml",
+              encryptionData: {
+                checksumType: "SHA1/1K",
+                checksum: "aa==",
+                algorithm: { name: "Blowfish CFB", initialisationVector: "bb==" },
+                keyDerivation: { name: "PBKDF2", salt: "cc==", iterationCount, keySize: 16 },
+              },
+            },
+          ],
+          encryptedKeys: [{ algorithm: "RSA", keyId: "MQ==", cipherValue: "Aw==" }],
+        },
+      );
+
+    expect(compareOcfSemantic(createPackage(1024), createPackage(2048))).toEqual([
+      'entry[1].encryptionData: {"checksumType":"SHA1/1K","checksum":"aa==","algorithm":{"name":"Blowfish CFB","initialisationVector":"bb=="},"keyDerivation":{"name":"PBKDF2","salt":"cc==","iterationCount":1024,"keySize":16}} != {"checksumType":"SHA1/1K","checksum":"aa==","algorithm":{"name":"Blowfish CFB","initialisationVector":"bb=="},"keyDerivation":{"name":"PBKDF2","salt":"cc==","iterationCount":2048,"keySize":16}}',
+    ]);
+  });
+
+  it("distinguishes meaningful leading and trailing XML text whitespace", () => {
+    const mimeType = "application/vnd.oasis.opendocument.text";
+    const createPackage = (text: string) =>
+      generateOcf(mimeType, { "content.xml": `<text:p>${text}</text:p>` });
+
+    expect(compareOcfSemantic(createPackage("word "), createPackage("word"))).not.toEqual([]);
+    expect(compareOcfSemantic(createPackage(" word"), createPackage("word"))).not.toEqual([]);
+  });
+
+  it("distinguishes CDATA content in XML parts", () => {
+    const mimeType = "application/vnd.oasis.opendocument.text";
+    const createPackage = (text: string) =>
+      generateOcf(mimeType, { "content.xml": `<text:p><![CDATA[${text}]]></text:p>` });
+
+    expect(compareOcfSemantic(createPackage("before"), createPackage("after"))).not.toEqual([]);
+  });
+
+  it("detects unmanifested package members in the semantic digest", () => {
+    const mimeType = "application/vnd.oasis.opendocument.text";
+    const source = generateOcf(mimeType, { "content.xml": "<text:p/>" });
+    const changed = generateOcf(mimeType, {
+      "content.xml": "<text:p/>",
+      "unmanifested.bin": new Uint8Array([1, 2, 3]),
+    });
+    expect(compareOcfSemantic(source, changed)).toContainEqual(expect.stringContaining("member["));
   });
 
   it("keeps supplied manifest entries and reports duplicate paths structurally", () => {

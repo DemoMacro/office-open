@@ -12,13 +12,17 @@ import {
 } from "@office-open/core";
 import {
   attributeString,
+  bindGraphicStyleResources,
   CHART_MIME,
   chartSubdocumentFiles,
   childNamed,
   childrenNamed,
-  emuToLength,
+  createGraphicStyleResources,
   descendantElements,
   generateOcf,
+  graphicStyleFiles,
+  graphicStyleResourcesXml,
+  hexColorValue,
   hasOcfManifestOptions,
   isExternalOdfUrl,
   lengthToEmu,
@@ -28,24 +32,43 @@ import {
   officeFormsXml,
   parseOfficeForms,
   parseGraphicStyles,
+  parseGraphicStyleResources,
   parseMeta,
   readOcfSync,
   readXml,
+  parseStyleProperty,
+  stylePropertyXml,
   xmlElement,
   type OcfManifestOptions,
+  type GraphicStyle,
   type OdfPackageFiles,
+  type StyleResourceOptions,
+  type StylePropertyOptions,
 } from "@office-open/odf";
 import type { PackageMemberOptions } from "@office-open/odf";
-import type { PresentationOptions, SlideOptions } from "@office-open/pptx";
+import type { MasterDefinition, PresentationOptions, SlideOptions } from "@office-open/pptx";
 import type { Element } from "@office-open/xml";
 
 import type { OdpChart, OdpImage } from "./drawing";
-import type { OdpEmbeddedObjectPool } from "./embedded-frames";
-import { OdpParseError } from "./error";
-import type { OdpPresentationOptions, OdpSlideOptions } from "./options";
-import { parseSlide, parseTableStyles, slideXml } from "./slide";
-import { reconcileTransitionStyleResources } from "./slide";
+import { normalizeEmbeddedObjectPath, type OdpEmbeddedObjectPool } from "./embedded-frames";
+import { OdpGenerateError, OdpParseError } from "./error";
+import type {
+  OdpMasterDefinition,
+  OdpMasterHeaderFooterOptions,
+  OdpPageLayoutOptions,
+  OdpPresentationOptions,
+  OdpSlideOptions,
+} from "./options";
+import {
+  parseSlide,
+  parseTableStyles,
+  type TableStyles,
+  reconcileTransitionStyleResources,
+  slideChildXml,
+  slideXml,
+} from "./slide";
 import { parseStyleResources, parseTextStyles, styleResourcesXml } from "./styles";
+import { parseParagraph, textBodyXml, type TextProperties } from "./text-run";
 import { materializeOdpTransitionSound, type OdpTransitionOptions } from "./transition";
 
 export const MIME = "application/vnd.oasis.opendocument.presentation";
@@ -83,40 +106,176 @@ function packageOptions(options: PresentationOptions): Partial<OdpPresentationOp
   return isOdpPackageOptions(options) ? options : {};
 }
 
+function backgroundOptions(
+  slides: readonly OdpSlideOptions[],
+  resources: readonly StyleResourceOptions[],
+): { slides: OdpSlideOptions[]; resources: StyleResourceOptions[] } {
+  const nextResources = [...resources];
+  const usedNames = new Set(resources.map((resource) => resource.name));
+  const nextSlides = slides.map((slide, index) => {
+    if (slide.background === undefined) return slide;
+    const background = slide.background;
+    if (
+      background.reference !== undefined ||
+      background.effects !== undefined ||
+      background.effectsList !== undefined ||
+      background.shadeToTitle !== undefined ||
+      background.blackWhiteMode !== undefined
+    )
+      throw new OdpGenerateError(
+        "ODF drawing-page styles cannot represent these background properties",
+        "content.xml",
+        "/office:document-content/office:automatic-styles/style:style/style:drawing-page-properties",
+        "background",
+        "unsupported-background-properties",
+      );
+    const fill = background.fill;
+    let fillMode: string;
+    let fillColor: string | undefined;
+    if (fill === undefined || (typeof fill === "object" && fill.type === "none")) {
+      fillMode = "none";
+    } else if (
+      typeof fill === "object" &&
+      fill.type === "solid" &&
+      hexColorValue(fill.color) !== undefined
+    ) {
+      const color = hexColorValue(fill.color)!.slice(-6);
+      if (!/^[0-9a-f]{6}$/iu.test(color))
+        throw new OdpGenerateError(
+          "ODF slide background requires an RGB color",
+          "content.xml",
+          "/office:document-content/office:automatic-styles/style:style/style:drawing-page-properties",
+          "background fill color",
+          "invalid-rgb-color",
+        );
+      fillMode = "solid";
+      fillColor = `#${color}`;
+    } else {
+      throw new OdpGenerateError(
+        "ODF slide background supports only solid colors and no-fill",
+        "content.xml",
+        "/office:document-content/office:automatic-styles/style:style/style:drawing-page-properties",
+        "background fill",
+        "unsupported-background-fill",
+      );
+    }
+    let name = slide.drawingPageStyleName;
+    if (name === undefined) {
+      let suffix = index + 1;
+      name = `ODPBackground${suffix}`;
+      while (usedNames.has(name)) name = `ODPBackground${++suffix}`;
+    }
+    usedNames.add(name);
+    const resourceIndex = nextResources.findIndex(
+      (resource) => resource.name === name && resource.family === "drawing-page",
+    );
+    const resource = resourceIndex < 0 ? undefined : nextResources[resourceIndex];
+    const properties = [...(resource?.properties ?? [])];
+    const propertyIndex = properties.findIndex(
+      (property) => property.name === "style:drawing-page-properties",
+    );
+    const existingProperty = properties[propertyIndex];
+    const drawingPageProperties = {
+      name: "style:drawing-page-properties" as const,
+      attributes: {
+        ...existingProperty?.attributes,
+        "draw:fill": fillMode,
+        "draw:fill-color": fillColor,
+      },
+      ...(existingProperty && "children" in existingProperty && existingProperty.children
+        ? { children: existingProperty.children }
+        : {}),
+    };
+    if (propertyIndex < 0) properties.push(drawingPageProperties);
+    else properties[propertyIndex] = drawingPageProperties;
+    const nextResource: StyleResourceOptions = {
+      name,
+      family: "drawing-page",
+      properties,
+      ...(resource?.maps === undefined ? {} : { maps: resource.maps }),
+    };
+    if (resourceIndex < 0) nextResources.push(nextResource);
+    else nextResources[resourceIndex] = nextResource;
+    return { ...slide, drawingPageStyleName: name };
+  });
+  return { slides: nextSlides, resources: nextResources };
+}
+
 function generateOdpPackage(options: OdpPresentationOptions): Uint8Array {
+  try {
+    return buildOdpPackage(options);
+  } catch (cause) {
+    if (
+      cause instanceof OdfSchemaError ||
+      (cause instanceof Error && cause.name === "XmlParseError")
+    )
+      throw new OdpGenerateError(
+        cause.message,
+        cause instanceof OdfSchemaError ? cause.part : "content.xml",
+        cause instanceof OdfSchemaError ? cause.path : "/office:document-content",
+        cause instanceof OdfSchemaError ? cause.elementName : "#text",
+        cause instanceof OdfSchemaError ? cause.reason : "invalid-xml-character",
+        { cause },
+      );
+    throw cause;
+  }
+}
+
+function buildOdpPackage(options: OdpPresentationOptions): Uint8Array {
   const { packageManifest, packageMembers, styleResources, embeddedObjects, packageMediaType } =
     packageOptions(options);
   validateEmbeddedObjects(options, embeddedObjects);
   const images: OdpImage[] = [];
   const mediaFiles: OdpImage[] = [];
-  const usedStyleNames = new Set(styleResources?.map((resource) => resource.name));
+  const background = backgroundOptions(options.slides ?? [], styleResources ?? []);
+  const slides = background.slides;
+  const usedStyleNames = new Set(background.resources.map((resource) => resource.name));
   const occupiedPaths = new Set([
     ...(packageMembers ?? []).map((member) => member.path),
     ...(embeddedObjects ?? []).flatMap((object) => object.members.map((member) => member.path)),
   ]);
   const transitionSounds = new Map<OdpSlideOptions, OdpTransitionOptions>();
-  for (const slide of options.slides ?? []) {
+  for (const slide of slides) {
     if (slide.transition === undefined || typeof slide.transition === "string") continue;
     transitionSounds.set(
       slide,
       materializeOdpTransitionSound(slide.transition, mediaFiles, occupiedPaths),
     );
   }
+  const presentationOptions = { ...options, slides };
   const styles: string[] = styleResourcesXml(
-    reconcileTransitionStyleResources(options, transitionSounds),
+    reconcileTransitionStyleResources(
+      { ...presentationOptions, styleResources: background.resources },
+      transitionSounds,
+    ),
   );
+  const graphicResources = createGraphicStyleResources();
+  bindGraphicStyleResources(styles, graphicResources);
+  const masterNames = [
+    ...(options.masters ?? []).flatMap((master) => (master.name ? [master.name] : [])),
+    ...slides.flatMap((slide) => (slide.master ? [slide.master] : [])),
+  ].filter((name, index, names) => names.indexOf(name) === index);
+  if (masterNames.length === 0) masterNames.push("Default");
   const charts: OdpChart[] = [];
   const embeddedObjectPool = new Map(
     (embeddedObjects ?? []).map((object) => [object.path ?? object.sourceUrl!, object] as const),
   );
   const size = normalizeSize(options.size);
-  const pageLayout = xmlElement("style:page-layout", { "style:name": "PM1" }, [
-    xmlElement("style:page-layout-properties", {
-      "fo:page-width": emuToLength(size.width),
-      "fo:page-height": emuToLength(size.height),
-    }),
-  ]);
-  const pages = (options.slides ?? []).map((slide, index) =>
+  const pageLayouts = options.pageLayouts?.length
+    ? options.pageLayouts
+    : [{ name: "PM1", size: options.size ?? { width: size.width, height: size.height } }];
+  const pageLayout = pageLayouts.map((layout) => pageLayoutXml(layout, size)).join("");
+  const masterPages = masterPagesXml(
+    masterNames,
+    options.masters ?? [],
+    pageLayouts[0]?.name ?? "PM1",
+    styles,
+    images,
+    mediaFiles,
+    embeddedObjectPool,
+    charts,
+  );
+  const pages = slides.map((slide, index) =>
     slideXml(
       slide,
       index + 1,
@@ -132,7 +291,7 @@ function generateOdpPackage(options: OdpPresentationOptions): Uint8Array {
   );
   const files: OdfPackageFiles = {
     "content.xml": contentXml(pages.join(""), styles),
-    "styles.xml": stylesXml(pageLayout),
+    "styles.xml": stylesXml(pageLayout, masterPages, graphicStyleResourcesXml(graphicResources)),
     "meta.xml": metaXml(options),
   };
   const mediaTypes: Record<string, string> = Object.fromEntries(
@@ -150,6 +309,7 @@ function generateOdpPackage(options: OdpPresentationOptions): Uint8Array {
   }
   for (const member of packageMembers ?? []) addPackageFile(files, member);
   for (const image of images) files[image.path] = image.data;
+  for (const file of graphicStyleFiles(graphicResources)) files[file.path] = file.data;
   for (const media of mediaFiles) files[media.path] = media.data;
   for (const chart of charts)
     Object.assign(files, chartSubdocumentFiles(`${chart.path}/`, chart.chart));
@@ -264,14 +424,23 @@ function parseOdpPackage(data: Uint8Array): OdpPresentationOptions {
   const { files, binaries, manifest } = readOcfSync(data, [MIME, TEMPLATE_MIME]);
   const content = readXml(files, "content.xml");
   const body = childNamed(childNamed(content, "office:body"), "office:presentation");
+  if (!body) {
+    throw new OdpParseError(
+      "content.xml: /office:document-content/office:body/office:presentation: required presentation body is missing",
+      "content.xml",
+      "/office:document-content/office:body/office:presentation",
+      "office:presentation",
+      "missing-required-element",
+    );
+  }
   const stylesDocument = files["styles.xml"] ? readXml(files, "styles.xml") : undefined;
-  const pageLayout = childNamed(
-    childNamed(childNamed(stylesDocument, "office:automatic-styles"), "style:page-layout"),
-    "style:page-layout-properties",
-  );
-  const width = lengthToEmu(attributeString(pageLayout, "fo:page-width"));
-  const height = lengthToEmu(attributeString(pageLayout, "fo:page-height"));
-  const graphicStyles = parseGraphicStyles(childNamed(content, "office:automatic-styles"));
+  const pageLayouts = parsePageLayouts(stylesDocument);
+  const masterStyles = childNamed(stylesDocument, "office:master-styles");
+  const firstMaster = childNamed(masterStyles, "style:master-page");
+  const firstLayoutName = attributeString(firstMaster, "style:page-layout-name");
+  const firstPageLayout =
+    pageLayouts.find((layout) => layout.name === firstLayoutName) ?? pageLayouts[0];
+  const size = firstPageLayout?.size;
   const chartPool = parseEmbeddedCharts(manifest, files, binaries, files["styles.xml"]);
   const embeddedObjects = embeddedObjectPool(manifest, files, binaries, chartPool);
   const manifestMediaTypes = new Map(
@@ -280,15 +449,98 @@ function parseOdpPackage(data: Uint8Array): OdpPresentationOptions {
   const usedBinaryPaths = new Set<string>();
   validateEmbeddedObjectBodies(body, binaries, chartPool, embeddedObjects);
   const nextEmbeddedShapeId = { value: 1 };
-  const styleResources = parseStyleResources(childNamed(content, "office:automatic-styles"));
+  const contentAutomaticStyles = childNamed(content, "office:automatic-styles");
+  const stylesAutomaticStyles = childNamed(stylesDocument, "office:automatic-styles");
+  const commonStyles = childNamed(stylesDocument, "office:styles");
+  const graphicResources = parseGraphicStyleResources(
+    [contentAutomaticStyles, stylesAutomaticStyles, commonStyles],
+    binaries,
+  );
+  const styleResources = [
+    ...parseStyleResources(contentAutomaticStyles),
+    ...parseStyleResources(stylesAutomaticStyles),
+    ...parseStyleResources(commonStyles),
+  ]
+    .filter(
+      (resource, index, resources) =>
+        resources.findIndex(
+          (candidate) => candidate.name === resource.name && candidate.family === resource.family,
+        ) === index,
+    )
+    .filter((resource) => resource.family !== "graphic");
+  const commonGraphicStyles = parseGraphicStyles(commonStyles, "graphic", graphicResources);
+  const stylesGraphicStyles = parseGraphicStyles(
+    stylesAutomaticStyles,
+    "graphic",
+    graphicResources,
+    commonGraphicStyles,
+  );
+  const graphicStyles = new Map([
+    ...commonGraphicStyles,
+    ...stylesGraphicStyles,
+    ...parseGraphicStyles(
+      contentAutomaticStyles,
+      "graphic",
+      graphicResources,
+      new Map([...commonGraphicStyles, ...stylesGraphicStyles]),
+    ),
+  ]);
+  const textStyles = new Map([
+    ...parseTextStyles(contentAutomaticStyles),
+    ...parseTextStyles(stylesAutomaticStyles),
+    ...parseTextStyles(commonStyles),
+  ]);
+  const tableStyles = parseTableStyles(contentAutomaticStyles, stylesAutomaticStyles, commonStyles);
+  const masterStyleResources = [
+    ...parseStyleResources(contentAutomaticStyles),
+    ...parseStyleResources(stylesAutomaticStyles),
+    ...parseStyleResources(commonStyles),
+  ];
+  const masters = childrenNamed(masterStyles, "style:master-page").flatMap((master) => {
+    const name = attributeString(master, "style:name");
+    if (name === undefined) return [];
+    const children = parseMasterChildren(
+      master,
+      textStyles,
+      tableStyles,
+      binaries,
+      files,
+      graphicStyles,
+      chartPool,
+      usedBinaryPaths,
+      embeddedObjects,
+      manifestMediaTypes,
+      nextEmbeddedShapeId,
+      masterStyleResources,
+    );
+    if (childNamed(master, "loext:theme")) {
+      throw new OdpParseError(
+        "styles.xml: ODF master theme extension has no ODF 1.3 canonical mapping",
+        "styles.xml",
+        "/office:document-styles/office:master-styles/style:master-page/loext:theme",
+        "loext:theme",
+        "unsupported-odf-theme",
+      );
+    }
+    return [
+      {
+        name,
+        ...(attributeString(master, "style:page-layout-name")
+          ? { pageLayoutName: attributeString(master, "style:page-layout-name") }
+          : {}),
+        ...(children.length > 0 ? { children } : {}),
+        ...parseMasterHeaderFooter(master, textStyles),
+      },
+    ];
+  });
   const result = {
     ...parseMeta(files),
-    ...(width && height ? { size: { width, height } } : {}),
+    ...(size ? { size } : {}),
     slides: childrenNamed(body, "draw:page").map((page) =>
       parseSlide(
         page,
-        parseTextStyles(childNamed(content, "office:automatic-styles")),
-        parseTableStyles(childNamed(content, "office:automatic-styles")),
+        textStyles,
+        tableStyles,
         binaries,
         files,
         graphicStyles,
@@ -311,6 +563,8 @@ function parseOdpPackage(data: Uint8Array): OdpPresentationOptions {
   );
   return {
     ...result,
+    ...(masters.length > 0 ? { masters } : {}),
+    ...(pageLayouts.length > 0 ? { pageLayouts } : {}),
     ...(hasOcfManifestOptions(manifest) ? { packageManifest: manifest } : {}),
     ...(packageMembers.length > 0 ? { packageMembers } : {}),
     ...(embeddedObjects.size > 0 ? { embeddedObjects: [...embeddedObjects.values()] } : {}),
@@ -326,9 +580,9 @@ function validateEmbeddedObjectBodies(
 ): void {
   const references = (body ? descendantElements(body) : []).flatMap((element) =>
     element.name === "draw:object-ole"
-      ? [attributeString(element, "xlink:href")?.replace(/^\.\//, "").replace(/^\//, "")]
+      ? [normalizeEmbeddedObjectPath(attributeString(element, "xlink:href") ?? "")]
       : element.name === "draw:object"
-        ? [attributeString(element, "xlink:href")?.replace(/^\.\//, "").replace(/^\//, "")]
+        ? [normalizeEmbeddedObjectPath(attributeString(element, "xlink:href") ?? "")]
         : [],
   );
   for (const href of references) {
@@ -356,14 +610,6 @@ function embeddedObjectPool(
   binaries: Record<string, Uint8Array>,
   chartPool: Map<string, ChartSpaceOptions>,
 ): OdpEmbeddedObjectPool {
-  const normalizePath = (path: string): string =>
-    decodeURIComponent(
-      path
-        .replace(/^\.\//, "")
-        .replace(/^\//, "")
-        .replace(/\/$/, "")
-        .replace(/%(?![0-9A-Fa-f]{2})/g, "%25"),
-    );
   const mediaTypes = new Map(
     manifest.entries
       .filter((entry) => entry.fullPath.endsWith("/") && entry.fullPath !== "/")
@@ -371,12 +617,12 @@ function embeddedObjectPool(
   );
   const pool: OdpEmbeddedObjectPool = new Map();
   for (const [rawPath, mediaType] of mediaTypes) {
-    const path = normalizePath(rawPath);
+    const path = normalizeEmbeddedObjectPath(rawPath, "META-INF/manifest.xml");
     if (chartPool.has(path) || files[`${rawPath}/content.xml`] === undefined) continue;
     pool.set(path, {
       path,
       ...(mediaType === undefined ? {} : { mediaType }),
-      members: objectMembers(path, files, binaries),
+      members: objectMembers(rawPath, files, binaries),
     });
   }
   return pool;
@@ -438,8 +684,298 @@ export function contentXml(pages: string, styles: string[]): string {
   )}</office:automatic-styles><office:body><office:presentation>${pages}</office:presentation></office:body></office:document-content>`;
 }
 
-export function stylesXml(pageLayout: string): string {
-  return `<?xml version="1.0" encoding="UTF-8"?><office:document-styles ${NAMESPACES} office:version="1.3"><office:styles/><office:automatic-styles>${pageLayout}</office:automatic-styles><office:master-styles><style:master-page style:name="Default" style:page-layout-name="PM1"/></office:master-styles></office:document-styles>`;
+export function stylesXml(
+  pageLayout: string,
+  masterPages: readonly string[] = [
+    '<style:master-page style:name="Default" style:page-layout-name="PM1"/>',
+  ],
+  graphicResources: readonly string[] = [],
+): string {
+  const commonStyles = graphicResources.length
+    ? `<office:styles>${graphicResources.join("")}</office:styles>`
+    : "<office:styles/>";
+  return `<?xml version="1.0" encoding="UTF-8"?><office:document-styles ${NAMESPACES} office:version="1.3">${commonStyles}<office:automatic-styles>${pageLayout}</office:automatic-styles><office:master-styles>${masterPages.join("")}</office:master-styles></office:document-styles>`;
+}
+
+function pageLayoutXml(
+  layout: OdpPageLayoutOptions,
+  fallback: { width: number; height: number },
+): string {
+  const size = layout.size === undefined ? fallback : normalizeSize(layout.size);
+  const properties: StylePropertyOptions = {
+    ...(layout.pageLayoutProperties ?? {
+      name: "style:page-layout-properties" as const,
+      attributes: {},
+    }),
+    attributes: {
+      ...layout.pageLayoutProperties?.attributes,
+      "fo:page-width": size.width,
+      "fo:page-height": size.height,
+    },
+  };
+  return xmlElement("style:page-layout", { "style:name": layout.name }, [
+    stylePropertyXml(properties, "emu"),
+  ]);
+}
+
+function masterPagesXml(
+  names: readonly string[],
+  masters: readonly OdpMasterDefinition[],
+  defaultPageLayoutName: string,
+  styles: string[],
+  images: OdpImage[],
+  mediaFiles: OdpImage[],
+  embeddedObjects: OdpEmbeddedObjectPool,
+  charts: OdpChart[],
+): string[] {
+  return names.map((name) => {
+    const master = masters.find((candidate) => candidate.name === name);
+    if (master?.theme) {
+      throw new OdpGenerateError(
+        `ODF 1.3 has no master theme element for "${name}"`,
+        "styles.xml",
+        `/office:document-styles/office:master-styles/style:master-page[@style:name="${name}"]`,
+        "theme",
+        "unsupported-odf-theme",
+      );
+    }
+    const children = (master?.children ?? []).map((child) => {
+      if ("placeholder" in child || "placeholderShape" in child) {
+        throw new OdpGenerateError(
+          `ODP master placeholder cannot be generated from a PPTX-only placeholder reference: ${name}`,
+          "styles.xml",
+          `/office:document-styles/office:master-styles/style:master-page[@style:name="${name}"]`,
+          "placeholder",
+          "unsupported-master-placeholder",
+        );
+      }
+      return slideChildXml(child, styles, images, mediaFiles, embeddedObjects, charts);
+    });
+    return xmlElement(
+      "style:master-page",
+      {
+        "style:name": name,
+        "style:page-layout-name": master?.pageLayoutName ?? defaultPageLayoutName,
+      },
+      [...masterHeaderFooterXml(master, styles), ...children],
+    );
+  });
+}
+
+function masterHeaderFooterXml(
+  master: OdpMasterDefinition | undefined,
+  styles: string[],
+): string[] {
+  if (!master) return [];
+  const regions: [string, OdpMasterHeaderFooterOptions | undefined][] = [
+    ["header", master.header],
+    ["header-left", master.headerLeft],
+    ["header-first", master.headerFirst],
+    ["footer", master.footer],
+    ["footer-left", master.footerLeft],
+    ["footer-first", master.footerFirst],
+  ];
+  return regions.flatMap(([name, value]) => {
+    if (value === undefined) return [];
+    return [
+      xmlElement(
+        `style:${name}`,
+        { "style:display": value.display },
+        value.paragraphs === undefined ? [] : textBodyXml({ paragraphs: value.paragraphs }, styles),
+      ),
+    ];
+  });
+}
+
+function parseMasterChildren(
+  master: Element,
+  textStyles: Map<string, TextProperties>,
+  tableStyles: TableStyles,
+  binaries: Record<string, Uint8Array>,
+  files: OdfPackageFiles,
+  graphicStyles: Map<string, GraphicStyle>,
+  chartPool: Map<string, ChartSpaceOptions>,
+  usedBinaryPaths: Set<string>,
+  embeddedObjects: OdpEmbeddedObjectPool,
+  manifestMediaTypes: Map<string, string | undefined>,
+  nextEmbeddedShapeId: { value: number },
+  styleResources: StyleResourceOptions[],
+): NonNullable<MasterDefinition["children"]> {
+  const page: Element = {
+    ...master,
+    name: "draw:page",
+    elements: (master.elements ?? []).filter(
+      (child) =>
+        child.name !== "loext:theme" &&
+        child.name !== "style:header" &&
+        child.name !== "style:header-left" &&
+        child.name !== "style:header-first" &&
+        child.name !== "style:footer" &&
+        child.name !== "style:footer-left" &&
+        child.name !== "style:footer-first",
+    ),
+  };
+  try {
+    return (
+      parseSlide(
+        page,
+        textStyles,
+        tableStyles,
+        binaries,
+        files,
+        graphicStyles,
+        chartPool,
+        usedBinaryPaths,
+        embeddedObjects,
+        manifestMediaTypes,
+        nextEmbeddedShapeId,
+        styleResources,
+      ).children ?? []
+    );
+  } catch (error) {
+    if (!(error instanceof OdpParseError) || error.part !== "content.xml") throw error;
+    const path = error.path
+      .replace(
+        "/office:document-content/office:body/office:presentation",
+        "/office:document-styles/office:master-styles",
+      )
+      .replace("/draw:page", "/style:master-page");
+    throw new OdpParseError(
+      error.message.replace("content.xml:", "styles.xml:"),
+      "styles.xml",
+      path,
+      error.elementName,
+      error.reason,
+      { cause: error },
+    );
+  }
+}
+
+function parseMasterHeaderFooter(
+  master: Element,
+  textStyles: Map<string, TextProperties>,
+): Pick<
+  OdpMasterDefinition,
+  "header" | "headerLeft" | "headerFirst" | "footer" | "footerLeft" | "footerFirst"
+> {
+  const result: Pick<
+    OdpMasterDefinition,
+    "header" | "headerLeft" | "headerFirst" | "footer" | "footerLeft" | "footerFirst"
+  > = {};
+  const regions = [
+    ["style:header", "header"],
+    ["style:header-left", "headerLeft"],
+    ["style:header-first", "headerFirst"],
+    ["style:footer", "footer"],
+    ["style:footer-left", "footerLeft"],
+    ["style:footer-first", "footerFirst"],
+  ] as const;
+  for (const [elementName, optionName] of regions) {
+    const element = childNamed(master, elementName);
+    if (!element) continue;
+    const path = `/office:document-styles/office:master-styles/style:master-page/${elementName}`;
+    const unsupported = Object.keys(element.attributes ?? {}).find(
+      (attribute) => attribute !== "style:display",
+    );
+    if (unsupported) throw unsupportedMasterHeaderFooter(element, path, unsupported);
+    const children = (element.elements ?? []).filter((child) => child.type === "element");
+    const unsupportedChild = children.find((child) => child.name !== "text:p");
+    if (unsupportedChild)
+      throw unsupportedMasterHeaderFooter(element, path, unsupportedChild.name!);
+    result[optionName] = {
+      ...(attributeBoolean(element, "style:display") === undefined
+        ? {}
+        : { display: attributeBoolean(element, "style:display") }),
+      ...(children.length > 0
+        ? { paragraphs: children.map((child) => parseParagraph(child, textStyles)) }
+        : {}),
+    };
+  }
+  return result;
+}
+
+function attributeBoolean(element: Element, name: string): boolean | undefined {
+  const value = attributeString(element, name);
+  if (value === undefined) return undefined;
+  if (value === "true" || value === "1") return true;
+  if (value === "false" || value === "0") return false;
+  throw unsupportedMasterHeaderFooter(
+    element,
+    `/office:document-styles/office:master-styles/style:master-page/${element.name}`,
+    name,
+  );
+}
+
+function unsupportedMasterHeaderFooter(
+  element: Element,
+  path: string,
+  name: string,
+): OdpParseError {
+  return new OdpParseError(
+    `styles.xml: ${path}: unsupported master header/footer member ${name}`,
+    "styles.xml",
+    `${path}/${name}`,
+    element.name ?? "style:header",
+    "unsupported-master-header-footer",
+  );
+}
+
+function parsePageLayouts(stylesDocument: Element | undefined): OdpPageLayoutOptions[] {
+  return childrenNamed(
+    childNamed(stylesDocument, "office:automatic-styles"),
+    "style:page-layout",
+  ).flatMap((layout) => {
+    const name = attributeString(layout, "style:name");
+    if (name === undefined) return [];
+    const properties = childNamed(layout, "style:page-layout-properties");
+    const width = lengthToEmu(attributeString(properties, "fo:page-width"));
+    const height = lengthToEmu(attributeString(properties, "fo:page-height"));
+    const pageLayoutProperties = parsePageLayoutProperties(properties);
+    if (width === undefined && height === undefined)
+      return [{ name, ...(pageLayoutProperties ? { pageLayoutProperties } : {}) }];
+    if (width === undefined || height === undefined) {
+      throw new OdpParseError(
+        `styles.xml: page layout "${name}" has only one page dimension`,
+        "styles.xml",
+        `/office:document-styles/office:automatic-styles/style:page-layout[@style:name="${name}"]/style:page-layout-properties`,
+        "style:page-layout-properties",
+        "incomplete-page-layout",
+      );
+    }
+    return [
+      {
+        name,
+        size: { width, height },
+        ...(pageLayoutProperties ? { pageLayoutProperties } : {}),
+      },
+    ];
+  });
+}
+
+function parsePageLayoutProperties(
+  element: Element | undefined,
+): OdpPageLayoutOptions["pageLayoutProperties"] {
+  if (element === undefined) return undefined;
+  const parsed = parseStyleProperty(element, { family: "page-layout", scale: "emu" });
+  if (!parsed.ok) {
+    throw new OdpParseError(
+      `styles.xml: ${parsed.reason}`,
+      "styles.xml",
+      "/office:document-styles/office:automatic-styles/style:page-layout/style:page-layout-properties",
+      parsed.attributeName ?? parsed.elementName,
+      "invalid-page-layout-properties",
+    );
+  }
+  if (parsed.value.name !== "style:page-layout-properties") {
+    throw new OdpParseError(
+      "styles.xml: page layout property has the wrong element name",
+      "styles.xml",
+      "/office:document-styles/office:automatic-styles/style:page-layout/style:page-layout-properties",
+      parsed.value.name,
+      "invalid-page-layout-properties",
+    );
+  }
+  return parsed.value;
 }
 
 export function normalizeSize(size: PresentationOptions["size"]): {

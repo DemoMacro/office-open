@@ -21,6 +21,7 @@ const CORPUS_DIRS = [
   "Open-XML-SDK",
   "calamine",
   "closedxml",
+  "markitdown",
   "oletools",
   "pandoc",
   "python-pptx",

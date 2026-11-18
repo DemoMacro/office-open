@@ -2,7 +2,13 @@ import { strFromU8, unzipSync } from "@office-open/core";
 import type { FormControlOptions, OfficeFormsOptions } from "@office-open/core";
 import type { DocumentOptions, TableOptions } from "@office-open/docx";
 import type { ParagraphOptions } from "@office-open/docx";
-import { CHART_MIME, generateOcf, ODF_NAMESPACES, readOcf } from "@office-open/odf";
+import {
+  CHART_MIME,
+  generateOcf,
+  ODF_NAMESPACES,
+  readOcf,
+  type StyleColumnsOptions,
+} from "@office-open/odf";
 import { describe, expect, it } from "vite-plus/test";
 
 import {
@@ -12,6 +18,7 @@ import {
   parseDocument,
   type OdtDocumentOptions,
 } from "./index";
+import { pageLayoutColumnsXml } from "./master-pages";
 import { trackRevisionBlocks } from "./paragraph";
 
 const FORM_NAMESPACE = 'xmlns:form="urn:oasis:names:tc:opendocument:xmlns:form:1.0"';
@@ -67,6 +74,265 @@ async function parseBodyError(body: string, name: string, reason?: string): Prom
 }
 
 describe("ODT canonical projection", () => {
+  it("projects primitive path geometry into DocumentOptions", async () => {
+    const parsed = await parseDocument(
+      odtPackage(
+        '<text:p><draw:path svg:x="1cm" svg:y="1cm" svg:width="2cm" svg:height="1cm" svg:viewBox="0 0 2 1" svg:d="M 0 0 L 2 0 L 2 1 Z"/></text:p>',
+      ),
+    );
+    const shape = sectionParagraph(parsed.sections[0]?.children?.[0])?.children?.[0];
+    expect(shape).toMatchObject({
+      wpsShape: {
+        customGeometry: {
+          pathList: [
+            {
+              commands: [
+                { command: "moveTo", point: { x: "0", y: "0" } },
+                { command: "lineTo", point: { x: "720000", y: "0" } },
+                { command: "lineTo", point: { x: "720000", y: "360000" } },
+                { command: "close" },
+              ],
+            },
+          ],
+        },
+      },
+    });
+    const reread = await parseDocument(await generateDocument(parsed));
+    expect(reread.sections[0]?.children).toEqual(parsed.sections[0]?.children);
+  });
+
+  it("projects and regenerates graphic gradient fills", async () => {
+    const source = generateOcf("application/vnd.oasis.opendocument.text", {
+      "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES} ${FORM_NAMESPACE}><office:automatic-styles><style:style style:name="Gradient" style:family="graphic"><style:graphic-properties draw:fill="gradient" draw:fill-gradient-name="Blue"/></style:style></office:automatic-styles><office:body><office:text><text:p><draw:rect draw:style-name="Gradient" svg:x="1cm" svg:y="1cm" svg:width="4cm" svg:height="2cm"/></text:p></office:text></office:body></office:document-content>`,
+      "styles.xml": `<?xml version="1.0"?><office:document-styles ${ODF_NAMESPACES}><office:styles><draw:gradient draw:name="Blue" draw:style="linear" draw:angle="900" draw:start-color="#112233" draw:end-color="#AABBCC"/></office:styles></office:document-styles>`,
+    });
+    const parsed = await parseDocument(source);
+    expect(parsed.sections[0]?.children?.[0]).toMatchObject({
+      paragraph: {
+        children: [
+          {
+            wpsShape: {
+              fill: {
+                type: "gradient",
+                angle: 900,
+                stops: [
+                  { position: 0, color: "112233" },
+                  { position: 100, color: "AABBCC" },
+                ],
+              },
+            },
+          },
+        ],
+      },
+    });
+    const generated = await generateDocument(parsed);
+    const files = (await readOcf(generated, "application/vnd.oasis.opendocument.text")).files;
+    expect(files["styles.xml"]).toContain('draw:gradient draw:name="gradient-1"');
+    expect(files["content.xml"]).toContain('draw:fill="gradient"');
+    const reread = await parseDocument(generated);
+    expect(reread.sections[0]?.children?.[0]).toMatchObject({
+      paragraph: { children: [{ wpsShape: { fill: { type: "gradient" } } }] },
+    });
+  });
+
+  it("inherits graphic style properties from common styles", async () => {
+    const source = generateOcf("application/vnd.oasis.opendocument.text", {
+      "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES} ${FORM_NAMESPACE}><office:automatic-styles><style:style style:name="Child" style:family="graphic" style:parent-style-name="Parent"><style:graphic-properties draw:stroke="none"/></style:style></office:automatic-styles><office:body><office:text><text:p><draw:rect draw:style-name="Child" svg:width="1cm" svg:height="1cm"/></text:p></office:text></office:body></office:document-content>`,
+      "styles.xml": `<?xml version="1.0"?><office:document-styles ${ODF_NAMESPACES}><office:styles><style:style style:name="Parent" style:family="graphic"><style:graphic-properties draw:fill="solid" draw:fill-color="#112233"/></style:style></office:styles></office:document-styles>`,
+    });
+    const parsed = await parseDocument(source);
+    expect(parsed.sections[0]?.children?.[0]).toMatchObject({
+      paragraph: { children: [{ wpsShape: { fill: { type: "solid", color: "112233" } } }] },
+    });
+  });
+
+  it("projects floating picture anchors through the canonical picture model", async () => {
+    const source = generateOcf("application/vnd.oasis.opendocument.text", {
+      "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES} ${FORM_NAMESPACE}><office:automatic-styles/><office:body><office:text><text:p><draw:frame text:anchor-type="page" draw:transform="translate(1cm 2cm) rotate(15deg)" svg:x="1cm" svg:y="2cm" svg:width="4cm" svg:height="3cm" draw:name="Logo"><draw:image xlink:href="Pictures/logo.png"/></draw:frame></text:p></office:text></office:body></office:document-content>`,
+      "styles.xml": `<?xml version="1.0"?><office:document-styles ${ODF_NAMESPACES}><office:styles/></office:document-styles>`,
+      "Pictures/logo.png": new Uint8Array([1, 2, 3]),
+    });
+    const parsed = await parseDocument(source);
+    const picture = sectionParagraph(parsed.sections[0]?.children?.[0])?.children?.[0];
+    expect(picture).toMatchObject({
+      picture: {
+        floating: {
+          horizontalPosition: { relative: "page", offset: 360000 },
+          verticalPosition: { relative: "page", offset: 720000 },
+        },
+        transformation: { offset: { x: 720000, y: 1440000 }, rotation: 15 },
+      },
+    });
+
+    const generated = await generateDocument(parsed);
+    const files = (await readOcf(generated, "application/vnd.oasis.opendocument.text")).files;
+    expect(files["content.xml"]).toContain('text:anchor-type="page"');
+    expect(files["content.xml"]).toContain('draw:transform="rotate(15deg)"');
+    const reread = await parseDocument(generated);
+    expect(sectionParagraph(reread.sections[0]?.children?.[0])?.children?.[0]).toMatchObject({
+      picture: {
+        floating: { verticalPosition: { relative: "page" } },
+        transformation: { rotation: 15 },
+      },
+    });
+  });
+
+  it("round-trips grouped shapes and their metadata", async () => {
+    const source = odtPackage(
+      '<text:p><draw:g draw:name="Group" svg:x="1cm" svg:y="2cm" svg:width="4cm" svg:height="3cm"><svg:title>Group title</svg:title><svg:desc>Group description</svg:desc><draw:rect draw:name="Child" svg:x="0.5cm" svg:y="0.25cm" svg:width="2cm" svg:height="1cm"><text:p>Grouped text</text:p></draw:rect></draw:g></text:p>',
+    );
+    const parsed = await parseDocument(source);
+    expect(parsed.sections[0]?.children?.[0]).toMatchObject({
+      paragraph: {
+        children: [
+          {
+            wpgGroup: {
+              transformation: {
+                offset: { x: 360000, y: 720000 },
+                width: 1440000,
+                height: 1080000,
+              },
+              altText: {
+                name: "Group",
+                title: "Group title",
+                description: "Group description",
+              },
+              children: [
+                {
+                  type: "wps",
+                  data: {
+                    children: [{ paragraph: { text: "Grouped text" } }],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    });
+    const regenerated = await parseDocument(await generateDocument(parsed));
+    expect(regenerated.sections[0]?.children).toEqual(parsed.sections[0]?.children);
+  });
+
+  it("projects simple group transforms into the canonical group model", async () => {
+    const source = odtPackage(
+      '<text:p><draw:g draw:transform="translate(1cm 2cm) rotate(15deg)" svg:x="1cm" svg:y="1cm" svg:width="2cm" svg:height="2cm"><draw:rect svg:x="0cm" svg:y="0cm" svg:width="1cm" svg:height="1cm"/></draw:g></text:p>',
+    );
+
+    const parsed = await parseDocument(source);
+    expect(parsed.sections[0]?.children?.[0]).toMatchObject({
+      paragraph: {
+        children: [
+          {
+            wpgGroup: {
+              transformation: {
+                offset: { x: 720000, y: 1080000 },
+                rotation: 15,
+              },
+            },
+          },
+        ],
+      },
+    });
+    const regenerated = await parseDocument(await generateDocument(parsed));
+    expect(regenerated.sections[0]?.children).toEqual(parsed.sections[0]?.children);
+  });
+
+  it("generates textbox section children instead of dropping them", async () => {
+    const generated = await generateDocument({
+      sections: [
+        {
+          children: [
+            {
+              textbox: {
+                text: "Text box",
+                children: [{ paragraph: "Nested paragraph" }],
+              },
+            },
+          ],
+        },
+      ],
+    });
+    const content = strFromU8(unzipSync(generated)["content.xml"]!);
+    expect(content).toContain("<draw:text-box>");
+    expect(content).toContain("Nested paragraph");
+    const parsed = await parseDocument(generated);
+    expect(parsed.sections[0]?.children?.[0]).toMatchObject({
+      paragraph: {
+        children: [{ wpsShape: { children: [{ paragraph: { text: "Nested paragraph" } }] } }],
+      },
+    });
+  });
+
+  it("round-trips canonical paragraphs inside custom shapes", async () => {
+    const options: DocumentOptions = {
+      sections: [
+        {
+          children: [
+            {
+              paragraph: {
+                children: [
+                  {
+                    wpsShape: {
+                      children: [{ paragraph: { text: "Shape paragraph" } }],
+                      transformation: { width: 914400, height: 457200 },
+                      altText: { name: "Shape", description: "Accessible shape" },
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      ],
+    };
+    const generated = await generateDocument(options);
+    const content = strFromU8(unzipSync(generated)["content.xml"]!);
+    expect(content).toContain("<text:p>Shape paragraph</text:p>");
+    expect(content).toContain("<svg:desc>Accessible shape</svg:desc>");
+    const parsed = await parseDocument(generated);
+    expect(parsed.sections[0]?.children?.[0]).toMatchObject({
+      paragraph: {
+        children: [
+          {
+            wpsShape: {
+              children: [{ paragraph: { text: "Shape paragraph" } }],
+              altText: { name: "Shape", description: "Accessible shape" },
+            },
+          },
+        ],
+      },
+    });
+  });
+
+  it("rejects a content document without its required text body", async () => {
+    const source = generateOcf("application/vnd.oasis.opendocument.text", {
+      "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body/></office:document-content>`,
+    });
+
+    await expect(parseDocument(source)).rejects.toMatchObject({
+      name: "OdtParseError",
+      part: "content.xml",
+      elementName: "office:text",
+      reason: "missing-required-element",
+    });
+  });
+
+  it("preserves list-header paragraphs without applying list numbering", async () => {
+    const parsed = await parseDocument(
+      odtPackage(
+        "<text:list><text:list-header><text:p>Heading</text:p></text:list-header><text:list-item><text:p>Item</text:p></text:list-item></text:list>",
+      ),
+    );
+    const children = parsed.sections[0]?.children ?? [];
+
+    expect(children).toHaveLength(2);
+    expect(sectionParagraph(children[0])).toMatchObject({ text: "Heading" });
+    expect(sectionParagraph(children[0])?.bullet).toBeUndefined();
+    expect(sectionParagraph(children[0])?.numbering).toBeUndefined();
+    expect(sectionParagraph(children[1])).toMatchObject({ text: "Item" });
+  });
+
   it("writes mandatory label alignment for generated list levels", async () => {
     const options = {
       numbering: {
@@ -134,6 +400,49 @@ describe("ODT canonical projection", () => {
     };
     const parsed = await parseDocument(await generateDocument(options));
     expect(parsed.styles?.paragraphStyles?.[0]).toEqual(options.styles?.paragraphStyles?.[0]);
+  });
+
+  it("resolves relative common-style font sizes against the parent style", async () => {
+    const source = generateOcf("application/vnd.oasis.opendocument.text", {
+      "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:text/></office:body></office:document-content>`,
+      "styles.xml": `<?xml version="1.0"?><office:document-styles ${ODF_NAMESPACES}><office:styles><style:default-style style:family="paragraph"><style:text-properties fo:font-size="12pt"/></style:default-style><style:style style:name="Heading" style:family="paragraph"><style:text-properties fo:font-size="14pt"/></style:style><style:style style:name="Heading_20_1" style:family="paragraph" style:parent-style-name="Heading"><style:text-properties fo:font-size="115%" fo:font-weight="bold"/></style:style></office:styles></office:document-styles>`,
+    });
+    const parsed = await parseDocument(source);
+    expect(
+      parsed.styles?.paragraphStyles?.find((style) => style.id === "Heading_20_1")?.run,
+    ).toEqual({ bold: true, size: 16.1 });
+    const regenerated = await parseDocument(await generateDocument(parsed));
+    expect(
+      regenerated.styles?.paragraphStyles?.find((style) => style.id === "Heading_20_1")?.run?.size,
+    ).toBe(16.1);
+  });
+
+  it("applies common style parents to automatic styles", async () => {
+    const source = generateOcf("application/vnd.oasis.opendocument.text", {
+      "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES} ${FORM_NAMESPACE}><office:automatic-styles><style:style style:name="P1" style:family="paragraph" style:parent-style-name="Standard"/><style:style style:name="C1" style:family="text" style:parent-style-name="Emphasis"/></office:automatic-styles><office:body><office:text><text:p text:style-name="P1"><text:span text:style-name="C1">Inherited</text:span></text:p></office:text></office:body></office:document-content>`,
+      "styles.xml": `<?xml version="1.0"?><office:document-styles ${ODF_NAMESPACES}><office:styles><style:style style:name="Standard" style:family="paragraph"><style:paragraph-properties fo:text-align="center"/></style:style><style:style style:name="Emphasis" style:family="text"><style:text-properties fo:font-style="italic"/></style:style></office:styles></office:document-styles>`,
+    });
+    const parsed = await parseDocument(source);
+    const paragraph = sectionParagraph(parsed.sections[0]?.children?.[0]);
+    expect(paragraph).toMatchObject({ alignment: "center" });
+    expect(paragraph?.children?.[0]).toMatchObject({ text: "Inherited", italic: true });
+  });
+
+  it("keeps modification date and time fields distinct", async () => {
+    const parsed = await parseDocument(
+      odtPackage(
+        "<text:p><text:modification-date>2026-01-02</text:modification-date><text:modification-time>03:04:05</text:modification-time></text:p>",
+      ),
+    );
+    const paragraph = sectionParagraph(parsed.sections[0]?.children?.[0]);
+    expect(paragraph?.children).toEqual([
+      { simpleField: { instruction: "SAVEDATE", cachedValue: "2026-01-02" } },
+      { simpleField: { instruction: "SAVETIME", cachedValue: "03:04:05" } },
+    ]);
+    const regenerated = await parseDocument(await generateDocument(parsed));
+    expect(sectionParagraph(regenerated.sections[0]?.children?.[0])?.children).toEqual(
+      paragraph?.children,
+    );
   });
 
   it("rejects invalid packages with a structured error", async () => {
@@ -222,6 +531,34 @@ describe("ODT canonical projection", () => {
     });
   });
 
+  it("projects custom-shape transforms and floating anchors", async () => {
+    const parsed = await parseDocument(
+      odtPackage(
+        '<text:p><draw:custom-shape text:anchor-type="page" draw:transform="translate(1cm 2cm) rotate(15deg)" svg:x="1cm" svg:y="2cm" svg:width="3cm" svg:height="4cm"><draw:enhanced-geometry draw:type="rectangle"/></draw:custom-shape></text:p>',
+      ),
+    );
+    const shape = sectionParagraph(parsed.sections[0]?.children[0])?.children?.[0];
+    expect(shape).toMatchObject({
+      wpsShape: {
+        floating: {
+          horizontalPosition: { relative: "page" },
+          verticalPosition: { relative: "page" },
+        },
+        transformation: {
+          offset: { x: 720000, y: 1440000 },
+          rotation: 15,
+        },
+      },
+    });
+    const reread = await parseDocument(await generateDocument(parsed));
+    expect(sectionParagraph(reread.sections[0]?.children[0])?.children?.[0]).toMatchObject({
+      wpsShape: {
+        transformation: { rotation: 15 },
+        floating: { verticalPosition: { relative: "page" } },
+      },
+    });
+  });
+
   it("escapes header field cached values", async () => {
     const options: DocumentOptions = {
       sections: [
@@ -243,6 +580,271 @@ describe("ODT canonical projection", () => {
       unzipSync(await generateDocument(options))["styles.xml"]!,
     );
     expect(styles).toContain("A&amp;B&lt;C&gt;");
+  });
+
+  it("round-trips formatted master header runs through DocumentOptions", async () => {
+    const options: DocumentOptions = {
+      sections: [
+        {
+          children: [],
+          headers: {
+            default: [{ paragraph: { children: [{ text: "Header", bold: true }] } }],
+          },
+        },
+      ],
+    };
+    const parsed = await parseDocument(await generateDocument(options));
+    expect(parsed.sections[0]?.headers?.default).toMatchObject([
+      { paragraph: { children: [{ text: "Header", bold: true }] } },
+    ]);
+    expect(await generateDocument(parsed)).toBeInstanceOf(Uint8Array);
+  });
+
+  it("maps ODF first and left header regions to canonical section slots", async () => {
+    const source = generateOcf("application/vnd.oasis.opendocument.text", {
+      "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:automatic-styles/><office:body><office:text/></office:body></office:document-content>`,
+      "styles.xml": `<?xml version="1.0"?><office:document-styles ${ODF_NAMESPACES}><office:styles/><office:automatic-styles/><office:master-styles><style:master-page style:name="Standard"><style:header-first><text:p>First page</text:p></style:header-first><style:header-left><text:p>Left page</text:p></style:header-left></style:master-page></office:master-styles></office:document-styles>`,
+    });
+    const parsed = await parseDocument(source);
+    expect(parsed.sections[0]?.headers).toEqual({
+      first: [{ paragraph: { text: "First page" } }],
+      even: [{ paragraph: { text: "Left page" } }],
+    });
+    const archive = await readOcf(
+      await generateDocument(parsed),
+      "application/vnd.oasis.opendocument.text",
+    );
+    expect(archive.files["styles.xml"]).toContain("style:header-first");
+    expect(archive.files["styles.xml"]).toContain("style:header-left");
+  });
+
+  it("uses the master page's referenced page layout", async () => {
+    const source = generateOcf("application/vnd.oasis.opendocument.text", {
+      "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:automatic-styles/><office:body><office:text><text:p>Body</text:p></office:text></office:body></office:document-content>`,
+      "styles.xml": `<?xml version="1.0"?><office:document-styles ${ODF_NAMESPACES}><office:styles/><office:automatic-styles><style:page-layout style:name="Wrong"><style:page-layout-properties fo:page-width="10cm" fo:page-height="10cm"/></style:page-layout><style:page-layout style:name="Right"><style:page-layout-properties fo:page-width="20cm" fo:page-height="30cm"/></style:page-layout></office:automatic-styles><office:master-styles><style:master-page style:name="Standard" style:page-layout-name="Right"/></office:master-styles></office:document-styles>`,
+    });
+    const parsed = await parseDocument(source);
+    expect(parsed.sections[0]?.properties?.pageSize).toMatchObject({
+      width: Math.round((20 * 360000) / 635),
+      height: Math.round((30 * 360000) / 635),
+    });
+  });
+
+  it("projects ODF page columns and writing mode into section properties", async () => {
+    const source = generateOcf("application/vnd.oasis.opendocument.text", {
+      "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:automatic-styles/><office:body><office:text><text:p>Body</text:p></office:text></office:body></office:document-content>`,
+      "styles.xml": `<?xml version="1.0"?><office:document-styles ${ODF_NAMESPACES}><office:styles/><office:automatic-styles><style:page-layout style:name="Columns"><style:page-layout-properties fo:page-width="21cm" fo:page-height="29.7cm" style:writing-mode="tb-rl"><style:columns fo:column-count="2" fo:column-gap="0.5cm"><style:column style:rel-width="1*"/><style:column style:rel-width="2*"/><style:column-sep style:style="solid" style:width="0.02cm" style:color="#112233"/></style:columns></style:page-layout-properties></style:page-layout></office:automatic-styles><office:master-styles><style:master-page style:name="Default" style:page-layout-name="Columns"/></office:master-styles></office:document-styles>`,
+    });
+
+    const parsed = await parseDocument(source);
+    expect(parsed.sections[0]?.properties?.columns).toMatchObject({
+      count: 2,
+      space: expect.any(Number),
+      separate: true,
+    });
+    expect(parsed.sections[0]?.properties?.textDirection).toBe("tbRl");
+    expect(parsed.pageLayouts?.[0]?.columns).toMatchObject({
+      attributes: { "fo:column-count": 2 },
+      columns: [
+        { attributes: { "style:rel-width": "1*" } },
+        { attributes: { "style:rel-width": "2*" } },
+      ],
+      separator: { attributes: { "style:color": "#112233" } },
+    });
+
+    const regenerated = await parseDocument(await generateDocument(parsed));
+    expect(regenerated.sections[0]?.properties?.columns).toMatchObject({
+      count: 2,
+      separate: true,
+    });
+    expect(regenerated.sections[0]?.properties?.textDirection).toBe("tbRl");
+    expect(regenerated.pageLayouts?.[0]?.columns).toMatchObject({
+      columns: [
+        { attributes: { "style:rel-width": "1*" } },
+        { attributes: { "style:rel-width": "2*" } },
+      ],
+      separator: { attributes: { "style:color": "#112233" } },
+    });
+  });
+
+  it("adds the required count when preserved page columns omit it", () => {
+    const preserved: StyleColumnsOptions = {
+      name: "style:columns",
+      attributes: {},
+      columns: [{ attributes: { "style:rel-width": "1*" } }],
+    };
+
+    expect(pageLayoutColumnsXml(undefined, preserved)).toContain('fo:column-count="1"');
+  });
+
+  it("preserves all page layouts and master-page bindings", async () => {
+    const source = generateOcf("application/vnd.oasis.opendocument.text", {
+      "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:automatic-styles/><office:body><office:text><text:p>Body</text:p></office:text></office:body></office:document-content>`,
+      "styles.xml": `<?xml version="1.0"?><office:document-styles ${ODF_NAMESPACES}><office:styles/><office:automatic-styles><style:page-layout style:name="Portrait"><style:page-layout-properties fo:page-width="21cm" fo:page-height="29.7cm" style:print-page-order="ltr"/></style:page-layout><style:page-layout style:name="Landscape"><style:page-layout-properties fo:page-width="29.7cm" fo:page-height="21cm" style:print-orientation="landscape"/></style:page-layout></office:automatic-styles><office:master-styles><style:master-page style:name="Default" style:page-layout-name="Portrait"><style:header><text:p>Portrait header</text:p></style:header></style:master-page><style:master-page style:name="Wide" style:page-layout-name="Landscape"><style:footer><text:p>Landscape footer</text:p></style:footer></style:master-page></office:master-styles></office:document-styles>`,
+    });
+
+    const parsed = await parseDocument(source);
+    expect(parsed.pageLayouts).toMatchObject([
+      {
+        name: "Portrait",
+        properties: { pageSize: { width: expect.any(Number) } },
+        pageLayoutProperties: { attributes: { "style:print-page-order": "ltr" } },
+      },
+      { name: "Landscape", properties: { pageSize: { orientation: "landscape" } } },
+    ]);
+    expect(parsed.masterPages).toMatchObject([
+      { name: "Default", pageLayoutName: "Portrait" },
+      { name: "Wide", pageLayoutName: "Landscape" },
+    ]);
+    expect(parsed.sections[0]?.headers?.default).toMatchObject([
+      { paragraph: { text: "Portrait header" } },
+    ]);
+
+    const archive = await readOcf(
+      await generateDocument(parsed),
+      "application/vnd.oasis.opendocument.text",
+    );
+    expect(archive.files["styles.xml"]).toContain('style:name="Landscape"');
+    expect(archive.files["styles.xml"]).toContain('style:page-layout-name="Landscape"');
+    expect(archive.files["styles.xml"]).toContain('style:print-page-order="ltr"');
+    expect(archive.files["styles.xml"]).toContain("Landscape footer");
+  });
+
+  it("uses edited canonical section page and header values over parsed ODF overlays", async () => {
+    const source = generateOcf("application/vnd.oasis.opendocument.text", {
+      "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:automatic-styles/><office:body><office:text><text:p>Body</text:p></office:text></office:body></office:document-content>`,
+      "styles.xml": `<?xml version="1.0"?><office:document-styles ${ODF_NAMESPACES}><office:styles/><office:automatic-styles><style:page-layout style:name="Portrait"><style:page-layout-properties fo:page-width="21cm" fo:page-height="29.7cm"/></style:page-layout></office:automatic-styles><office:master-styles><style:master-page style:name="Default" style:page-layout-name="Portrait"><style:header><text:p>Original header</text:p></style:header></style:master-page></office:master-styles></office:document-styles>`,
+    });
+    const parsed = await parseDocument(source);
+    parsed.sections[0]!.properties!.pageSize = { width: 12000, height: 16000 };
+    parsed.sections[0]!.headers = { default: [{ paragraph: "Edited header" }] };
+
+    const regenerated = await parseDocument(await generateDocument(parsed));
+    expect(regenerated.sections[0]?.properties?.pageSize).toMatchObject({
+      width: 12000,
+      height: 16000,
+    });
+    expect(regenerated.sections[0]?.headers?.default).toEqual([
+      { paragraph: { text: "Edited header" } },
+    ]);
+  });
+
+  it("writes edited section properties to the referenced page layout", async () => {
+    const source = generateOcf("application/vnd.oasis.opendocument.text", {
+      "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:automatic-styles/><office:body><office:text><text:p>Body</text:p></office:text></office:body></office:document-content>`,
+      "styles.xml": `<?xml version="1.0"?><office:document-styles ${ODF_NAMESPACES}><office:styles/><office:automatic-styles><style:page-layout style:name="Portrait"><style:page-layout-properties fo:page-width="21cm" fo:page-height="29.7cm"/></style:page-layout><style:page-layout style:name="Landscape"><style:page-layout-properties fo:page-width="29.7cm" fo:page-height="21cm"/></style:page-layout></office:automatic-styles><office:master-styles><style:master-page style:name="Default" style:page-layout-name="Landscape"/></office:master-styles></office:document-styles>`,
+    });
+    const parsed = await parseDocument(source);
+    parsed.sections[0]!.properties!.pageSize = { width: 12000, height: 16000 };
+
+    const regenerated = await parseDocument(await generateDocument(parsed));
+    expect(regenerated.sections[0]?.properties?.pageSize).toMatchObject({
+      width: 12000,
+      height: 16000,
+    });
+    expect(regenerated.pageLayouts).toMatchObject([
+      {
+        name: "Portrait",
+        properties: { pageSize: { width: expect.not.objectContaining({ width: 12000 }) } },
+      },
+      { name: "Landscape", properties: { pageSize: { width: 12000, height: 16000 } } },
+    ]);
+  });
+
+  it("round-trips tables inside master page headers", async () => {
+    const options: DocumentOptions = {
+      sections: [
+        {
+          children: [],
+          headers: {
+            default: [
+              {
+                table: {
+                  rows: [
+                    {
+                      cells: [{ children: [{ paragraph: { text: "Header cell" } }] }],
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        },
+      ],
+    };
+    const parsed = await parseDocument(await generateDocument(options));
+    expect(parsed.sections[0]?.headers?.default).toMatchObject([
+      { table: { rows: [{ cells: [{ children: [{ paragraph: { text: "Header cell" } }] }] }] } },
+    ]);
+  });
+
+  it("round-trips row-spanned table cells", async () => {
+    const options: DocumentOptions = {
+      sections: [
+        {
+          children: [
+            {
+              table: {
+                rows: [
+                  {
+                    cells: [
+                      { rowSpan: 2, children: [{ paragraph: { text: "Merged" } }] },
+                      { children: [{ paragraph: { text: "Top" } }] },
+                    ],
+                  },
+                  { cells: [{ children: [{ paragraph: { text: "Bottom" } }] }] },
+                ],
+              },
+            },
+          ],
+        },
+      ],
+    };
+    const parsed = await parseDocument(await generateDocument(options));
+    const table = parsed.sections[0]?.children[0];
+    expect(table).toMatchObject({
+      table: {
+        rows: [
+          { cells: [{ rowSpan: 2 }, { children: [{ paragraph: { text: "Top" } }] }] },
+          { cells: [{ children: [{ paragraph: { text: "Bottom" } }] }] },
+        ],
+      },
+    });
+  });
+
+  it("does not invent fixed widths for unstyled ODF table columns", async () => {
+    const source = generateOcf("application/vnd.oasis.opendocument.text", {
+      "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:text><table:table><table:table-column/><table:table-row><table:table-cell><text:p>Cell</text:p></table:table-cell></table:table-row></table:table></office:text></office:body></office:document-content>`,
+      "styles.xml": `<?xml version="1.0"?><office:document-styles ${ODF_NAMESPACES}><office:styles/></office:document-styles>`,
+    });
+    const parsed = await parseDocument(source);
+    const child = parsed.sections[0]?.children[0];
+    expect(child).toMatchObject({
+      table: { rows: [{ cells: [{ children: [{ paragraph: { text: "Cell" } }] }] }] },
+    });
+    expect(child && "table" in child ? child.table.columnWidths : undefined).toBeUndefined();
+  });
+
+  it("preserves the canonical table style reference", async () => {
+    const parsed = await parseDocument(
+      await generateDocument({
+        sections: [
+          {
+            children: [
+              {
+                table: {
+                  style: "FinancialTable",
+                  rows: [{ cells: [{ children: [{ paragraph: { text: "Value" } }] }] }],
+                },
+              },
+            ],
+          },
+        ],
+      }),
+    );
+    expect(parsed.sections[0]?.children?.[0]).toMatchObject({
+      table: { style: "FinancialTable" },
+    });
   });
 
   it("round-trips ODF form-control shapes with typed references", async () => {
@@ -324,6 +926,26 @@ describe("ODT canonical projection", () => {
     expect(content).toContain('fo:widows="2"');
     expect(content).toContain('style:contextual-spacing="true"');
     expect((await parseDocument(generated)).styleResources).toEqual(options.styleResources);
+  });
+
+  it("maps canonical both alignment to ODF justify", async () => {
+    const options: DocumentOptions = {
+      sections: [{ children: [{ paragraph: { alignment: "both", text: "Justified" } }] }],
+    };
+    const generated = await generateDocument(options);
+    const content = strFromU8(unzipSync(generated)["content.xml"]!);
+    expect(content).toContain('fo:text-align="justify"');
+    expect((await parseDocument(generated)).sections[0]?.children?.[0]).toMatchObject({
+      paragraph: { alignment: "both", text: "Justified" },
+    });
+  });
+
+  it("rejects section directions that ODF cannot represent together", async () => {
+    await expect(
+      generateDocument({
+        sections: [{ properties: { bidi: true, textDirection: "lrTb" }, children: [] }],
+      }),
+    ).rejects.toMatchObject({ reason: "conflicting-writing-mode" });
   });
 
   it("rejects unknown paragraph style attributes", async () => {
@@ -463,7 +1085,11 @@ describe("ODT canonical projection", () => {
                     picture: {
                       type: "png",
                       sourceUrl: "../images/logo.png",
-                      transformation: { width: 360000, height: 360000 },
+                      transformation: {
+                        offset: { x: 180000, y: 90000 },
+                        width: 360000,
+                        height: 360000,
+                      },
                     },
                   },
                 ],
@@ -481,7 +1107,11 @@ describe("ODT canonical projection", () => {
             picture: {
               type: "png",
               sourceUrl: "../images/logo.png",
-              transformation: { width: 360000, height: 360000 },
+              transformation: {
+                offset: { x: 180000, y: 90000 },
+                width: 360000,
+                height: 360000,
+              },
             },
           },
         ],
@@ -489,28 +1119,148 @@ describe("ODT canonical projection", () => {
     });
   });
 
-  it("round-trips a missing package image as a linked-only picture", async () => {
-    const parsed = await parseDocument(
-      odtPackage(
-        '<text:p><draw:frame svg:width="4cm" svg:height="3cm" draw:name="Logo"><draw:image xlink:href="Pictures/missing.png"/></draw:frame></text:p>',
-      ),
-    );
+  it("preserves linked pictures whose URL has no image extension", async () => {
+    const options: DocumentOptions = {
+      sections: [
+        {
+          children: [
+            {
+              paragraph: {
+                children: [
+                  {
+                    picture: {
+                      type: "png",
+                      sourceUrl: "https://example.com/image.txt",
+                      transformation: { width: 360000, height: 360000 },
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      ],
+    };
+
+    const parsed = await parseDocument(await generateDocument(options));
     expect(parsed.sections[0]?.children?.[0]).toMatchObject({
       paragraph: {
         children: [
           {
             picture: {
               type: "png",
-              sourceUrl: "Pictures/missing.png",
-              transformation: { width: 1440000, height: 1080000 },
+              sourceUrl: "https://example.com/image.txt",
             },
           },
         ],
       },
     });
-    expect(
-      (await parseDocument(await generateDocument(parsed))).sections[0]?.children?.[0],
-    ).toEqual(parsed.sections[0]?.children?.[0]);
+  });
+
+  it("writes standard MIME types for linked raster pictures", async () => {
+    const generated = await generateDocument({
+      sections: [
+        {
+          children: [
+            {
+              paragraph: {
+                children: [
+                  {
+                    picture: {
+                      type: "jpg",
+                      sourceUrl: "https://example.com/image",
+                      transformation: { width: 360000, height: 360000 },
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      ],
+    });
+    const content = strFromU8(unzipSync(generated)["content.xml"]!);
+    expect(content).toContain('draw:mime-type="image/jpeg"');
+  });
+
+  it("preserves picture descriptions", async () => {
+    const parsed = await parseDocument(
+      await generateDocument({
+        sections: [
+          {
+            children: [
+              {
+                paragraph: {
+                  children: [
+                    {
+                      picture: {
+                        type: "png",
+                        data: new Uint8Array([1]),
+                        altText: { name: "Diagram", description: "A <sample> diagram" },
+                        transformation: { width: 360000, height: 180000 },
+                      },
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        ],
+      }),
+    );
+    expect(parsed.sections[0]?.children?.[0]).toMatchObject({
+      paragraph: {
+        children: [
+          {
+            picture: {
+              altText: { name: "Diagram", description: "A <sample> diagram" },
+            },
+          },
+        ],
+      },
+    });
+  });
+
+  it("rejects an internal image reference whose package member is missing", async () => {
+    await expect(
+      parseDocument(
+        odtPackage(
+          '<text:p><draw:frame svg:width="4cm" svg:height="3cm" draw:name="Logo"><draw:image xlink:href="Pictures/missing.png"/></draw:frame></text:p>',
+        ),
+      ),
+    ).rejects.toMatchObject({
+      name: "OdtParseError",
+      part: "content.xml",
+      elementName: "draw:image",
+      reason: "missing-package-part",
+    });
+  });
+
+  it("does not treat a missing embedded image as an external link", async () => {
+    await expect(
+      parseDocument(
+        odtPackage(
+          '<text:p><draw:frame svg:width="4cm" svg:height="3cm"><draw:image xlink:type="simple" xlink:show="embed" xlink:href="Pictures/missing.png"/></draw:frame></text:p>',
+        ),
+      ),
+    ).rejects.toMatchObject({ reason: "missing-package-part" });
+  });
+
+  it("resolves encoded package image paths and case-insensitive file extensions", async () => {
+    const source = generateOcf("application/vnd.oasis.opendocument.text", {
+      "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:automatic-styles/><office:body><office:text><text:p><draw:frame svg:width="2cm" svg:height="1cm"><draw:image xlink:href="Pictures/My%20Logo.PNG"/></draw:frame></text:p></office:text></office:body></office:document-content>`,
+      "styles.xml": `<?xml version="1.0"?><office:document-styles ${ODF_NAMESPACES}><office:styles/></office:document-styles>`,
+      "Pictures/My Logo.PNG": new Uint8Array([1, 2, 3]),
+    });
+    const parsed = await parseDocument(source);
+
+    expect(sectionParagraph(parsed.sections[0]?.children?.[0])?.children?.[0]).toMatchObject({
+      picture: {
+        type: "png",
+        data: new Uint8Array([1, 2, 3]),
+        transformation: { width: 720000, height: 360000 },
+      },
+    });
   });
 
   it("round-trips deeply nested tables without exhausting the stack", async () => {
@@ -555,7 +1305,7 @@ describe("ODT canonical projection", () => {
     await expect(
       parseDocument(
         odtPackage(
-          "<text:bookmark-start text:id='9007199254740993' text:name='unsafe'/>" +
+          "<text:bookmark-start xml:id='bookmark-9007199254740993' text:name='unsafe'/>" +
             "<text:bookmark-end text:name='unsafe'/>",
         ),
       ),
@@ -571,7 +1321,7 @@ describe("ODT canonical projection", () => {
     await expect(
       parseDocument(
         odtPackage(
-          "<text:bookmark-start text:id='9007199254740991' text:name='maximum'/>" +
+          "<text:bookmark-start xml:id='bookmark-9007199254740991' text:name='maximum'/>" +
             "<text:bookmark-start text:name='overflow'/>" +
             "<text:bookmark-end text:name='overflow'/>",
         ),
@@ -756,6 +1506,89 @@ describe("ODT canonical projection", () => {
     expect(reread.embeddedObjects).toEqual(parsed.embeddedObjects);
     expect(projection(reread.sections[0]?.children?.[0])).toEqual(
       projection(parsed.sections[0]?.children?.[0]),
+    );
+  });
+
+  it("round-trips an embedded object replacement image", async () => {
+    const replacementImage = new Uint8Array([137, 80, 78, 71]);
+    const source = generateOcf(
+      "application/vnd.oasis.opendocument.text",
+      {
+        "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:automatic-styles/><office:body><office:text><text:p><draw:frame svg:width="4cm" svg:height="3cm"><draw:object xlink:href="./Object 1" xlink:type="simple"/><draw:image xlink:href="./ObjectReplacements/preview.png" xlink:type="simple"/></draw:frame></text:p></office:text></office:body></office:document-content>`,
+        "styles.xml": `<?xml version="1.0"?><office:document-styles ${ODF_NAMESPACES}><office:styles/></office:document-styles>`,
+        "Object 1/content.xml":
+          '<?xml version="1.0"?><office:document-content xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"/>',
+        "ObjectReplacements/preview.png": replacementImage,
+      },
+      {},
+      {
+        version: "1.3",
+        entries: [
+          { fullPath: "/", version: "1.3", mediaType: "application/vnd.oasis.opendocument.text" },
+          { fullPath: "content.xml", mediaType: "text/xml" },
+          { fullPath: "styles.xml", mediaType: "text/xml" },
+          { fullPath: "Object 1/", mediaType: "application/vnd.oasis.opendocument.formula" },
+          { fullPath: "Object 1/content.xml", mediaType: "text/xml" },
+          { fullPath: "ObjectReplacements/", mediaType: undefined },
+          { fullPath: "ObjectReplacements/preview.png", mediaType: "image/png" },
+        ],
+      },
+    );
+
+    const parsed = await parseDocument(source);
+    expect(parsed.embeddedObjects?.[0]?.frames).toEqual([
+      { shapeId: 1, replacementImagePath: "ObjectReplacements/preview.png" },
+    ]);
+    expect(parsed.packageMembers).toContainEqual({
+      path: "ObjectReplacements/preview.png",
+      mediaType: "image/png",
+      data: replacementImage,
+    });
+
+    const generated = await generateDocument(parsed);
+    const output = await readOcf(generated, "application/vnd.oasis.opendocument.text");
+    expect(output.binaries["ObjectReplacements/preview.png"]).toEqual(replacementImage);
+    expect(output.files["content.xml"]).toContain(
+      '<draw:image xlink:href="./ObjectReplacements/preview.png" xlink:type="simple"/>',
+    );
+    expect((await parseDocument(generated)).embeddedObjects?.[0]?.frames).toEqual(
+      parsed.embeddedObjects?.[0]?.frames,
+    );
+  });
+
+  it("preserves an external embedded-object replacement image", async () => {
+    const parsed = await parseDocument(
+      generateOcf(
+        "application/vnd.oasis.opendocument.text",
+        {
+          "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:automatic-styles/><office:body><office:text><text:p><draw:frame svg:width="4cm" svg:height="3cm"><draw:object xlink:href="./Object 1" xlink:type="simple"/><draw:image xlink:href="https://example.com/preview.png" xlink:type="simple"/></draw:frame></text:p></office:text></office:body></office:document-content>`,
+          "styles.xml": `<?xml version="1.0"?><office:document-styles ${ODF_NAMESPACES}><office:styles/></office:document-styles>`,
+          "Object 1/content.xml":
+            '<?xml version="1.0"?><office:document-content xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"/>',
+        },
+        {},
+        {
+          version: "1.3",
+          entries: [
+            { fullPath: "/", version: "1.3", mediaType: "application/vnd.oasis.opendocument.text" },
+            { fullPath: "content.xml", mediaType: "text/xml" },
+            { fullPath: "styles.xml", mediaType: "text/xml" },
+            { fullPath: "Object 1/", mediaType: "application/vnd.oasis.opendocument.formula" },
+            { fullPath: "Object 1/content.xml", mediaType: "text/xml" },
+          ],
+        },
+      ),
+    );
+    expect(parsed.embeddedObjects?.[0]?.frames?.[0]).toMatchObject({
+      replacementImageSourceUrl: "https://example.com/preview.png",
+    });
+
+    const generated = await generateDocument(parsed);
+    expect(
+      (await readOcf(generated, "application/vnd.oasis.opendocument.text")).files["content.xml"],
+    ).toContain('xlink:href="https://example.com/preview.png"');
+    expect((await parseDocument(generated)).embeddedObjects?.[0]?.frames?.[0]).toEqual(
+      parsed.embeddedObjects?.[0]?.frames?.[0],
     );
   });
 
@@ -1065,11 +1898,11 @@ describe("ODT canonical projection", () => {
     expect(children).toEqual({
       paragraph: {
         children: [
-          { bookmarkStart: { id: 1, name: "inline target" } },
-          { bookmarkStart: { id: 2, name: "reference target" } },
+          { bookmarkStart: { id: 7, name: "inline target" } },
+          { bookmarkStart: { id: 8, name: "reference target" } },
           "marked",
-          { bookmarkEnd: { id: 2 } },
-          { bookmarkEnd: { id: 1 } },
+          { bookmarkEnd: { id: 8 } },
+          { bookmarkEnd: { id: 7 } },
         ],
       },
     });
@@ -1141,6 +1974,29 @@ describe("ODT canonical projection", () => {
       path: "/office:document-content/office:body/office:text",
       elementName: "commentRange",
       reason: "unrepresentable-orphan-comment-range",
+    });
+  });
+
+  it("rejects block children without an ODF projection", async () => {
+    const error = await generateDocument({
+      sections: [
+        {
+          children: [
+            {
+              customXml: {
+                element: "custom",
+                children: [{ paragraph: { text: "not representable in ODT" } }],
+              },
+            },
+          ],
+        },
+      ],
+    }).catch((caught: unknown) => caught);
+    expect(error).toBeInstanceOf(OdtGenerateError);
+    expect(error).toMatchObject({
+      part: "content.xml",
+      elementName: "customXml",
+      reason: "unsupported-block-child",
     });
   });
 
@@ -1240,14 +2096,21 @@ describe("ODT canonical projection", () => {
         )
       ).reason,
     ).toContain("not allowed");
-    expect(
-      (
-        await parseBodyError(
-          "<text:bookmark-start text:name='same'/><text:bookmark-start text:name='same'/>",
-          "text:bookmark-start",
-        )
-      ).reason,
-    ).toContain("no canonical");
+    const duplicateBookmarks = await parseDocument(
+      odtPackage(
+        "<text:p><text:bookmark-start text:name='same'/><text:bookmark-start text:name='same'/><text:bookmark-end text:name='same'/><text:bookmark-end text:name='same'/></text:p>",
+      ),
+    );
+    expect(duplicateBookmarks.sections[0]?.children[0]).toMatchObject({
+      paragraph: {
+        children: [
+          { bookmarkStart: { id: 1, name: "same" } },
+          { bookmarkStart: { id: 2, name: "same" } },
+          { bookmarkEnd: { id: 1 } },
+          { bookmarkEnd: { id: 2 } },
+        ],
+      },
+    });
     expect(
       (await parseBodyError("<text:bookmark-end text:name='missing'/>", "text:bookmark-end"))
         .reason,
@@ -1295,7 +2158,7 @@ describe("ODT canonical projection", () => {
     );
     expect(parsed.sections[0]?.children[0]).toEqual({
       paragraph: {
-        children: [{ bookmarkStart: { id: 1, name: "bookmark-7" } }, { bookmarkEnd: { id: 1 } }],
+        children: [{ bookmarkStart: { id: 7, name: "bookmark-7" } }, { bookmarkEnd: { id: 7 } }],
       },
     });
   });
@@ -1324,6 +2187,119 @@ describe("ODT canonical projection", () => {
   it("reports unknown body elements with structured errors", async () => {
     const error = await parseBodyError("<text:unknown/>", "text:unknown");
     expect(error.path).toBe("/office:document-content/office:body/office:text/text:unknown");
+    expect(error.reason).toBe("no canonical DocumentOptions mapping");
+  });
+
+  it("rejects unsupported frame payloads instead of dropping them", async () => {
+    const error = await parseBodyError(
+      '<text:p>before<draw:frame svg:width="2cm" svg:height="1cm"><draw:plugin xlink:href="plugin:example" draw:mime-type="application/example"/></draw:frame>after</text:p>',
+      "draw:frame",
+    );
+
+    expect(error.reason).toBe("no canonical DocumentOptions mapping");
+  });
+
+  it("keeps external image references as linked-only pictures", async () => {
+    const parsed = await parseDocument(
+      odtPackage(
+        '<text:p><draw:frame svg:width="4cm" svg:height="3cm"><draw:image xlink:href="https://example.com/logo.png"/></draw:frame></text:p>',
+      ),
+    );
+
+    expect(sectionParagraph(parsed.sections[0]?.children?.[0])?.children?.[0]).toMatchObject({
+      picture: {
+        type: "png",
+        sourceUrl: "https://example.com/logo.png",
+        transformation: { width: 1440000, height: 1080000 },
+      },
+    });
+  });
+
+  it("rejects external images without a canonical picture type", async () => {
+    await expect(
+      parseDocument(
+        odtPackage(
+          '<text:p><draw:frame svg:width="4cm" svg:height="3cm"><draw:image xlink:href="https://example.com/logo.avif"/></draw:frame></text:p>',
+        ),
+      ),
+    ).rejects.toMatchObject({ reason: "unsupported-image-type" });
+  });
+
+  it("rejects pictures without embedded data or a source URL", async () => {
+    await expect(
+      generateDocument({
+        sections: [
+          {
+            children: [
+              {
+                paragraph: {
+                  children: [{ picture: { type: "png", transformation: { width: 1, height: 1 } } }],
+                },
+              },
+            ],
+          },
+        ],
+      }),
+    ).rejects.toMatchObject({
+      part: "content.xml",
+      elementName: "draw:image",
+      reason: "missing-picture-source",
+    });
+  });
+
+  it("rejects multiple sections with different page properties", async () => {
+    await expect(
+      generateDocument({
+        sections: [
+          {
+            properties: { pageSize: { width: 12000, height: 16000 } },
+            children: [{ paragraph: "Portrait" }],
+          },
+          {
+            properties: { pageSize: { width: 16000, height: 12000 } },
+            children: [{ paragraph: "Landscape" }],
+          },
+        ],
+      }),
+    ).rejects.toMatchObject({
+      part: "styles.xml",
+      elementName: "style:master-page",
+      reason: "multiple-sections-not-representable",
+    });
+  });
+
+  it("rejects hyperlinks without a target", async () => {
+    await expect(
+      generateDocument({
+        sections: [
+          {
+            children: [
+              { paragraph: { children: [{ hyperlink: { children: ["missing target"] } }] } },
+            ],
+          },
+        ],
+      }),
+    ).rejects.toMatchObject({
+      elementName: "text:a",
+      reason: "missing-hyperlink-target",
+    });
+  });
+
+  it("rejects a frame with an unsupported payload and no image", async () => {
+    const error = await parseBodyError(
+      '<text:p>before<draw:frame svg:width="2cm" svg:height="1cm"><draw:plugin xlink:href="plugin:example" draw:mime-type="application/example"/></draw:frame>after</text:p>',
+      "draw:frame",
+    );
+
+    expect(error.reason).toBe("no canonical DocumentOptions mapping");
+  });
+
+  it("rejects a frame containing multiple payloads", async () => {
+    const error = await parseBodyError(
+      '<text:p><draw:frame svg:width="2cm" svg:height="1cm"><draw:image xlink:href="Pictures/preview.png"/><draw:plugin xlink:href="plugin:example" draw:mime-type="application/example"/></draw:frame></text:p>',
+      "draw:frame",
+    );
+
     expect(error.reason).toBe("no canonical DocumentOptions mapping");
   });
 
@@ -1430,22 +2406,17 @@ describe("ODT linked and revision boundaries", () => {
       "</text:variable-decls><text:p><text:variable-set text:name='ReportDate' office:value-type='date'" +
       " office:date-value='2016-10-05T00:00:00.0Z' text:formula='ooow:Date(2016;10;05)' text:display='none'/></text:p>";
     const parsed = await parseDocument(odtPackage(body));
-    expect(parsed.odtVariableDeclarations).toEqual([{ name: "ReportDate", valueType: "date" }]);
+    expect(parsed.variableDeclarations).toEqual([{ name: "ReportDate", valueType: "date" }]);
     const paragraph = sectionParagraph(parsed.sections[0]?.children[0]);
     expect(paragraph?.children?.[0]).toMatchObject({
       simpleField: { cachedValue: undefined },
     });
     const regenerated = await parseDocument(await generateDocument(parsed));
-    expect(regenerated.odtVariableDeclarations).toEqual(parsed.odtVariableDeclarations);
-    expect(
-      (
-        await parseBodyError(
-          body.replace("office:value-type='date'/>", "office:value-type='float'/>"),
-          "ReportDate",
-          "invalid-variable-value-type",
-        )
-      ).reason,
-    ).toBe("invalid-variable-value-type");
+    expect(regenerated.variableDeclarations).toEqual(parsed.variableDeclarations);
+    const mismatched = parseDocument(
+      odtPackage(body.replace("office:value-type='date'/>", "office:value-type='float'/>")),
+    );
+    await expect(mismatched).rejects.toMatchObject({ reason: "invalid-variable-value-type" });
   });
 
   it("round-trips a body-level format change range", async () => {

@@ -4,11 +4,12 @@
 ![npm downloads](https://img.shields.io/npm/dw/@office-open/odp)
 ![npm license](https://img.shields.io/npm/l/@office-open/odp)
 
-> Generate and parse OpenDocument Presentation (`.odp`) files from plain `PresentationOptions` JSON — no Microsoft Office or LibreOffice required.
+> Generate and parse OpenDocument Presentation (`.odp`) files from canonical `PresentationOptions` JSON with typed ODF-only fields — no Microsoft Office or LibreOffice required.
 
 ## Features
 
 - 📈 **Canonical Presentation Model** — Read and write the same `PresentationOptions` used by PPTX and PPT
+- 🧾 **Master Page Regions** — Preserve typed ODF headers, footers, and their first/left variants
 - 🧱 **Slides & Shapes** — Slide layouts, shapes, text bodies, geometry, and transforms
 - 🎨 **Styles** — Graphic, text, paragraph, and page styles
 - 🖼️ **Media & Charts** — Embedded images and typed charts

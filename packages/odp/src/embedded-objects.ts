@@ -5,6 +5,7 @@ export interface OdpEmbeddedObjectFrameOptions {
   shapeId: number;
   styleName?: string;
   replacementPath?: string;
+  replacementSourceUrl?: string;
 }
 
 /** Standalone or linked ODF object with no canonical pptx OLE equivalent. */

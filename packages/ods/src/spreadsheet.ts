@@ -1,3 +1,4 @@
+import type { TextBodyOptions, TextRunOptions } from "@office-open/core";
 import {
   attributeNumber,
   attributeString,
@@ -8,7 +9,13 @@ import {
   graphicFill,
   graphicOutline,
   lengthToEmu,
+  odfEnhancedGeometryXml,
+  odfGroupTransform,
+  parseOdfGroupTransform,
+  parseOdfEnhancedGeometry,
+  parseOdfPrimitiveGeometry,
   parseGraphicStyles,
+  parseGraphicStyleResources,
   odfLengthToEmu,
   pushShapeStyle,
   spreadsheetColumnName,
@@ -21,21 +28,33 @@ import type {
   ConditionalFormatOptions,
   ConditionalFormatRule,
   CfvoOptions,
+  AutoFilterOptions,
+  CustomFilterOperator,
   DataValidationOptions,
   DxfOptions,
+  FilterColumnOptions,
+  GroupOptions,
+  GroupShapeChildOptions,
   IconSetType,
   PivotDataField,
+  PivotPageFieldOptions,
+  SourcePivotTableOptions,
   ShapeOptions,
   SheetProtectionOptions,
+  SortCondition,
+  SortStateOptions,
   StyleOptions,
   TableOptions,
   WorksheetOptions,
   WorkbookOptions,
+  RichTextRunPropertiesOptions,
 } from "@office-open/xlsx";
 import type { Element } from "@office-open/xml";
 
+import { OdsGenerateError, OdsParseError } from "./error";
 import { parseNumberStyles } from "./numbering";
 import type { OdsDataPilotFunctionOptions } from "./options";
+import { addTextStyle } from "./styles";
 import { assertElementNames, unknownOdsElement } from "./workbook";
 
 const CONTENT_PATH = "/office:document-content/office:body/office:spreadsheet";
@@ -62,10 +81,20 @@ export interface SheetAddress {
 export function parseWorksheetGraphicStyles(
   automaticStyles: Element | undefined,
   stylesDocument: Element | undefined,
+  binaries: Record<string, Uint8Array> = {},
 ): Map<string, GraphicStyle> {
+  const resources = parseGraphicStyleResources(
+    [automaticStyles, childNamed(stylesDocument, "office:styles")],
+    binaries,
+  );
+  const commonStyles = parseGraphicStyles(
+    childNamed(stylesDocument, "office:styles"),
+    "graphic",
+    resources,
+  );
   return new Map([
-    ...parseGraphicStyles(automaticStyles),
-    ...parseGraphicStyles(childNamed(stylesDocument, "office:styles")),
+    ...commonStyles,
+    ...parseGraphicStyles(automaticStyles, "graphic", resources, commonStyles),
   ]);
 }
 
@@ -74,6 +103,8 @@ export function parseDrawingShape(
   row: number,
   column: number,
   graphicStyles: Map<string, GraphicStyle>,
+  textStyles: Map<string, RichTextRunPropertiesOptions>,
+  absolute = false,
 ): ShapeOptions {
   assertElementNames(
     element,
@@ -106,6 +137,16 @@ export function parseDrawingShape(
     ["text:p", "svg:title", "svg:desc", "draw:enhanced-geometry", "office:event-listeners"],
   );
   const isLine = element.name === "draw:line" || element.name === "draw:measure";
+  const transformValue = attributeString(element, "draw:transform");
+  const transform = parseOdfGroupTransform(transformValue);
+  if (transform === null)
+    throw new OdsParseError(
+      "ODS shape transform cannot be projected to the canonical shape model",
+      "content.xml",
+      `${CONTENT_PATH}/table:table/table:shapes/${element.name ?? "draw:shape"}`,
+      "draw:transform",
+      "unsupported-shape-transform",
+    );
   const x1 = isLine
     ? lengthToEmu(attributeString(element, "svg:x1"))
     : lengthToEmu(attributeString(element, "svg:x"));
@@ -114,6 +155,8 @@ export function parseDrawingShape(
     : lengthToEmu(attributeString(element, "svg:y"));
   const x2 = isLine ? lengthToEmu(attributeString(element, "svg:x2")) : undefined;
   const y2 = isLine ? lengthToEmu(attributeString(element, "svg:y2")) : undefined;
+  const translatedX1 = (x1 ?? 0) + (transform?.x ?? 0);
+  const translatedY1 = (y1 ?? 0) + (transform?.y ?? 0);
   const width = isLine
     ? Math.abs((x2 ?? 0) - (x1 ?? 0))
     : (lengthToEmu(attributeString(element, "svg:width")) ?? 0);
@@ -121,19 +164,27 @@ export function parseDrawingShape(
     ? Math.abs((y2 ?? 0) - (y1 ?? 0))
     : (lengthToEmu(attributeString(element, "svg:height")) ?? 0);
   const style = graphicStyles.get(attributeString(element, "draw:style-name") ?? "");
-  const text = childrenNamed(element, "text:p")
-    .map((paragraph) => textOf(paragraph))
-    .join("\n");
+  const customGeometry = parseOdfEnhancedGeometry(childNamed(element, "draw:enhanced-geometry"));
+  const primitiveGeometry = parseOdfPrimitiveGeometry(element, width, height);
+  const paragraphs = childrenNamed(element, "text:p");
   const endAddress = parseSheetAddress(attributeString(element, "table:end-cell-address"));
   const endCell = /^([A-Z]+)([0-9]+)$/u.exec(endAddress?.address ?? "");
-  return {
+  const result: ShapeOptions = {
     col: column,
     row,
+    ...(absolute
+      ? {
+          anchorType: "absolute" as const,
+          absoluteX: translatedX1,
+          absoluteY: translatedY1,
+        }
+      : {
+          colOffset: translatedX1,
+          rowOffset: translatedY1,
+        }),
     ...(attributeString(element, "draw:control") === undefined
       ? {}
       : { controlId: attributeString(element, "draw:control") }),
-    colOffset: x1,
-    rowOffset: y1,
     extentCx: width,
     extentCy: height,
     ...(endCell
@@ -147,10 +198,11 @@ export function parseDrawingShape(
     name: attributeString(element, "draw:name") ?? `${element.name}:${column}:${row}`,
     zOrder: attributeNumber(element, "draw:z-index"),
     properties: {
-      x: x1,
-      y: y1,
+      x: translatedX1,
+      y: translatedY1,
       width,
       height,
+      ...(transform?.rotation === undefined ? {} : { rotation: transform.rotation }),
       geometry:
         element.name === "draw:rect" || element.name === "draw:control"
           ? "rect"
@@ -161,8 +213,11 @@ export function parseDrawingShape(
               : null,
       fill: graphicFill(style),
       outline: graphicOutline(style),
+      ...((customGeometry ?? primitiveGeometry)
+        ? { customGeometry: customGeometry ?? primitiveGeometry }
+        : {}),
     },
-    ...(text ? { textBody: { text } } : {}),
+    ...(paragraphs.length ? { textBody: parseShapeText(paragraphs, textStyles) } : {}),
     ...(attributeString(element, "svg:title")
       ? { title: attributeString(element, "svg:title") }
       : {}),
@@ -170,6 +225,266 @@ export function parseDrawingShape(
       ? { description: attributeString(element, "svg:desc") }
       : {}),
   };
+  return result;
+}
+
+export function parseDrawingGroup(
+  element: Element,
+  row: number,
+  column: number,
+  graphicStyles: Map<string, GraphicStyle>,
+  textStyles: Map<string, RichTextRunPropertiesOptions>,
+  absolute = false,
+): GroupOptions {
+  const path = "/office:document-content/office:body/office:spreadsheet/table:table/draw:g";
+  assertElementNames(
+    element,
+    [
+      "draw:name",
+      "draw:style-name",
+      "draw:z-index",
+      "draw:transform",
+      "svg:x",
+      "svg:y",
+      "svg:width",
+      "svg:height",
+      "svg:title",
+      "svg:desc",
+    ],
+    [
+      "svg:title",
+      "svg:desc",
+      "draw:rect",
+      "draw:control",
+      "draw:ellipse",
+      "draw:circle",
+      "draw:line",
+      "draw:measure",
+      "draw:polygon",
+      "draw:polyline",
+      "draw:custom-shape",
+      "draw:g",
+    ],
+  );
+  const transformValue = attributeString(element, "draw:transform");
+  const groupTransform = parseOdfGroupTransform(transformValue);
+  if (groupTransform === null)
+    throw new OdsParseError(
+      "ODS group transform cannot be projected to the canonical group transform model",
+      "content.xml",
+      path,
+      "draw:transform",
+      "unsupported-group-transform",
+    );
+  const style = graphicStyles.get(attributeString(element, "draw:style-name") ?? "");
+  const groupFill = graphicFill(style);
+  if (graphicOutline(style))
+    throw new OdsParseError(
+      "ODS group outline has no equivalent in the canonical group model",
+      "content.xml",
+      path,
+      "draw:style-name",
+      "unsupported-group-outline",
+    );
+  const x = lengthToEmu(attributeString(element, "svg:x"));
+  const y = lengthToEmu(attributeString(element, "svg:y"));
+  const resolvedX = x === undefined ? groupTransform?.x : x + (groupTransform?.x ?? 0);
+  const resolvedY = y === undefined ? groupTransform?.y : y + (groupTransform?.y ?? 0);
+  const width = lengthToEmu(attributeString(element, "svg:width"));
+  const height = lengthToEmu(attributeString(element, "svg:height"));
+  const title = childNamed(element, "svg:title");
+  const description = childNamed(element, "svg:desc");
+  const shapes: GroupShapeChildOptions[] = [];
+  const groups: NonNullable<GroupOptions["groups"]> = [];
+  let nestedGroupSeen = false;
+  for (const child of element.elements ?? []) {
+    if (child.name === "svg:title" || child.name === "svg:desc") continue;
+    if (child.name === "draw:g") {
+      nestedGroupSeen = true;
+      const nested = parseDrawingGroup(child, row, column, graphicStyles, textStyles);
+      const {
+        col: _column,
+        row: _row,
+        colOffset,
+        rowOffset,
+        extentCx,
+        extentCy,
+        ...nestedGroup
+      } = nested;
+      groups.push({
+        ...nestedGroup,
+        properties: {
+          ...nestedGroup.properties,
+          ...(colOffset === undefined ? {} : { x: colOffset }),
+          ...(rowOffset === undefined ? {} : { y: rowOffset }),
+          ...(extentCx === undefined ? {} : { width: extentCx }),
+          ...(extentCy === undefined ? {} : { height: extentCy }),
+        },
+      });
+      continue;
+    }
+    if (nestedGroupSeen)
+      throw new OdsParseError(
+        "ODS group child order cannot be represented by the canonical group model",
+        "content.xml",
+        path,
+        child.name ?? "",
+        "unsupported-group-child-order",
+      );
+    const shape = parseDrawingShape(child, row, column, graphicStyles, textStyles);
+    shapes.push({
+      name: shape.name,
+      title: shape.title,
+      description: shape.description,
+      hidden: shape.hidden,
+      properties: shape.properties,
+      ...(shape.textBody === undefined ? {} : { textBody: shape.textBody }),
+    });
+  }
+  return {
+    col: column,
+    row,
+    ...(absolute
+      ? {
+          anchorType: "absolute" as const,
+          absoluteX: resolvedX,
+          absoluteY: resolvedY,
+          extentCx: width,
+          extentCy: height,
+        }
+      : { colOffset: resolvedX, rowOffset: resolvedY, extentCx: width, extentCy: height }),
+    name: attributeString(element, "draw:name"),
+    title: attributeString(element, "svg:title") ?? (title ? textOf(title) : undefined),
+    description:
+      attributeString(element, "svg:desc") ?? (description ? textOf(description) : undefined),
+    zOrder: attributeNumber(element, "draw:z-index"),
+    properties: {
+      ...(resolvedX === undefined ? {} : { x: resolvedX }),
+      ...(resolvedY === undefined ? {} : { y: resolvedY }),
+      ...(width === undefined ? {} : { width, childExtentWidth: width }),
+      ...(height === undefined ? {} : { height, childExtentHeight: height }),
+      ...(groupTransform?.rotation === undefined ? {} : { rotation: groupTransform.rotation }),
+      childOffsetX: 0,
+      childOffsetY: 0,
+      childOffsetPresent: true,
+      childExtentPresent: width !== undefined || height !== undefined,
+      ...(groupFill === undefined ? {} : { fill: groupFill }),
+    },
+    ...(shapes.length ? { shapes } : {}),
+    ...(groups.length ? { groups } : {}),
+  };
+}
+
+function parseShapeText(
+  paragraphs: Element[],
+  textStyles: Map<string, RichTextRunPropertiesOptions>,
+): TextBodyOptions {
+  if (
+    paragraphs.length === 1 &&
+    !(paragraphs[0]?.elements ?? []).some((child) => child.type === "element")
+  )
+    return { text: textOf(paragraphs[0]!) };
+  const parsedParagraphs = paragraphs.map((paragraph) => {
+    const children: TextRunOptions[] = [];
+    function pushRun(run: TextRunOptions): void {
+      const previous = children.at(-1);
+      if (
+        previous &&
+        Object.keys(previous).every((key) => key === "text") &&
+        Object.keys(run).every((key) => key === "text") &&
+        !/[\n\t]/u.test(previous.text ?? "") &&
+        !/[\n\t]/u.test(run.text ?? "")
+      ) {
+        previous.text = `${previous.text ?? ""}${run.text ?? ""}`;
+      } else {
+        children.push(run);
+      }
+    }
+    type RunStyle = Pick<
+      TextRunOptions,
+      "font" | "size" | "bold" | "italic" | "fill" | "underline" | "strike" | "hyperlink"
+    >;
+    function append(element: Element, inherited?: RunStyle): void {
+      for (const child of element.elements ?? []) {
+        if (child.type === "text") {
+          const text = String(child.text ?? "");
+          if (text) pushRun({ ...inherited, text });
+        } else if (child.name === "text:s") {
+          const count = attributeNumber(child, "text:c") ?? 1;
+          if (!Number.isInteger(count) || count < 1)
+            throw unknownOdsElement(
+              child,
+              "/office:document-content/office:body/office:spreadsheet/draw:rect/text:p",
+              "text:c",
+              "invalid space count",
+            );
+          pushRun({ ...inherited, text: " ".repeat(count) });
+        } else if (child.name === "text:tab") {
+          pushRun({ ...inherited, text: "\t" });
+        } else if (child.name === "text:line-break") {
+          pushRun({ ...inherited, text: "\n" });
+        } else if (child.name === "text:span") {
+          const style = textStyles.get(attributeString(child, "text:style-name") ?? "");
+          append(child, {
+            ...inherited,
+            ...(style?.font === undefined ? {} : { font: style.font }),
+            ...(style?.size === undefined ? {} : { size: style.size }),
+            ...(style?.bold === undefined ? {} : { bold: style.bold }),
+            ...(style?.italic === undefined ? {} : { italic: style.italic }),
+            ...(style?.color?.rgb === undefined
+              ? {}
+              : { fill: { type: "solid", color: { value: style.color.rgb } } }),
+            ...(style?.underline === "single" || style?.underline === "double"
+              ? { underline: style.underline }
+              : {}),
+            ...(style?.strike === undefined
+              ? {}
+              : { strike: style.strike ? "singleStrike" : "noStrike" }),
+          });
+        } else if (child.name === "text:a") {
+          const href = attributeString(child, "xlink:href");
+          if (href === undefined)
+            throw unknownOdsElement(
+              child,
+              "/office:document-content/office:body/office:spreadsheet/draw:rect/text:p",
+              "xlink:href",
+              "hyperlink target is required",
+            );
+          append(child, {
+            ...inherited,
+            hyperlink: { url: href },
+          });
+        } else
+          throw unknownOdsElement(
+            child,
+            "/office:document-content/office:body/office:spreadsheet/draw:rect/text:p",
+            child.name ?? "unknown",
+            "unsupported shape text element",
+          );
+      }
+    }
+    append(paragraph);
+    if (children.every((child) => Object.keys(child).every((key) => key === "text")))
+      return { text: children.map((child) => child.text ?? "").join("") };
+    return children.length === 0 ? { text: "" } : { children };
+  });
+  const onlyParagraph = parsedParagraphs[0];
+  return paragraphs.length === 1 && onlyParagraph && "text" in onlyParagraph
+    ? { text: onlyParagraph.text }
+    : { paragraphs: parsedParagraphs };
+}
+
+function shapeTextXml(text: string): string[] {
+  return text
+    .split(/(\n|\t| +)/u)
+    .filter(Boolean)
+    .map((part) => {
+      if (part === "\n") return xmlElement("text:line-break");
+      if (part === "\t") return xmlElement("text:tab");
+      if (part.startsWith(" "))
+        return xmlElement("text:s", part.length === 1 ? undefined : { "text:c": part.length });
+      return escapeText(part);
+    });
 }
 
 export function parseTableProtection(table: Element, worksheet: WorksheetOptions): void {
@@ -196,7 +511,7 @@ export function cellShapeXml(
   reference: string,
   styles: string[],
 ): string[] {
-  return (shapes ?? [])
+  const shapeXml = (shapes ?? [])
     .filter((shape) => `${spreadsheetColumnName(shape.col)}${shape.row}` === reference)
     .map((shape) => {
       const geometry = shape.properties.geometry;
@@ -210,6 +525,72 @@ export function cellShapeXml(
               ? "draw:ellipse"
               : "draw:custom-shape";
       const styleName = pushShapeStyle(shape.properties.fill, shape.properties.outline, styles);
+      const textBody = shape.textBody;
+      const paragraphs = textBody?.paragraphs ?? (textBody?.text ? [textBody.text] : []);
+      const paragraphXml = paragraphs.map((paragraph) => {
+        const value = typeof paragraph === "string" ? { text: paragraph } : paragraph;
+        const runs = value.children ?? (value.text === undefined ? [] : [{ text: value.text }]);
+        return xmlElement(
+          "text:p",
+          undefined,
+          runs.flatMap((run) => {
+            if (typeof run === "string") return [escapeText(run)];
+            if ("break" in run) return [xmlElement("text:line-break")];
+            if ("type" in run)
+              throw new OdsGenerateError(
+                "ODF shape text cannot represent this DrawingML text child",
+                "content.xml",
+                "/office:document-content/office:body/office:spreadsheet/draw:rect/text:p",
+                "text child",
+                "unsupported-shape-text-child",
+              );
+            if (!("text" in run)) {
+              throw new OdsGenerateError(
+                "ODF shape text cannot represent this DrawingML text child",
+                "content.xml",
+                "/office:document-content/office:body/office:spreadsheet/draw:rect/text:p",
+                "text child",
+                "unsupported-shape-text-child",
+              );
+            }
+            const fill = run.fill;
+            const styleName = addTextStyle(
+              {
+                ...(typeof run.font === "string" ? { font: run.font } : {}),
+                ...(run.size === undefined ? {} : { size: run.size }),
+                ...(run.bold === undefined ? {} : { bold: run.bold }),
+                ...(run.italic === undefined ? {} : { italic: run.italic }),
+                ...(run.underline === undefined ? {} : { underline: run.underline }),
+                ...(run.strike === undefined ? {} : { strike: run.strike !== "noStrike" }),
+                ...(fill &&
+                typeof fill === "object" &&
+                "color" in fill &&
+                typeof fill.color === "object" &&
+                "value" in fill.color
+                  ? { color: { rgb: fill.color.value } }
+                  : {}),
+              },
+              styles,
+            );
+            const content = shapeTextXml(run.text ?? "");
+            if (run.hyperlink?.url)
+              return [
+                xmlElement(
+                  "text:a",
+                  { "xlink:href": run.hyperlink.url },
+                  styleName
+                    ? [xmlElement("text:span", { "text:style-name": styleName }, content)]
+                    : content,
+                ),
+              ];
+            return [
+              styleName
+                ? xmlElement("text:span", { "text:style-name": styleName }, content)
+                : content.join(""),
+            ];
+          }),
+        );
+      });
       return xmlElement(
         elementName,
         {
@@ -236,12 +617,85 @@ export function cellShapeXml(
                 "svg:width": emuToLength(shape.extentCx ?? 0),
                 "svg:height": emuToLength(shape.extentCy ?? 0),
               }),
+          "table:end-cell-address":
+            shape.toCol !== undefined && shape.toRow !== undefined
+              ? `${spreadsheetColumnName(shape.toCol)}${shape.toRow}`
+              : undefined,
+          "table:end-x":
+            shape.toColOffset === undefined ? undefined : emuToLength(shape.toColOffset),
+          "table:end-y":
+            shape.toRowOffset === undefined ? undefined : emuToLength(shape.toRowOffset),
+          "draw:transform": odfGroupTransform(shape.properties.rotation),
         },
-        shape.textBody?.text === undefined
-          ? []
-          : [xmlElement("text:p", undefined, [escapeText(shape.textBody.text)])],
+        [
+          ...(shape.properties.customGeometry
+            ? [odfEnhancedGeometryXml(shape.properties.customGeometry)]
+            : []),
+          ...paragraphXml,
+        ],
       );
     });
+  return shapeXml;
+}
+
+export function drawingGroupXml(group: GroupOptions, styles: string[]): string {
+  const reference = `${spreadsheetColumnName(group.col)}${group.row}`;
+  const children = [
+    ...cellShapeXml(
+      (group.shapes ?? []).map((shape) => ({
+        col: group.col,
+        row: group.row,
+        colOffset: shape.properties.x,
+        rowOffset: shape.properties.y,
+        extentCx: shape.properties.width,
+        extentCy: shape.properties.height,
+        name: shape.name,
+        title: shape.title,
+        description: shape.description,
+        hidden: shape.hidden,
+        properties: shape.properties,
+        textBody: shape.textBody,
+      })),
+      reference,
+      styles,
+    ),
+    ...(group.groups ?? []).map((nested) =>
+      drawingGroupXml(
+        {
+          ...nested,
+          col: group.col,
+          row: group.row,
+          colOffset: nested.properties.x,
+          rowOffset: nested.properties.y,
+          extentCx: nested.properties.width,
+          extentCy: nested.properties.height,
+        },
+        styles,
+      ),
+    ),
+  ];
+  return xmlElement(
+    "draw:g",
+    {
+      "draw:name": group.name,
+      "draw:style-name": pushShapeStyle(group.properties.fill, undefined, styles),
+      "draw:z-index": group.zOrder,
+      "draw:transform": odfGroupTransform(group.properties.rotation),
+      "svg:x": emuToLength(group.absoluteX ?? group.colOffset ?? group.properties.x ?? 0),
+      "svg:y": emuToLength(group.absoluteY ?? group.rowOffset ?? group.properties.y ?? 0),
+      "svg:width": emuToLength(group.extentCx ?? group.properties.width ?? 0),
+      "svg:height": emuToLength(group.extentCy ?? group.properties.height ?? 0),
+    },
+    [
+      ...(group.title === undefined
+        ? []
+        : [xmlElement("svg:title", undefined, [escapeText(group.title)])]),
+      ...(group.description === undefined
+        ? []
+        : [xmlElement("svg:desc", undefined, [escapeText(group.description)])]),
+      ...children,
+    ],
+  );
 }
 
 export function tableProtectionXml(worksheet: WorksheetOptions): string {
@@ -479,6 +933,16 @@ export function parseContentValidations(
     if (help) assertElementNames(help, ["table:display", "table:title"], ["text:p"]);
     if (error)
       assertElementNames(error, ["table:display", "table:title", "table:message-type"], ["text:p"]);
+    for (const name of ["table:error-macro", "office:event-listeners"]) {
+      if (childNamed(validation, name)) {
+        throw unknownOdsElement(
+          validation,
+          CONTENT_PATH,
+          name,
+          "content validation behavior has no canonical DataValidationOptions mapping",
+        );
+      }
+    }
     const condition = attributeString(validation, "table:condition");
     const displayList = attributeString(validation, "table:display-list");
     result.set(attributeString(validation, "table:name") ?? "", {
@@ -693,6 +1157,20 @@ export function parseDatabaseRanges(
         "table:subtotal-rules",
       ],
     );
+    const sourceNames = [
+      "table:database-source-sql",
+      "table:database-source-table",
+      "table:database-source-query",
+    ];
+    const source = sourceNames.find((name) => childNamed(range, name) !== undefined);
+    if (source) {
+      throw unknownOdsElement(
+        range,
+        CONTENT_PATH,
+        source,
+        "database source has no canonical TableOptions mapping",
+      );
+    }
     const target = parseSheetAddress(attributeString(range, "table:target-range-address"));
     if (!target?.sheet || !target.address) {
       throw unknownOdsElement(
@@ -711,19 +1189,346 @@ export function parseDatabaseRanges(
         "database range worksheet is missing",
       );
     }
-    worksheet.tables = [
-      ...(worksheet.tables ?? []),
-      {
-        displayName:
-          attributeString(range, "table:name") ??
-          `DatabaseRange${worksheet.tables?.length ?? 0 + 1}`,
-        name: attributeString(range, "table:name"),
-        ref: target.address,
-        columns: [],
-        headerRowCount: attributeString(range, "table:contains-header") === "false" ? 0 : undefined,
-      },
-    ];
+    const filter = childNamed(range, "table:filter");
+    const sort = childNamed(range, "table:sort");
+    const table: TableOptions = {
+      displayName:
+        attributeString(range, "table:name") ??
+        `DatabaseRange${(worksheet.tables?.length ?? 0) + 1}`,
+      name: attributeString(range, "table:name"),
+      ref: target.address,
+      columns: [],
+      headerRowCount: parseOdsBoolean(range, "table:contains-header") === false ? 0 : undefined,
+      ...(filter ? { autoFilter: parseDatabaseFilter(filter, target.address) } : {}),
+      ...(sort ? { sortState: parseDatabaseSort(sort, range, target.address) } : {}),
+    };
+    const displayFilterButtons = parseOdsBoolean(range, "table:display-filter-buttons");
+    if (displayFilterButtons === true && filter === undefined) {
+      table.autoFilter = { ref: target.address };
+    }
+    const unsupportedAttributes = [
+      "table:is-selection",
+      "table:on-update-keep-styles",
+      "table:on-update-keep-size",
+      "table:has-persistent-data",
+      "table:orientation",
+      "calcext:contains-footer",
+    ].filter((name) => attributeString(range, name) !== undefined);
+    if (unsupportedAttributes.length > 0) {
+      throw unknownOdsElement(
+        range,
+        CONTENT_PATH,
+        unsupportedAttributes[0]!,
+        "database range attribute has no canonical TableOptions mapping",
+      );
+    }
+    if (childNamed(range, "table:subtotal-rules")) {
+      throw unknownOdsElement(
+        range,
+        CONTENT_PATH,
+        "table:subtotal-rules",
+        "subtotal rules have no canonical TableOptions mapping",
+      );
+    }
+    worksheet.tables = [...(worksheet.tables ?? []), table];
   }
+}
+
+function parseDatabaseFilter(filter: Element, rangeReference: string): AutoFilterOptions {
+  assertElementNames(
+    filter,
+    [
+      "table:target-range-address",
+      "table:condition-source",
+      "table:condition-source-range-address",
+      "table:display-duplicates",
+    ],
+    ["table:filter-condition", "table:filter-and", "table:filter-or"],
+  );
+  if (
+    attributeString(filter, "table:condition-source") !== undefined &&
+    attributeString(filter, "table:condition-source") !== "self"
+  ) {
+    throw unknownOdsElement(
+      filter,
+      CONTENT_PATH,
+      "table:condition-source",
+      "external filter condition sources have no canonical autoFilter mapping",
+    );
+  }
+  for (const name of ["table:condition-source-range-address", "table:display-duplicates"]) {
+    if (attributeString(filter, name) !== undefined) {
+      throw unknownOdsElement(
+        filter,
+        CONTENT_PATH,
+        name,
+        "filter attribute has no canonical autoFilter mapping",
+      );
+    }
+  }
+  const children = (filter.elements ?? []).filter((child) => child.type === "element");
+  const topLevelOr = children.length === 1 && children[0]?.name === "table:filter-or";
+  const conditionNodes: { element: Element; group?: "and" | "or" }[] = [];
+  const appendGroup = (element: Element, group?: "and" | "or"): void => {
+    for (const child of (element.elements ?? []).filter(
+      (entry): entry is Element => entry.type === "element",
+    )) {
+      if (child.name === "table:filter-condition") conditionNodes.push({ element: child, group });
+      else if (child.name === "table:filter-or" || child.name === "table:filter-and") {
+        appendGroup(child, child.name === "table:filter-or" ? "or" : "and");
+      } else {
+        throw unknownOdsElement(
+          child,
+          CONTENT_PATH,
+          child.name ?? "table:filter-condition",
+          "nested filter logic has no canonical autoFilter mapping",
+        );
+      }
+    }
+  };
+  for (const child of children) {
+    if (child.name === "table:filter-condition") conditionNodes.push({ element: child });
+    else if (child.name === "table:filter-or" || child.name === "table:filter-and") {
+      appendGroup(child, child.name === "table:filter-or" ? "or" : undefined);
+    } else {
+      throw unknownOdsElement(
+        child,
+        CONTENT_PATH,
+        child.name ?? "table:filter-condition",
+        "nested filter logic has no canonical autoFilter mapping",
+      );
+    }
+  }
+  const conditions = conditionNodes.map(({ element: condition, group }) => {
+    if (condition.name !== "table:filter-condition") {
+      throw unknownOdsElement(
+        condition,
+        CONTENT_PATH,
+        condition.name ?? "table:filter-condition",
+        "nested filter logic has no canonical autoFilter mapping",
+      );
+    }
+    assertElementNames(
+      condition,
+      [
+        "table:field-number",
+        "table:value",
+        "table:operator",
+        "table:case-sensitive",
+        "table:data-type",
+      ],
+      ["table:filter-set-item"],
+    );
+    for (const name of ["table:case-sensitive", "table:data-type"]) {
+      if (attributeString(condition, name) !== undefined) {
+        throw unknownOdsElement(
+          condition,
+          CONTENT_PATH,
+          name,
+          "filter condition attribute has no canonical mapping",
+        );
+      }
+    }
+    const field = attributeNumber(condition, "table:field-number");
+    const operator = attributeString(condition, "table:operator");
+    const values = childrenNamed(condition, "table:filter-set-item").map((item) => {
+      assertElementNames(item, ["table:value"]);
+      return attributeString(item, "table:value") ?? "";
+    });
+    const value = attributeString(condition, "table:value");
+    if (
+      field === undefined ||
+      operator === undefined ||
+      (values.length === 0 && value === undefined)
+    ) {
+      throw unknownOdsElement(
+        condition,
+        CONTENT_PATH,
+        "table:filter-condition",
+        "required filter data is missing",
+      );
+    }
+    const conditionValues = values.length > 0 ? values : [value!];
+    if (values.length > 0 && operator !== "=" && operator !== "equal") {
+      throw unknownOdsElement(
+        condition,
+        CONTENT_PATH,
+        "table:filter-set-item",
+        "filter set only supports equality",
+      );
+    }
+    return { field, operator, values: conditionValues, group };
+  });
+  const byField = new Map<number, typeof conditions>();
+  for (const condition of conditions) {
+    const values = byField.get(condition.field) ?? [];
+    values.push(condition);
+    byField.set(condition.field, values);
+  }
+  if (topLevelOr && byField.size !== 1) {
+    throw unknownOdsElement(
+      filter,
+      CONTENT_PATH,
+      "table:filter-or",
+      "OR filters across fields have no canonical autoFilter mapping",
+    );
+  }
+  if (
+    [...byField.values()].some(
+      (entries) => entries.length > 1 && entries.some((entry) => entry.group === undefined),
+    )
+  ) {
+    throw unknownOdsElement(
+      filter,
+      CONTENT_PATH,
+      "table:filter-condition",
+      "multiple AND comparisons for one field have no canonical mapping",
+    );
+  }
+  const columns: FilterColumnOptions[] = [...byField].map(([colId, entries]) => {
+    const equality = entries.every((entry) => entry.operator === "=" || entry.operator === "equal");
+    if (equality) {
+      if (entries.some((entry) => entry.group === "and")) {
+        return {
+          colId,
+          customFilters: {
+            and: true,
+            entries: entries.map((entry) => ({ operator: "equal", val: entry.values[0]! })),
+          },
+        };
+      }
+      return { colId, filters: { values: entries.flatMap((entry) => entry.values) } };
+    }
+    const mapped: Record<string, CustomFilterOperator> = {
+      "!=": "notEqual",
+      "<>": "notEqual",
+      "not-equal": "notEqual",
+      ">": "greaterThan",
+      ">=": "greaterThanOrEqual",
+      "<": "lessThan",
+      "<=": "lessThanOrEqual",
+    };
+    const customEntries: {
+      operator: CustomFilterOperator;
+      value: string;
+      group: "and" | "or" | undefined;
+    }[] = [];
+    for (const entry of entries) {
+      const canonicalOperator = mapped[entry.operator];
+      const value = entry.values[0];
+      if (canonicalOperator === undefined || value === undefined || entry.group === undefined) {
+        throw unknownOdsElement(
+          filter,
+          CONTENT_PATH,
+          "table:filter-condition",
+          `unsupported filter operator: ${entry.operator}`,
+        );
+      }
+      customEntries.push({ operator: canonicalOperator, value, group: entry.group });
+    }
+    return {
+      colId,
+      customFilters: {
+        ...(customEntries.every((entry) => entry.group === "and") ? { and: true } : {}),
+        entries: customEntries.map((entry) => ({ operator: entry.operator, val: entry.value })),
+      },
+    };
+  });
+  return {
+    ref:
+      parseSheetAddress(attributeString(filter, "table:target-range-address"))?.address ??
+      rangeReference,
+    columns,
+  };
+}
+
+function parseDatabaseSort(
+  sort: Element,
+  range: Element,
+  rangeReference: string,
+): SortStateOptions {
+  assertElementNames(
+    sort,
+    [
+      "table:bind-styles-to-content",
+      "table:target-range-address",
+      "table:case-sensitive",
+      "table:language",
+      "table:country",
+      "table:script",
+      "table:rfc-language-tag",
+      "table:algorithm",
+      "table:embedded-number-behavior",
+    ],
+    ["table:sort-by"],
+  );
+  for (const name of [
+    "table:bind-styles-to-content",
+    "table:language",
+    "table:country",
+    "table:script",
+    "table:rfc-language-tag",
+    "table:algorithm",
+    "table:embedded-number-behavior",
+  ]) {
+    if (attributeString(sort, name) !== undefined) {
+      throw unknownOdsElement(
+        sort,
+        CONTENT_PATH,
+        name,
+        "sort attribute has no canonical sortState mapping",
+      );
+    }
+  }
+  const reference =
+    parseSheetAddress(attributeString(sort, "table:target-range-address"))?.address ??
+    rangeReference;
+  const rangeStart = /^\$?([A-Z]+)\$?(\d+)/u.exec(reference.split(":")[0] ?? "");
+  if (!rangeStart) {
+    throw unknownOdsElement(
+      range,
+      CONTENT_PATH,
+      "table:target-range-address",
+      "database range has an invalid sort reference",
+    );
+  }
+  const firstColumn = spreadsheetColumnNumber(rangeStart[1]!);
+  const firstRow = Number(rangeStart[2]);
+  const conditions: SortCondition[] = childrenNamed(sort, "table:sort-by").map((entry) => {
+    assertElementNames(entry, ["table:field-number", "table:data-type", "table:order"]);
+    const field = attributeNumber(entry, "table:field-number");
+    if (field === undefined) {
+      throw unknownOdsElement(
+        entry,
+        CONTENT_PATH,
+        "table:field-number",
+        "sort field number is missing",
+      );
+    }
+    if (attributeString(entry, "table:data-type") !== undefined) {
+      throw unknownOdsElement(
+        entry,
+        CONTENT_PATH,
+        "table:data-type",
+        "sort data type has no canonical sortState mapping",
+      );
+    }
+    const order = attributeString(entry, "table:order");
+    if (order !== undefined && order !== "ascending" && order !== "descending") {
+      throw unknownOdsElement(entry, CONTENT_PATH, "table:order", `invalid sort order: ${order}`);
+    }
+    return {
+      ref: `${spreadsheetColumnName(firstColumn + field)}${firstRow}`,
+      ...(order === undefined ? {} : { descending: order === "descending" }),
+    };
+  });
+  return {
+    ref: reference,
+    ...(attributeString(sort, "table:case-sensitive") === undefined
+      ? {}
+      : { caseSensitive: parseOdsBoolean(sort, "table:case-sensitive") }),
+    conditions,
+  };
 }
 
 export function databaseRangesXml(worksheets: WorksheetOptions[]): string {
@@ -743,9 +1548,12 @@ export function databaseRangesXml(worksheets: WorksheetOptions[]): string {
           "table:contains-header": table.headerRowCount === 0 ? "false" : undefined,
           "table:display-filter-buttons": table.autoFilter === undefined ? undefined : true,
         },
-        table.autoFilter === undefined || typeof table.autoFilter === "string"
-          ? []
-          : [filterXml(table)],
+        [
+          ...(table.autoFilter === undefined || typeof table.autoFilter === "string"
+            ? []
+            : [filterXml(table, worksheet.name ?? "Sheet1")]),
+          ...(table.sortState === undefined ? [] : [sortXml(table, worksheet.name ?? "Sheet1")]),
+        ],
       ),
     ),
   );
@@ -755,6 +1563,18 @@ export function dataPilotTablesXml(
   worksheets: WorksheetOptions[],
   functions: OdsDataPilotFunctionOptions[] = [],
 ): string {
+  const unsupportedPivot = worksheets
+    .flatMap((worksheet) => worksheet.pivotTables ?? [])
+    .find((pivot) => pivot.mode === "definition");
+  if (unsupportedPivot) {
+    throw new OdsGenerateError(
+      "ODS cannot represent a complete OOXML pivot-table definition",
+      "content.xml",
+      "/office:document-content/office:body/office:spreadsheet/table:data-pilot-tables",
+      "table:data-pilot-table",
+      "pivot-definition-not-representable",
+    );
+  }
   const overrides = new Map(
     functions.map((item) => [`${item.tableName ?? ""}\0${item.field}`, item.summaryFunction]),
   );
@@ -767,30 +1587,59 @@ export function dataPilotTablesXml(
   return xmlElement(
     "table:data-pilot-tables",
     undefined,
-    tables.map(({ worksheet, pivot }, index) =>
-      xmlElement(
+    tables.map(({ worksheet, pivot }, index) => {
+      const sourceSheetName = pivot.sourceSheet ?? worksheet.name ?? `Sheet${index + 1}`;
+      const sourceWorksheet = pivot.sourceSheet
+        ? worksheets.find((item) => item.name === pivot.sourceSheet)
+        : worksheet;
+      if (!sourceWorksheet) {
+        throw new OdsGenerateError(
+          `ODS Data Pilot source sheet does not exist: ${sourceSheetName ?? ""}`,
+          "content.xml",
+          `/office:document-content/office:body/office:spreadsheet/table:data-pilot-tables/table:data-pilot-table[@table:name="${pivot.name ?? ""}"]`,
+          "table:source-cell-range",
+          "source-sheet-missing",
+        );
+      }
+      const location = pivot.location ?? "A3";
+      return xmlElement(
         "table:data-pilot-table",
         {
           "table:name": pivot.name ?? `DataPilot${index + 1}`,
           "table:target-range-address": sheetAddress(
             worksheet.name ?? `Sheet${index + 1}`,
-            `${pivot.location}:${pivot.location}`,
+            `${location}:${location}`,
           ),
-          "table:grand-total": "none",
-          "table:show-filter-button": false,
-          "table:drill-down-on-double-click": false,
+          "table:grand-total":
+            pivot.rowGrandTotals === false && pivot.colGrandTotals === false
+              ? "none"
+              : pivot.rowGrandTotals === false
+                ? "column"
+                : pivot.colGrandTotals === false
+                  ? "row"
+                  : "both",
+          "table:drill-down-on-double-click": pivot.enableDrill,
         },
         [
           xmlElement("table:source-cell-range", {
-            "table:cell-range-address": sheetAddress(
-              pivot.sourceSheet ?? worksheet.name ?? "Sheet1",
-              pivot.source,
-            ),
+            "table:cell-range-address": sheetAddress(sourceSheetName, pivot.source),
           }),
           ...pivot.rows.map((field) =>
             xmlElement("table:data-pilot-field", {
               "table:source-field-name": field,
               "table:orientation": "row",
+              "table:function": "auto",
+            }),
+          ),
+          ...(pivot.pages ?? []).map((field) =>
+            xmlElement("table:data-pilot-field", {
+              "table:source-field-name": field.field,
+              "table:orientation": "page",
+              "table:selected-page":
+                field.item === undefined
+                  ? undefined
+                  : (pivotFieldMembers(sourceWorksheet, pivot.source, field.field)[field.item] ??
+                    invalidPageItem(pivot, field.field, field.item)),
               "table:function": "auto",
             }),
           ),
@@ -809,33 +1658,214 @@ export function dataPilotTablesXml(
                 overrides.get(`${pivot.name ?? ""}\0${field.field}`) ?? field.summarize ?? "auto",
             }),
           ),
+          ...(pivot.hiddenFields ?? []).map((field) =>
+            xmlElement("table:data-pilot-field", {
+              "table:source-field-name": field,
+              "table:orientation": "hidden",
+              "table:function": "auto",
+            }),
+          ),
         ],
-      ),
-    ),
+      );
+    }),
   );
 }
 
-function filterXml(table: TableOptions): string {
+function pivotFieldMembers(worksheet: WorksheetOptions, source: string, field: string): string[] {
+  const match = /^([A-Z]+)([0-9]+)(?::([A-Z]+)([0-9]+))?$/u.exec(source);
+  if (!match) return [];
+  const firstColumn = spreadsheetColumnNumber(match[1] ?? "A");
+  const firstRow = Number(match[2] ?? 1);
+  const lastColumn = spreadsheetColumnNumber(match[3] ?? match[1] ?? "A");
+  const lastRow = Number(match[4] ?? match[2] ?? 1);
+  const cellAt = (rowNumber: number, column: number) =>
+    worksheet.rows
+      ?.find((row, index) => (row.rowNumber ?? index + 1) === rowNumber)
+      ?.cells?.find((cell, index) => {
+        const reference = /^([A-Z]+)[0-9]+$/u.exec(cell.reference ?? "");
+        return reference
+          ? spreadsheetColumnNumber(reference[1] ?? "A") === column
+          : index + 1 === column;
+      });
+  const fieldColumn = Array.from(
+    { length: lastColumn - firstColumn + 1 },
+    (_, index) => firstColumn + index,
+  ).find((column) => pivotValueText(cellAt(firstRow, column)?.value) === field);
+  if (fieldColumn === undefined) return [];
+  return [
+    ...new Set(
+      Array.from({ length: lastRow - firstRow }, (_, index) =>
+        pivotValueText(cellAt(firstRow + index + 1, fieldColumn)?.value),
+      ),
+    ),
+  ];
+}
+
+function pivotValueText(value: unknown): string {
+  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean")
+    return String(value);
+  if (value instanceof Date) return value.toISOString();
+  return "";
+}
+
+function invalidPageItem(pivot: SourcePivotTableOptions, field: string, item: number): never {
+  throw new OdsGenerateError(
+    `ODS Data Pilot page field ${field} refers to missing source item ${item}`,
+    "content.xml",
+    `/office:document-content/office:body/office:spreadsheet/table:data-pilot-tables/table:data-pilot-table[@table:name="${pivot.name ?? ""}"]`,
+    "table:data-pilot-field",
+    "page-field-item-missing",
+  );
+}
+
+function filterXml(table: TableOptions, worksheetName: string): string {
   const autoFilter = typeof table.autoFilter === "string" ? undefined : table.autoFilter;
   const conditions = autoFilter?.columns ?? [];
   if (!conditions.length) return "";
-  const group = conditions.length > 1 ? "table:filter-or" : undefined;
-  const children = conditions.map((column) => {
+  const groups = conditions.map((column) => {
+    if (column.hiddenButton || column.showButton === false) {
+      throw new OdsGenerateError(
+        "ODS database filters cannot represent per-column button visibility",
+        "content.xml",
+        "/office:document-content/office:body/office:spreadsheet/table:database-ranges/table:database-range/table:filter",
+        "table:filter-column",
+        "filter-button-visibility-unsupported",
+      );
+    }
     const values = column.filters?.values ?? [];
-    return xmlElement(
-      "table:filter-condition",
-      {
-        "table:field-number": column.colId,
-        "table:value": values[0] ?? "",
-        "table:operator": "=",
-      },
-      values.map((value) => xmlElement("table:filter-set-item", { "table:value": value })),
-    );
+    const customFilters = column.customFilters?.entries ?? [];
+    if (column.filters && column.customFilters) {
+      throw new OdsGenerateError(
+        "ODS database filters cannot combine value and custom filters for one column",
+        "content.xml",
+        "/office:document-content/office:body/office:spreadsheet/table:database-ranges/table:database-range/table:filter",
+        "table:filter-column",
+        "filter-variants-conflict",
+      );
+    }
+    if (customFilters.length > 0) {
+      const entries = customFilters.map((entry) =>
+        xmlElement("table:filter-condition", {
+          "table:field-number": column.colId,
+          "table:value": entry.val,
+          "table:operator": odsFilterOperator(entry.operator),
+        }),
+      );
+      const group = column.customFilters?.and ? "table:filter-and" : "table:filter-or";
+      return entries.length === 1 ? entries : [xmlElement(group, undefined, entries)];
+    }
+    if (values.length === 0 && !column.filters?.blank) {
+      throw new OdsGenerateError(
+        "ODS database filter column has no filter values",
+        "content.xml",
+        "/office:document-content/office:body/office:spreadsheet/table:database-ranges/table:database-range/table:filter",
+        "table:filter-column",
+        "filter-values-missing",
+      );
+    }
+    const entries = values.length
+      ? values.map((value) =>
+          xmlElement("table:filter-condition", {
+            "table:field-number": column.colId,
+            "table:value": value,
+            "table:operator": "=",
+          }),
+        )
+      : [
+          xmlElement("table:filter-condition", {
+            "table:field-number": column.colId,
+            "table:value": "",
+            "table:operator": "=",
+          }),
+        ];
+    return entries.length === 1 ? entries : [xmlElement("table:filter-or", undefined, entries)];
   });
+  const children = groups.flat();
   return xmlElement(
     "table:filter",
-    undefined,
-    group ? [xmlElement(group, undefined, children)] : children,
+    { "table:target-range-address": sheetAddress(worksheetName, autoFilter?.ref ?? table.ref) },
+    children.length === 1 ? children : [xmlElement("table:filter-and", undefined, children)],
+  );
+}
+
+function odsFilterOperator(operator: CustomFilterOperator | undefined): string {
+  switch (operator) {
+    case "notEqual":
+      return "<>";
+    case "greaterThan":
+      return ">";
+    case "greaterThanOrEqual":
+      return ">=";
+    case "lessThan":
+      return "<";
+    case "lessThanOrEqual":
+      return "<=";
+    case "equal":
+    case undefined:
+      return "=";
+  }
+}
+
+function sortXml(table: TableOptions, worksheetName: string): string {
+  const sortState = table.sortState!;
+  const unsupportedState =
+    sortState.columnSort !== undefined || sortState.sortMethod !== undefined
+      ? "sort state has fields that ODF cannot represent"
+      : sortState.conditions.some(
+            (condition) => condition.sortBy !== undefined && condition.sortBy !== "value",
+          ) ||
+          sortState.conditions.some(
+            (condition) =>
+              condition.customList !== undefined ||
+              condition.dxfId !== undefined ||
+              condition.iconSet !== undefined ||
+              condition.iconId !== undefined,
+          )
+        ? "sort condition has fields that ODF cannot represent"
+        : undefined;
+  if (unsupportedState) {
+    throw new OdsGenerateError(
+      unsupportedState,
+      "content.xml",
+      "/office:document-content/office:body/office:spreadsheet/table:database-ranges/table:database-range/table:sort",
+      "table:sort",
+      "sort-state-not-representable",
+    );
+  }
+  const rangeStart = /^([A-Z]+)\d+/u.exec(sortState.ref || table.ref);
+  if (!rangeStart) {
+    throw new OdsGenerateError(
+      "ODS database sort range is invalid",
+      "content.xml",
+      "/office:document-content/office:body/office:spreadsheet/table:database-ranges/table:database-range/table:sort",
+      "table:target-range-address",
+      "sort-range-invalid",
+    );
+  }
+  const firstColumn = spreadsheetColumnNumber(rangeStart[1]!);
+  const sortStart = /^([A-Z]+)\d+/u;
+  return xmlElement(
+    "table:sort",
+    {
+      "table:target-range-address": sheetAddress(worksheetName, sortState.ref),
+      "table:case-sensitive": sortState.caseSensitive,
+    },
+    sortState.conditions.map((condition) => {
+      const match = sortStart.exec(condition.ref);
+      if (!match) {
+        throw new OdsGenerateError(
+          "ODS database sort condition reference is invalid",
+          "content.xml",
+          "/office:document-content/office:body/office:spreadsheet/table:database-ranges/table:database-range/table:sort/table:sort-by",
+          "table:sort-by",
+          "sort-condition-invalid",
+        );
+      }
+      return xmlElement("table:sort-by", {
+        "table:field-number": spreadsheetColumnNumber(match[1]!) - firstColumn,
+        "table:order": condition.descending ? "descending" : "ascending",
+      });
+    }),
   );
 }
 
@@ -857,32 +1887,44 @@ export function parseConditionalFormats(
         "calcext:color-scale",
         "calcext:data-bar",
         "calcext:icon-set",
-        "calcext:date-is",
+        "calcext:date",
       ],
     );
     const target = parseSheetAddress(attributeString(format, "calcext:target-range-address"));
-    const rules: ConditionalFormatRule[] = childrenNamed(format, "calcext:condition").map(
-      (condition) => {
-        assertElementNames(condition, [
+    let priority = 0;
+    const rules: ConditionalFormatRule[] = (format.elements ?? []).flatMap((rule) => {
+      if (rule.type !== "element") return [];
+      const rulePriority = ++priority;
+      if (rule.name === "calcext:condition") {
+        assertElementNames(rule, [
           "calcext:apply-style-name",
           "calcext:base-cell-address",
           "calcext:value",
         ]);
-        const styleName = attributeString(condition, "calcext:apply-style-name") ?? "";
+        const styleName = attributeString(rule, "calcext:apply-style-name") ?? "";
         const style: StyleOptions = styles.get(styleName) ?? {};
-        return {
-          ...conditionalRule(attributeString(condition, "calcext:value") ?? ""),
-          priority: result.length + rulesPrioritySeed(format),
-          dxfId: dxfIndex(style, dxfs),
-        };
-      },
-    );
-    const colorScale = childNamed(format, "calcext:color-scale");
-    if (colorScale) rules.push(colorScaleRule(colorScale));
-    const dataBar = childNamed(format, "calcext:data-bar");
-    if (dataBar) rules.push(dataBarRule(dataBar));
-    const iconSet = childNamed(format, "calcext:icon-set");
-    if (iconSet) rules.push(iconSetRule(iconSet));
+        return [
+          {
+            ...conditionalRule(attributeString(rule, "calcext:value") ?? ""),
+            priority: rulePriority,
+            dxfId: dxfIndex(style, dxfs),
+          },
+        ];
+      }
+      if (rule.name === "calcext:color-scale") {
+        return [{ ...colorScaleRule(rule), priority: rulePriority }];
+      }
+      if (rule.name === "calcext:data-bar") {
+        return [{ ...dataBarRule(rule), priority: rulePriority }];
+      }
+      if (rule.name === "calcext:icon-set") {
+        return [{ ...iconSetRule(rule), priority: rulePriority }];
+      }
+      if (rule.name === "calcext:date") {
+        return [dateIsRule(rule, styles, dxfs, rulePriority)];
+      }
+      return [];
+    });
     if (!rules.length) continue;
     result.push({ sqref: target?.address ?? sheetName, rules });
   }
@@ -900,6 +1942,12 @@ export function conditionalFormatsXml(
     undefined,
     formats.flatMap((format) => {
       const rules = format.rules.map((rule) => {
+        if (rule.type === "timePeriod") {
+          return xmlElement("calcext:date", {
+            "calcext:date": dateIsValue(rule.timePeriod),
+            "calcext:style": styleNames.get(rule.dxfId ?? -1) ?? "Default",
+          });
+        }
         if (rule.type === "colorScale") {
           return xmlElement(
             "calcext:color-scale",
@@ -994,10 +2042,6 @@ function conditionValue(rule: ConditionalFormatRule): string {
     return `${rule.operator === "between" ? "" : "not-"}between(${rule.formulas?.join(",") ?? ""})`;
   }
   return `${operator}${rule.formulas?.[0] ?? ""}`;
-}
-
-function rulesPrioritySeed(format: Element): number {
-  return (format.elements ?? []).filter((child) => child.type === "element").length;
 }
 
 const dxfKeyCache = new WeakMap<DxfOptions[], string[]>();
@@ -1184,6 +2228,60 @@ function iconSetRule(element: Element): ConditionalFormatRule {
   };
 }
 
+function dateIsRule(
+  element: Element,
+  styles: Map<string, StyleOptions>,
+  dxfs: DxfOptions[],
+  priority: number,
+): ConditionalFormatRule {
+  assertElementNames(element, ["calcext:date", "calcext:style"]);
+  const value = attributeString(element, "calcext:date");
+  const timePeriod = Object.entries(dateIsPeriods).find(([candidate]) => candidate === value)?.[1];
+  if (!timePeriod) {
+    throw unknownOdsElement(
+      element,
+      CONTENT_PATH,
+      "calcext:date",
+      `unsupported date period: ${value ?? "missing"}`,
+    );
+  }
+  const styleName = attributeString(element, "calcext:style");
+  const style = styleName === undefined ? undefined : styles.get(styleName);
+  return {
+    type: "timePeriod",
+    timePeriod,
+    priority,
+    ...(style ? { dxfId: dxfIndex(style, dxfs) } : {}),
+  };
+}
+
+const dateIsPeriods = {
+  today: "today",
+  yesterday: "yesterday",
+  tomorrow: "tomorrow",
+  "last-7-days": "last7Days",
+  "this-week": "thisWeek",
+  "last-week": "lastWeek",
+  "next-week": "nextWeek",
+  "this-month": "thisMonth",
+  "last-month": "lastMonth",
+  "next-month": "nextMonth",
+} satisfies Record<string, NonNullable<ConditionalFormatRule["timePeriod"]>>;
+
+function dateIsValue(timePeriod: ConditionalFormatRule["timePeriod"]): string {
+  const value = Object.entries(dateIsPeriods).find(([, period]) => period === timePeriod)?.[0];
+  if (value === undefined) {
+    throw new OdsGenerateError(
+      `ODS date conditional formatting does not support time period: ${timePeriod ?? "missing"}`,
+      CONTENT_PATH,
+      "/office:body/office:spreadsheet/table:table/calcext:conditional-formats/calcext:date",
+      "calcext:date",
+      "date-period-not-representable",
+    );
+  }
+  return value;
+}
+
 export function parseDataPilotTables(
   body: Element | undefined,
   worksheets: WorksheetOptions[],
@@ -1196,21 +2294,11 @@ export function parseDataPilotTables(
       table,
       [
         "table:name",
-        "table:application-data",
         "table:target-range-address",
-        "table:buttons",
         "table:grand-total",
-        "table:show-filter-button",
         "table:drill-down-on-double-click",
-        "table:ignore-empty-rows",
-        "table:header-grid-layout",
       ],
-      [
-        "table:source-cell-range",
-        "table:database-source-query",
-        "table:data-pilot-field",
-        "tableooo:data-pilot-grand-total",
-      ],
+      ["table:source-cell-range", "table:data-pilot-field"],
     );
     const target = parseSheetAddress(attributeString(table, "table:target-range-address"));
     if (!target?.sheet) {
@@ -1226,15 +2314,93 @@ export function parseDataPilotTables(
       throw unknownOdsElement(table, CONTENT_PATH, target.sheet, "data pilot worksheet is missing");
     }
     const sourceRange = childNamed(table, "table:source-cell-range");
+    if (!sourceRange) {
+      throw unknownOdsElement(
+        table,
+        CONTENT_PATH,
+        "table:source-cell-range",
+        "data pilot source has no canonical WorkbookOptions mapping",
+      );
+    }
     const source = parseSheetAddress(attributeString(sourceRange, "table:cell-range-address"));
+    if (!source?.address) {
+      throw unknownOdsElement(
+        sourceRange,
+        CONTENT_PATH,
+        "table:cell-range-address",
+        "data pilot source range is missing",
+      );
+    }
+    const sourceWorksheet = source?.sheet
+      ? worksheets.find((entry) => entry.name === source.sheet)
+      : worksheet;
+    if (!sourceWorksheet) {
+      throw unknownOdsElement(
+        sourceRange,
+        CONTENT_PATH,
+        source?.sheet ?? "table:cell-range-address",
+        "data pilot source worksheet is missing",
+      );
+    }
+    const grandTotal = attributeString(table, "table:grand-total");
+    if (grandTotal !== undefined && !["none", "row", "column", "both"].includes(grandTotal)) {
+      throw unknownOdsElement(
+        table,
+        CONTENT_PATH,
+        "table:grand-total",
+        `invalid data pilot grand-total value: ${grandTotal}`,
+      );
+    }
+    const drillDown = parseOdsBoolean(table, "table:drill-down-on-double-click");
     const rows: string[] = [];
     const columns: string[] = [];
+    const pages: PivotPageFieldOptions[] = [];
     const data: PivotDataField[] = [];
+    const hidden: string[] = [];
     for (const field of childrenNamed(table, "table:data-pilot-field")) {
       const name = attributeString(field, "table:source-field-name") ?? "";
       const orientation = attributeString(field, "table:orientation");
+      if (orientation === undefined) {
+        throw unknownOdsElement(
+          field,
+          CONTENT_PATH,
+          "table:orientation",
+          "data pilot field orientation is required",
+        );
+      }
+      if (
+        attributeString(field, "table:is-data-layout-field") !== undefined ||
+        attributeString(field, "table:used-hierarchy") !== undefined ||
+        (field.elements ?? []).some((child) => child.type === "element")
+      ) {
+        throw unknownOdsElement(
+          field,
+          CONTENT_PATH,
+          "table:data-pilot-field",
+          "field hierarchy, grouping, and layout metadata have no canonical pivot mapping",
+        );
+      }
       if (orientation === "row") rows.push(name);
-      else if (orientation === "column") columns.push(name);
+      else if (orientation === "page") {
+        const selectedPage = attributeString(field, "table:selected-page");
+        const selectedIndex =
+          selectedPage === undefined
+            ? undefined
+            : pivotFieldMembers(sourceWorksheet, source.address, name).indexOf(selectedPage);
+        if (selectedPage !== undefined && (selectedIndex === undefined || selectedIndex < 0)) {
+          throw unknownOdsElement(
+            field,
+            CONTENT_PATH,
+            "table:selected-page",
+            "selected page member is not present in the source range",
+          );
+        }
+        pages.push({
+          field: name,
+          ...(selectedIndex === undefined ? {} : { item: selectedIndex }),
+        });
+      } else if (orientation === "column") columns.push(name);
+      else if (orientation === "hidden") hidden.push(name);
       else if (orientation === "data") {
         const functionValue = attributeString(field, "table:function");
         const summarize =
@@ -1253,6 +2419,13 @@ export function parseDataPilotTables(
           field: name,
           summarize,
         });
+      } else {
+        throw unknownOdsElement(
+          field,
+          CONTENT_PATH,
+          "table:orientation",
+          `unsupported data pilot field orientation: ${orientation}`,
+        );
       }
     }
     worksheet.pivotTables = [
@@ -1260,14 +2433,29 @@ export function parseDataPilotTables(
       {
         mode: "source",
         name: attributeString(table, "table:name"),
-        source: source?.address ?? "",
+        source: source.address,
         sourceSheet: source?.sheet,
         location: target.address.split(":")[0],
         rows,
+        ...(pages.length > 0 ? { pages } : {}),
         columns,
         data,
+        rowGrandTotals:
+          grandTotal === undefined ? undefined : grandTotal === "row" || grandTotal === "both",
+        colGrandTotals:
+          grandTotal === undefined ? undefined : grandTotal === "column" || grandTotal === "both",
+        enableDrill: drillDown,
+        ...(hidden.length > 0 ? { hiddenFields: hidden } : {}),
       },
     ];
   }
   return functions;
+}
+
+function parseOdsBoolean(element: Element, name: string): boolean | undefined {
+  const value = attributeString(element, name);
+  if (value === undefined) return undefined;
+  if (value === "true" || value === "1") return true;
+  if (value === "false" || value === "0") return false;
+  throw unknownOdsElement(element, CONTENT_PATH, name, `invalid boolean value: ${value}`);
 }

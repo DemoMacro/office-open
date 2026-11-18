@@ -1,13 +1,3 @@
-/** Word revision insert/delete markers decoded from FRD ranges. */
-export interface LegacyRevisionRange {
-  /** Start character position in the main document. */
-  start: number;
-  /** End character position, exclusive. */
-  end: number;
-  /** True for inserted text; false for deleted text. */
-  inserted: boolean;
-}
-
 /** A named bookmark range decoded from PlcfBkf and PlcfBkl. */
 export interface LegacyBookmark {
   id: number;

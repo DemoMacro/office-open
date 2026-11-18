@@ -5,6 +5,7 @@ import type {
   TableRowOptions,
 } from "@office-open/docx";
 
+import { DocParseError } from "../errors";
 import type { LegacyParagraphProperties, ParagraphRange, TextCharacter } from "./models";
 export function paragraphPropertiesFor(
   ranges: readonly ParagraphRange[],
@@ -78,17 +79,30 @@ export function applyTables(
   for (const row of rows) {
     const startIndex = paragraphIndexForCp(characters, previousEnd);
     const endIndex = paragraphIndexForCp(characters, row.cpEnd);
-    const content = result.slice(startIndex + offset, endIndex + offset + 1);
+    const content = result.slice(startIndex + offset, endIndex + offset);
+    const cellEnds = characters
+      .filter(
+        (character) => character.cellEnd && character.cp >= previousEnd && character.cp < row.cpEnd,
+      )
+      .map((character) => paragraphIndexForCp(characters, character.cp) + 1 - startIndex);
     const columnCount = row.properties.columnWidths!.length;
-    const cells: TableCellOptions[] = Array.from({ length: columnCount }, (_, index) => {
+    if (cellEnds.length !== columnCount || cellEnds.at(-1) !== content.length) {
+      throw new DocParseError("Invalid DOC table: cell markers do not match the row definition", {
+        part: "document",
+        path: "table/cell-boundaries",
+        reason: "invalid-table-cell-boundaries",
+      });
+    }
+    let cellStart = 0;
+    const cells: TableCellOptions[] = cellEnds.map((cellEnd, index) => {
       const merge = row.properties.cellMerges?.[index];
-      const chunkStart = Math.ceil((index * content.length) / columnCount);
-      const chunkEnd = Math.ceil(((index + 1) * content.length) / columnCount);
-      return {
-        children: content.slice(chunkStart, chunkEnd),
+      const cell = {
+        children: content.slice(cellStart, cellEnd),
         ...(merge?.continue ? { verticalMerge: "continue" as const } : {}),
         ...(merge?.restart ? { verticalMerge: "restart" as const } : {}),
       };
+      cellStart = cellEnd;
+      return cell;
     });
     const table: SectionChild = {
       table: {
@@ -104,5 +118,9 @@ export function applyTables(
 }
 
 export function paragraphIndexForCp(characters: readonly TextCharacter[], cp: number): number {
-  return characters.filter((character) => character.paragraphEnd && character.cp < cp).length;
+  let count = 0;
+  for (const character of characters) {
+    if (character.paragraphEnd && character.cp < cp) count += 1;
+  }
+  return count;
 }

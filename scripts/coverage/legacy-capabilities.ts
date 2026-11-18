@@ -139,8 +139,8 @@ export const LEGACY_CAPABILITY_PROBES: readonly LegacyCapabilityFormat[] = [
         },
         {
           name: "Annotations and revision ranges",
-          assertion: "annotation references become revision ranges",
-          testId: "projects annotation references as canonical revision ranges",
+          assertion: "annotation references remain distinct from revision ranges",
+          testId: "does not treat annotation references as revision ranges",
         },
         {
           name: "Main document fields",
@@ -397,7 +397,7 @@ export const LEGACY_CAPABILITY_PROBES: readonly LegacyCapabilityFormat[] = [
         {
           name: "Picture corruption isolation",
           assertion: "a corrupt picture does not discard valid pictures",
-          testId: "isolates a corrupt picture beside a valid embedded picture",
+          testId: "rejects a corrupt picture beside a valid embedded picture",
         },
         {
           name: "Grouped text tables",

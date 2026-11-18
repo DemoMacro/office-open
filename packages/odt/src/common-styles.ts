@@ -1,18 +1,36 @@
-import type { DocumentOptions, SectionOptions } from "@office-open/docx";
+import type {
+  DocumentOptions,
+  ParagraphStylePropertiesOptions,
+  RunStylePropertiesOptions,
+  SectionOptions,
+} from "@office-open/docx";
 import {
   attributeString,
   childNamed,
   childrenNamed,
   readXml,
+  stylePropertyXml,
+  type GraphicStyleResources,
+  graphicStyleResourcesXml,
   xmlElement,
+  type StyleColumnsOptions,
+  type StylePropertyChildOptions,
+  type StylePropertyOptions,
   type OdfFiles,
 } from "@office-open/odf";
 import type { Element } from "@office-open/xml";
 
 import { NAMESPACES } from "./body";
+import { OdtGenerateError, OdtParseError } from "./error";
 import { outlineStyleXml } from "./list";
-import { lengthToTwips, masterHeaderFooter, twipsToLength } from "./master-pages";
+import {
+  lengthToTwips,
+  pageLayoutColumnsOptions,
+  pageLayoutColumnsXml,
+  twipsToLength,
+} from "./master-pages";
 import { notesConfigurationXml } from "./notes";
+import type { OdtMasterPageOptions, OdtPageLayoutOptions } from "./options";
 
 /** Docx font-table entry, indexed from the shared document model. */
 export type FontEntry = NonNullable<DocumentOptions["fonts"]>[number];
@@ -24,6 +42,19 @@ export type DocumentDefaults = NonNullable<
 type CommonStyle =
   | NonNullable<NonNullable<DocumentOptions["styles"]>["paragraphStyles"]>[number]
   | NonNullable<NonNullable<DocumentOptions["styles"]>["characterStyles"]>[number];
+
+type ParsedCommonStyle = {
+  id: string;
+  name: string;
+  family?: string;
+  alignment?: ParagraphStylePropertiesOptions["alignment"];
+  basedOn?: string;
+  next?: string;
+  indent?: ParagraphStylePropertiesOptions["indent"];
+  spacing?: ParagraphStylePropertiesOptions["spacing"];
+  run?: RunStylePropertiesOptions;
+  relativeFontSize?: number;
+};
 
 function textPropertiesXml(style: Pick<CommonStyle, "run">): string {
   const run = style.run;
@@ -67,11 +98,61 @@ export function documentStylesXml(
   settings: DocumentOptions["settings"],
   numbering: DocumentOptions["numbering"],
   styles: DocumentOptions["styles"],
+  headerFooter: string,
+  pageLayouts?: readonly OdtPageLayoutOptions[],
+  masterPages?: readonly OdtMasterPageOptions[],
+  masterPageXml?: readonly string[],
+  graphicResources?: GraphicStyleResources,
 ): string {
   const properties = section?.properties;
+  const needsDefaultLayout =
+    pageLayouts?.length || properties !== undefined || headerFooter !== "" || masterPages?.length;
+  const layouts = pageLayouts?.length
+    ? pageLayouts
+    : needsDefaultLayout
+      ? [{ name: "pm1", properties }]
+      : [];
+  const pageLayout = layouts
+    .map(
+      (layout) =>
+        `<style:page-layout style:name="${layout.name}">${pageLayoutPropertiesXml(
+          layout.properties,
+          layout.columns,
+          layout.pageLayoutProperties,
+        )}</style:page-layout>`,
+    )
+    .join("");
+  const masters = masterPageXml?.length
+    ? masterPageXml.join("")
+    : masterPages?.length
+      ? masterPages
+          .map(
+            (master) =>
+              `<style:master-page style:name="${master.name}"${
+                master.pageLayoutName ? ` style:page-layout-name="${master.pageLayoutName}"` : ""
+              }/>`,
+          )
+          .join("")
+      : headerFooter !== ""
+        ? `<style:master-page style:name="Standard" style:page-layout-name="${layouts[0]?.name ?? "pm1"}">${headerFooter}</style:master-page>`
+        : "";
+  const masterStyles = masters ? `<office:master-styles>${masters}</office:master-styles>` : "";
+  const notes =
+    commonStylesXml(styles) +
+    notesConfigurationXml(settings) +
+    outlineStyleXml(numbering) +
+    defaultStyleXml(styles);
+  return `<?xml version="1.0" encoding="UTF-8"?><office:document-styles ${NAMESPACES} office:version="1.3"><office:styles>${notes}${graphicResources ? graphicStyleResourcesXml(graphicResources).join("") : ""}</office:styles><office:automatic-styles>${pageLayout}</office:automatic-styles>${masterStyles}</office:document-styles>`;
+}
+
+function pageLayoutPropertiesXml(
+  properties: SectionOptions["properties"],
+  preservedColumns?: StyleColumnsOptions,
+  preservedProperties?: Extract<StylePropertyOptions, { name: "style:page-layout-properties" }>,
+): string {
   const pageSize = typeof properties?.pageSize === "object" ? properties.pageSize : undefined;
   const pageMargin = typeof properties?.pageMargin === "object" ? properties.pageMargin : undefined;
-  const layoutAttributes = [
+  const attributes = [
     pageSize?.width !== undefined && `fo:page-width="${twipsToLength(pageSize.width)}"`,
     pageSize?.height !== undefined && `fo:page-height="${twipsToLength(pageSize.height)}"`,
     pageSize?.orientation && `style:print-orientation="${pageSize.orientation}"`,
@@ -79,23 +160,69 @@ export function documentStylesXml(
     pageMargin?.right !== undefined && `fo:margin-right="${twipsToLength(pageMargin.right)}"`,
     pageMargin?.bottom !== undefined && `fo:margin-bottom="${twipsToLength(pageMargin.bottom)}"`,
     pageMargin?.left !== undefined && `fo:margin-left="${twipsToLength(pageMargin.left)}"`,
+    writingModeAttribute(properties),
   ].filter(Boolean);
-  const headerFooter = masterHeaderFooter(section);
-  const needsMaster = layoutAttributes.length > 0 || headerFooter !== "";
-  const pageLayout = needsMaster
-    ? `<style:page-layout style:name="pm1"><style:page-layout-properties ${layoutAttributes.join(
-        " ",
-      )}/></style:page-layout>`
-    : "";
-  const masterStyles = needsMaster
-    ? `<office:master-styles><style:master-page style:name="Standard" style:page-layout-name="pm1">${headerFooter}</style:master-page></office:master-styles>`
-    : "";
-  const notes =
-    commonStylesXml(styles) +
-    notesConfigurationXml(settings) +
-    outlineStyleXml(numbering) +
-    defaultStyleXml(styles);
-  return `<?xml version="1.0" encoding="UTF-8"?><office:document-styles ${NAMESPACES} office:version="1.3"><office:styles>${notes}</office:styles><office:automatic-styles>${pageLayout}</office:automatic-styles>${masterStyles}</office:document-styles>`;
+  const columns = pageLayoutColumnsXml(properties, preservedColumns);
+  if (preservedProperties !== undefined) {
+    const children: StylePropertyChildOptions[] = (preservedProperties.children ?? []).filter(
+      (child) => child.name !== "style:columns",
+    );
+    const columnOptions = pageLayoutColumnsOptions(properties, preservedColumns);
+    if (columnOptions !== undefined) children.push(columnOptions);
+    return stylePropertyXml(
+      {
+        ...preservedProperties,
+        attributes: {
+          ...preservedProperties.attributes,
+          ...pageLayoutCanonicalAttributes(properties),
+        },
+        children,
+      },
+      "hundredth-millimeter",
+    );
+  }
+  return `<style:page-layout-properties${attributes.length ? ` ${attributes.join(" ")}` : ""}>${columns}</style:page-layout-properties>`;
+}
+
+function pageLayoutCanonicalAttributes(
+  properties: SectionOptions["properties"],
+): Partial<Record<string, string | number | boolean>> {
+  const pageSize = typeof properties?.pageSize === "object" ? properties.pageSize : undefined;
+  const pageMargin = typeof properties?.pageMargin === "object" ? properties.pageMargin : undefined;
+  const writingMode = writingModeValue(properties);
+  return {
+    ...(pageSize?.width === undefined ? {} : { "fo:page-width": pageSize.width }),
+    ...(pageSize?.height === undefined ? {} : { "fo:page-height": pageSize.height }),
+    ...(pageSize?.orientation === undefined
+      ? {}
+      : { "style:print-orientation": pageSize.orientation }),
+    ...(pageMargin?.top === undefined ? {} : { "fo:margin-top": pageMargin.top }),
+    ...(pageMargin?.right === undefined ? {} : { "fo:margin-right": pageMargin.right }),
+    ...(pageMargin?.bottom === undefined ? {} : { "fo:margin-bottom": pageMargin.bottom }),
+    ...(pageMargin?.left === undefined ? {} : { "fo:margin-left": pageMargin.left }),
+    ...(writingMode === undefined ? {} : { "style:writing-mode": writingMode }),
+  };
+}
+
+function writingModeValue(properties: SectionOptions["properties"]): string | undefined {
+  if (properties?.bidi && properties.textDirection !== undefined) {
+    throw new OdtGenerateError(
+      "ODT cannot represent section bidi and text direction together",
+      "styles.xml",
+      "/office:document-styles/office:automatic-styles/style:page-layout/style:page-layout-properties/@style:writing-mode",
+      "style:writing-mode",
+      "conflicting-writing-mode",
+    );
+  }
+  if (properties?.bidi) return "rl-tb";
+  if (properties?.textDirection === "lrTb") return "lr-tb";
+  if (properties?.textDirection === "tbRl") return "tb-rl";
+  return undefined;
+}
+
+function writingModeAttribute(properties: SectionOptions["properties"]): string | undefined {
+  const value = writingModeValue(properties);
+  return value === undefined ? undefined : `style:writing-mode="${value}"`;
 }
 
 export function commonStylesXml(styles: DocumentOptions["styles"]): string {
@@ -113,7 +240,7 @@ export function commonStylesXml(styles: DocumentOptions["styles"]): string {
         },
         [
           xmlElement("style:paragraph-properties", {
-            "fo:text-align": paragraph?.alignment,
+            "fo:text-align": paragraph?.alignment === "both" ? "justify" : paragraph?.alignment,
             "fo:margin-left":
               paragraph?.indent?.left !== undefined
                 ? twipsToLength(paragraph.indent.left)
@@ -173,7 +300,7 @@ export function defaultStyleXml(styles: DocumentOptions["styles"]): string {
     : {};
   const paragraphAttributes = paragraph
     ? {
-        "fo:text-align": paragraph.alignment,
+        "fo:text-align": paragraph.alignment === "both" ? "justify" : paragraph.alignment,
         "fo:margin-left":
           paragraph.indent?.left !== undefined ? twipsToLength(paragraph.indent.left) : undefined,
         "fo:margin-right":
@@ -264,20 +391,7 @@ export function parseDefaultStyle(files: OdfFiles): DocumentDefaults | undefined
 
 export function parseCommonStyles(files: OdfFiles): DocumentOptions["styles"] {
   const container = childNamed(readXml(files, "styles.xml"), "office:styles");
-  const parsed = new Map<
-    string,
-    {
-      id: string;
-      name?: string;
-      family?: string;
-      alignment?: string;
-      basedOn?: string;
-      next?: string;
-      indent?: { left?: number; right?: number };
-      spacing?: { before?: number; after?: number };
-      character: Record<string, unknown>;
-    }
-  >();
+  const parsed = new Map<string, ParsedCommonStyle>();
   for (const style of childrenNamed(container, "style:style")) {
     const id = attributeString(style, "style:name") ?? "";
     const character = childNamed(style, "style:text-properties");
@@ -300,36 +414,45 @@ export function parseCommonStyles(files: OdfFiles): DocumentOptions["styles"] {
             ...(spacingAfter !== undefined ? { after: spacingAfter } : {}),
           }
         : undefined;
-    const size = attributeString(character, "fo:font-size");
-    const color = attributeString(character, "fo:color");
-    const run = Object.fromEntries(
-      Object.entries({
-        bold: attributeString(character, "fo:font-weight") === "bold" || undefined,
-        italic: attributeString(character, "fo:font-style") === "italic" || undefined,
-        underline:
-          attributeString(character, "style:text-underline-style") === "solid"
-            ? { type: "single" as const }
-            : undefined,
-        strike:
-          attributeString(character, "style:text-line-through-style") === "solid" || undefined,
-        ...(size?.endsWith("pt") ? { size: Number(size.slice(0, -2)) } : {}),
-        color: color?.startsWith("#") ? color.slice(1) : undefined,
-        font: attributeString(character, "fo:font-family") || undefined,
-      }).filter(([, value]) => value !== undefined),
-    );
+    const run = parseRunProperties(character, id);
     parsed.set(id, {
       id,
       name: attributeString(style, "style:display-name") ?? id,
       family: attributeString(style, "style:family"),
-      alignment: attributeString(paragraph, "fo:text-align"),
+      alignment: parseAlignment(attributeString(paragraph, "fo:text-align"), id),
       basedOn: attributeString(style, "style:parent-style-name"),
       next: attributeString(style, "style:next-style-name"),
       indent,
       spacing,
-      character: run,
+      ...(run.run ? { run: run.run } : {}),
+      ...(run.relativeFontSize === undefined ? {} : { relativeFontSize: run.relativeFontSize }),
     });
   }
-  const paragraphStyles = [...parsed]
+  const defaultSize = parseDefaultStyle(files)?.run?.size ?? 12;
+  const resolvedSizes = new Map<string, number>();
+  function effectiveFontSize(name: string, path = new Set<string>()): number {
+    const cached = resolvedSizes.get(name);
+    if (cached !== undefined) return cached;
+    const style = parsed.get(name);
+    if (!style) return defaultSize;
+    if (path.has(name)) throw invalidStyle(name, "style:parent-style-name", "cyclic style chain");
+    const parentPath = new Set(path).add(name);
+    const inherited = style.basedOn ? effectiveFontSize(style.basedOn, parentPath) : defaultSize;
+    const size =
+      style.run?.size ??
+      (style.relativeFontSize === undefined
+        ? inherited
+        : (inherited * style.relativeFontSize) / 100);
+    resolvedSizes.set(name, size);
+    return size;
+  }
+  for (const [name, style] of parsed) {
+    if (style.relativeFontSize === undefined) continue;
+    style.run = { ...style.run, size: effectiveFontSize(name) };
+  }
+  const paragraphStyles: NonNullable<NonNullable<DocumentOptions["styles"]>["paragraphStyles"]> = [
+    ...parsed,
+  ]
     .filter(([, style]) => style.family === "paragraph")
     .map(([name, style]) => ({
       id: style.id,
@@ -339,26 +462,104 @@ export function parseCommonStyles(files: OdfFiles): DocumentOptions["styles"] {
       ...(style.alignment !== undefined || style.indent !== undefined || style.spacing !== undefined
         ? {
             paragraph: {
-              alignment: style.alignment as never,
+              alignment: style.alignment,
               ...(style.indent ? { indent: style.indent } : {}),
               ...(style.spacing ? { spacing: style.spacing } : {}),
             },
           }
         : {}),
-      ...(Object.keys(style.character).length > 0 ? { run: style.character as never } : {}),
+      ...(style.run ? { run: style.run } : {}),
     }));
-  const characterStyles = [...parsed]
+  const characterStyles: NonNullable<NonNullable<DocumentOptions["styles"]>["characterStyles"]> = [
+    ...parsed,
+  ]
     .filter(([, style]) => style.family === "text")
     .map(([name, style]) => ({
       id: style.id,
       name: style.name ?? name,
       ...(style.basedOn ? { basedOn: style.basedOn } : {}),
       ...(style.next ? { next: style.next } : {}),
-      ...(Object.keys(style.character).length > 0 ? { run: style.character as never } : {}),
+      ...(style.run ? { run: style.run } : {}),
     }));
   const result = {
     ...(paragraphStyles.length > 0 ? { paragraphStyles } : {}),
     ...(characterStyles.length > 0 ? { characterStyles } : {}),
   };
   return Object.keys(result).length > 0 ? result : undefined;
+}
+
+function parseRunProperties(
+  element: Element | undefined,
+  styleName: string,
+): { run?: RunStylePropertiesOptions; relativeFontSize?: number } {
+  const size = attributeString(element, "fo:font-size");
+  const color = attributeString(element, "fo:color");
+  const weight = attributeString(element, "fo:font-weight");
+  const fontStyle = attributeString(element, "fo:font-style");
+  const underline = attributeString(element, "style:text-underline-style");
+  const strike = attributeString(element, "style:text-line-through-style");
+  const relativeFontSize = size?.endsWith("%") ? Number(size.slice(0, -1)) : undefined;
+  if (
+    relativeFontSize !== undefined &&
+    (!Number.isFinite(relativeFontSize) || relativeFontSize < 0)
+  )
+    throw invalidStyle(styleName, "fo:font-size", "invalid relative size");
+  const run: RunStylePropertiesOptions = {
+    ...(weight === undefined ? {} : { bold: weight === "bold" }),
+    ...(fontStyle === undefined ? {} : { italic: fontStyle === "italic" }),
+    ...(underline === undefined || underline === "none"
+      ? {}
+      : { underline: { type: "single" as const } }),
+    ...(strike === undefined || strike === "none" ? {} : { strike: true }),
+    ...(size === undefined || relativeFontSize !== undefined
+      ? {}
+      : { size: parsePointSize(size, styleName) }),
+    ...(color?.startsWith("#") ? { color: color.slice(1) } : {}),
+    ...(attributeString(element, "fo:font-family")
+      ? { font: attributeString(element, "fo:font-family") }
+      : {}),
+  };
+  return {
+    ...(Object.keys(run).length > 0 ? { run } : {}),
+    ...(relativeFontSize === undefined ? {} : { relativeFontSize }),
+  };
+}
+
+function parsePointSize(value: string, styleName: string): number {
+  const size = value.endsWith("pt")
+    ? Number(value.slice(0, -2))
+    : (lengthToTwips(value) ?? Number.NaN) / 20;
+  if (!Number.isFinite(size) || size < 0)
+    throw invalidStyle(styleName, "fo:font-size", "invalid size");
+  return size;
+}
+
+function parseAlignment(
+  value: string | undefined,
+  styleName: string,
+): ParagraphStylePropertiesOptions["alignment"] {
+  switch (value) {
+    case undefined:
+      return undefined;
+    case "start":
+    case "end":
+    case "left":
+    case "right":
+    case "center":
+      return value;
+    case "justify":
+      return "both";
+    default:
+      throw invalidStyle(styleName, "fo:text-align", `unsupported value: ${value}`);
+  }
+}
+
+function invalidStyle(styleName: string, elementName: string, reason: string): OdtParseError {
+  return new OdtParseError(
+    `styles.xml: style ${styleName}: ${reason}`,
+    "styles.xml",
+    `/office:document-styles/office:styles/style:style[@style:name="${styleName}"]/${elementName}`,
+    elementName,
+    reason,
+  );
 }

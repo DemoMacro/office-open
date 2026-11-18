@@ -587,6 +587,13 @@ function canonicalNode(
     if (!(valueAttribute in attributes) || attributes[valueAttribute] === "")
       attributes[valueAttribute] = "1";
   }
+  if (
+    name === "w:zoom" &&
+    attributes["w:percent"] === undefined &&
+    ["bestFit", "textFit"].includes(attributes["w:val"] ?? "")
+  ) {
+    attributes["w:percent"] = "100";
+  }
   for (const [attributeName, value] of Object.entries(DEFAULT_ATTRIBUTES.get(name) ?? {})) {
     if (!(attributeName in attributes)) attributes[attributeName] = value;
   }
@@ -666,6 +673,19 @@ function canonicalNode(
       }
       return node;
     });
+  if (name === "w:document") {
+    const bodies = mappedChildren.filter((child) => child.name === "w:body");
+    if (bodies.length > 1) {
+      const firstBodyIndex = mappedChildren.indexOf(bodies[0]!);
+      const mergedBody = {
+        ...bodies[0]!,
+        children: bodies.flatMap((body) => body.children),
+      };
+      const normalizedChildren = mappedChildren.filter((child) => child.name !== "w:body");
+      normalizedChildren.splice(firstBodyIndex, 0, mergedBody);
+      mappedChildren.splice(0, mappedChildren.length, ...normalizedChildren);
+    }
+  }
   // Legacy documents may carry bare text directly inside w:r. Word treats it
   // as run text and normalizes it into w:t on save, so the digest normalizes
   // it the same way instead of comparing structurally different encodings.

@@ -579,13 +579,14 @@ export function initPresRels(
   masters: readonly MasterInfo[],
   slides: readonly SlideOptions[],
   passthroughRelationships: PresentationOptions["passthroughRelationships"],
+  presentationPath: string,
 ): Relationships {
   // Source relationships own their ids first. Structural slots that survive
   // round-trip reuse the matching source entry; newly added slots get the next
   // free id without colliding with an unrelated captured relationship.
-  const rels = new Relationships("ppt/presentation.xml");
+  const rels = new Relationships(presentationPath);
   for (const relationship of passthroughRelationships ?? []) {
-    if (relationship.source === "ppt/presentation.xml") rels.claimSourceRel(relationship);
+    if (relationship.source === presentationPath) rels.claimSourceRel(relationship);
   }
   const attachedMasters = masters
     .filter((master) => master.attachedToPresentation)
@@ -593,14 +594,14 @@ export function initPresRels(
       (left, right) => (left.presentationMasterOrder ?? 0) - (right.presentationMasterOrder ?? 0),
     );
   for (const master of attachedMasters) {
-    const target = relativePartTarget("ppt/presentation.xml", master.path);
+    const target = relativePartTarget(presentationPath, master.path);
     if (!rels.hasRelationship(RELATIONSHIP_TYPES.slideMaster, target)) {
       rels.add(RELATIONSHIP_TYPES.slideMaster, target);
     }
   }
   for (const [index, slide] of slides.entries()) {
     const target = relativePartTarget(
-      "ppt/presentation.xml",
+      presentationPath,
       slide.sourcePath ?? `ppt/slides/slide${index + 1}.xml`,
     );
     if (!rels.hasRelationship(RELATIONSHIP_TYPES.slide, target)) {
@@ -813,10 +814,6 @@ export function mapNotesAndHandoutMasters(
   descCtx: PptxWriteContext,
   themesCount: number,
 ): void {
-  for (const rel of options.passthroughRelationships ?? []) {
-    if (rel.source !== "ppt/presentation.xml") continue;
-    presRels.claimSourceRel(rel);
-  }
   // Notes Master — emitted when notes slides exist or the source carried one.
   const includeNotesMasterPart =
     slides.some((s) => Boolean(s.notes)) || options.notesMasterOptions !== undefined;

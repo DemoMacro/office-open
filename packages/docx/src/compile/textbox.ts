@@ -63,10 +63,9 @@ export function compileTextBoxParts(ctx: DocxWriteContext): CompiledTextBoxPart[
     const children = (optionsPart.children ?? [])
       .map((child) => stringifyWpsTextBoxChild(child, bodyCtx))
       .join("");
-    const ignorable = optionsPart.ignorable
-      ? ` mc:Ignorable="${escapeXml(optionsPart.ignorable)}"`
-      : "";
-    const source = `${XML_DECL}<w14:txbx xmlns:w14="http://schemas.microsoft.com/office/word/2008/9/12/wordml" xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"${ignorable}>${children}</w14:txbx>`;
+    const ignorablePrefixes = new Set(optionsPart.ignorable?.split(/\s+/).filter(Boolean));
+    ignorablePrefixes.add("w16du");
+    const source = `${XML_DECL}<w14:txbx xmlns:w14="http://schemas.microsoft.com/office/word/2008/9/12/wordml" xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:w16du="http://schemas.microsoft.com/office/word/2023/wordml/word16du" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" mc:Ignorable="${escapeXml([...ignorablePrefixes].join(" "))}">${children}</w14:txbx>`;
     const relationshipCount = relationships.nextRelationshipId;
     const media = resolvePartMedia(source, ctx, relationshipCount);
     registerPartMedia(relationships, ctx, media);

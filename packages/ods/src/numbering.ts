@@ -15,7 +15,13 @@ import type {
 import type { Element } from "@office-open/xml";
 
 import { OdsParseError } from "./error";
-import { odfColor, parseBorder, parseOdfStrike, parseOdfUnderline } from "./styles";
+import {
+  odfColor,
+  parseBorder,
+  parseGnumericFill,
+  parseOdfStrike,
+  parseOdfUnderline,
+} from "./styles";
 
 /** Translates an Excel numFmt code into the matching ODF data style element. */
 export function numFmtDataStyle(numFmt: string): { name: string; children: string[] } {
@@ -101,15 +107,22 @@ export function odfDateValue(date: Date): string {
 }
 
 /** Maps table-cell style names back to typed StyleOptions via data styles. */
-export function parseNumberStyles(container: Element | undefined): Map<string, StyleOptions> {
+export function parseNumberStyles(
+  container: Element | undefined,
+  inheritedContainers: readonly (Element | undefined)[] = [],
+): Map<string, StyleOptions> {
   const dataStyles = new Map<string, string>();
   const cellStyles = new Map<string, StyleOptions>();
+  const containers = [container, ...inheritedContainers].filter(
+    (value): value is Element => value !== undefined,
+  );
   const stylesByName = new Map(
-    (container?.elements ?? [])
+    containers
+      .flatMap((styleContainer) => styleContainer.elements ?? [])
       .filter((element) => element.name?.startsWith("number:"))
       .map((element) => [attributeString(element, "style:name") ?? "", element]),
   );
-  for (const element of container?.elements ?? []) {
+  for (const element of containers.flatMap((styleContainer) => styleContainer.elements ?? [])) {
     if (
       element.name === "number:number-style" ||
       element.name === "number:percentage-style" ||
@@ -124,88 +137,189 @@ export function parseNumberStyles(container: Element | undefined): Map<string, S
       if (format) dataStyles.set(attributeString(element, "style:name") ?? "", format);
     }
   }
-  for (const style of childrenNamed(container, "style:style")) {
+  const source = new Map<string, { element: Element; parent?: string }>();
+  for (const style of containers.flatMap((styleContainer) =>
+    childrenNamed(styleContainer, "style:style"),
+  )) {
     if (attributeString(style, "style:family") !== "table-cell") continue;
-    const options: StyleOptions = {};
-    const dataName = attributeString(style, "style:data-style-name");
-    const numFmt = dataName ? dataStyles.get(dataName) : undefined;
-    if (numFmt) options.numFmt = numFmt;
-    const text = childNamed(style, "style:text-properties");
-    const size = attributeString(text, "fo:font-size");
-    const fontColor = odfColor(attributeString(text, "fo:color"));
-    const font: FontOptions = {
-      color: fontColor ? { rgb: `FF${fontColor}` } : undefined,
-      size: size?.endsWith("pt") ? Number(size.slice(0, -2)) : undefined,
-      bold: attributeString(text, "fo:font-weight") === "bold" || undefined,
-      italic: attributeString(text, "fo:font-style") === "italic" || undefined,
-      ...parseOdfUnderline(text),
-      ...parseOdfStrike(text),
-    };
-    if (Object.values(font).some((value) => value !== undefined)) options.font = font;
-    const background = odfColor(
-      attributeString(childNamed(style, "style:table-cell-properties"), "fo:background-color"),
-    );
-    if (background) options.fill = { type: "solid", foregroundColor: { rgb: `FF${background}` } };
-    const cellProps = childNamed(style, "style:table-cell-properties");
-    const border: BorderSideOptions = {
-      top: parseBorder(attributeString(cellProps, "fo:border-top")),
-      bottom: parseBorder(attributeString(cellProps, "fo:border-bottom")),
-      left: parseBorder(attributeString(cellProps, "fo:border-left")),
-      right: parseBorder(attributeString(cellProps, "fo:border-right")),
-    };
-    const diagonalDown = parseBorder(attributeString(cellProps, "style:diagonal-tl-br"));
-    const diagonalUp = parseBorder(attributeString(cellProps, "style:diagonal-bl-tr"));
-    if (diagonalDown !== undefined || diagonalUp !== undefined) {
-      border.diagonal = diagonalDown ?? diagonalUp;
-      border.diagonalDown = diagonalDown !== undefined || undefined;
-      border.diagonalUp = diagonalUp !== undefined || undefined;
-    }
-    if (Object.values(border).some((side) => side !== undefined)) options.border = border;
-    const verticalValue = attributeString(cellProps, "style:vertical-align");
-    const vertical =
-      verticalValue === "automatic" || verticalValue === "auto" ? undefined : verticalValue;
-    const wrapText = attributeString(cellProps, "fo:wrap-option") === "wrap";
-    const horizontal = attributeString(
-      childNamed(style, "style:paragraph-properties"),
-      "fo:text-align",
-    );
-    const alignment: AlignmentOptions = {
-      horizontal:
-        horizontal === undefined
-          ? undefined
-          : horizontal === "start"
-            ? "left"
-            : horizontal === "end"
-              ? "right"
-              : (["left", "center", "right", "justify"] as const).find(
-                  (value) => value === horizontal,
-                ),
-      vertical:
-        vertical === undefined
-          ? undefined
-          : vertical === "middle"
-            ? "center"
-            : (["top", "bottom"] as const).find((value) => value === vertical),
-      wrapText: wrapText || undefined,
-    };
-    if (
-      (horizontal !== undefined && !alignment.horizontal) ||
-      (vertical !== undefined && !alignment.vertical)
-    )
-      throw new OdsParseError(
-        "Invalid OpenDocument cell alignment",
-        "content.xml",
-        "/office:document-content/office:automatic-styles/style:style",
-        vertical !== undefined && !alignment.vertical ? "style:vertical-align" : "fo:text-align",
-        "unsupported alignment value",
-      );
-    if (Object.values(alignment).some((value) => value !== undefined))
-      options.alignment = alignment;
-    if (Object.keys(options).length > 0) {
-      cellStyles.set(attributeString(style, "style:name") ?? "", options);
+    const name = attributeString(style, "style:name");
+    if (name !== undefined) {
+      source.set(name, {
+        element: style,
+        parent: attributeString(style, "style:parent-style-name"),
+      });
     }
   }
+  const resolving = new Set<string>();
+  const resolved = new Map<string, StyleOptions>();
+  function resolve(name: string): StyleOptions {
+    const cached = resolved.get(name);
+    if (cached !== undefined) return cached;
+    if (resolving.has(name)) {
+      throw new OdsParseError(
+        `styles.xml: cyclic table-cell style inheritance: ${name}`,
+        "styles.xml",
+        `/office:document-styles/office:styles/style:style[@style:name="${name}"]`,
+        "style:parent-style-name",
+        "cyclic-style-inheritance",
+      );
+    }
+    const entry = source.get(name);
+    if (entry === undefined) return {};
+    resolving.add(name);
+    const parent = entry.parent === undefined ? {} : resolve(entry.parent);
+    const options = parseCellStyle(entry.element, dataStyles);
+    const merged = mergeStyleOptions(parent, options);
+    resolving.delete(name);
+    resolved.set(name, merged);
+    return merged;
+  }
+  for (const [name] of source) {
+    const options = resolve(name);
+    if (Object.keys(options).length > 0) cellStyles.set(name, options);
+  }
   return cellStyles;
+}
+
+function parseCellStyle(style: Element, dataStyles: ReadonlyMap<string, string>): StyleOptions {
+  const options: StyleOptions = {};
+  const dataName = attributeString(style, "style:data-style-name");
+  const numFmt = dataName ? dataStyles.get(dataName) : undefined;
+  if (numFmt) options.numFmt = numFmt;
+  const text = childNamed(style, "style:text-properties");
+  const size = attributeString(text, "fo:font-size");
+  const fontColor = odfColor(attributeString(text, "fo:color"));
+  const weight = attributeString(text, "fo:font-weight");
+  const fontStyle = attributeString(text, "fo:font-style");
+  const font: FontOptions = {
+    font: attributeString(text, "fo:font-family")?.replace(/^(['"])(.*)\1$/u, "$2"),
+    color: fontColor ? { rgb: `FF${fontColor}` } : undefined,
+    size: size?.endsWith("pt") ? Number(size.slice(0, -2)) : undefined,
+    ...(weight === undefined
+      ? {}
+      : { bold: weight === "bold" || (/^\d+$/u.test(weight) && Number(weight) >= 600) }),
+    ...(fontStyle === undefined
+      ? {}
+      : { italic: fontStyle === "italic" || fontStyle === "oblique" }),
+    ...parseOdfUnderline(text),
+    ...parseOdfStrike(text),
+  };
+  if (Object.values(font).some((value) => value !== undefined)) options.font = font;
+  const cellProps = childNamed(style, "style:table-cell-properties");
+  const background = odfColor(attributeString(cellProps, "fo:background-color"));
+  const fill = cellProps === undefined ? undefined : parseGnumericFill(cellProps);
+  if (fill) options.fill = fill;
+  else if (background)
+    options.fill = { type: "solid", foregroundColor: { rgb: `FF${background}` } };
+  const border: BorderSideOptions = {
+    top: parseBorder(attributeString(cellProps, "fo:border-top")),
+    bottom: parseBorder(attributeString(cellProps, "fo:border-bottom")),
+    left: parseBorder(attributeString(cellProps, "fo:border-left")),
+    right: parseBorder(attributeString(cellProps, "fo:border-right")),
+  };
+  const diagonalDown = parseBorder(attributeString(cellProps, "style:diagonal-tl-br"));
+  const diagonalUp = parseBorder(attributeString(cellProps, "style:diagonal-bl-tr"));
+  if (diagonalDown !== undefined || diagonalUp !== undefined) {
+    border.diagonal = diagonalDown ?? diagonalUp;
+    border.diagonalDown = diagonalDown !== undefined || undefined;
+    border.diagonalUp = diagonalUp !== undefined || undefined;
+  }
+  if (Object.values(border).some((side) => side !== undefined)) options.border = border;
+  const verticalValue = attributeString(cellProps, "style:vertical-align");
+  const vertical =
+    verticalValue === "automatic" || verticalValue === "auto" ? undefined : verticalValue;
+  const wrap = attributeString(cellProps, "fo:wrap-option");
+  const wrapText = wrap === undefined ? undefined : wrap === "wrap";
+  const textRotation = parseOdfRotation(attributeString(cellProps, "style:rotation-angle"));
+  const shrinkToFit = parseOdfBoolean(attributeString(cellProps, "style:shrink-to-fit"));
+  const horizontal = attributeString(
+    childNamed(style, "style:paragraph-properties"),
+    "fo:text-align",
+  );
+  const alignment: AlignmentOptions = {
+    horizontal:
+      horizontal === undefined
+        ? undefined
+        : horizontal === "start"
+          ? "left"
+          : horizontal === "end"
+            ? "right"
+            : (["left", "center", "right", "justify"] as const).find(
+                (value) => value === horizontal,
+              ),
+    vertical:
+      vertical === undefined
+        ? undefined
+        : vertical === "middle"
+          ? "center"
+          : (["top", "bottom"] as const).find((value) => value === vertical),
+    ...(wrapText === undefined ? {} : { wrapText }),
+    textRotation,
+    shrinkToFit,
+  };
+  if (
+    (horizontal !== undefined && !alignment.horizontal) ||
+    (vertical !== undefined && !alignment.vertical)
+  )
+    throw new OdsParseError(
+      "Invalid OpenDocument cell alignment",
+      "content.xml",
+      "/office:document-content/office:automatic-styles/style:style",
+      vertical !== undefined && !alignment.vertical ? "style:vertical-align" : "fo:text-align",
+      "unsupported alignment value",
+    );
+  if (Object.values(alignment).some((value) => value !== undefined)) options.alignment = alignment;
+  return options;
+}
+
+function mergeStyleOptions(parent: StyleOptions, own: StyleOptions): StyleOptions {
+  return {
+    ...parent,
+    ...own,
+    ...(parent.font || own.font ? { font: { ...parent.font, ...own.font } } : {}),
+    ...(parent.alignment || own.alignment
+      ? { alignment: { ...parent.alignment, ...own.alignment } }
+      : {}),
+    ...(parent.border || own.border ? { border: { ...parent.border, ...own.border } } : {}),
+  };
+}
+
+function parseOdfBoolean(value: string | undefined): boolean | undefined {
+  if (value === undefined) return undefined;
+  if (value === "true" || value === "1") return true;
+  if (value === "false" || value === "0") return false;
+  throw new OdsParseError(
+    "Invalid ODF boolean style value",
+    "content.xml",
+    "/office:document-content/office:automatic-styles/style:style",
+    "style:shrink-to-fit",
+    "invalid-boolean",
+  );
+}
+
+function parseOdfRotation(value: string | undefined): number | undefined {
+  if (value === undefined) return undefined;
+  const match = /^(-?\d+(?:\.\d+)?)(?:deg)?$/u.exec(value.trim());
+  if (!match) {
+    throw new OdsParseError(
+      "Invalid ODF cell rotation angle",
+      "content.xml",
+      "/office:document-content/office:automatic-styles/style:style",
+      "style:rotation-angle",
+      "invalid-rotation-angle",
+    );
+  }
+  const rotation = Number(match[1]);
+  if (!Number.isFinite(rotation)) {
+    throw new OdsParseError(
+      "Invalid ODF cell rotation angle",
+      "content.xml",
+      "/office:document-content/office:automatic-styles/style:style",
+      "style:rotation-angle",
+      "invalid-rotation-angle",
+    );
+  }
+  return rotation;
 }
 
 /** Reconstructs an Excel numFmt code from ODF number:* style children. */

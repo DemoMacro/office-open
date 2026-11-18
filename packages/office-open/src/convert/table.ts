@@ -63,6 +63,7 @@ import { fromDrawingParagraph, toDrawingParagraph } from "./text";
 
 /** Heuristic EMU per character of column width (8.43 chars ≈ DEFAULT_COL_EMU). */
 const EMU_PER_CHAR = DEFAULT_COL_EMU / 8.43;
+const MAX_VISUAL_TABLE_CELLS = 100_000;
 
 /** xlsx visual-table restoration: worksheet fragments (rows/merges/columns). */
 export interface XlsxVisualTable {
@@ -321,6 +322,7 @@ interface XlsxVisualGrid {
   cellAt: (row: number, col: number) => XlsxCellOptions;
   lastRow: number;
   lastCol: number;
+  assertMaterializable: () => void;
 }
 
 function coveredMergeCells(merges: ParsedMergeRef[]): Set<string> {
@@ -337,6 +339,7 @@ function coveredMergeCells(merges: ParsedMergeRef[]): Set<string> {
 
 function xlsxVisualGrid(source: XlsxVisualTable): XlsxVisualGrid {
   const rowsByNumber = new Map<number, XlsxRowOptions>();
+  const cellsByPosition = new Map<string, XlsxCellOptions>();
   let lastRow = 0;
   let lastCol = 0;
   const cellPosition = (
@@ -357,6 +360,8 @@ function xlsxVisualGrid(source: XlsxVisualTable): XlsxVisualGrid {
       const position = cellPosition(cell, cellIndex, rowNumber - 1);
       lastRow = Math.max(lastRow, position.row);
       lastCol = Math.max(lastCol, position.col);
+      const key = `${position.row}:${position.col}`;
+      if (!cellsByPosition.has(key)) cellsByPosition.set(key, cell);
     }
   }
   for (const merge of source.mergeCells ?? []) {
@@ -367,14 +372,16 @@ function xlsxVisualGrid(source: XlsxVisualTable): XlsxVisualGrid {
   }
   if (source.columns?.length) lastCol = Math.max(lastCol, source.columns.length - 1);
   const rowAt = (row: number): XlsxRowOptions => rowsByNumber.get(row) ?? {};
-  const cellAt = (row: number, col: number): XlsxCellOptions => {
-    for (const [cellIndex, cell] of (rowAt(row).cells ?? []).entries()) {
-      const position = cellPosition(cell, cellIndex, row);
-      if (position.row === row && position.col === col) return cell;
+  const cellAt = (row: number, col: number): XlsxCellOptions =>
+    cellsByPosition.get(`${row}:${col}`) ?? {};
+  const assertMaterializable = () => {
+    if ((lastRow + 1) * (lastCol + 1) > MAX_VISUAL_TABLE_CELLS) {
+      throw new RangeError(
+        `XLSX visual table exceeds the ${MAX_VISUAL_TABLE_CELLS}-cell conversion limit`,
+      );
     }
-    return {};
   };
-  return { rows: source.rows, rowAt, cellAt, lastRow, lastCol };
+  return { rows: source.rows, rowAt, cellAt, lastRow, lastCol, assertMaterializable };
 }
 
 function xlsxToDocx(src: XlsxVisualTable): DocxTableOptions {
@@ -384,6 +391,7 @@ function xlsxToDocx(src: XlsxVisualTable): DocxTableOptions {
       .filter((m): m is NonNullable<typeof m> => m !== undefined),
   );
   const grid = xlsxVisualGrid(src);
+  grid.assertMaterializable();
   const covered = coveredMergeCells([...merges.values()]);
   const rows: DocxTableRowOptions[] = Array.from({ length: grid.lastRow + 1 }, (_, ri) => {
     const row = grid.rowAt(ri);
@@ -458,6 +466,7 @@ function xlsxToPptx(src: XlsxVisualTable): PptxTableOptions {
       .filter((m): m is NonNullable<typeof m> => m !== undefined),
   );
   const grid = xlsxVisualGrid(src);
+  grid.assertMaterializable();
   const covered = coveredMergeCells([...merges.values()]);
   const rows: PptxTableRowOptions[] = Array.from({ length: grid.lastRow + 1 }, (_, ri) => {
     const row = grid.rowAt(ri);

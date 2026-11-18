@@ -60,10 +60,27 @@ describe("SmartArt opaque part round-trip", () => {
 
   it("keeps opaque companions stable on a second round-trip", async () => {
     const first = await generateDocument(documentWithOpaqueSmartArt(), { type: "uint8array" });
-    const second = await generateDocument(parseDocumentSync(first), { type: "uint8array" });
+    const parsed = parseDocumentSync(first);
+    const smartArt = (
+      parsed.sections[0]?.children?.[0] as {
+        paragraph?: {
+          children?: { smartArt?: { sourcePaths?: { data?: string; layout?: string } } }[];
+        };
+      }
+    )?.paragraph?.children?.[0]?.smartArt;
+    expect(smartArt?.sourcePaths).toMatchObject({
+      data: "word/diagrams/data1.xml",
+      layout: "word/diagrams/layout1.xml",
+    });
+    const second = await generateDocument(parsed, { type: "uint8array" });
     const firstFiles = unzipSync(first);
     const secondFiles = unzipSync(second);
+    const secondDocument = new TextDecoder().decode(secondFiles["word/document.xml"]!);
 
+    expect(secondDocument).toContain(
+      'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"',
+    );
+    expect(() => parseDocumentSync(second)).not.toThrow();
     expect(new TextDecoder().decode(secondFiles["word/diagrams/drawing1.xml"]!)).toBe(DRAWING);
     expect(Array.from(secondFiles["word/media/image1.png"]!)).toEqual(
       Array.from(firstFiles["word/media/image1.png"]!),
@@ -106,5 +123,58 @@ describe("SmartArt opaque part round-trip", () => {
     expect(rels).toContain(
       'Id="rId9" Type="http://example.com/relationships/image" Target="/word/media/image1.png"',
     );
+  });
+
+  it("round-trips descriptive document SmartArt relationship ids", async () => {
+    const files = unzipSync(
+      await generateDocument(documentWithOpaqueSmartArt(), { type: "uint8array" }),
+    );
+    const decoder = new TextDecoder();
+    const encoder = new TextEncoder();
+    let documentXml = decoder.decode(files["word/document.xml"]!);
+    let relationshipsXml = decoder.decode(files["word/_rels/document.xml.rels"]!);
+    const replacements = [
+      ["diagramData", "dm", "rIdDgmData"],
+      ["diagramLayout", "lo", "rIdDgmLayout"],
+      ["diagramQuickStyle", "qs", "rIdDgmQuickStyle"],
+      ["diagramColors", "cs", "rIdDgmColors"],
+    ] as const;
+
+    for (const [kind, attribute, nextId] of replacements) {
+      const match = relationshipsXml.match(
+        new RegExp(`<Relationship Id="([^"]+)" Type="[^"]+/${kind}"`),
+      );
+      expect(match?.[1]).toBeDefined();
+      const sourceId = match![1]!;
+      documentXml = documentXml.replace(
+        `r:${attribute}="${sourceId}"`,
+        `r:${attribute}="${nextId}"`,
+      );
+      relationshipsXml = relationshipsXml.replace(`Id="${sourceId}"`, `Id="${nextId}"`);
+    }
+
+    files["word/document.xml"] = encoder.encode(documentXml);
+    files["word/_rels/document.xml.rels"] = encoder.encode(relationshipsXml);
+    const parsed = parseDocumentSync(zipSync(files));
+    const parsedSmartArt = (
+      parsed.sections[0]?.children?.[0] as {
+        paragraph?: { children?: { smartArt?: { sourceRelIds?: Record<string, string> } }[] };
+      }
+    )?.paragraph?.children?.[0]?.smartArt;
+    expect(parsedSmartArt?.sourceRelIds).toEqual({
+      dm: "rIdDgmData",
+      lo: "rIdDgmLayout",
+      qs: "rIdDgmQuickStyle",
+      cs: "rIdDgmColors",
+    });
+    const second = unzipSync(await generateDocument(parsed, { type: "uint8array" }));
+    const secondDocument = decoder.decode(second["word/document.xml"]!);
+    const secondRelationships = decoder.decode(second["word/_rels/document.xml.rels"]!);
+
+    for (const [, attribute, rId] of replacements) {
+      expect(secondDocument).toContain(`r:${attribute}="${rId}"`);
+      expect(secondRelationships).toContain(`Id="${rId}"`);
+    }
+    expect(() => parseDocumentSync(zipSync(second))).not.toThrow();
   });
 });

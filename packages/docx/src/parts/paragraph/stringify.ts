@@ -33,6 +33,7 @@ import type { TabStopDefinition } from "@parts/paragraph/formatting/tab-stop";
 import type { FrameOptions } from "@parts/paragraph/frame/frame-properties";
 import type { ParagraphOptions } from "@parts/paragraph/paragraph";
 import type {
+  NumberingChangeOptions,
   NumberingInsertionOptions,
   ParagraphPropertiesOptions,
 } from "@parts/paragraph/properties";
@@ -136,7 +137,7 @@ function spacingStr(opts: SpacingProperties): string {
       opts.after !== undefined
         ? typeof opts.after === "string"
           ? opts.after
-          : twipsMeasureValue(opts.after)
+          : signedTwipsMeasureValue(opts.after)
         : undefined,
     "w:afterAutospacing":
       opts.afterAutoSpacing !== undefined ? (opts.afterAutoSpacing ? 1 : 0) : undefined,
@@ -145,7 +146,7 @@ function spacingStr(opts: SpacingProperties): string {
       opts.before !== undefined
         ? typeof opts.before === "string"
           ? opts.before
-          : twipsMeasureValue(opts.before)
+          : signedTwipsMeasureValue(opts.before)
         : undefined,
     "w:beforeAutospacing":
       opts.beforeAutoSpacing !== undefined ? (opts.beforeAutoSpacing ? 1 : 0) : undefined,
@@ -292,7 +293,7 @@ function framePrStr(opts: FrameOptions): string {
 function numPrStr(
   numberId: number | string | undefined,
   indentLevel: number | undefined,
-  numberingChange?: { original: string; id: string; author: string; date?: string },
+  numberingChange?: NumberingChangeOptions,
   insertion?: NumberingInsertionOptions,
 ): string {
   // numberId undefined → a track-change-only numPr: just the revision
@@ -315,6 +316,8 @@ function numPrStr(
       "w:id": numberingChange.id,
       "w:author": escapeXml(numberingChange.author),
       "w:date": numberingChange.date !== undefined ? escapeXml(numberingChange.date) : undefined,
+      "w16du:dateUtc":
+        numberingChange.dateUtc !== undefined ? escapeXml(numberingChange.dateUtc) : undefined,
     });
     parts.push(`<w:numberingChange${a}/>`);
   }
@@ -323,6 +326,7 @@ function numPrStr(
       "w:id": insertion.id,
       "w:author": escapeXml(insertion.author),
       "w:date": insertion.date !== undefined ? escapeXml(insertion.date) : undefined,
+      "w16du:dateUtc": insertion.dateUtc !== undefined ? escapeXml(insertion.dateUtc) : undefined,
     });
     parts.push(`<w:ins${a}/>`);
   }
@@ -629,8 +633,8 @@ export function stringifyParagraphProperties(
       runOpts.emptyProperties
     ) {
       const extra: string[] = [];
-      const revisionAttrs = ({ id, author, date }: ChangedProperties) =>
-        ` w:id="${id ?? autoRevisionId(scope)}" w:author="${escapeXml(author)}"${date ? ` w:date="${escapeXml(String(date))}"` : ""}`;
+      const revisionAttrs = ({ id, author, date, dateUtc }: ChangedProperties) =>
+        ` w:id="${id ?? autoRevisionId(scope)}" w:author="${escapeXml(author)}"${date ? ` w:date="${escapeXml(String(date))}"` : ""}${dateUtc ? ` w16du:dateUtc="${escapeXml(String(dateUtc))}"` : ""}`;
       if (runOpts.insertion) {
         extra.push(`<w:ins${revisionAttrs(runOpts.insertion)}/>`);
       }
@@ -650,10 +654,11 @@ export function stringifyParagraphProperties(
     const rev = options.revision;
     // The embedded w:pPr is CT_PPrBase — no rPr (run), so drop it before
     // serializing the pre-change properties.
-    const { author: _a, date: _d, id: _i, run: _r, ...originalProps } = rev;
+    const { author: _a, date: _d, dateUtc: _dateUtc, id: _i, run: _r, ...originalProps } = rev;
     const inner = stringifyParagraphProperties({ ...originalProps, includeIfEmpty: true }, scope);
     const date = rev.date ? ` w:date="${escapeXml(rev.date)}"` : "";
-    s += `<w:pPrChange w:author="${escapeXml(rev.author)}"${date} w:id="${rev.id ?? autoRevisionId(scope)}">${inner.xml ?? "<w:pPr/>"}</w:pPrChange>`;
+    const dateUtc = rev.dateUtc ? ` w16du:dateUtc="${escapeXml(rev.dateUtc)}"` : "";
+    s += `<w:pPrChange w:author="${escapeXml(rev.author)}"${date}${dateUtc} w:id="${rev.id ?? autoRevisionId(scope)}">${inner.xml ?? "<w:pPr/>"}</w:pPrChange>`;
   }
 
   const body = s;
@@ -826,6 +831,7 @@ export function stringifyRunPropertiesInner(
     const {
       author: _a,
       date: _d,
+      dateUtc: _dateUtc,
       id: _i,
       insertion,
       deletion,
@@ -835,8 +841,9 @@ export function stringifyRunPropertiesInner(
     } = rev;
     const inner = stringifyRunPropertiesInner(originalProps as RunPropertiesOptions, scope);
     const date = rev.date ? ` w:date="${escapeXml(rev.date)}"` : "";
-    const revisionAttrs = ({ id, author, date }: ChangedProperties) =>
-      ` w:id="${id ?? autoRevisionId(scope)}" w:author="${escapeXml(author)}"${date ? ` w:date="${escapeXml(String(date))}"` : ""}`;
+    const dateUtc = rev.dateUtc ? ` w16du:dateUtc="${escapeXml(rev.dateUtc)}"` : "";
+    const revisionAttrs = ({ id, author, date, dateUtc }: ChangedProperties) =>
+      ` w:id="${id ?? autoRevisionId(scope)}" w:author="${escapeXml(author)}"${date ? ` w:date="${escapeXml(String(date))}"` : ""}${dateUtc ? ` w16du:dateUtc="${escapeXml(String(dateUtc))}"` : ""}`;
     const markers = [
       insertion && `<w:ins${revisionAttrs(insertion)}/>`,
       deletion && `<w:del${revisionAttrs(deletion)}/>`,
@@ -844,7 +851,7 @@ export function stringifyRunPropertiesInner(
       movedTo && `<w:moveTo${revisionAttrs(movedTo)}/>`,
     ].filter(Boolean);
     const originalXml = markers.join("") + (inner ?? "");
-    s += `<w:rPrChange w:author="${escapeXml(rev.author)}"${date} w:id="${rev.id ?? autoRevisionId(scope)}"><w:rPr>${originalXml}</w:rPr></w:rPrChange>`;
+    s += `<w:rPrChange w:author="${escapeXml(rev.author)}"${date}${dateUtc} w:id="${rev.id ?? autoRevisionId(scope)}"><w:rPr>${originalXml}</w:rPr></w:rPrChange>`;
   }
 
   // w14:* text effects — typed emission first (EG_RPrTextEffects +
@@ -852,6 +859,30 @@ export function stringifyRunPropertiesInner(
   // verbatim so unsupported extensions still round-trip.
   s += w14RunEffectsXml(opts);
   if (opts.w14RawXml) s += opts.w14RawXml;
+
+  if (opts.extensionAttributes) {
+    for (const { element, occurrence, attributes } of opts.extensionAttributes) {
+      const tag = `<${element}`;
+      let start = -1;
+      let searchFrom = 0;
+      for (let index = 0; index <= occurrence; index += 1) {
+        start = s.indexOf(tag, searchFrom);
+        if (start < 0) break;
+        const delimiter = s[start + tag.length];
+        if (delimiter !== " " && delimiter !== "/" && delimiter !== ">") {
+          searchFrom = start + tag.length;
+          index -= 1;
+          continue;
+        }
+        searchFrom = start + tag.length;
+      }
+      if (start < 0) continue;
+      const serialized = Object.entries(attributes)
+        .map(([name, value]) => ` ${name}="${escapeXml(value)}"`)
+        .join("");
+      s = s.slice(0, start + tag.length) + serialized + s.slice(start + tag.length);
+    }
+  }
 
   return s.length > 0 ? s : undefined;
 }

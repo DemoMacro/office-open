@@ -209,6 +209,7 @@ export const OOXML_CANONICAL_PREFIXES: Readonly<Record<string, string>> = {
   [`${SCHEMAS_MS}/office/word/2012/wordml`]: "w15",
   [`${SCHEMAS_MS}/office/word/2016/wordml/cid`]: "w16cid",
   [`${SCHEMAS_MS}/office/word/2018/wordml`]: "w16",
+  [`${SCHEMAS_MS}/office/word/2023/wordml/word16du`]: "w16du",
   [`${SCHEMAS_MS}/office/word/2018/wordml/cex`]: "w16cex",
   [`${SCHEMAS_MS}/office/word/2020/wordml/sdtdatahash`]: "w16sdtdh",
   [`${SCHEMAS_MS}/office/word/2015/wordml/symex`]: "w16se",

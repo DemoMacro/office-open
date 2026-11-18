@@ -64,9 +64,14 @@ export function readNotes(
 ): string | undefined {
   if (!notesId) return undefined;
   const offset = notesReferences.get(notesId);
-  if (offset === undefined) {
-    return undefined;
-  }
+  if (offset === undefined)
+    throw new PptParseError("Corrupt legacy PowerPoint file: notes persist object is missing", {
+      part: "record",
+      recordType: RecordType.notes,
+      recordName: "NotesContainer",
+      notesId,
+      reason: "missing-notes-persist-object",
+    });
   const notes = readPersistedRecord(view, offset, [RecordType.notes]);
   const drawing = findDirect(notes, RecordType.ppDrawing);
   if (!drawing) {
@@ -174,7 +179,13 @@ function animationType(effect: number): AnimationEntry["type"] {
   if (effect === 0x0b) return "fly";
   if (effect === 0x0d) return "split";
   if (effect === 0x1a) return "wheel";
-  return "appear";
+  throw new PptParseError(`Unsupported legacy animation effect: ${effect}`, {
+    part: "record",
+    path: "PowerPoint Document",
+    recordType: RecordType.animationInfoAtom,
+    recordName: "AnimationInfoAtom",
+    reason: "unsupported-animation-effect",
+  });
 }
 
 export function readMaster(

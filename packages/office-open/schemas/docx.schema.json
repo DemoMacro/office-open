@@ -2525,6 +2525,9 @@
         "date": {
           "$ref": "#/definitions/RunPropertiesChangeOptions/properties/date"
         },
+        "dateUtc": {
+          "$ref": "#/definitions/RunPropertiesChangeOptions/properties/dateUtc"
+        },
         "id": {
           "$ref": "#/definitions/RunPropertiesChangeOptions/properties/id"
         },
@@ -2552,6 +2555,9 @@
         },
         "date": {
           "$ref": "#/definitions/RunPropertiesChangeOptions/properties/date"
+        },
+        "dateUtc": {
+          "$ref": "#/definitions/RunPropertiesChangeOptions/properties/dateUtc"
         },
         "id": {
           "$ref": "#/definitions/RunPropertiesChangeOptions/properties/id"
@@ -16607,6 +16613,9 @@
                 "date": {
                   "$ref": "#/definitions/RunPropertiesChangeOptions/properties/date"
                 },
+                "dateUtc": {
+                  "$ref": "#/definitions/RunPropertiesChangeOptions/properties/dateUtc"
+                },
                 "deletion": {
                   "$ref": "#/definitions/RunPropertiesChangeOptions"
                 },
@@ -16637,6 +16646,9 @@
                 },
                 "date": {
                   "$ref": "#/definitions/RunPropertiesChangeOptions/properties/date"
+                },
+                "dateUtc": {
+                  "$ref": "#/definitions/RunPropertiesChangeOptions/properties/dateUtc"
                 },
                 "id": {
                   "$ref": "#/definitions/RunPropertiesChangeOptions/properties/id"
@@ -18128,6 +18140,9 @@
           "$ref": "#/definitions/DateTime",
           "description": "Date of the move."
         },
+        "dateUtc": {
+          "$ref": "#/definitions/NumberingChangeOptions/properties/dateUtc"
+        },
         "displacedByCustomXml": {
           "$ref": "#/definitions/MarkupRangeOptions/properties/displacedByCustomXml"
         },
@@ -18172,6 +18187,9 @@
         "date": {
           "$ref": "#/definitions/DateTime",
           "description": "Date of the move."
+        },
+        "dateUtc": {
+          "$ref": "#/definitions/NumberingChangeOptions/properties/dateUtc"
         },
         "displacedByCustomXml": {
           "$ref": "#/definitions/MarkupRangeOptions/properties/displacedByCustomXml"
@@ -18531,6 +18549,10 @@
           "$ref": "#/definitions/DateTime",
           "description": "Date of the change."
         },
+        "dateUtc": {
+          "$ref": "#/definitions/DateTime",
+          "description": "UTC timestamp written by recent Word versions (`w16du:dateUtc`)."
+        },
         "id": {
           "description": "Revision ID.",
           "type": "string"
@@ -18554,6 +18576,9 @@
         "date": {
           "$ref": "#/definitions/DateTime",
           "description": "Date of the change"
+        },
+        "dateUtc": {
+          "$ref": "#/definitions/NumberingChangeOptions/properties/dateUtc"
         },
         "id": {
           "description": "Revision ID (document-unique; omit for a library-assigned value)",
@@ -19893,6 +19918,9 @@
                 "date": {
                   "$ref": "#/definitions/RunPropertiesChangeOptions/properties/date"
                 },
+                "dateUtc": {
+                  "$ref": "#/definitions/RunPropertiesChangeOptions/properties/dateUtc"
+                },
                 "id": {
                   "$ref": "#/definitions/RunPropertiesChangeOptions/properties/id"
                 }
@@ -20187,6 +20215,9 @@
                   "type": "string"
                 },
                 "date": {
+                  "type": "string"
+                },
+                "dateUtc": {
                   "type": "string"
                 },
                 "id": {
@@ -20894,6 +20925,9 @@
         "date": {
           "$ref": "#/definitions/RunPropertiesChangeOptions/properties/date"
         },
+        "dateUtc": {
+          "$ref": "#/definitions/RunPropertiesChangeOptions/properties/dateUtc"
+        },
         "divId": {
           "description": "HTML div ID reference",
           "type": "number"
@@ -21475,6 +21509,30 @@
             }
           ],
           "description": "Endnote reference as a top-level field (sibling of footnoteReference)."
+        },
+        "extensionAttributes": {
+          "description": "Namespaced extension attributes on run-property elements (round-trip only).",
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "attributes": {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              "element": {
+                "type": "string"
+              },
+              "occurrence": {
+                "type": "number"
+              }
+            },
+            "required": ["element", "occurrence", "attributes"],
+            "type": "object"
+          },
+          "readOnly": true,
+          "type": "array"
         },
         "fitText": {
           "type": "number"
@@ -24129,6 +24187,9 @@
         "endnoteReference": {
           "$ref": "#/definitions/ParagraphRunOptions/properties/endnoteReference"
         },
+        "extensionAttributes": {
+          "$ref": "#/definitions/ParagraphRunOptions/properties/extensionAttributes"
+        },
         "fitText": {
           "type": "number"
         },
@@ -24345,6 +24406,10 @@
           "$ref": "#/definitions/DateTime",
           "description": "Date and time when the change was made (ISO 8601 format); omitted when absent at source"
         },
+        "dateUtc": {
+          "$ref": "#/definitions/DateTime",
+          "description": "UTC timestamp written by recent Word versions (w16du:dateUtc)."
+        },
         "deletion": {
           "$ref": "#/definitions/ChangedProperties",
           "description": "Track-change deletion on the original paragraph-mark run properties."
@@ -24366,6 +24431,9 @@
         },
         "emptyProperties": {
           "$ref": "#/definitions/ParagraphRunOptions/properties/emptyProperties"
+        },
+        "extensionAttributes": {
+          "$ref": "#/definitions/ParagraphRunOptions/properties/extensionAttributes"
         },
         "fitText": {
           "type": "number"
@@ -24594,6 +24662,9 @@
         "emptyProperties": {
           "$ref": "#/definitions/ParagraphRunOptions/properties/emptyProperties"
         },
+        "extensionAttributes": {
+          "$ref": "#/definitions/ParagraphRunOptions/properties/extensionAttributes"
+        },
         "fitText": {
           "type": "number"
         },
@@ -24803,6 +24874,9 @@
         },
         "emptyProperties": {
           "$ref": "#/definitions/ParagraphRunOptions/properties/emptyProperties"
+        },
+        "extensionAttributes": {
+          "$ref": "#/definitions/ParagraphRunOptions/properties/extensionAttributes"
         },
         "fitText": {
           "type": "number"
@@ -26924,6 +26998,9 @@
         "date": {
           "$ref": "#/definitions/RunPropertiesChangeOptions/properties/date"
         },
+        "dateUtc": {
+          "$ref": "#/definitions/RunPropertiesChangeOptions/properties/dateUtc"
+        },
         "deletionRsid": {
           "$ref": "#/definitions/LongHexNumber"
         },
@@ -28986,6 +29063,37 @@
         "runPropertiesRsid": {
           "$ref": "#/definitions/ChartOptions/properties/runPropertiesRsid"
         },
+        "sourcePaths": {
+          "$ref": "#/definitions/SmartArtSourcePaths",
+          "description": "Source package paths and diagram relationship targets; round-trip only.",
+          "readOnly": true
+        },
+        "sourceRelIds": {
+          "additionalProperties": false,
+          "description": "Source dgm:relIds relationship IDs; round-trip only.",
+          "properties": {
+            "cs": {
+              "type": "string"
+            },
+            "dm": {
+              "type": "string"
+            },
+            "lo": {
+              "type": "string"
+            },
+            "qs": {
+              "type": "string"
+            }
+          },
+          "readOnly": true,
+          "type": "object"
+        },
+        "sourceRelationships": {
+          "items": {
+            "$ref": "#/definitions/SmartArtSourceRelationship"
+          },
+          "type": "array"
+        },
         "style": {
           "anyOf": [
             {
@@ -29058,6 +29166,51 @@
           "type": "array"
         }
       },
+      "type": "object"
+    },
+    "SmartArtSourcePaths": {
+      "additionalProperties": false,
+      "description": "Source package paths preserved by round-trip; compiler-only.",
+      "properties": {
+        "colors": {
+          "type": "string"
+        },
+        "data": {
+          "type": "string"
+        },
+        "dataRels": {
+          "type": "string"
+        },
+        "drawing": {
+          "type": "string"
+        },
+        "layout": {
+          "type": "string"
+        },
+        "quickStyle": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "SmartArtSourceRelationship": {
+      "additionalProperties": false,
+      "properties": {
+        "rId": {
+          "type": "string"
+        },
+        "relationshipType": {
+          "type": "string"
+        },
+        "target": {
+          "type": "string"
+        },
+        "targetMode": {
+          "const": "External",
+          "type": "string"
+        }
+      },
+      "required": ["relationshipType", "target", "rId"],
       "type": "object"
     },
     "SolidFillOptions": {
@@ -29950,6 +30103,9 @@
         "endnoteReference": {
           "$ref": "#/definitions/ParagraphRunOptions/properties/endnoteReference"
         },
+        "extensionAttributes": {
+          "$ref": "#/definitions/ParagraphRunOptions/properties/extensionAttributes"
+        },
         "fitText": {
           "type": "number"
         },
@@ -30469,6 +30625,9 @@
         "date": {
           "$ref": "#/definitions/RunPropertiesChangeOptions/properties/date"
         },
+        "dateUtc": {
+          "$ref": "#/definitions/RunPropertiesChangeOptions/properties/dateUtc"
+        },
         "deletion": {
           "$ref": "#/definitions/ChangedProperties"
         },
@@ -30978,6 +31137,9 @@
         "date": {
           "$ref": "#/definitions/RunPropertiesChangeOptions/properties/date"
         },
+        "dateUtc": {
+          "$ref": "#/definitions/RunPropertiesChangeOptions/properties/dateUtc"
+        },
         "description": {
           "description": "Table description for accessibility (tblDescription)",
           "type": "string"
@@ -31103,6 +31265,9 @@
         },
         "date": {
           "$ref": "#/definitions/RunPropertiesChangeOptions/properties/date"
+        },
+        "dateUtc": {
+          "$ref": "#/definitions/RunPropertiesChangeOptions/properties/dateUtc"
         },
         "id": {
           "$ref": "#/definitions/RunPropertiesChangeOptions/properties/id"
@@ -31391,6 +31556,9 @@
         },
         "date": {
           "$ref": "#/definitions/RunPropertiesChangeOptions/properties/date"
+        },
+        "dateUtc": {
+          "$ref": "#/definitions/RunPropertiesChangeOptions/properties/dateUtc"
         },
         "divId": {
           "description": "div ID for HTML compatibility (divId)",
@@ -33951,9 +34119,8 @@
           "type": "string"
         },
         "valueType": {
-          "description": "Stored value type; display text is owned by the field result.",
-          "enum": ["float", "string"],
-          "type": "string"
+          "$ref": "#/definitions/VariableValueType",
+          "description": "Stored value type; display text is owned by the field result."
         }
       },
       "required": ["name", "valueType"],
@@ -34022,6 +34189,10 @@
         }
       },
       "type": "object"
+    },
+    "VariableValueType": {
+      "enum": ["float", "percentage", "currency", "date", "time", "boolean", "string"],
+      "type": "string"
     },
     "VariantValue": {
       "anyOf": [

@@ -4,7 +4,6 @@ import type { DocumentOptions, SectionChild } from "@office-open/docx";
 import { readSummaryInformation } from "../cfb/container";
 import { decryptWordStreams } from "../cfb/encryption";
 import { DocParseError } from "../errors";
-import type { LegacyRevisionRange } from "../records/models";
 import {
   parseBookmarks,
   parseBodyPictureAnchors,
@@ -29,7 +28,6 @@ import { applyTables } from "./paragraph-projection";
 import {
   applyHyperlinkFields,
   parseRequired,
-  parseTolerant,
   projectCommentStory,
   projectStory,
 } from "./projection";
@@ -149,7 +147,10 @@ export function parseInternal(data: Uint8Array, password?: string): DocumentOpti
   const legacy = readUint16(word, 0, "Invalid Word document: FIB is truncated") === 0xa5dc;
   if (legacy) {
     const fib = parseLegacyFib(word);
-    return { sections: [{ children: legacyChildren(parseLegacyText(word, fib)) }] };
+    return {
+      ...readSummaryInformation(reader),
+      sections: [{ children: legacyChildren(parseLegacyText(word, fib)) }],
+    };
   }
   const flags = readUint16(word, 10, "Invalid Word document: FIB is truncated");
   let tablePath = (flags & FLAG_TABLE_ONE) !== 0 ? "1Table" : "0Table";
@@ -239,32 +240,28 @@ export function parseInternal(data: Uint8Array, password?: string): DocumentOpti
   const sections =
     fib.sectionTable.length === 0
       ? []
-      : parseTolerant(
+      : parseRequired(
           { part: "table", path: "PlcfSed", recordType: 6, recordName: "fcPlcfSed" },
-          [],
           () => parseSectionProperties(table, fib.sectionTable, word).sections,
         );
   const sectionModels: SectionModel[] = sections.length > 0 ? sections : [{}];
   const stylesheet: StylesheetModel =
     fib.styleSheet.length === 0
       ? { styles: [] }
-      : parseTolerant(
-          { part: "table", path: "Stshf", recordType: 1, recordName: "fcStshf" },
-          { styles: [] },
-          () => parseStylesheet(table, fib.styleSheet),
+      : parseRequired({ part: "table", path: "Stshf", recordType: 1, recordName: "fcStshf" }, () =>
+          parseStylesheet(table, fib.styleSheet),
         );
   const bookmarks: ReturnType<typeof parseBookmarks> =
     fib.bookmarkNames.length === 0
       ? []
-      : parseTolerant({ part: "table", path: "Bookmarks", recordName: "BKM" }, [], () =>
+      : parseRequired({ part: "table", path: "Bookmarks", recordName: "BKM" }, () =>
           parseBookmarks(table, fib.bookmarkNames, fib.bookmarkStarts, fib.bookmarkEnds),
         );
   const fields: ReturnType<typeof parseFields> =
     fib.fields.length === 0
       ? []
-      : parseTolerant(
+      : parseRequired(
           { part: "table", path: "PlcffldMom", recordType: 16, recordName: "fcPlcffldMom" },
-          [],
           () => parseFields(rawCharacters, table, fib.fields),
         );
   applyHyperlinkFields(characters, fields, rawCharacters);
@@ -278,30 +275,10 @@ export function parseInternal(data: Uint8Array, password?: string): DocumentOpti
       character.complexField = fieldInstructionsByCp.get(character.cp) ?? "";
     }
   }
-  const revisions: LegacyRevisionRange[] =
-    fib.comments.length === 0
-      ? []
-      : parseTolerant(
-          { part: "table", path: "PlcfandRef", recordType: 4, recordName: "fcPlcfandRef" },
-          [],
-          () =>
-            parseCommentRanges(table, fib.comments).map((comment) => ({
-              start: comment.start,
-              end: comment.end,
-              inserted: (comment.data[1]! & 0x01) === 0,
-            })),
-        );
-  for (const revision of revisions) {
-    for (const character of characters) {
-      if (character.cp >= revision.start && character.cp < revision.end) {
-        character.revision = { inserted: revision.inserted };
-      }
-    }
-  }
   const lists: ReturnType<typeof parseLists> | undefined =
     fib.list.length === 0 && fib.listOverrides.length === 0
       ? undefined
-      : parseTolerant({ part: "table", path: "Lists", recordName: "PLF" }, undefined, () =>
+      : parseRequired({ part: "table", path: "Lists", recordName: "PLF" }, () =>
           parseLists(table, fib.list, fib.listOverrides),
         );
   const footnoteStart = ranges[1]!.start;
@@ -310,6 +287,12 @@ export function parseInternal(data: Uint8Array, password?: string): DocumentOpti
   const endnoteStart = commentStart + fib.ccpComments;
   const textboxStart = endnoteStart + fib.ccpEndnotes;
   const headerTextboxStart = textboxStart + fib.ccpTextboxes;
+  const commentRanges =
+    fib.ccpComments === 0 || fib.comments.length === 0
+      ? []
+      : parseRequired({ part: "table", path: "PlcfandRef", recordName: "fcPlcfandRef" }, () =>
+          parseCommentRanges(table, fib.comments),
+        );
 
   const sectionChildGroups = sectionModels.map((sectionModel, index) => {
     const start = sectionModel.mainStart ?? sectionModels[index - 1]?.mainEnd ?? 0;
@@ -330,9 +313,8 @@ export function parseInternal(data: Uint8Array, password?: string): DocumentOpti
   const headerStories =
     fib.ccpHeaders === 0 || noOpFibTableRecord(11, fib.headerTable)
       ? []
-      : parseTolerant(
+      : parseRequired(
           { part: "table", path: "PlcfHdd", recordType: 11, recordName: "fcPlcfHdd" },
-          [],
           () => parseHeaderStreams(table, fib.headerTable, fib.ccpHeaders),
         );
   const headerStoryChildren = (sectionIndex: number, groupSlot: number): SectionChild[] => {
@@ -347,9 +329,8 @@ export function parseInternal(data: Uint8Array, password?: string): DocumentOpti
   };
   const textboxBoundaries =
     fib.ccpTextboxes > 0 && !noOpFibTableRecord(56, fib.textboxTable)
-      ? parseTolerant(
+      ? parseRequired(
           { part: "table", path: "PlcftxbxTxt", recordType: 56, recordName: "fcPlcftxbxTxt" },
-          [],
           () => parseTextboxBoundaries(table, fib.textboxTable, fib.ccpTextboxes),
         )
       : [];
@@ -393,14 +374,13 @@ export function parseInternal(data: Uint8Array, password?: string): DocumentOpti
   }
   const headerTextboxBoundaries =
     fib.ccpHeaderTextboxes > 0 && !noOpFibTableRecord(58, fib.headerTextboxTable)
-      ? parseTolerant(
+      ? parseRequired(
           {
             part: "table",
             path: "PlcfHdrTxbxTxt",
             recordType: 58,
             recordName: "fcPlcfHdrTxbxTxt",
           },
-          [],
           () => parseTextboxBoundaries(table, fib.headerTextboxTable, fib.ccpHeaderTextboxes),
         )
       : [];
@@ -473,19 +453,17 @@ export function parseInternal(data: Uint8Array, password?: string): DocumentOpti
           })),
         }
       : {}),
-    ...(fib.ccpComments > 0
+    ...(commentRanges.length > 0
       ? {
-          comments: [
-            {
-              id: 1,
-              children: projectCommentStory(
-                characters,
-                characterRanges,
-                commentStart,
-                endnoteStart,
-              ),
-            },
-          ],
+          comments: commentRanges.map((range, index) => ({
+            id: index,
+            children: projectCommentStory(
+              characters,
+              characterRanges,
+              commentStart + range.start,
+              commentStart + range.end,
+            ),
+          })),
         }
       : {}),
     ...(fib.ccpEndnotes > 0

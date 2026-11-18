@@ -72,6 +72,54 @@ describe("parsePresentation", () => {
     expect(result.size).to.equal("16:9");
   });
 
+  it("resolves the presentation part from the package root relationship", async () => {
+    const source = await generatePresentation({
+      slides: [
+        { children: [{ shape: { x: 0, y: 0, width: 200, height: 100, textBody: { text: "A" } } }] },
+      ],
+    });
+    const archive = unzipSync(source);
+    archive["custom/deck.xml"] = archive["ppt/presentation.xml"]!;
+    archive["custom/_rels/deck.xml.rels"] = new TextEncoder().encode(
+      new TextDecoder()
+        .decode(archive["ppt/_rels/presentation.xml.rels"]!)
+        .replace(/Target="([^"]+)"/g, (_match, target: string) => `Target="../ppt/${target}"`),
+    );
+    archive["_rels/.rels"] = new TextEncoder().encode(
+      new TextDecoder()
+        .decode(archive["_rels/.rels"]!)
+        .replace('Target="ppt/presentation.xml"', 'Target="custom/deck.xml"'),
+    );
+    delete archive["ppt/presentation.xml"];
+    delete archive["ppt/_rels/presentation.xml.rels"];
+
+    const parsed = parsePresentationSync(zipSync(archive));
+
+    expect(parsed.presentationPath).toBe("custom/deck.xml");
+    expect(parsed.slides).toHaveLength(1);
+    expect(parsed.slides?.[0]?.children?.[0]).toMatchObject({
+      shape: { textBody: { paragraphs: [{ text: "A" }] } },
+    });
+
+    const regenerated = await generatePresentation(parsed);
+    const regeneratedArchive = unzipSync(regenerated);
+    expect(regeneratedArchive["custom/deck.xml"]).toBeDefined();
+    expect(regeneratedArchive["ppt/presentation.xml"]).toBeUndefined();
+    expect(decodeEntry(regenerated, "_rels/.rels")).toContain('Target="custom/deck.xml"');
+  });
+
+  it("rejects a package whose root relationship points to a missing presentation", async () => {
+    const source = await generatePresentation({
+      slides: [{ children: [{ shape: { x: 0, y: 0, width: 200, height: 100 } }] }],
+    });
+    const archive = unzipSync(source);
+    delete archive["ppt/presentation.xml"];
+
+    expect(() => parsePresentationSync(zipSync(archive))).toThrow(
+      "primary presentation part is missing",
+    );
+  });
+
   it("round-trips the advisory slide size type", async () => {
     const options: PresentationOptions = {
       size: { width: 10826750, height: 8120063 },

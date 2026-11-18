@@ -222,12 +222,12 @@ describe("glossaryDesc round-trip", () => {
 
   it("marks extension namespaces as ignorable on generated roots", () => {
     const emptyXml = glossaryDesc.stringify({ hasDocParts: false, parts: [] }, writeCtx);
-    expect(emptyXml).toContain('mc:Ignorable="w14 w15"');
+    expect(emptyXml).toContain('mc:Ignorable="w14 w15 w16du"');
     const populatedXml = glossaryDesc.stringify(
       { parts: [{ name: "Part", gallery: "default", sections: [] }] },
       writeCtx,
     );
-    expect(populatedXml).toContain('mc:Ignorable="w14 w15"');
+    expect(populatedXml).toContain('mc:Ignorable="w14 w15 w16du"');
   });
 
   it("preserves paragraph-hosted and terminal section properties", () => {

@@ -149,6 +149,7 @@ export interface PresentationPartOptions {
   /** Relationship ids assigned by the presentation relationship container. */
   slideRIds?: (number | string)[];
   notesMasterRId?: number;
+  notesMasterIdListPresent?: boolean;
   handoutMasterRId?: number;
   /** Server zoom in percent (p:presentation/@serverZoom, ST_Percentage). */
   serverZoom?: number;

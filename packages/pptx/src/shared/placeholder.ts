@@ -60,17 +60,23 @@ export type PlaceholderMapOptions = { [K in PlaceholderKey]?: PlaceholderDefinit
 
 /**
  * Maps a `p:ph/@type` token (ST_PlaceholderType, 16 tokens) to the matching
- * placeholder-map key. `ctrTitle` normalizes to `title`; every other token
- * keeps its full-word key.
+ * placeholder-map key. The canonical public type `centerTitle` and its source
+ * XML token `ctrTitle` both normalize to `title`; every other token keeps its
+ * full-word key.
  */
 export const PLACEHOLDER_TYPE_TO_KEY: Readonly<Record<string, PlaceholderKey>> = {
   title: "title",
+  centerTitle: "title",
   ctrTitle: "title",
   body: "body",
   subTitle: "subtitle",
+  date: "date",
   dt: "date",
+  slideNumber: "slideNumber",
   sldNum: "slideNumber",
+  footer: "footer",
   ftr: "footer",
+  header: "header",
   hdr: "header",
   obj: "object",
   chart: "chart",

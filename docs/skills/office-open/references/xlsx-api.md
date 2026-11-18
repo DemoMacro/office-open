@@ -383,10 +383,11 @@ const pretty = await generateWorkbook(opts, { prettify: true });
 Parse a `.xlsx` file into `WorkbookOptions`, suitable for `generateWorkbook(parsed)`:
 
 ```ts
-import { parseWorkbook, generateWorkbook } from "@office-open/xlsx";
+import { readFileSync } from "node:fs";
+import { generateWorkbook, parseWorkbook } from "@office-open/xlsx";
 
 // Accepts Uint8Array, other typed-array views, ArrayBuffer, Buffer, number[], base64 string
-const options = parseWorkbook(readFileSync("input.xlsx"));
+const options = await parseWorkbook(readFileSync("input.xlsx"));
 // options.title, options.creator, options.worksheets, etc.
 
 const buffer = await generateWorkbook(options);
@@ -397,6 +398,7 @@ const buffer = await generateWorkbook(options);
 Parse a `.xlsx` file into a raw `XlsxDocument` for direct XML access:
 
 ```ts
+import { readFileSync } from "node:fs";
 import { parseXlsx } from "@office-open/xlsx";
 
 const doc = parseXlsx(readFileSync("input.xlsx"));
@@ -415,11 +417,12 @@ const doc = parseXlsx(readFileSync("input.xlsx"));
 Modify an existing `.xlsx` template with ordered, source-preserving commands:
 
 ```ts
+import { readFileSync } from "node:fs";
 import { patchWorkbook } from "@office-open/xlsx";
 
 const result = await patchWorkbook({
   outputType: "nodebuffer",
-  data: templateBuffer,
+  data: readFileSync("template.xlsx"),
   commands: [
     {
       type: "replace",

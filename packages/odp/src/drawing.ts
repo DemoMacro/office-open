@@ -10,9 +10,15 @@ import {
   isExternalOdfUrl,
   textOf,
   lengthToEmu,
+  odfGroupTransform,
+  parseOdfGroupTransform,
+  graphicFill,
+  graphicOutline,
+  pushShapeStyle,
   resolveEmbeddedChart,
   xmlElement,
 } from "@office-open/odf";
+import type { GraphicStyle } from "@office-open/odf";
 import type {
   AudioType,
   AudioFrameOptions,
@@ -24,7 +30,7 @@ import type {
 } from "@office-open/pptx";
 import type { Element } from "@office-open/xml";
 
-import { OdpParseError } from "./error";
+import { OdpGenerateError, OdpParseError } from "./error";
 import { toOdfLength } from "./shape";
 
 /** Binary image collected during generation — emitted as a Pictures/ entry. */
@@ -40,10 +46,22 @@ export interface OdpChart {
 }
 
 /** Slide picture renders as a positioned draw:frame + draw:image. */
-export function pictureFrameXml(picture: PictureOptions, images: OdpImage[]): string {
+export function pictureFrameXml(
+  picture: PictureOptions,
+  images: OdpImage[],
+  styles: string[],
+): string {
   let path: string;
   if (picture.data === undefined) {
-    if (!picture.sourceUrl) return "";
+    if (!picture.sourceUrl) {
+      throw new OdpGenerateError(
+        "ODP picture has neither embedded data nor an external source URL",
+        "content.xml",
+        "/office:document-content/office:body/office:presentation/draw:page/draw:frame/draw:image",
+        "draw:image",
+        "missing-picture-source",
+      );
+    }
     path = picture.sourceUrl;
   } else {
     const data = toUint8Array(picture.data);
@@ -54,10 +72,12 @@ export function pictureFrameXml(picture: PictureOptions, images: OdpImage[]): st
     "draw:frame",
     {
       "draw:name": picture.name,
+      "draw:style-name": pushShapeStyle(picture.fill, picture.outline, styles),
       "svg:x": toOdfLength(picture.x),
       "svg:y": toOdfLength(picture.y),
       "svg:width": toOdfLength(picture.width),
       "svg:height": toOdfLength(picture.height),
+      "draw:transform": odfGroupTransform(picture.rotation),
     },
     [
       xmlElement("draw:image", {
@@ -216,53 +236,150 @@ export function parsePictureFrame(
   frame: Element,
   binaries: Record<string, Uint8Array>,
   usedBinaryPaths: Set<string>,
+  graphicStyles: Map<string, GraphicStyle> = new Map(),
 ): { picture: PictureOptions } | undefined {
   const image = childNamed(frame, "draw:image");
   if (!image) return undefined;
-  const path = attributeString(image, "xlink:href")?.replace(/^\//, "");
-  const data = path ? binaries[path] : undefined;
-  const type = path
-    ? data
-      ? embeddedPictureType(path)
-      : pictureTypeFromUrl(attributeString(image, "xlink:href") ?? "")
-    : undefined;
+  const href = attributeString(image, "xlink:href");
+  if (href === undefined) {
+    throw new OdpParseError(
+      "ODP image reference is missing",
+      "content.xml",
+      "/office:document-content/office:body/office:presentation/draw:page/draw:frame/draw:image",
+      "xlink:href",
+      "missing-required-attribute",
+    );
+  }
+  const external = isExternalOdfUrl(href);
+  const path = external ? undefined : packagePathFromReference(href);
+  if (!external && path === undefined) {
+    throw new OdpParseError(
+      "ODP image reference is not a valid package path",
+      "content.xml",
+      "/office:document-content/office:body/office:presentation/draw:page/draw:frame/draw:image",
+      "xlink:href",
+      "invalid-package-uri",
+    );
+  }
+  const data = path === undefined ? undefined : binaries[path];
+  if (!external && data === undefined) {
+    throw new OdpParseError(
+      `ODP image package member is missing: ${path}`,
+      "content.xml",
+      "/office:document-content/office:body/office:presentation/draw:page/draw:frame/draw:image",
+      "draw:image",
+      "missing-package-part",
+    );
+  }
+  let type: PictureOptions["type"] | undefined;
+  if (external) type = pictureTypeFromUrl(href);
+  else {
+    if (path === undefined) return undefined;
+    type = embeddedPictureType(path);
+  }
   if (type === undefined) return undefined;
+  const graphic = graphicStyles.get(attributeString(frame, "draw:style-name") ?? "");
+  const fill = graphicFill(graphic);
+  const outline = graphicOutline(graphic);
+  const transform = parsePictureTransform(frame);
+  const x = transformedLength(attributeString(frame, "svg:x"), transform.x);
+  const y = transformedLength(attributeString(frame, "svg:y"), transform.y);
   if (data && path) usedBinaryPaths.add(path);
-  if (!data || !path) {
-    const href = attributeString(image, "xlink:href");
-    if (!href) return undefined;
+  if (external) {
     return {
       picture: {
         type,
         sourceUrl: href,
-        x: lengthToEmu(attributeString(frame, "svg:x")),
-        y: lengthToEmu(attributeString(frame, "svg:y")),
+        x,
+        y,
         width: lengthToEmu(attributeString(frame, "svg:width")),
         height: lengthToEmu(attributeString(frame, "svg:height")),
+        ...(transform.rotation === undefined ? {} : { rotation: transform.rotation }),
+        ...(fill ? { fill } : {}),
+        ...(outline ? { outline } : {}),
         ...parseFrameMetadata(frame),
       },
     };
+  }
+  if (path === undefined || data === undefined) {
+    throw new OdpParseError(
+      "ODP embedded image data is unavailable",
+      "content.xml",
+      "/office:document-content/office:body/office:presentation/draw:page/draw:frame/draw:image",
+      "draw:image",
+      "missing-package-part",
+    );
   }
   return {
     picture: {
       type,
       data,
-      x: lengthToEmu(attributeString(frame, "svg:x")),
-      y: lengthToEmu(attributeString(frame, "svg:y")),
+      x,
+      y,
       width: lengthToEmu(attributeString(frame, "svg:width")),
       height: lengthToEmu(attributeString(frame, "svg:height")),
+      ...(transform.rotation === undefined ? {} : { rotation: transform.rotation }),
+      ...(fill ? { fill } : {}),
+      ...(outline ? { outline } : {}),
       ...parseFrameMetadata(frame),
     },
   };
 }
 
+function packagePathFromReference(href: string): string | undefined {
+  let decoded: string;
+  try {
+    decoded = decodeURIComponent(href.split(/[?#]/u, 1)[0] ?? "");
+  } catch (cause) {
+    throw new OdpParseError(
+      "ODP image reference is not a valid package URI",
+      "content.xml",
+      "/office:document-content/office:body/office:presentation/draw:page/draw:frame/draw:image",
+      "xlink:href",
+      "invalid-package-uri",
+      { cause },
+    );
+  }
+  const segments: string[] = [];
+  for (const segment of decoded.split("/")) {
+    if (segment === "" || segment === ".") continue;
+    if (segment === "..") {
+      if (segments.length === 0) return undefined;
+      segments.pop();
+      continue;
+    }
+    segments.push(segment);
+  }
+  return segments.join("/");
+}
+
+function parsePictureTransform(element: Element): { x?: number; y?: number; rotation?: number } {
+  const transform = parseOdfGroupTransform(attributeString(element, "draw:transform"));
+  if (transform !== null) return transform;
+  throw new OdpParseError(
+    "ODP picture transform cannot be projected to the canonical picture model",
+    "content.xml",
+    "/office:document-content/office:body/office:presentation/draw:page/draw:frame",
+    "draw:transform",
+    "unsupported-picture-transform",
+  );
+}
+
+function transformedLength(
+  value: string | undefined,
+  offset: number | undefined,
+): number | undefined {
+  const length = lengthToEmu(value);
+  if (length === undefined) return offset;
+  return length + (offset ?? 0);
+}
+
 function pictureTypeFromUrl(value: string): PictureOptions["type"] | undefined {
   const extension = value.split(/[?#]/, 1)[0]?.split("/").pop()?.split(".").pop()?.toLowerCase();
-  if (extension === "svg") return undefined;
   const type =
     extension === "jpeg"
       ? "jpg"
-      : (["png", "jpg", "gif", "bmp", "tif", "ico", "emf", "wmf"] as const).find(
+      : (["png", "jpg", "gif", "bmp", "tif", "ico", "emf", "wmf", "svg"] as const).find(
           (candidate) => candidate === extension,
         );
   return type;
@@ -270,11 +387,10 @@ function pictureTypeFromUrl(value: string): PictureOptions["type"] | undefined {
 
 function embeddedPictureType(path: string): PictureOptions["type"] | undefined {
   const extension = path.split(/[?#]/, 1)[0]?.split("/").pop()?.split(".").pop()?.toLowerCase();
-  if (extension === "svg") return undefined;
   const type =
     extension === "jpeg"
       ? "jpg"
-      : (["png", "jpg", "gif", "bmp", "tif", "ico", "emf", "wmf"] as const).find(
+      : (["png", "jpg", "gif", "bmp", "tif", "ico", "emf", "wmf", "svg"] as const).find(
           (value) => value === extension,
         );
   if (!type)

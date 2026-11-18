@@ -40,7 +40,10 @@ export function tokenizeRtf(source: string | Uint8Array): RtfToken[] {
   const text = typeof source === "string" ? source : latin1Source(source);
   const bytes =
     typeof source === "string"
-      ? Uint8Array.from(source, (character) => character.charCodeAt(0) & 0xff)
+      ? Uint8Array.from(
+          { length: source.length },
+          (_value, index) => source.charCodeAt(index) & 0xff,
+        )
       : source;
 
   const tokens: RtfToken[] = [];

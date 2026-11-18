@@ -1088,6 +1088,7 @@ export type ConditionalFormatType =
   | "cellIs"
   | "containsText"
   | "expression"
+  | "timePeriod"
   | "top10"
   | "aboveAverage"
   | "colorScale"

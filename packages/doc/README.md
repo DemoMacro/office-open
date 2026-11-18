@@ -55,12 +55,12 @@ const options = parseDocument(data, { password: "secret" });
 
 - `parseDocument(data, options?)` — read a `.doc` file into `DocumentOptions`
 - `DocParseOptions` — parse-time options, including `password`
-- `DocParseError` — thrown for invalid, truncated, unsupported, or encrypted input, with canonical `context` fields
+- `DocParseError` — thrown for invalid, truncated, unsupported, or undecryptable input, with structured `context`
 
 ## Errors and Limitations
 
-- Invalid, truncated, unsupported, and encrypted files throw `DocParseError`.
-- Unsupported legacy records are skipped without aborting the document; their omissions are visible in canonical context.
+- Invalid, truncated, and unsupported required structures throw `DocParseError`. Supported RC4-encrypted files can be read with a password; other encrypted inputs throw.
+- Tolerated auxiliary structures and unknown records may be skipped with a `console.warn` diagnostic; unsupported required structures fail.
 - DOC generation is intentionally unavailable.
 
 ## Documentation

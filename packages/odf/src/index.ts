@@ -77,6 +77,7 @@ export {
   compareOcfSemantic,
   ocfSemanticDigest,
   type OcfEntrySemanticDigest,
+  type OcfMemberSemanticDigest,
   type OcfSemanticDigest,
 } from "./container/digest";
 export { metaXml, ODF_NAMESPACES, parseMeta } from "./meta";
@@ -114,13 +115,22 @@ export {
 } from "./forms";
 export type { FormEventListenerOptions } from "@office-open/core";
 export {
+  bindGraphicStyleResources,
+  createGraphicStyleResources,
   graphicFill,
   graphicOutline,
+  graphicStyleFiles,
+  graphicStyleResources,
+  graphicStyleResourcesXml,
   hexColorValue,
   odfColor,
+  parseGraphicStyleResources,
   parseGraphicStyles,
   pushShapeStyle,
+  type GraphicFillImageResource,
   type GraphicStyle,
+  type GraphicStyleResource,
+  type GraphicStyleResources,
 } from "./drawing/graphic-style";
 export {
   PRESET_GEOMETRY_DOCX,
@@ -129,6 +139,13 @@ export {
   resolveOdfDrawGeometryOverlay,
   type OdfDrawGeometry,
 } from "./drawing/preset-geometry";
+export {
+  odfGroupTransform,
+  parseOdfGroupTransform,
+  type OdfGroupTransform,
+} from "./drawing/group-transform";
+export { odfEnhancedGeometryXml, parseOdfEnhancedGeometry } from "./drawing/enhanced-geometry";
+export { parseOdfPrimitiveGeometry } from "./drawing/primitive-geometry";
 
 export {
   chartPropertiesXml,

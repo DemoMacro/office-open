@@ -13,7 +13,7 @@ describe("generateDocument entry guards", () => {
     expect(() => generateDocument({} as never)).toThrow(/sections is required/);
   });
 
-  it("rejects a source document part with duplicate relationship ids", () => {
+  it("normalizes duplicate source relationship ids while preserving last-value references", () => {
     const source = zipSync({
       "[Content_Types].xml": new TextEncoder().encode(
         '<?xml version="1.0"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
@@ -35,7 +35,47 @@ describe("generateDocument entry guards", () => {
           "</Relationships>",
       ),
     });
-    expect(() => parseDocumentSync(source)).toThrow(/Duplicate relationship id/);
+    const options = parseDocumentSync(source);
+    const relsXml = new TextDecoder().decode(
+      compileDocument(options)["word/_rels/document.xml.rels"] as Uint8Array,
+    );
+    const ids = [...relsXml.matchAll(/Id="([^"]+)"/g)].map((match) => match[1]!);
+    expect(ids).toHaveLength(new Set(ids).size);
+    expect(relsXml).toContain(
+      'Id="rId5" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image"',
+    );
+    expect(relsXml).toContain(
+      'Id="rId6" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/fontTable"',
+    );
+  });
+
+  it("preserves content from repeated body elements", () => {
+    const source = zipSync({
+      "[Content_Types].xml": new TextEncoder().encode(
+        '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+          '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>' +
+          "</Types>",
+      ),
+      "_rels/.rels": new TextEncoder().encode(
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+          '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>' +
+          "</Relationships>",
+      ),
+      "word/document.xml": new TextEncoder().encode(
+        '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+          "<w:body><w:p><w:r><w:t>First</w:t></w:r></w:p></w:body>" +
+          "<w:body><w:p><w:r><w:t>Second</w:t></w:r></w:p></w:body>" +
+          "</w:document>",
+      ),
+    });
+
+    const options = parseDocumentSync(source);
+    const output = generateDocumentSync(options);
+    const document = new TextDecoder().decode(unzipSync(output)["word/document.xml"]);
+
+    expect(document).toContain("First");
+    expect(document).toContain("Second");
+    expect(document.match(/<w:body>/g)).toHaveLength(1);
   });
 });
 
@@ -140,7 +180,7 @@ describe("deep documents", () => {
 });
 
 describe("malformed package boundaries", () => {
-  it("rejects negative paragraph spacing during parse", async () => {
+  it("tolerates negative paragraph spacing during parse", async () => {
     const generated = await generateDocument(
       { sections: [{ children: [{ paragraph: { children: ["Spacing"] } }] }] },
       { type: "uint8array" },
@@ -151,9 +191,11 @@ describe("malformed package boundaries", () => {
       documentXml.replace("<w:p>", '<w:p><w:pPr><w:spacing w:before="-1"/></w:pPr>'),
     );
     const invalid = zipSync(entries);
-    expect(() => parseDocumentSync(invalid)).toThrowError(
-      /Paragraph spacing before cannot be negative/,
-    );
+    const parsed = parseDocumentSync(invalid);
+    const paragraph = parsed.sections?.[0]?.children?.[0] as {
+      paragraph?: { spacing?: { before?: unknown } };
+    };
+    expect(paragraph.paragraph?.spacing?.before).toBe(-1);
   });
 
   it("tolerates a parsed table whose source omitted tblGrid", async () => {
@@ -569,6 +611,31 @@ describe("package metadata presence", () => {
     const output = unzipSync(generateDocumentSync(parsed, { type: "uint8array" }));
     expect(Object.keys(output)).toContain("docProps/core1.xml");
     expect(new TextDecoder().decode(output["_rels/.rels"]!)).toContain("docProps/core1.xml");
+  });
+
+  it("resolves dot segments in root metadata relationship targets", () => {
+    const coreXml =
+      '<?xml version="1.0"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>Selected</dc:title></cp:coreProperties>';
+    const source = zipSync({
+      "[Content_Types].xml": new TextEncoder().encode(
+        '<?xml version="1.0"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+          '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>' +
+          '<Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>' +
+          "</Types>",
+      ),
+      "_rels/.rels": new TextEncoder().encode(
+        '<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+          '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>' +
+          '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="./docProps/core.xml"/>' +
+          "</Relationships>",
+      ),
+      "word/document.xml": new TextEncoder().encode(
+        '<?xml version="1.0"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body/></w:document>',
+      ),
+      "docProps/core.xml": new TextEncoder().encode(coreXml),
+    });
+
+    expect(parseDocumentSync(source).title).toBe("Selected");
   });
 });
 

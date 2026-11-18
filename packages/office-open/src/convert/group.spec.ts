@@ -4,7 +4,7 @@ import type {
   ShapeOptions as PptxShapeOptions,
 } from "@office-open/pptx";
 import type { GroupOptions as XlsxGroupOptions } from "@office-open/xlsx";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import { toDocxGroup, toPptxGroup, toXlsxGroup } from "./group";
 
@@ -40,26 +40,55 @@ describe("toXlsxGroup (pptx → xlsx)", () => {
     expect(x.shapes?.[0].textBody).toEqual({ text: "Child" });
   });
 
-  it("warns and drops children xlsx groups cannot host", () => {
-    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
-    const x = toXlsxGroup({
-      x: 0,
-      y: 0,
-      width: 100,
-      height: 100,
-      children: [
-        { picture: { type: "png", data: new Uint8Array(), x: 0, y: 0, width: 1, height: 1 } },
-      ],
-    });
-    expect(x.shapes).toBeUndefined();
-    expect(spy).toHaveBeenCalled();
-    spy.mockRestore();
+  it("rejects children xlsx groups cannot host", () => {
+    expect(() =>
+      toXlsxGroup({
+        x: 0,
+        y: 0,
+        width: 100,
+        height: 100,
+        children: [
+          { picture: { type: "png", data: new Uint8Array(), x: 0, y: 0, width: 1, height: 1 } },
+        ],
+      }),
+    ).toThrow("Cannot convert picture inside a group to XLSX");
   });
 
   it("carries container rotation and vertical flip onto grpSpPr", () => {
     const x = toXlsxGroup({ ...PPTX_GROUP, rotation: 45, flipVertical: true });
     expect(x.properties.rotation).toBe(45);
     expect(x.properties.flipVertical).toBe(true);
+  });
+});
+
+describe("XLSX group conversion", () => {
+  it("rejects nested pictures and groups rather than dropping them", () => {
+    const base: XlsxGroupOptions = {
+      col: 1,
+      row: 1,
+      properties: { x: 0, y: 0, width: 100, height: 100 },
+    };
+    const withPicture: XlsxGroupOptions = {
+      ...base,
+      images: [{ rId: "rId1", extentCx: 50, extentCy: 50, shapeId: 2 }],
+    };
+    const withGroup: XlsxGroupOptions = {
+      ...base,
+      groups: [{ shapeId: 2, properties: { x: 0, y: 0, width: 50, height: 50 } }],
+    };
+
+    expect(() => toDocxGroup(withPicture)).toThrow(
+      "Cannot convert pictures inside an XLSX group to DOCX",
+    );
+    expect(() => toPptxGroup(withPicture)).toThrow(
+      "Cannot convert pictures inside an XLSX group to PPTX",
+    );
+    expect(() => toDocxGroup(withGroup)).toThrow(
+      "Cannot convert nested groups inside an XLSX group to DOCX",
+    );
+    expect(() => toPptxGroup(withGroup)).toThrow(
+      "Cannot convert nested groups inside an XLSX group to PPTX",
+    );
   });
 });
 

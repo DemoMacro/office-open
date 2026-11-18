@@ -1,6 +1,8 @@
 import {
   buildDependencyGraph,
   collectDependencies,
+  dependentsByFormula,
+  detectFormulaCycles,
   evaluateFormulaAst,
   FormulaError,
   isFormulaErrorToken,
@@ -10,6 +12,7 @@ import {
   type FormulaCellSnapshot,
   type FormulaDialect,
   type FormulaEvaluationOptions,
+  type FormulaDependencyGraph,
   type FormulaMatrix,
   type FormulaScalar,
   type FormulaValue,
@@ -70,7 +73,9 @@ interface ResolvedWorkbookFormula {
   readonly source: WorkbookCell;
   readonly formula: string;
   readonly type: Required<FormulaOptions>["type"];
-  readonly ast: ReturnType<typeof parseFormula>;
+  readonly reference?: string;
+  readonly ast?: ReturnType<typeof parseFormula>;
+  readonly parseError?: string;
   readonly followers?: readonly WorkbookCell[];
 }
 
@@ -103,14 +108,28 @@ export function createWorkbookFormulaContext(
   options: CanonicalWorkbookOptions,
   dialect: WorkbookFormulaDialect = "excel",
 ): FormulaWorkbookContext {
+  return createWorkbookFormulaState(options, dialect, false).context;
+}
+
+function createWorkbookFormulaState(
+  options: CanonicalWorkbookOptions,
+  dialect: WorkbookFormulaDialect,
+  parseFormulas: boolean,
+): { context: FormulaWorkbookContext; formulas: ResolvedWorkbookFormula[] } {
   const sheets = options.worksheets ?? [];
   const names = sheets.map((sheet, index) => sheet.name ?? `Sheet${index + 1}`);
   const cells = collectWorkbookCells(sheets);
-  const cellIndex = new Map(
-    cells.map((entry) => [cellKey(entry.sheetIndex, entry.row, entry.column), entry]),
-  );
+  const cellIndex = new Map<string, WorkbookCell>();
+  const rowCounts = Array.from({ length: sheets.length }, () => 0);
+  const columnCounts = Array.from({ length: sheets.length }, () => 0);
+  for (const entry of cells) {
+    cellIndex.set(cellKey(entry.sheetIndex, entry.row, entry.column), entry);
+    rowCounts[entry.sheetIndex] = Math.max(rowCounts[entry.sheetIndex] ?? 0, entry.row);
+    columnCounts[entry.sheetIndex] = Math.max(columnCounts[entry.sheetIndex] ?? 0, entry.column);
+  }
+  const formulas = collectResolvedFormulas(dialect, cells, cellIndex, parseFormulas);
   const formulaByCell = new Map<string, string>();
-  for (const formula of collectResolvedFormulas(options, dialect)) {
+  for (const formula of formulas) {
     const cells =
       formula.type === "array" ? [formula.source] : [formula.source, ...(formula.followers ?? [])];
     for (const cell of cells)
@@ -122,7 +141,7 @@ export function createWorkbookFormulaContext(
     ),
   );
 
-  return {
+  const context: FormulaWorkbookContext = {
     getSheetId: (name) => {
       const index = names.findIndex((candidate) => candidate.toLowerCase() === name.toLowerCase());
       return index === -1 ? undefined : index;
@@ -167,23 +186,14 @@ export function createWorkbookFormulaContext(
         hasTotals,
       };
     },
-    getRowCount: (sheet) => {
-      const maximum = cells.reduce(
-        (value, entry) => (entry.sheetIndex === sheet ? Math.max(value, entry.row) : value),
-        0,
-      );
-      return maximum || 1_048_576;
-    },
-    getColumnCount: (sheet) => {
-      const maximum = cells.reduce(
-        (value, entry) => (entry.sheetIndex === sheet ? Math.max(value, entry.column) : value),
-        0,
-      );
-      return maximum || 16_384;
-    },
+    getRowCount: (sheet) => rowCounts[sheet] || 1_048_576,
+    getColumnCount: (sheet) => columnCounts[sheet] || 16_384,
     isRowHidden: (sheet, row) =>
-      sheets[sheet]?.rows?.find((entry) => actualRowNumber(entry) === row)?.hidden === true,
+      sheets[sheet]?.rows?.some(
+        (entry, index) => actualRowNumber(entry, index + 1) === row && entry.hidden === true,
+      ) === true,
   };
+  return { context, formulas };
 }
 
 export function evaluateWorkbookFormula(
@@ -229,13 +239,13 @@ export function lintWorkbookFormulas(
   };
   (options.worksheets ?? []).forEach((worksheet, sheetIndex) => {
     const name = worksheetName(options, sheetIndex);
-    for (const row of worksheet.rows ?? [])
+    for (const [rowIndex, row] of (worksheet.rows ?? []).entries())
       for (const cell of row.cells ?? []) {
         const formula = formulaOptions(cell)?.formula;
         if (formula)
           check(
             formula,
-            `${name}!${cell.reference ?? formatReference(actualRowNumber(row) ?? 1, 1)}`,
+            `${name}!${cell.reference ?? formatReference(actualRowNumber(row, rowIndex + 1), 1)}`,
           );
       }
     for (const format of worksheet.conditionalFormats ?? [])
@@ -294,19 +304,28 @@ export function calculateWorkbookFormulas(
   options: CanonicalWorkbookOptions,
   evaluationOptions: Pick<FormulaEvaluationOptions, "dateSystem" | "dialect" | "errors"> = {},
 ): WorkbookFormulaRecalculation {
-  const formulas = collectResolvedFormulas(options, evaluationOptions.dialect);
-  const context = createWorkbookFormulaContext(options, evaluationOptions.dialect);
+  const { context, formulas } = createWorkbookFormulaState(
+    options,
+    evaluationOptions.dialect ?? "excel",
+    true,
+  );
   const graph = buildDependencyGraph(
     [
-      ...formulas.map((formula) => ({
-        id: formula.id,
-        ast: formula.ast,
-        cell: {
-          sheet: worksheetName(options, formula.source.sheetIndex),
-          row: formula.source.row,
-          column: formula.source.column,
-        },
-      })),
+      ...formulas.flatMap((formula) =>
+        formula.ast === undefined
+          ? []
+          : [
+              {
+                id: formula.id,
+                ast: formula.ast,
+                cell: {
+                  sheet: worksheetName(options, formula.source.sheetIndex),
+                  row: formula.source.row,
+                  column: formula.source.column,
+                },
+              },
+            ],
+      ),
       ...(options.definedNames ?? []).map((definedName, index) => ({
         id: `#defined-name:${index}`,
         name: definedName.name,
@@ -329,10 +348,51 @@ export function calculateWorkbookFormulas(
   const formulaById = new Map(formulas.map((formula) => [formula.id, formula]));
   const results: WorkbookFormulaCalculation[] = [];
   const failures: WorkbookFormulaFailure[] = [];
+  for (const formula of formulas) {
+    if (formula.parseError === undefined) continue;
+    failures.push({
+      sheet: worksheetName(options, formula.source.sheetIndex),
+      reference: formula.source.reference,
+      formula: formula.formula,
+      reason: formula.parseError,
+    });
+  }
 
-  for (const id of topologicalFormulaOrder(graph)) {
+  let formulaOrder: string[];
+  try {
+    formulaOrder = topologicalFormulaOrder(graph);
+  } catch (error) {
+    const cyclic = new Set(detectFormulaCycles(graph).flat());
+    if (cyclic.size === 0) throw error;
+
+    const blocked = new Set(cyclic);
+    const dependents = dependentsByFormula(graph);
+    const pending = [...cyclic];
+    while (pending.length > 0) {
+      for (const dependent of dependents.get(pending.pop()!) ?? []) {
+        if (blocked.has(dependent)) continue;
+        blocked.add(dependent);
+        pending.push(dependent);
+      }
+    }
+    for (const formula of formulas) {
+      if (!blocked.has(formula.id)) continue;
+      failures.push({
+        sheet: worksheetName(options, formula.source.sheetIndex),
+        reference: formula.source.reference,
+        formula: formula.formula,
+        reason: cyclic.has(formula.id)
+          ? "Cyclic formula dependency"
+          : "Formula depends on a cyclic formula dependency",
+      });
+    }
+    formulaOrder = topologicalFormulaOrder(withoutFormulaNodes(graph, blocked));
+  }
+
+  for (const id of formulaOrder) {
     const formula = formulaById.get(id);
     if (!formula) continue;
+    if (formula.ast === undefined) continue;
     const previous = toFormulaScalar(formula.source.cell.value);
     try {
       const value = evaluateFormulaAst(formula.ast, context, {
@@ -342,7 +402,7 @@ export function calculateWorkbookFormulas(
         column: formula.source.column,
       });
       const targets = formula.followers?.length ? formula.followers : [formula.source];
-      distributeFormulaValue(targets, value, formula.type);
+      distributeFormulaValue(targets, value, formula.type, formula.reference);
       const scalar = firstScalar(value);
       results.push({
         sheet: worksheetName(options, formula.source.sheetIndex),
@@ -368,30 +428,30 @@ export function calculateWorkbookFormulas(
 
 function collectWorkbookCells(sheets: readonly WorksheetOptions[]): WorkbookCell[] {
   return sheets.flatMap((sheet, sheetIndex) =>
-    (sheet.rows ?? []).flatMap((row) =>
-      (row.cells ?? []).flatMap((cell) => {
+    (sheet.rows ?? []).flatMap((row, rowIndex) => {
+      const rowNumber = row.rowNumber ?? rowIndex + 1;
+      return (row.cells ?? []).map((cell, cellIndex) => {
         const position = parseReference(cell.reference ?? "");
-        if (!position) return [];
-        return [
-          {
-            sheetIndex,
-            row: position.row,
-            column: position.column,
-            reference: cell.reference ?? formatReference(position.row, position.column),
-            cell,
-          },
-        ];
-      }),
-    ),
+        const rowNumberForCell = position?.row ?? rowNumber;
+        const column = position?.column ?? cellIndex + 1;
+        return {
+          sheetIndex,
+          row: rowNumberForCell,
+          column,
+          reference: cell.reference ?? formatReference(rowNumberForCell, column),
+          cell,
+        };
+      });
+    }),
   );
 }
 
 function collectResolvedFormulas(
-  options: CanonicalWorkbookOptions,
-  dialect: WorkbookFormulaDialect = "excel",
+  dialect: WorkbookFormulaDialect,
+  cells: readonly WorkbookCell[],
+  cellIndex: ReadonlyMap<string, WorkbookCell>,
+  parseFormulas: boolean,
 ): ResolvedWorkbookFormula[] {
-  const sheets = options.worksheets ?? [];
-  const cells = collectWorkbookCells(sheets);
   const shared = new Map<string, WorkbookCell>();
   for (const entry of cells) {
     const formula = formulaOptions(entry.cell);
@@ -424,14 +484,25 @@ function collectResolvedFormulas(
     seen.add(entry.reference);
     const followers =
       formula.type === "array" && formula.reference
-        ? cellsInReference(cells, entry.sheetIndex, formula.reference)
+        ? cellsInReference(cellIndex, entry.sheetIndex, formula.reference)
         : undefined;
+    let ast: ReturnType<typeof parseFormula> | undefined;
+    let parseError: string | undefined;
+    if (parseFormulas) {
+      try {
+        ast = parseWorkbookFormula(source, dialect);
+      } catch (error) {
+        parseError = error instanceof Error ? error.message : String(error);
+      }
+    }
     formulas.push({
       id: `Sheet${entry.sheetIndex}!${entry.reference}`,
       source: entry,
       formula: source,
       type: formula.type ?? "normal",
-      ast: parseWorkbookFormula(source, dialect),
+      reference: formula.reference,
+      ...(ast === undefined ? {} : { ast }),
+      ...(parseError === undefined ? {} : { parseError }),
       followers,
     });
   }
@@ -442,49 +513,67 @@ function distributeFormulaValue(
   targets: readonly WorkbookCell[],
   value: FormulaValue,
   type: Required<FormulaOptions>["type"],
+  reference?: string,
 ): void {
   const matrix = isMatrix(value) ? value : type === "array" ? [[value]] : undefined;
   if (!matrix) {
     assignFormulaCache(targets[0]!.cell, firstScalar(value));
     return;
   }
-  targets.forEach((target, index) => {
-    const row = Math.floor(index / (matrix[0]?.length || 1));
-    const column = index % (matrix[0]?.length || 1);
+  const range = reference === undefined ? undefined : parseRange(reference);
+  const firstRow = range?.firstRow ?? targets[0]!.row;
+  const firstColumn = range?.firstColumn ?? targets[0]!.column;
+  targets.forEach((target) => {
+    const row = target.row - firstRow;
+    const column = target.column - firstColumn;
     assignFormulaCache(target.cell, matrix[row]?.[column] ?? null);
   });
 }
 
+function withoutFormulaNodes(
+  graph: FormulaDependencyGraph,
+  excluded: ReadonlySet<string>,
+): FormulaDependencyGraph {
+  const nodes = new Map([...graph.nodes].filter(([id]) => !excluded.has(id)));
+  const edges = new Map(
+    [...nodes.keys()].map((id) => [
+      id,
+      new Set([...(graph.edges.get(id) ?? [])].filter((dependency) => nodes.has(dependency))),
+    ]),
+  );
+  return { nodes, edges };
+}
+
 function assignFormulaCache(cell: CellOptions, value: FormulaScalar): void {
   if (value instanceof FormulaError) {
+    delete cell.value;
     cell.error = value.value;
     return;
   }
   if (typeof value === "string" && isFormulaErrorToken(value)) {
+    delete cell.value;
     cell.error = value;
     return;
   }
   if (cell.error !== undefined) delete cell.error;
-  if (value === null) return;
+  if (value === null) {
+    delete cell.value;
+    return;
+  }
   cell.value = value;
 }
 
 function cellsInReference(
-  cells: readonly WorkbookCell[],
+  cellIndex: ReadonlyMap<string, WorkbookCell>,
   sheetIndex: number,
   reference: string,
 ): WorkbookCell[] {
   const range = parseRange(reference);
   if (!range) return [];
-  const byPosition = new Map(
-    cells
-      .filter((entry) => entry.sheetIndex === sheetIndex)
-      .map((entry) => [cellKey(0, entry.row, entry.column), entry]),
-  );
   const found: WorkbookCell[] = [];
   for (let row = range.firstRow; row <= range.lastRow; row += 1)
     for (let column = range.firstColumn; column <= range.lastColumn; column += 1) {
-      const foundCell = byPosition.get(cellKey(0, row, column));
+      const foundCell = cellIndex.get(cellKey(sheetIndex, row, column));
       if (foundCell) found.push(foundCell);
     }
   return found;
@@ -561,10 +650,10 @@ function worksheetName(options: CanonicalWorkbookOptions, sheetIndex: number): s
   return options.worksheets?.[sheetIndex]?.name ?? `Sheet${sheetIndex + 1}`;
 }
 
-function actualRowNumber(row: RowOptions): number | undefined {
+function actualRowNumber(row: RowOptions, fallback: number): number {
   if (row.rowNumber !== undefined) return row.rowNumber;
   const reference = row.cells?.find((cell) => cell.reference)?.reference;
-  return reference ? parseReference(reference)?.row : undefined;
+  return (reference ? parseReference(reference)?.row : undefined) ?? fallback;
 }
 
 function tableName(table: TableOptions): string {

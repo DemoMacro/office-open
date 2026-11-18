@@ -463,14 +463,13 @@ export function buildDependencyGraph(
   for (const node of nodes) {
     for (const dependency of collectDependencies(node.ast)) {
       const name = dependency.target.kind === "name" ? dependency.target.name : undefined;
-      const namedNode = name
-        ? namedNodes.find(
-            (node) =>
-              node.name?.toUpperCase() === name.toUpperCase() &&
-              (node.scopeSheet === undefined ||
-                node.scopeSheet === (dependency.target.sheet ?? node.cell?.sheet)),
-          )
-        : undefined;
+      const namedMatches = name
+        ? namedNodes.filter((candidate) => candidate.name?.toUpperCase() === name.toUpperCase())
+        : [];
+      const targetSheet = dependency.target.sheet ?? node.cell?.sheet;
+      const namedNode =
+        namedMatches.find((candidate) => candidate.scopeSheet === targetSheet) ??
+        namedMatches.find((candidate) => candidate.scopeSheet === undefined);
       const nodeId = name ? (namedNode?.id ?? nodeIdsByName.get(name.toUpperCase())) : undefined;
       if (name && nodeId !== undefined) {
         graph.edges.get(node.id)?.add(nodeId);

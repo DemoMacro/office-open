@@ -40,7 +40,13 @@ export async function parseOffice(
   input: DataType,
   options?: OfficeParseOptions,
 ): Promise<ParsedOffice> {
-  const data = await toUint8ArrayAsync(input);
+  const isRtfText =
+    typeof input === "string" &&
+    input
+      .replace(/^\uFEFF\s*/, "")
+      .trimStart()
+      .startsWith("{\\rtf");
+  const data = isRtfText ? input : await toUint8ArrayAsync(input);
   const info = detectOffice(data);
   if (info.family === "document") {
     return {

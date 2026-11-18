@@ -19,26 +19,11 @@ export function parseCommentRanges(
     });
   }
   const count = (range.length - 4) / 34;
-  const descriptorLength = count * 30;
-  if (range.length !== (count + 1) * 4 + descriptorLength) {
-    throw new DocParseError("Invalid DOC annotation references: truncated descriptors", {
-      part: "table",
-      path: "PlcfandRef",
-      recordName: "ATRD",
-      offset: range.offset + (count + 1) * 4,
-      length: descriptorLength,
-      byteRange: [
-        range.offset + (count + 1) * 4,
-        range.offset + (count + 1) * 4 + descriptorLength,
-      ],
-      reason: "invalid-record-length",
-    });
-  }
   const values: Array<{ start: number; end: number; data: Uint8Array }> = [];
   for (let index = 0; index < count; index += 1) {
-    const start = readUint32(table, range.offset + index * 30, message);
+    const start = readUint32(table, range.offset + index * 4, message);
     const end = readUint32(table, range.offset + (index + 1) * 4, message);
-    const dataOffset = range.offset + (count + 1) * 4 + index * 4;
+    const dataOffset = range.offset + (count + 1) * 4 + index * 30;
     values.push({
       start,
       end,

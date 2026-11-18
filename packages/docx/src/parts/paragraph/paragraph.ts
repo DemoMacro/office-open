@@ -397,18 +397,34 @@ export type ParagraphChild =
   | { moveFrom: MoveRangeOptions }
   | { moveTo: MoveRangeOptions }
   // Custom XML range markers (track changes)
-  | { customXmlInsRangeStart: { id: number; author?: string; date?: string } }
+  | { customXmlInsRangeStart: { id: number; author?: string; date?: string; dateUtc?: string } }
   | { customXmlInsRangeEnd: number }
-  | { customXmlDelRangeStart: { id: number; author?: string; date?: string } }
+  | { customXmlDelRangeStart: { id: number; author?: string; date?: string; dateUtc?: string } }
   | { customXmlDelRangeEnd: number }
-  | { customXmlMoveFromRangeStart: { id: number; author?: string; date?: string } }
+  | {
+      customXmlMoveFromRangeStart: { id: number; author?: string; date?: string; dateUtc?: string };
+    }
   | { customXmlMoveFromRangeEnd: number }
-  | { customXmlMoveToRangeStart: { id: number; author?: string; date?: string } }
+  | { customXmlMoveToRangeStart: { id: number; author?: string; date?: string; dateUtc?: string } }
   | { customXmlMoveToRangeEnd: number }
   // Merge-conflict range markers (w14, Word 2010+)
-  | { customXmlConflictInsRangeStart: { id: number; author?: string; date?: string } }
+  | {
+      customXmlConflictInsRangeStart: {
+        id: number;
+        author?: string;
+        date?: string;
+        dateUtc?: string;
+      };
+    }
   | { customXmlConflictInsRangeEnd: number }
-  | { customXmlConflictDelRangeStart: { id: number; author?: string; date?: string } }
+  | {
+      customXmlConflictDelRangeStart: {
+        id: number;
+        author?: string;
+        date?: string;
+        dateUtc?: string;
+      };
+    }
   | { customXmlConflictDelRangeEnd: number }
   // Merge-conflict text runs (w14, Word 2010+ — CT_RunTrackChange wrappers)
   | { conflictIns: ChangedProperties & { children: TrackChangeChild[] } }

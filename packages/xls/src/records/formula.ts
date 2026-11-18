@@ -103,7 +103,7 @@ function viewSigned(value: number): number {
 }
 
 function readString(reader: FormulaReader): string {
-  const characterCount = reader.uint16();
+  const characterCount = reader.byte();
   const flags = reader.byte();
   const highByte = (flags & 0x01) !== 0;
   const bytes = reader.bytes(characterCount * (highByte ? 2 : 1));

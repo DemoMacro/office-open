@@ -1,4 +1,5 @@
 import { attributeString, childNamed, isExternalOdfUrl, xmlElement } from "@office-open/odf";
+import type { GraphicStyle } from "@office-open/odf";
 import type { ShapeOptions } from "@office-open/pptx";
 import type { Element } from "@office-open/xml";
 
@@ -9,6 +10,29 @@ import type { TextProperties } from "./text-run";
 
 export type OdpEmbeddedObjectPool = Map<string, OdpEmbeddedObjectOptions>;
 
+export function normalizeEmbeddedObjectPath(path: string, part = "content.xml"): string {
+  const normalized = path
+    .replace(/^\.\//, "")
+    .replace(/^\//, "")
+    .replace(/\/$/, "")
+    .replace(/%(?![0-9A-Fa-f]{2})/g, "%25");
+  try {
+    return decodeURIComponent(normalized);
+  } catch (cause) {
+    const manifest = part === "META-INF/manifest.xml";
+    throw new OdpParseError(
+      `Invalid embedded object path encoding: ${path}`,
+      part,
+      manifest
+        ? "/manifest:manifest/manifest:file-entry/@manifest:full-path"
+        : "/draw:frame/draw:object/@xlink:href",
+      manifest ? "manifest:file-entry" : "draw:object",
+      manifest ? "invalid-embedded-object-path" : "invalid-embedded-object-href",
+      { cause },
+    );
+  }
+}
+
 export function parseEmbeddedObjectFrame(
   frame: Element,
   objects: OdpEmbeddedObjectPool,
@@ -16,6 +40,7 @@ export function parseEmbeddedObjectFrame(
   mediaTypes: Map<string, string | undefined>,
   nextShapeId: () => number,
   textStyles: Map<string, TextProperties>,
+  graphicStyles: Map<string, GraphicStyle>,
 ): { shape: ShapeOptions } | undefined {
   const reference = childNamed(frame, "draw:object");
   const sourceHref = attributeString(reference, "xlink:href");
@@ -34,7 +59,7 @@ export function parseEmbeddedObjectFrame(
     .replace(/^\//, "")
     .replace(/\/$/, "")
     .replace(/%(?![0-9A-Fa-f]{2})/g, "%25");
-  const normalizedHref = href ? decodeURIComponent(href) : undefined;
+  const normalizedHref = href ? normalizeEmbeddedObjectPath(sourceHref ?? href) : undefined;
   if (!href) return undefined;
   let object = objects.get(normalizedHref ?? "");
   if (!object) {
@@ -60,7 +85,12 @@ export function parseEmbeddedObjectFrame(
       "missing-replacement-image-href",
     );
   }
-  const replacementPath = replacementHref?.replace(/^\.\//, "").replace(/^\//, "");
+  const replacementPath =
+    replacementHref && !isExternalEmbeddedHref(replacementHref)
+      ? normalizeEmbeddedObjectPath(replacementHref)
+      : undefined;
+  const replacementSourceUrl =
+    replacementHref && isExternalEmbeddedHref(replacementHref) ? replacementHref : undefined;
   const replacementData = replacementPath ? binaries[replacementPath] : undefined;
   if (replacementHref && !isExternalOdfUrl(replacementHref) && replacementData === undefined) {
     throw new OdpParseError(
@@ -83,9 +113,10 @@ export function parseEmbeddedObjectFrame(
         data: replacementMemberData,
       });
   }
+  if (replacementSourceUrl) frameOptions.replacementSourceUrl = replacementSourceUrl;
   object.frames = [...(object.frames ?? []), frameOptions];
   return {
-    shape: parseShape(frame, textStyles, shapeId),
+    shape: parseShape(frame, textStyles, graphicStyles, shapeId),
   };
 }
 
@@ -133,6 +164,16 @@ export function embeddedObjectXml(
         ? [
             xmlElement("draw:image", {
               "xlink:href": `./${frame.replacementPath}`,
+              "xlink:type": "simple",
+              "xlink:show": "embed",
+              "xlink:actuate": "onLoad",
+            }),
+          ]
+        : []),
+      ...(frame.replacementSourceUrl
+        ? [
+            xmlElement("draw:image", {
+              "xlink:href": frame.replacementSourceUrl,
               "xlink:type": "simple",
               "xlink:show": "embed",
               "xlink:actuate": "onLoad",

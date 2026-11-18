@@ -32,6 +32,8 @@ export interface NumberingChangeOptions {
   author: string;
   /** Date of the change. */
   date?: DateTime;
+  /** UTC timestamp written by recent Word versions (`w16du:dateUtc`). */
+  dateUtc?: DateTime;
 }
 
 /** Numbering applied as a revision (w:numPr/w:ins, CT_TrackChange). */
@@ -42,6 +44,8 @@ export interface NumberingInsertionOptions {
   author: string;
   /** Date of the change */
   date?: DateTime;
+  /** UTC timestamp written by recent Word versions (`w16du:dateUtc`). */
+  dateUtc?: DateTime;
 }
 
 /**

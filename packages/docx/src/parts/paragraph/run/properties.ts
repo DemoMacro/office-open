@@ -226,6 +226,12 @@ export interface RunStylePropertiesOptions extends W14RunEffectsOptions {
    * in the rPr extension slot — verbatim for round-trip fidelity.
    */
   w14RawXml?: string;
+  /** Namespaced extension attributes on run-property elements (round-trip only). */
+  extensionAttributes?: Array<{
+    element: string;
+    occurrence: number;
+    attributes: Record<string, string>;
+  }>;
   /**
    * The source carried a bare `<w:rPr/>` with no attributes or children.
    * Round-trip marker only — re-emits the empty element instead of dropping

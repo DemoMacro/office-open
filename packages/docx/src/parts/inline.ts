@@ -545,6 +545,7 @@ export function buildMoveRangeStartAttrs(m: MoveRangeStartOptions): string {
   if (m.name) a.push(`w:name="${escapeXml(m.name)}"`);
   if (m.author) a.push(`w:author="${escapeXml(m.author)}"`);
   if (m.date) a.push(`w:date="${m.date}"`);
+  if (m.dateUtc) a.push(`w16du:dateUtc="${escapeXml(m.dateUtc)}"`);
   if (m.displacedByCustomXml) a.push(`w:displacedByCustomXml="${m.displacedByCustomXml}"`);
   if (m.colFirst !== undefined) a.push(`w:colFirst="${m.colFirst}"`);
   if (m.colLast !== undefined) a.push(`w:colLast="${m.colLast}"`);
@@ -559,7 +560,8 @@ function revisionElementAttrs(
   const id = revision.id ?? autoRevisionId(scope);
   const author = escapeXml(String(revision.author));
   const date = revision.date ? ` w:date="${escapeXml(revision.date)}"` : "";
-  return ` w:id="${id}" w:author="${author}"${date}`;
+  const dateUtc = revision.dateUtc ? ` w16du:dateUtc="${escapeXml(revision.dateUtc)}"` : "";
+  return ` w:id="${id}" w:author="${author}"${date}${dateUtc}`;
 }
 
 /** Stringify inline run/text content — the `wrap` shared by every sugar child. */
@@ -635,16 +637,16 @@ function stringifyTrackChangeChildren(
     } else if (typeof c !== "string" && "commentRangeEnd" in c) {
       parts.push(`<w:commentRangeEnd ${buildMarkupRangeAttrs(c.commentRangeEnd)}/>`);
     } else if (typeof c !== "string" && "insertion" in c) {
-      const { id, author, date, children: nested } = c.insertion;
+      const { id, author, date, dateUtc, children: nested } = c.insertion;
       parts.push(
-        `<w:ins${revisionElementAttrs({ id, author, date }, ctx.reproducible)}>` +
+        `<w:ins${revisionElementAttrs({ id, author, date, dateUtc }, ctx.reproducible)}>` +
           stringifyTrackChangeChildren(nested, ctx, false) +
           "</w:ins>",
       );
     } else if (typeof c !== "string" && "deletion" in c) {
-      const { id, author, date, children: nested } = c.deletion;
+      const { id, author, date, dateUtc, children: nested } = c.deletion;
       parts.push(
-        `<w:del${revisionElementAttrs({ id, author, date }, ctx.reproducible)}>` +
+        `<w:del${revisionElementAttrs({ id, author, date, dateUtc }, ctx.reproducible)}>` +
           stringifyTrackChangeChildren(nested, ctx, true) +
           "</w:del>",
       );
@@ -766,6 +768,7 @@ function stringifyMoveRangeChild(
     name: opts.name,
     author: opts.author,
     date: opts.date,
+    dateUtc: opts.dateUtc,
     displacedByCustomXml: opts.displacedByCustomXml,
     colFirst: opts.colFirst,
     colLast: opts.colLast,
@@ -776,7 +779,7 @@ function stringifyMoveRangeChild(
   });
   return (
     `<${startTag} ${rangeStartAttrs}/>` +
-    `<${runTag} w:id="${runId}" w:author="${escapeXml(opts.author)}" w:date="${opts.date}">${stringifyInlineWrap(opts.wrap, ctx)}</${runTag}>` +
+    `<${runTag} w:id="${runId}" w:author="${escapeXml(opts.author)}" w:date="${opts.date}"${opts.dateUtc ? ` w16du:dateUtc="${escapeXml(opts.dateUtc)}"` : ""}>${stringifyInlineWrap(opts.wrap, ctx)}</${runTag}>` +
     `<${endTag} ${endAttrs}/>`
   );
 }
@@ -987,16 +990,16 @@ export function stringifyChildDispatch(
 
   // Inserted text run(s) — w:ins wraps one or more runs (CT_RunTrackChange)
   if ("insertion" in child) {
-    const { id, author, date, children } = child.insertion;
+    const { id, author, date, dateUtc, children } = child.insertion;
     const body = stringifyTrackChangeChildren(children, ctx, false);
-    return `<w:ins${revisionElementAttrs({ id, author, date }, ctx.reproducible)}>${body}</w:ins>`;
+    return `<w:ins${revisionElementAttrs({ id, author, date, dateUtc }, ctx.reproducible)}>${body}</w:ins>`;
   }
 
   // Deleted text run(s) — w:del wraps one or more runs (delText content)
   if ("deletion" in child) {
-    const { id, author, date, children } = child.deletion;
+    const { id, author, date, dateUtc, children } = child.deletion;
     const body = stringifyTrackChangeChildren(children, ctx, true);
-    return `<w:del${revisionElementAttrs({ id, author, date }, ctx.reproducible)}>${body}</w:del>`;
+    return `<w:del${revisionElementAttrs({ id, author, date, dateUtc }, ctx.reproducible)}>${body}</w:del>`;
   }
 
   // Hyperlink — side effect: relationship registration
@@ -1128,14 +1131,14 @@ export function stringifyChildDispatch(
 
   // ── Move revision text runs ──
   if ("movedFrom" in child) {
-    const { id, author, date, children } = child.movedFrom;
+    const { id, author, date, dateUtc, children } = child.movedFrom;
     const body = stringifyTrackChangeChildren(children, ctx, false);
-    return `<w:moveFrom${revisionElementAttrs({ id, author, date }, ctx.reproducible)}>${body}</w:moveFrom>`;
+    return `<w:moveFrom${revisionElementAttrs({ id, author, date, dateUtc }, ctx.reproducible)}>${body}</w:moveFrom>`;
   }
   if ("movedTo" in child) {
-    const { id, author, date, children } = child.movedTo;
+    const { id, author, date, dateUtc, children } = child.movedTo;
     const body = stringifyTrackChangeChildren(children, ctx, false);
-    return `<w:moveTo${revisionElementAttrs({ id, author, date }, ctx.reproducible)}>${body}</w:moveTo>`;
+    return `<w:moveTo${revisionElementAttrs({ id, author, date, dateUtc }, ctx.reproducible)}>${body}</w:moveTo>`;
   }
 
   // ── Merge-conflict text runs (w14, Word 2010+) ──
@@ -1153,25 +1156,25 @@ export function stringifyChildDispatch(
   // ── Custom XML range markers (track changes) ──
   if ("customXmlInsRangeStart" in child) {
     const o = child.customXmlInsRangeStart;
-    return `<w:customXmlInsRangeStart w:id="${o.id}"${o.author ? ` w:author="${escapeXml(o.author)}"` : ""}${o.date ? ` w:date="${o.date}"` : ""}/>`;
+    return `<w:customXmlInsRangeStart w:id="${o.id}"${o.author ? ` w:author="${escapeXml(o.author)}"` : ""}${o.date ? ` w:date="${escapeXml(o.date)}"` : ""}${o.dateUtc ? ` w16du:dateUtc="${escapeXml(o.dateUtc)}"` : ""}/>`;
   }
   if ("customXmlInsRangeEnd" in child)
     return `<w:customXmlInsRangeEnd w:id="${child.customXmlInsRangeEnd}"/>`;
   if ("customXmlDelRangeStart" in child) {
     const o = child.customXmlDelRangeStart;
-    return `<w:customXmlDelRangeStart w:id="${o.id}"${o.author ? ` w:author="${escapeXml(o.author)}"` : ""}${o.date ? ` w:date="${o.date}"` : ""}/>`;
+    return `<w:customXmlDelRangeStart w:id="${o.id}"${o.author ? ` w:author="${escapeXml(o.author)}"` : ""}${o.date ? ` w:date="${escapeXml(o.date)}"` : ""}${o.dateUtc ? ` w16du:dateUtc="${escapeXml(o.dateUtc)}"` : ""}/>`;
   }
   if ("customXmlDelRangeEnd" in child)
     return `<w:customXmlDelRangeEnd w:id="${child.customXmlDelRangeEnd}"/>`;
   if ("customXmlMoveFromRangeStart" in child) {
     const o = child.customXmlMoveFromRangeStart;
-    return `<w:customXmlMoveFromRangeStart w:id="${o.id}"${o.author ? ` w:author="${escapeXml(o.author)}"` : ""}${o.date ? ` w:date="${o.date}"` : ""}/>`;
+    return `<w:customXmlMoveFromRangeStart w:id="${o.id}"${o.author ? ` w:author="${escapeXml(o.author)}"` : ""}${o.date ? ` w:date="${escapeXml(o.date)}"` : ""}${o.dateUtc ? ` w16du:dateUtc="${escapeXml(o.dateUtc)}"` : ""}/>`;
   }
   if ("customXmlMoveFromRangeEnd" in child)
     return `<w:customXmlMoveFromRangeEnd w:id="${child.customXmlMoveFromRangeEnd}"/>`;
   if ("customXmlMoveToRangeStart" in child) {
     const o = child.customXmlMoveToRangeStart;
-    return `<w:customXmlMoveToRangeStart w:id="${o.id}"${o.author ? ` w:author="${escapeXml(o.author)}"` : ""}${o.date ? ` w:date="${o.date}"` : ""}/>`;
+    return `<w:customXmlMoveToRangeStart w:id="${o.id}"${o.author ? ` w:author="${escapeXml(o.author)}"` : ""}${o.date ? ` w:date="${escapeXml(o.date)}"` : ""}${o.dateUtc ? ` w16du:dateUtc="${escapeXml(o.dateUtc)}"` : ""}/>`;
   }
   if ("customXmlMoveToRangeEnd" in child)
     return `<w:customXmlMoveToRangeEnd w:id="${child.customXmlMoveToRangeEnd}"/>`;
@@ -1179,13 +1182,13 @@ export function stringifyChildDispatch(
   // ── Merge-conflict range markers (w14, Word 2010+) ──
   if ("customXmlConflictInsRangeStart" in child) {
     const o = child.customXmlConflictInsRangeStart;
-    return `<w14:customXmlConflictInsRangeStart w:id="${o.id}"${o.author ? ` w:author="${escapeXml(o.author)}"` : ""}${o.date ? ` w:date="${o.date}"` : ""}/>`;
+    return `<w14:customXmlConflictInsRangeStart w:id="${o.id}"${o.author ? ` w:author="${escapeXml(o.author)}"` : ""}${o.date ? ` w:date="${escapeXml(o.date)}"` : ""}${o.dateUtc ? ` w16du:dateUtc="${escapeXml(o.dateUtc)}"` : ""}/>`;
   }
   if ("customXmlConflictInsRangeEnd" in child)
     return `<w14:customXmlConflictInsRangeEnd w:id="${child.customXmlConflictInsRangeEnd}"/>`;
   if ("customXmlConflictDelRangeStart" in child) {
     const o = child.customXmlConflictDelRangeStart;
-    return `<w14:customXmlConflictDelRangeStart w:id="${o.id}"${o.author ? ` w:author="${escapeXml(o.author)}"` : ""}${o.date ? ` w:date="${o.date}"` : ""}/>`;
+    return `<w14:customXmlConflictDelRangeStart w:id="${o.id}"${o.author ? ` w:author="${escapeXml(o.author)}"` : ""}${o.date ? ` w:date="${escapeXml(o.date)}"` : ""}${o.dateUtc ? ` w16du:dateUtc="${escapeXml(o.dateUtc)}"` : ""}/>`;
   }
   if ("customXmlConflictDelRangeEnd" in child)
     return `<w14:customXmlConflictDelRangeEnd w:id="${child.customXmlConflictDelRangeEnd}"/>`;

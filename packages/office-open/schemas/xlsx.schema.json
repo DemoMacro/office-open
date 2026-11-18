@@ -3021,6 +3021,18 @@
       "required": ["reference", "smartTags"],
       "type": "object"
     },
+    "CellStyleCategory": {
+      "description": "Custom cell style — a named reference to a cell-style XF.",
+      "enum": [
+        "custom",
+        "goodBadNeutral",
+        "dataModel",
+        "titleAndHeading",
+        "themedCell",
+        "numberFormat"
+      ],
+      "type": "string"
+    },
     "CellStyleXfOptions": {
       "additionalProperties": false,
       "description": "Named cell-style template — a cellStyleXfs entry. Structured definitions (not indices); source order keeps cellStyle.xfId stable on round-trip. Alignment/protection and applyXxx flags preserved verbatim, unlike cellXfs which derives applyXxx.",
@@ -6356,6 +6368,11 @@
           "readOnly": true,
           "type": "string"
         },
+        "sourcePath": {
+          "description": "Source chartsheet part path — round-trip only.",
+          "readOnly": true,
+          "type": "string"
+        },
         "state": {
           "description": "Visibility",
           "enum": ["visible", "hidden", "veryHidden"],
@@ -7730,6 +7747,7 @@
         "cellIs",
         "containsText",
         "expression",
+        "timePeriod",
         "top10",
         "aboveAverage",
         "colorScale",
@@ -8392,9 +8410,8 @@
           "type": "string"
         },
         "valueType": {
-          "description": "Declared source value type retained for round-trip.",
-          "enum": ["float", "string", "date", "boolean", "percentage", "currency", "time"],
-          "type": "string"
+          "$ref": "#/definitions/VariableValueType",
+          "description": "Declared source value type retained for round-trip."
         }
       },
       "required": ["reference"],
@@ -8402,10 +8419,13 @@
     },
     "CustomCellStyleOptions": {
       "additionalProperties": false,
-      "description": "Custom cell style — a named reference to a cell-style XF.",
       "properties": {
         "builtinId": {
           "type": "number"
+        },
+        "category": {
+          "$ref": "#/definitions/CellStyleCategory",
+          "description": "Gallery category recorded by legacy workbook formats."
         },
         "customBuiltin": {
           "description": "Custom built-in",
@@ -13994,7 +14014,7 @@
           "type": "boolean"
         },
         "properties": {
-          "$ref": "#/definitions/GroupTransform2DOptions",
+          "$ref": "#/definitions/GroupShapePropertiesOptions",
           "description": "Group shape properties (a:: group xfrm + fill/ln)."
         },
         "row": {
@@ -14300,52 +14320,6 @@
         "scene3d": {
           "$ref": "#/definitions/Scene3DOptions",
           "description": "a:scene3d."
-        },
-        "width": {
-          "$ref": "#/definitions/Transform2DOptions/properties/width"
-        },
-        "x": {
-          "$ref": "#/definitions/Transform2DOptions/properties/x"
-        },
-        "y": {
-          "$ref": "#/definitions/Transform2DOptions/properties/y"
-        }
-      },
-      "type": "object"
-    },
-    "GroupTransform2DOptions": {
-      "additionalProperties": false,
-      "properties": {
-        "childExtentHeight": {
-          "$ref": "#/definitions/GroupShapePropertiesOptions/properties/childExtentHeight"
-        },
-        "childExtentPresent": {
-          "$ref": "#/definitions/GroupShapePropertiesOptions/properties/childExtentPresent"
-        },
-        "childExtentWidth": {
-          "$ref": "#/definitions/GroupShapePropertiesOptions/properties/childExtentWidth"
-        },
-        "childOffsetPresent": {
-          "$ref": "#/definitions/GroupShapePropertiesOptions/properties/childOffsetPresent"
-        },
-        "childOffsetX": {
-          "$ref": "#/definitions/GroupShapePropertiesOptions/properties/childOffsetX"
-        },
-        "childOffsetY": {
-          "$ref": "#/definitions/GroupShapePropertiesOptions/properties/childOffsetY"
-        },
-        "flipHorizontal": {
-          "type": "boolean"
-        },
-        "flipVertical": {
-          "type": "boolean"
-        },
-        "height": {
-          "$ref": "#/definitions/Transform2DOptions/properties/height"
-        },
-        "rotation": {
-          "description": "Rotation angle in degrees (e.g., 45 = 45°).",
-          "type": "number"
         },
         "width": {
           "$ref": "#/definitions/Transform2DOptions/properties/width"
@@ -24575,6 +24549,10 @@
           },
           "type": "array"
         },
+        "colGrandTotals": {
+          "description": "Whether column grand totals are shown (defaults to true).",
+          "type": "boolean"
+        },
         "colHeaderCaption": {
           "description": "Column header caption",
           "type": "string"
@@ -24667,6 +24645,13 @@
         },
         "gridDropZones": {
           "type": "boolean"
+        },
+        "hiddenFields": {
+          "description": "Source fields that are present but hidden from the pivot layout.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
         },
         "immersive": {
           "description": "Immersive",
@@ -24762,6 +24747,10 @@
         },
         "published": {
           "description": "Published to server",
+          "type": "boolean"
+        },
+        "rowGrandTotals": {
+          "description": "Whether row grand totals are shown (defaults to true).",
           "type": "boolean"
         },
         "rowHeaderCaption": {
@@ -27732,6 +27721,10 @@
         }
       },
       "type": "object"
+    },
+    "VariableValueType": {
+      "enum": ["float", "percentage", "currency", "date", "time", "boolean", "string"],
+      "type": "string"
     },
     "VariantValue": {
       "anyOf": [
@@ -30745,6 +30738,11 @@
           ],
           "description": "Calculation chain cells (xl/calcChain.xml) — set on parse; the compiler round-trips them verbatim and rebuilds from formula cells only when absent"
         },
+        "calcChainPath": {
+          "description": "Source calculation-chain part path; default xl/calcChain.xml. Round-trip only.",
+          "readOnly": true,
+          "type": "string"
+        },
         "calcChainXmlSpace": {
           "description": "Source `<calcChain/@xml:space>`; round-trip only.",
           "enum": ["default", "preserve"],
@@ -30837,6 +30835,11 @@
             "$ref": "#/definitions/ConnectionOptions"
           },
           "type": "array"
+        },
+        "connectionsPath": {
+          "description": "Source connections part path; default xl/connections.xml. Round-trip only.",
+          "readOnly": true,
+          "type": "string"
         },
         "contentStatus": {
           "description": "Document status (e.g. \"Draft\"), round-tripped from cp:contentStatus.",
@@ -31051,6 +31054,11 @@
         "metadata": {
           "$ref": "#/definitions/MetadataOptions",
           "description": "Rich metadata block (xl/metadata.xml)"
+        },
+        "metadataPath": {
+          "description": "Source metadata part path; default xl/metadata.xml. Round-trip only.",
+          "readOnly": true,
+          "type": "string"
         },
         "modified": {
           "description": "Last modified timestamp (W3CDTF); same null/undefined semantics as the created field.",
@@ -31333,6 +31341,11 @@
         "xmlMaps": {
           "$ref": "#/definitions/MapInfoOptions",
           "description": "XML mappings (xl/xmlMaps.xml)"
+        },
+        "xmlMapsPath": {
+          "description": "Source XML mappings part path; default xl/xmlMaps.xml. Round-trip only.",
+          "readOnly": true,
+          "type": "string"
         }
       },
       "type": "object"

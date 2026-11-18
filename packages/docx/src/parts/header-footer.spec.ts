@@ -106,6 +106,43 @@ describe("header/footer part naming", () => {
     expect(decodePart(second, "word/header1.xml")).toContain("Default header");
     expect(decodePart(second, "word/header2.xml")).toContain("Even header");
   });
+
+  it("declares the Word UTC revision namespace in generated headers", async () => {
+    const output = await generateDocument(
+      {
+        sections: [
+          {
+            children: [{ paragraph: { children: [{ text: "Body" }] } }],
+            headers: {
+              default: [
+                {
+                  paragraph: {
+                    children: [
+                      {
+                        insertion: {
+                          id: 1,
+                          author: "A",
+                          dateUtc: "2026-01-15T09:30:00.000Z",
+                          children: [{ text: "Header" }],
+                        },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+      { type: "uint8array" },
+    );
+    const header = decodePart(output, "word/header1.xml");
+    expect(header).toContain(
+      'xmlns:w16du="http://schemas.microsoft.com/office/word/2023/wordml/word16du"',
+    );
+    expect(header).toContain('mc:Ignorable="w14 w15 w16du wp14"');
+    expect(header).toContain('w16du:dateUtc="2026-01-15T09:30:00.000Z"');
+  });
 });
 
 describe("legacy odd header references", () => {

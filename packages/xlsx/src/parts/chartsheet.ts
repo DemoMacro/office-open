@@ -88,6 +88,8 @@ export interface ChartsheetProtectionOptions {
 
 /** A chart sheet (xl/chartsheets/sheetN.xml) — a full-sheet chart with its own view state. */
 export interface ChartsheetOptions extends Omit<NonVisualDrawingPropertiesOptions, "name"> {
+  /** Source chartsheet part path — round-trip only. */
+  sourcePath?: string;
   /** Sheet name */
   name?: string;
   /** Revision UID (CT_Chartsheet `@xr:uid`); round-trip only. */

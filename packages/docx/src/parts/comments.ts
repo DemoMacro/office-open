@@ -52,6 +52,7 @@ const COMMENTS_NAMESPACE_KEYS: readonly DocumentAttributeNamespace[] = [
   "w16",
   "w16cex",
   "w16cid",
+  "w16du",
   "w16sdtdh",
   "w16se",
   "wne",
@@ -65,7 +66,7 @@ const COMMENTS_NAMESPACE_KEYS: readonly DocumentAttributeNamespace[] = [
 export function commentsNamespaceAttributes(ctx: BodyContext): string {
   return (
     documentNamespaceAttributesInDialect(COMMENTS_NAMESPACE_KEYS, documentNamespaceDialect(ctx)) +
-    ' mc:Ignorable="w14 w15 wp14"'
+    ' mc:Ignorable="w14 w15 w16du wp14"'
   );
 }
 

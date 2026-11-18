@@ -46,4 +46,9 @@ export { Media, type BaseMediaEntry } from "./opc";
 export { Relationships, type RelationshipType } from "./opc";
 export type { CorePropertiesOptions } from "./opc";
 export { sanitizeXmlText } from "@office-open/xml";
-export { parseArchive, ParsedArchive } from "./opc";
+export {
+  DEFAULT_ARCHIVE_READ_LIMITS,
+  parseArchive,
+  ParsedArchive,
+  type ArchiveReadLimits,
+} from "./opc";

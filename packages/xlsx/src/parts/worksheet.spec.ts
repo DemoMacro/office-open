@@ -601,6 +601,27 @@ describe("Worksheet", () => {
   });
 
   describe("conditional formatting formulas", () => {
+    it("round-trips a date-period conditional rule", () => {
+      const readCtx = {
+        resolveRelationship: () => undefined,
+        getPart: () => undefined,
+        getRaw: () => undefined,
+      } as unknown as ReadContext;
+      const element = parseXml(
+        `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">` +
+          `<conditionalFormatting sqref="A1:A10"><cfRule type="timePeriod" priority="1" timePeriod="lastWeek"/></conditionalFormatting></worksheet>`,
+      ).elements?.[0];
+      if (!element) throw new Error("no root");
+      const worksheet = worksheetDesc.parse(element, readCtx);
+      expect(worksheet.conditionalFormats?.[0]?.rules[0]).toMatchObject({
+        type: "timePeriod",
+        timePeriod: "lastWeek",
+      });
+      expect(buildWorksheetXml(worksheet, {})).toContain(
+        '<cfRule type="timePeriod" priority="1" timePeriod="lastWeek"/>',
+      );
+    });
+
     it("emits formulas before specialized rule content", () => {
       const formula = 'MAX(IF(A1="", 0, A1))';
       const xml = buildWorksheetXml(

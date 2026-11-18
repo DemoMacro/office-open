@@ -115,7 +115,12 @@ export function projectText(
       const value = normalizeCharacter(source);
       const isParagraphEnd = value === "\r" || value === "\x07" || value === "\x0c";
       if (isParagraphEnd) {
-        characters.push({ value: "", cp, paragraphEnd: true });
+        characters.push({
+          value: "",
+          cp,
+          paragraphEnd: true,
+          ...(value === "\x07" ? { cellEnd: true } : {}),
+        });
       } else if (value !== undefined) {
         characters.push({ value, cp });
       }

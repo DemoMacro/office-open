@@ -1,4 +1,5 @@
 import type { ChartSpaceOptions } from "../chart";
+import type { VariableValueType } from "./declarations";
 
 /** Image graphic anchored to a spreadsheet cell. */
 export interface CellImageGraphicOptions {
@@ -105,7 +106,7 @@ export interface CoveredCellOptions {
   /** Covered-cell reference, such as `B2`. */
   reference: string;
   /** Declared source value type retained for round-trip. */
-  valueType?: "float" | "string" | "date" | "boolean" | "percentage" | "currency" | "time";
+  valueType?: VariableValueType;
   /** Placeholder text retained from the covered cell. */
   text?: string;
   /** Graphics anchored inside the covered cell. */

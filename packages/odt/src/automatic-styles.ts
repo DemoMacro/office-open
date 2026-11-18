@@ -16,18 +16,22 @@ import { parseTabStop, tabStopXml, type TabStop } from "./paragraph";
 
 export type OdtAutomaticStyleResource = StyleResourceOptions;
 
-export type StyleMap = Map<
-  string,
-  {
-    alignment?: string;
-    columnWidth?: number;
-    pageBreakBefore?: boolean;
-    tabStops?: TabStop[];
-    family: StyleFamily;
-    properties?: StylePropertyOptions[];
-    character: CharacterProperties;
-  }
->;
+export interface ParsedStyle {
+  basedOn?: string;
+  alignment?: string;
+  columnWidth?: number;
+  pageBreakBefore?: boolean;
+  tabStops?: TabStop[];
+  family: StyleFamily;
+  properties?: StylePropertyOptions[];
+  character: CharacterProperties;
+}
+
+export type StyleMap = Map<string, ParsedStyle>;
+
+function canonicalAlignment(value: string | undefined): string | undefined {
+  return value === "justify" ? "both" : value;
+}
 
 export interface CharacterProperties {
   bold?: boolean;
@@ -65,7 +69,7 @@ export function addParagraphStyle(
         xmlElement(
           "style:paragraph-properties",
           {
-            "fo:text-align": properties.alignment,
+            "fo:text-align": properties.alignment === "both" ? "justify" : properties.alignment,
             "fo:break-before": properties.pageBreakBefore ? "page" : undefined,
           },
           properties.tabStops?.length
@@ -100,57 +104,94 @@ export function addCharacterStyle(
   return name;
 }
 
-export function parseStyles(container: Element | undefined): StyleMap {
-  const result: StyleMap = new Map();
-  for (const style of childrenNamed(container, "style:style")) {
-    const name = attributeString(style, "style:name") ?? "";
-    const family = parseFamily(attributeString(style, "style:family"), style);
-    const propertyElements = (style.elements ?? []).filter(
-      (child) => child.type === "element" && child.name !== "style:tab-stops",
-    );
-    const paragraph = childNamed(style, "style:paragraph-properties");
-    const tabStops = childrenNamed(childNamed(paragraph, "style:tab-stops"), "style:tab-stop").map(
-      parseTabStop,
-    );
-    const character = childNamed(style, "style:text-properties");
-    const columnWidthValue = attributeString(
-      childNamed(style, "style:table-column-properties"),
-      "style:column-width",
-    );
-    const columnWidth =
-      columnWidthValue === undefined
-        ? undefined
-        : Math.round((lengthToEmu(columnWidthValue) ?? 0) / 635);
-    const color = attributeString(character, "fo:color");
-    const size = attributeString(character, "fo:font-size");
-    const resourceProperties = propertyElements.map((property) => {
-      const parsed = parseStyleProperty(property, { family, scale: "hundredth-millimeter" });
-      if (!parsed.ok)
-        throw styleError(style, parsed.attributeName ?? parsed.elementName, parsed.reason);
-      return parsed.value;
-    });
-    result.set(name, {
-      alignment: attributeString(paragraph, "fo:text-align"),
-      pageBreakBefore: attributeString(paragraph, "fo:break-before") === "page",
-      tabStops: tabStops.length > 0 ? tabStops : undefined,
-      columnWidth,
-      family,
-      ...(resourceProperties.some(hasStyleProjection) ? { properties: resourceProperties } : {}),
-      character: {
-        bold: attributeString(character, "fo:font-weight") === "bold",
-        italic: attributeString(character, "fo:font-style") === "italic",
-        underline:
-          attributeString(character, "style:text-underline-style") === "solid"
-            ? "single"
-            : undefined,
-        strike: attributeString(character, "style:text-line-through-style") === "solid",
-        size: size?.endsWith("pt") ? Number(size.slice(0, -2)) : undefined,
-        color: color?.startsWith("#") ? color.slice(1) : undefined,
-        font: attributeString(character, "fo:font-family"),
-      },
-    });
+export function parseStyles(...containers: (Element | undefined)[]): StyleMap {
+  const direct: StyleMap = new Map();
+  const sourceElements = new Map<string, Element>();
+  for (const container of containers) {
+    for (const style of childrenNamed(container, "style:style")) {
+      const name = attributeString(style, "style:name") ?? "";
+      const family = parseFamily(attributeString(style, "style:family"), style);
+      const propertyElements = (style.elements ?? []).filter(
+        (child) => child.type === "element" && child.name !== "style:tab-stops",
+      );
+      const paragraph = childNamed(style, "style:paragraph-properties");
+      const tabStops = childrenNamed(
+        childNamed(paragraph, "style:tab-stops"),
+        "style:tab-stop",
+      ).map(parseTabStop);
+      const character = childNamed(style, "style:text-properties");
+      const columnWidthValue = attributeString(
+        childNamed(style, "style:table-column-properties"),
+        "style:column-width",
+      );
+      const columnWidth =
+        columnWidthValue === undefined
+          ? undefined
+          : Math.round((lengthToEmu(columnWidthValue) ?? 0) / 635);
+      const color = attributeString(character, "fo:color");
+      const size = attributeString(character, "fo:font-size");
+      const breakBefore = attributeString(paragraph, "fo:break-before");
+      const bold = attributeString(character, "fo:font-weight");
+      const italic = attributeString(character, "fo:font-style");
+      const underline = attributeString(character, "style:text-underline-style");
+      const strike = attributeString(character, "style:text-line-through-style");
+      const resourceProperties = propertyElements.map((property) => {
+        const parsed = parseStyleProperty(property, { family, scale: "hundredth-millimeter" });
+        if (!parsed.ok)
+          throw styleError(style, parsed.attributeName ?? parsed.elementName, parsed.reason);
+        return parsed.value;
+      });
+      const characterProperties: CharacterProperties = {
+        ...(bold === undefined ? {} : { bold: bold === "bold" }),
+        ...(italic === undefined ? {} : { italic: italic === "italic" }),
+        ...(underline === undefined
+          ? {}
+          : { underline: underline === "solid" ? ("single" as const) : undefined }),
+        ...(strike === undefined ? {} : { strike: strike === "solid" }),
+        ...(size?.endsWith("pt") ? { size: Number(size.slice(0, -2)) } : {}),
+        ...(color?.startsWith("#") ? { color: color.slice(1) } : {}),
+        ...(attributeString(character, "fo:font-family")
+          ? { font: attributeString(character, "fo:font-family") }
+          : {}),
+      };
+      direct.set(name, {
+        basedOn: attributeString(style, "style:parent-style-name"),
+        alignment: canonicalAlignment(attributeString(paragraph, "fo:text-align")),
+        pageBreakBefore: breakBefore === undefined ? undefined : breakBefore === "page",
+        tabStops: tabStops.length > 0 ? tabStops : undefined,
+        columnWidth,
+        family,
+        ...(resourceProperties.some(hasStyleProjection) ? { properties: resourceProperties } : {}),
+        character: characterProperties,
+      });
+      sourceElements.set(name, style);
+    }
   }
-  return result;
+  const resolved: StyleMap = new Map();
+  const resolve = (name: string, path: Set<string>): ParsedStyle | undefined => {
+    const cached = resolved.get(name);
+    if (cached) return cached;
+    const style = direct.get(name);
+    if (!style) return undefined;
+    if (path.has(name))
+      throw styleError(sourceElements.get(name)!, name, "cyclic parent style chain");
+    const nextPath = new Set(path).add(name);
+    const parent = style.basedOn ? resolve(style.basedOn, nextPath) : undefined;
+    const merged = {
+      ...parent,
+      ...style,
+      alignment: style.alignment ?? parent?.alignment,
+      columnWidth: style.columnWidth ?? parent?.columnWidth,
+      pageBreakBefore: style.pageBreakBefore ?? parent?.pageBreakBefore,
+      tabStops: style.tabStops ?? parent?.tabStops,
+      properties: [...(parent?.properties ?? []), ...(style.properties ?? [])],
+      character: { ...parent?.character, ...style.character },
+    };
+    resolved.set(name, merged);
+    return merged;
+  };
+  for (const name of direct.keys()) resolve(name, new Set());
+  return resolved;
 }
 
 export function automaticStyleResourcesXml(

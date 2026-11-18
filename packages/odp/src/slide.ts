@@ -8,6 +8,7 @@ import {
   escapeText,
   lengthToEmu,
   parseXmlElement,
+  pushShapeStyle,
   textOf,
   unknownAttributeNames,
   unknownChildElement,
@@ -19,6 +20,7 @@ import type { StyleResourceOptions } from "@office-open/odf";
 import type {
   AnimationEntry,
   GroupOptions,
+  NotesSlideOptions,
   SlideChild,
   SlideCommentOptions,
   TableOptions,
@@ -78,13 +80,13 @@ import {
   addColumnStyle,
   addRowStyle,
   parseCellStyles,
+  parseDrawingPageBackground,
   parseRowHeights,
   type TableCellStyle,
 } from "./styles";
 import { parseParagraph, textBodyXml, type TextProperties } from "./text-run";
 import {
   applyTransitionToStyleResource,
-  hasTransitionOverlay,
   parseTransition,
   requiresTransitionStyle,
   transitionDrawingPageXml,
@@ -147,15 +149,51 @@ export function slideXml(
       ? transitionDrawingPageXml(transitionStyleName, transitionForStyle)
       : undefined;
   if (transitionStyleXml !== undefined) styles.push(transitionStyleXml);
-  const notes = typeof slide.notes === "string" ? slide.notes : slide.notes?.text;
-  const notesXml = notes
-    ? xmlElement("presentation:notes", undefined, [
-        xmlElement("draw:frame", undefined, [
-          xmlElement("draw:text-box", undefined, [
-            xmlElement("text:p", undefined, [escapeText(notes)]),
+  const notes = typeof slide.notes === "string" ? { text: slide.notes } : slide.notes;
+  if (
+    notes?.background ||
+    notes?.colorMappingOverride ||
+    notes?.cSldExt ||
+    notes?.show === false ||
+    (notes?.text !== undefined && notes.children !== undefined)
+  ) {
+    throw new OdpGenerateError(
+      "ODF notes cannot represent the requested PowerPoint notes properties",
+      "content.xml",
+      "/office:document-content/office:body/office:presentation/draw:page/presentation:notes",
+      "presentation:notes",
+      "unsupported-notes-properties",
+    );
+  }
+  const notesChildren = [
+    ...(notes?.text === undefined
+      ? []
+      : [
+          xmlElement("draw:frame", undefined, [
+            xmlElement(
+              "draw:text-box",
+              undefined,
+              notes.text
+                .split(/\r?\n/u)
+                .map((paragraph) => xmlElement("text:p", undefined, [escapeText(paragraph)])),
+            ),
           ]),
         ]),
-      ])
+    ...(notes?.children ?? []).map((child) => {
+      if (!("shape" in child || "line" in child || "connector" in child)) {
+        throw new OdpGenerateError(
+          "ODF notes support shape, line, and connector children",
+          "content.xml",
+          "/office:document-content/office:body/office:presentation/draw:page/presentation:notes",
+          "notes-child",
+          "unsupported-notes-child",
+        );
+      }
+      return slideChildXml(child, styles, images, mediaFiles, embeddedObjects, charts);
+    }),
+  ];
+  const notesXml = notesChildren.length
+    ? xmlElement("presentation:notes", undefined, notesChildren)
     : undefined;
   return xmlElement(
     "draw:page",
@@ -163,6 +201,7 @@ export function slideXml(
       "draw:name": slide.name ?? `Slide${index}`,
       "draw:master-page-name": slide.master ?? "Default",
       "draw:style-name": transitionStyleName,
+      "presentation:presentation-page-layout-name": slide.presentationPageLayoutName,
     },
     [
       ...(slide.forms === undefined ? [] : [formsXml(slide.forms)]),
@@ -302,20 +341,38 @@ export function slideChildXml(
     return shapeXml(child.shape, styles);
   }
   if ("table" in child) return tableFrameXml(child.table, styles);
-  if ("connector" in child) return connectorXml(child.connector);
-  if ("line" in child) return lineXml(child.line);
-  if ("picture" in child) return pictureFrameXml(child.picture, images);
+  if ("connector" in child) return connectorXml(child.connector, styles);
+  if ("line" in child) return lineXml(child.line, styles);
+  if ("picture" in child) return pictureFrameXml(child.picture, images, styles);
   if ("video" in child) return mediaFrameXml(child.video, mediaFiles, images);
   if ("audio" in child) return mediaFrameXml(child.audio, mediaFiles, images);
   if ("chart" in child) return chartFrameXml(child.chart, charts);
   if ("group" in child)
     return xmlElement(
       "draw:g",
-      { "draw:id": odfShapeIdXml(child.group.id), "draw:name": child.group.name },
+      {
+        "draw:id": odfShapeIdXml(child.group.id),
+        "draw:name": child.group.name,
+        "draw:style-name": pushShapeStyle(child.group.fill, undefined, styles),
+        "draw:transform":
+          child.group.rotation === undefined ? undefined : `rotate(${child.group.rotation}deg)`,
+        "svg:x": toOdfLength(child.group.x),
+        "svg:y": toOdfLength(child.group.y),
+        "svg:width": toOdfLength(child.group.width),
+        "svg:height": toOdfLength(child.group.height),
+      },
       (() => {
-        const children = child.group.children.map((nested) =>
-          slideChildXml(nested, styles, images, mediaFiles, embeddedObjects, charts),
-        );
+        const children = [
+          ...(child.group.title === undefined
+            ? []
+            : [xmlElement("svg:title", undefined, [escapeText(child.group.title)])]),
+          ...(child.group.description === undefined
+            ? []
+            : [xmlElement("svg:desc", undefined, [escapeText(child.group.description)])]),
+          ...child.group.children.map((nested) =>
+            slideChildXml(nested, styles, images, mediaFiles, embeddedObjects, charts),
+          ),
+        ];
         const odpNodes = "odpNodes" in child.group ? child.group.odpNodes : [];
         for (const node of [...(odpNodes ?? [])].sort(
           (left, right) => left.position - right.position,
@@ -331,7 +388,15 @@ export function slideChildXml(
   if ("frame" in child || "measure" in child || "pageThumbnail" in child || "scene" in child)
     return slideNodeXml(child, styles, charts);
   if ("rawXml" in child) {
-    if (child.rawXml === "") return "";
+    if (child.rawXml === "") {
+      throw new OdpGenerateError(
+        "ODP opaque slide node cannot be empty",
+        "content.xml",
+        "/office:document-content/office:body/office:presentation/draw:page",
+        "rawXml",
+        "empty-raw-xml",
+      );
+    }
     const legacyShape = compatibilityLegacyShape(child.rawXml);
     if (legacyShape) return shapeXml(legacyShape, styles);
     const match = /<([A-Za-z_][\w.-]*)(?::([\w.-]+))?/u.exec(child.rawXml);
@@ -347,7 +412,13 @@ export function slideChildXml(
     }
     return child.rawXml;
   }
-  return "";
+  throw new OdpGenerateError(
+    "ODP slide child has no canonical ODF mapping",
+    "content.xml",
+    "/office:document-content/office:body/office:presentation/draw:page",
+    "slide-child",
+    "unsupported-slide-child",
+  );
 }
 
 const ODF_RAW_PREFIXES = new Set([
@@ -429,26 +500,10 @@ export function parseSlide(
     packageMembers,
     binaries,
   );
-  const transitionEntry = parsedAnimationRoots.map(findTransitionFilter).find(Boolean);
-  const hasOtherAnimations =
-    parsedAnimationRoots.length > 1 ||
-    parsedAnimationRoots.some(
-      (entry) => entry !== transitionEntry && containsTransitionFilter(entry),
-    );
-  const animationRoots = parsedAnimationRoots.filter(
-    (entry) =>
-      !(
-        transition !== undefined &&
-        containsTransitionFilter(entry) &&
-        (!hasOtherAnimations || hasTransitionOverlay(transitionEntry))
-      ),
-  );
+  const animationRoots = parsedAnimationRoots;
+  const background = parseDrawingPageBackground(styleResources ?? [], pageStyleName);
   const shapeReferences = collectOdfShapeIds(normalizedPage);
-  const notes = childNamed(
-    childNamed(childNamed(page, "presentation:notes"), "draw:frame"),
-    "draw:text-box",
-  );
-  const notesText = notes ? textOf(childNamed(notes, "text:p")) : undefined;
+  const notes = parseNotes(childNamed(page, "presentation:notes"), textStyles, graphicStyles);
   const comments = childrenNamed(page, "officeooo:annotation").map(parseAnnotation);
   const children: SlideChild[] = [];
   const odpNodes: OdpSlideNodeOptions[] = [];
@@ -500,6 +555,7 @@ export function parseSlide(
         manifestMediaTypes,
         () => nextEmbeddedShapeId.value++,
         textStyles,
+        graphicStyles,
       );
       if (embeddedObject) {
         children.push(embeddedObject);
@@ -510,13 +566,13 @@ export function parseSlide(
         children.push(media);
         continue;
       }
-      const picture = parsePictureFrame(child, binaries, usedBinaryPaths);
+      const picture = parsePictureFrame(child, binaries, usedBinaryPaths, graphicStyles);
       if (picture) {
         children.push(picture);
         continue;
       }
       if (childNamed(child, "draw:text-box")) {
-        children.push({ shape: parseShape(child, textStyles) });
+        children.push({ shape: parseShape(child, textStyles, graphicStyles) });
         continue;
       }
       const framedTable = tableOfPlainFrame(child);
@@ -558,7 +614,7 @@ export function parseSlide(
       continue;
     }
     if (child.name === "draw:line") {
-      children.push(parseLine(child));
+      children.push(parseLine(child, graphicStyles));
       continue;
     }
     if (child.name === "draw:g") {
@@ -576,7 +632,7 @@ export function parseSlide(
       continue;
     }
     if (child.name === "draw:connector") {
-      children.push(parseConnector(child));
+      children.push(parseConnector(child, graphicStyles));
       continue;
     }
     if (child.name === "table:table") {
@@ -627,15 +683,88 @@ export function parseSlide(
       ? { master: attributeString(page, "draw:master-page-name") }
       : {}),
     ...(forms !== undefined ? { forms } : {}),
+    ...(background === undefined ? {} : { background }),
     children,
     ...(odpNodes.length > 0 ? { odpNodes } : {}),
     ...(transition !== undefined ? { transition } : {}),
     ...(pageStyleName ? { drawingPageStyleName: pageStyleName } : {}),
+    ...(attributeString(page, "presentation:presentation-page-layout-name")
+      ? {
+          presentationPageLayoutName: attributeString(
+            page,
+            "presentation:presentation-page-layout-name",
+          ),
+        }
+      : {}),
     ...(animations.length > 0 ? { animations } : {}),
     ...(comments.length > 0 ? { comments } : {}),
-    ...(notesText ? { notes: notesText } : {}),
+    ...(notes === undefined ? {} : { notes }),
   };
   return slideOptions;
+}
+
+function parseNotes(
+  element: Element | undefined,
+  textStyles: Map<string, TextProperties>,
+  graphicStyles: Map<string, GraphicStyle>,
+): NotesSlideOptions | string | undefined {
+  if (element === undefined) return undefined;
+  const path =
+    "/office:document-content/office:body/office:presentation/draw:page/presentation:notes";
+  const children: SlideChild[] = [];
+  for (const child of element.elements ?? []) {
+    if (child.type !== "element") continue;
+    if (child.name === "draw:frame") {
+      if (childNamed(child, "draw:text-box")) {
+        children.push({ shape: parseShape(child, textStyles, graphicStyles) });
+        continue;
+      }
+    } else if (child.name === "draw:custom-shape") {
+      children.push({ shape: parseCustomSlideShape(child, textStyles, graphicStyles) });
+      continue;
+    } else if (
+      child.name === "draw:rect" ||
+      child.name === "draw:circle" ||
+      child.name === "draw:ellipse" ||
+      child.name === "draw:path" ||
+      child.name === "draw:polygon" ||
+      child.name === "draw:polyline"
+    ) {
+      children.push({ shape: parsePrimitiveSlideShape(child, textStyles, graphicStyles) });
+      continue;
+    } else if (child.name === "draw:line") {
+      children.push(parseLine(child, graphicStyles));
+      continue;
+    } else if (child.name === "draw:connector") {
+      children.push(parseConnector(child, graphicStyles));
+      continue;
+    }
+    throw unknownSlideChild(child, path);
+  }
+  if (children.length === 0) return undefined;
+  const [first] = children;
+  if (children.length === 1 && first && "shape" in first) {
+    const { shape } = first;
+    const paragraphs = first.shape.textBody?.paragraphs ?? [];
+    if (
+      shape.id === undefined &&
+      shape.name === undefined &&
+      shape.x === undefined &&
+      shape.y === undefined &&
+      shape.width === undefined &&
+      shape.height === undefined &&
+      shape.properties === undefined &&
+      paragraphs.every(
+        (paragraph) => typeof paragraph === "string" || paragraph.children === undefined,
+      )
+    ) {
+      const text = paragraphs
+        .map((paragraph) => (typeof paragraph === "string" ? paragraph : (paragraph.text ?? "")))
+        .join("\n");
+      if (text !== "") return text;
+    }
+  }
+  return { children };
 }
 
 function compatibilityPage(page: Element): Element {
@@ -646,17 +775,19 @@ function compatibilityPage(page: Element): Element {
       ...branches.filter((branch) => branch.name === "mc:Choice"),
       ...branches.filter((branch) => branch.name === "mc:Fallback"),
     ];
-    const known = candidates.flatMap((branch) =>
-      (branch.elements ?? []).filter((content) => isKnownCompatibilityChild(content.name)),
+    const selectedBranch = candidates.find(
+      (branch) =>
+        (branch.name === "mc:Fallback" || supportsCompatibilityChoice(branch)) &&
+        (branch.elements ?? []).some((content) => isKnownCompatibilityChild(content.name)),
     );
-    const selected = (known[0] ?? candidates[0]?.elements?.[0]) as Element | undefined;
-    if (selected === undefined) {
+    const selected = selectedBranch?.elements ?? candidates[0]?.elements ?? [];
+    if (selected.length === 0) {
       throw unknownSlideChild(
         child,
         "/office:document-content/office:body/office:presentation/draw:page/mc:AlternateContent",
       );
     }
-    return [selected];
+    return selected;
   });
   return { ...page, elements: children };
 }
@@ -690,13 +821,23 @@ function isKnownCompatibilityChild(name: string | undefined): boolean {
   );
 }
 
-function findTransitionFilter(entry: AnimationEntry): AnimationEntry | undefined {
-  if (entry.behavior === "transitionFilter") return entry;
-  for (const child of entry.children ?? []) {
-    const transition = findTransitionFilter(child);
-    if (transition !== undefined) return transition;
-  }
-  return undefined;
+const SUPPORTED_COMPATIBILITY_PREFIXES = new Set([
+  "anim",
+  "draw",
+  "odf",
+  "office",
+  "officeooo",
+  "presentation",
+  "table",
+]);
+
+function supportsCompatibilityChoice(branch: Element): boolean {
+  const requires = attributeString(branch, "Requires");
+  if (requires === undefined || requires.trim() === "") return true;
+  return requires
+    .trim()
+    .split(/\s+/u)
+    .every((prefix) => SUPPORTED_COMPATIBILITY_PREFIXES.has(prefix));
 }
 
 function containsTransitionFilter(entry: AnimationEntry): boolean {
@@ -781,11 +922,12 @@ export interface TableStyles {
   cells: Map<string, TableCellStyle>;
 }
 
-export function parseTableStyles(container: Element | undefined): TableStyles {
+/** Table style lookups merged from several style containers; a later container wins on a name clash. */
+export function parseTableStyles(...containers: (Element | undefined)[]): TableStyles {
   return {
-    columnWidths: parseColumnWidths(container),
-    rowHeights: parseRowHeights(container),
-    cells: parseCellStyles(container),
+    columnWidths: new Map(containers.flatMap((container) => [...parseColumnWidths(container)])),
+    rowHeights: new Map(containers.flatMap((container) => [...parseRowHeights(container)])),
+    cells: new Map(containers.flatMap((container) => [...parseCellStyles(container)])),
   };
 }
 

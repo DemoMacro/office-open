@@ -52,12 +52,34 @@ function rtfProjection(options) {
   );
 }
 
+function odpProjection(options) {
+  const masters = options.masters?.map((master) => {
+    const projected = { ...master };
+    delete projected.theme;
+    delete projected.placeholders;
+    delete projected.placeholderShapes;
+    if (projected.children !== undefined) {
+      projected.children = projected.children.filter(
+        (child) => !("placeholder" in child || "placeholderShape" in child),
+      );
+    }
+    return projected;
+  });
+  return { ...options, ...(masters === undefined ? {} : { masters }) };
+}
+
+function projectOptions(target, options) {
+  if (target === "rtf") return rtfProjection(options);
+  if (target === "odp") return odpProjection(options);
+  return { ...options };
+}
+
 async function convertSource(family, source, data, targets) {
   const parsed = await parseOffice(data);
   const generated = [];
   for (const target of targets) {
     if (target === source) continue;
-    const options = target === "rtf" ? rtfProjection(parsed.options) : { ...parsed.options };
+    const options = projectOptions(target, parsed.options);
     const output = await generateOffice(target, options, "nodebuffer");
     const outputPath = path.join(outputDir, `${family}-${source}-to-${target}.${target}`);
     await writeFile(outputPath, output);

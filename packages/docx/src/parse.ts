@@ -9,7 +9,6 @@ import {
 } from "@office-open/core";
 import type { ThemeColor } from "@office-open/core";
 import {
-  assertUniqueRelationshipIds,
   collectPassthroughParts,
   isEncryptedContainer,
   opaquePassthroughPolicy,
@@ -205,14 +204,6 @@ function resolveEmbeddedFontData(
   fontTablePath = "word/fontTable.xml",
 ): void {
   const relsEl = doc.get(partPathToRelsPath(fontTablePath));
-  if (!relsEl && fonts.some((font) => embeddedFontParts(font).some(([, part]) => part.embedRid))) {
-    throw new DocxParseError(
-      "Embedded font relationship part is missing",
-      fontTablePath,
-      `/${fontTablePath}/w:fonts/w:font`,
-      "missing-package-part",
-    );
-  }
   if (!relsEl) return;
   const ridToPath = new Map<string, string>();
   for (const child of relsEl.elements ?? []) {
@@ -227,28 +218,14 @@ function resolveEmbeddedFontData(
     for (const [, part] of embeddedFontParts(font)) {
       if (!part.embedRid) continue;
       const odttfPath = ridToPath.get(part.embedRid);
-      if (!odttfPath) {
-        throw new DocxParseError(
-          `Embedded font relationship is missing: ${part.embedRid}`,
-          fontTablePath,
-          `/${fontTablePath}/w:fonts/w:font`,
-          "missing-package-part",
-        );
-      }
+      if (!odttfPath) continue;
       // The Target is a URI (escaped); the ZIP entry may carry the raw name.
       // Look up both forms and store the decoded path so compileDocument
       // re-escapes it exactly once.
       const decoded = decodeUriPath(odttfPath);
       part.odttfPath = decoded;
       const bytes = doc.getRaw(odttfPath) ?? doc.getRaw(decoded);
-      if (!bytes) {
-        throw new DocxParseError(
-          `Embedded font part is missing: ${part.embedRid}`,
-          fontTablePath,
-          `/${fontTablePath}/w:fonts/w:font`,
-          "missing-package-part",
-        );
-      }
+      if (!bytes) continue;
       part.data = bytes;
       part.rawOdttf = true;
       part.odttfPath = decoded;
@@ -281,7 +258,7 @@ function parseDocPartRefs(doc: ParsedArchive, documentPath = "word/document.xml"
 
   const relsEl = doc.get(partPathToRelsPath(documentPath));
   if (!relsEl) return refs;
-  assertUniqueRelationshipIds(relsEl, partPathToRelsPath(documentPath));
+  normalizeDuplicateRelationshipIds(relsEl);
 
   for (const child of relsEl.elements ?? []) {
     if (child.name !== "Relationship") continue;
@@ -354,7 +331,7 @@ function parseDocPartRefs(doc: ParsedArchive, documentPath = "word/document.xml"
     if (relsMarker < 0) continue;
     const relsEl = doc.get(relsPath);
     if (!relsEl) continue;
-    assertUniqueRelationshipIds(relsEl, relsPath);
+    normalizeDuplicateRelationshipIds(relsEl);
     const partPath = `${relsPath.slice(0, relsMarker)}/${relsPath.slice(relsMarker + 7, -5)}`;
     for (const rel of relsEl.elements ?? []) {
       if (rel.name !== "Relationship") continue;
@@ -419,6 +396,7 @@ function parseRootRels(doc: ParsedArchive): {
 } {
   const relsEl = doc.get("_rels/.rels");
   if (!relsEl) return { relationships: [] };
+  normalizeDuplicateRelationshipIds(relsEl);
 
   let coreProps: string | undefined;
   let appProps: string | undefined;
@@ -436,7 +414,7 @@ function parseRootRels(doc: ParsedArchive): {
     const type = attr(child, "Type") ?? "";
     const target = attr(child, "Target") ?? "";
     if (!target) return true;
-    const path = target.startsWith("/") ? target.slice(1) : target;
+    const path = resolveRelationshipTarget("", target);
     const relType = type.toLowerCase().replaceAll("-", "");
     if (relType.endsWith("/officedocument")) {
       if (attr(child, "TargetMode")?.toLowerCase() !== "external") {
@@ -475,6 +453,42 @@ function parseRootRels(doc: ParsedArchive): {
     customProps,
     relationships: capturedRelationships,
   };
+}
+
+/**
+ * Normalize invalid duplicate relationship ids found in real-world packages.
+ * The last source entry keeps its id to match lookup semantics; earlier
+ * duplicates receive fresh ids so generated packages remain valid OPC.
+ */
+function normalizeDuplicateRelationshipIds(element: Element): void {
+  const remaining = new Map<string, number>();
+  let maxId = 0;
+  for (const child of element.elements ?? []) {
+    if (child.name !== "Relationship") continue;
+    const id = attr(child, "Id");
+    if (!id) continue;
+    maxId = Math.max(maxId, Number(/^rId(\d+)$/.exec(id)?.[1] ?? 0));
+    remaining.set(id, (remaining.get(id) ?? 0) + 1);
+  }
+  const seen = new Set<string>();
+  for (const child of element.elements ?? []) {
+    if (child.name !== "Relationship") continue;
+    const id = attr(child, "Id");
+    if (!id) continue;
+    const count = remaining.get(id) ?? 0;
+    remaining.set(id, count - 1);
+    if (count === 1) {
+      seen.add(id);
+      continue;
+    }
+    let freshId: string;
+    do {
+      freshId = `rId${++maxId}`;
+    } while (seen.has(freshId));
+    child.attributes ??= {};
+    child.attributes.Id = freshId;
+    seen.add(freshId);
+  }
 }
 
 function ensureNestedMap<K, V>(outer: Map<K, Map<K, V>>, key: K): Map<K, V> {
@@ -1231,7 +1245,12 @@ function parseDocxArchive(doc: ParsedArchive): DocxDocument {
       primaryPartPath,
       "missing-primary-part",
     );
-  const body = documentEl.elements?.find((e) => e.name === "w:body");
+  const bodies = documentEl.elements?.filter((e) => e.name === "w:body") ?? [];
+  const firstBody = bodies[0];
+  const body =
+    bodies.length > 1 && firstBody
+      ? { ...firstBody, elements: bodies.flatMap((element) => element.elements ?? []) }
+      : firstBody;
   if (!body)
     throw new OpcPackageError(
       "w:body not found in word/document.xml",

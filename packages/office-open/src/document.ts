@@ -1,6 +1,7 @@
 import {
   convertOutput,
   unsupportedPatchFormat,
+  toUint8Array,
   toUint8ArrayAsync,
   type DataType,
   type OutputByType,
@@ -89,17 +90,23 @@ export async function parseDocument(
   input: DataType,
   options?: DocumentParseOptions,
 ): Promise<DocumentOptions | OdtDocumentOptions> {
-  const data = await toUint8ArrayAsync(input);
+  const isRtfText =
+    typeof input === "string" &&
+    input
+      .replace(/^\uFEFF\s*/, "")
+      .trimStart()
+      .startsWith("{\\rtf");
+  const data = isRtfText ? input : await toUint8ArrayAsync(input);
   const info = detectOffice(data);
 
   switch (info.format) {
     case "doc":
-      return parseDocDocument(data, options) as DocumentOptions;
+      return parseDocDocument(toUint8Array(data), options) as DocumentOptions;
     case "docx":
     case "docm":
     case "dotx":
     case "dotm":
-      return parseDocxDocument(data);
+      return parseDocxDocument(toUint8Array(data));
     case "rtf":
       return parseRtfDocument(data) as DocumentOptions;
     case "odt":

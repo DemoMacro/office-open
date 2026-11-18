@@ -49,7 +49,12 @@ export interface ToUint8ArrayOptions {
    *   `readFileSync(...).toString("base64")`.
    */
   encoding?: "utf8" | "base64";
+  /** Maximum bytes materialized from a Blob or ReadableStream. */
+  maxBytes?: number;
 }
+
+/** Default bound for materializing asynchronous binary inputs. */
+export const DEFAULT_ASYNC_INPUT_SIZE = 1024 * 1024 * 1024;
 
 /** Normalize any supported binary input to a `Uint8Array`. */
 export function toUint8Array(data: DataType, options?: ToUint8ArrayOptions): Uint8Array {
@@ -79,7 +84,11 @@ export async function toUint8ArrayAsync(
   data: DataType,
   options?: ToUint8ArrayOptions,
 ): Promise<Uint8Array> {
-  if (data instanceof Blob) return new Uint8Array(await data.arrayBuffer());
+  const maxBytes = options?.maxBytes ?? DEFAULT_ASYNC_INPUT_SIZE;
+  if (data instanceof Blob) {
+    if (data.size > maxBytes) throw new RangeError("Binary input exceeds configured size limit");
+    return new Uint8Array(await data.arrayBuffer());
+  }
   if (data instanceof ReadableStream) {
     const reader = data.getReader();
     const chunks: Uint8Array[] = [];
@@ -89,6 +98,10 @@ export async function toUint8ArrayAsync(
       if (done) break;
       chunks.push(value);
       total += value.length;
+      if (total > maxBytes) {
+        await reader.cancel("Binary input exceeds configured size limit");
+        throw new RangeError("Binary input exceeds configured size limit");
+      }
     }
     const out = new Uint8Array(total);
     let offset = 0;

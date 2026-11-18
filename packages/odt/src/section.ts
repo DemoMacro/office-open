@@ -1,4 +1,4 @@
-import type { OfficeFormsOptions } from "@office-open/core";
+import type { OfficeFormsOptions, VariableValueType } from "@office-open/core";
 import type { DocumentOptions, ParagraphChild, SectionChild } from "@office-open/docx";
 import {
   attributeNumber,
@@ -15,7 +15,7 @@ import { blockXml, blocksXml, parseBlocks, unknownOdtElement, type ParseContext 
 import type { OdtChart, OdtImage } from "./drawing";
 import type { OdtEmbeddedObjectOptions } from "./embedded-objects";
 import { OdtParseError } from "./error";
-import type { CanonicalRevision, OdtVariableValueType } from "./paragraph";
+import type { CanonicalRevision } from "./paragraph";
 
 /** Footnote/endnote entry, indexed from the shared docx document model. */
 export type NoteEntry = NonNullable<DocumentOptions["footnotes"]>[number];
@@ -55,7 +55,7 @@ export interface NotesContext {
   bookmarkEndNames: Map<number, string[]>;
   bookmarkXmlIdCounts: Map<number, number>;
   sequenceNames: Set<string>;
-  variableTypes: Map<string, OdtVariableValueType>;
+  variableTypes: Map<string, VariableValueType>;
   forms: OfficeFormsOptions;
   revisions: Map<string, CanonicalRevision>;
   comments: Map<number, NonNullable<DocumentOptions["comments"]>[number]>;

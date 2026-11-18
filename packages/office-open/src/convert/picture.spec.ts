@@ -1,3 +1,4 @@
+import type { BlipEffectsOptions, SourceRectangleOptions } from "@office-open/core/drawing";
 import type { MediaTransformation, PictureOptions as DocxPictureOptions } from "@office-open/docx";
 import type { PictureOptions as PptxPictureOptions } from "@office-open/pptx";
 import type { PictureOptions as XlsxPictureOptions } from "@office-open/xlsx";
@@ -80,6 +81,19 @@ describe("toXlsxPicture (pptx → xlsx)", () => {
     });
     expect(xlsx).not.toHaveProperty("width");
     expect(xlsx).not.toHaveProperty("height");
+  });
+
+  it("rejects picture types that XLSX cannot represent without transcoding", () => {
+    expect(() =>
+      toXlsxPicture({
+        type: "tif",
+        data: new Uint8Array([1, 2, 3]),
+        x: 0,
+        y: 0,
+        width: 10,
+        height: 10,
+      }),
+    ).toThrow('Cannot convert picture type "tif" to XLSX without transcoding');
   });
 });
 
@@ -206,5 +220,99 @@ describe("cross-format cNvPr (alt text) preservation", () => {
   it("omits docx altText when source carries no cNvPr at all", () => {
     const pptx: PptxPictureOptions = { type: "png", data, width: 10, height: 10 };
     expect(toDocxPicture(pptx).altText).toBeUndefined();
+  });
+});
+
+describe("cross-format picture appearance", () => {
+  const data = new Uint8Array([3, 4, 5]);
+
+  it("maps DPI and stretch markers between DOCX and XLSX", () => {
+    const xlsx: XlsxPictureOptions = {
+      type: "png",
+      data,
+      col: 1,
+      row: 1,
+      dpi: 300,
+      fillRectangle: false,
+      useLocalDpi: true,
+    };
+    expect(toDocxPicture(xlsx)).toMatchObject({
+      dpi: 300,
+      stretch: false,
+      useLocalDpi: true,
+    });
+
+    const docx: DocxPictureOptions = {
+      type: "png",
+      data,
+      transformation: { width: 10, height: 10 },
+      dpi: 150,
+      fillRectangle: false,
+      useLocalDpi: false,
+    };
+    expect(toXlsxPicture(docx)).toMatchObject({
+      dpi: 150,
+      fillRectangle: true,
+      useLocalDpi: false,
+    });
+  });
+
+  it("preserves PPTX/XLSX picture locks and relative-resize settings", () => {
+    const pptx: PptxPictureOptions = {
+      type: "png",
+      data,
+      locking: { noChangeAspect: true },
+      preferRelativeResize: false,
+      fillRectangle: false,
+      useLocalDpi: "default",
+    };
+    expect(toXlsxPicture(pptx)).toMatchObject({
+      locking: { noChangeAspect: true },
+      preferRelativeResize: false,
+      fillRectangle: true,
+      useLocalDpi: "default",
+    });
+    expect(toDocxPicture(pptx)).toMatchObject({
+      fillRectangle: false,
+      useLocalDpi: false,
+    });
+  });
+});
+
+describe("cross-format picture appearance preservation", () => {
+  const data = new Uint8Array([1, 2, 3]);
+  const sourceRectangle: SourceRectangleOptions = { left: 10, right: 20 };
+  const blipEffects: BlipEffectsOptions = { luminance: { bright: 20, contrast: 30 } };
+  const common = {
+    sourceRectangle,
+    blipEffects,
+    compression: "print" as const,
+    rotWithShape: false,
+  };
+
+  it("preserves crop and blip effects through every format pair", () => {
+    const docx: DocxPictureOptions = {
+      type: "png",
+      data,
+      transformation: { width: 100, height: 100 },
+      ...common,
+    };
+    const pptx: PptxPictureOptions = {
+      type: "png",
+      data,
+      x: 0,
+      y: 0,
+      width: 100,
+      height: 100,
+      ...common,
+    };
+    const xlsx: XlsxPictureOptions = { type: "png", data, col: 1, row: 1, ...common };
+
+    expect(toDocxPicture(pptx)).toMatchObject(common);
+    expect(toDocxPicture(xlsx)).toMatchObject(common);
+    expect(toPptxPicture(docx)).toMatchObject(common);
+    expect(toPptxPicture(xlsx)).toMatchObject(common);
+    expect(toXlsxPicture(docx)).toMatchObject(common);
+    expect(toXlsxPicture(pptx)).toMatchObject(common);
   });
 });

@@ -229,6 +229,7 @@ function changeAttrStr(tag: string, opts: ChangedProperties, scope?: Reproducibl
   const a = attrsRaw({
     "w:author": escapeXml(opts.author),
     "w:date": opts.date !== undefined ? escapeXml(opts.date) : undefined,
+    "w16du:dateUtc": opts.dateUtc !== undefined ? escapeXml(opts.dateUtc) : undefined,
     "w:id": opts.id ?? autoRevisionId(scope),
   });
   return `<${tag}${a}/>`;
@@ -240,6 +241,7 @@ function cellMergeStr(opts: CellMergeAttributes, scope?: ReproducibleScope): str
   const attrs: Record<string, string | number | boolean | undefined> = {
     "w:author": escapeXml(opts.author),
     "w:date": opts.date !== undefined ? escapeXml(opts.date) : undefined,
+    "w16du:dateUtc": opts.dateUtc !== undefined ? escapeXml(opts.dateUtc) : undefined,
     "w:id": opts.id ?? autoRevisionId(scope),
   };
   if (opts.verticalMerge !== undefined) {
@@ -274,6 +276,7 @@ function stringifyTablePropertiesChangeInner(
   const a = attrsRaw({
     "w:author": escapeXml(options.author),
     "w:date": options.date !== undefined ? escapeXml(options.date) : undefined,
+    "w16du:dateUtc": options.dateUtc !== undefined ? escapeXml(options.dateUtc) : undefined,
     "w:id": options.id ?? autoRevisionId(scope),
   });
   return `<w:tblPrChange ${a}><w:tblPr>${inner}</w:tblPr></w:tblPrChange>`;

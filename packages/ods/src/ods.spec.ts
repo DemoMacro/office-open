@@ -11,11 +11,251 @@ import {
 } from "./index";
 
 describe("ODS codec", () => {
+  it("projects primitive polygon geometry into WorkbookOptions", async () => {
+    const parsed = await parseWorkbook(
+      generateOcf("application/vnd.oasis.opendocument.spreadsheet", {
+        "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:spreadsheet><table:table table:name="Sheet1"><table:shapes><draw:polygon svg:x="1cm" svg:y="1cm" svg:width="2cm" svg:height="1cm" svg:viewBox="0 0 2 1" draw:points="0,0 2,0 1,1"/></table:shapes><table:table-row><table:table-cell/></table:table-row></table:table></office:spreadsheet></office:body></office:document-content>`,
+      }),
+    );
+    expect(parsed.worksheets?.[0]?.shapes?.[0]?.properties?.customGeometry).toMatchObject({
+      pathList: [
+        {
+          commands: [
+            { command: "moveTo", point: { x: "0", y: "0" } },
+            { command: "lineTo", point: { x: "720000", y: "0" } },
+            { command: "lineTo", point: { x: "360000", y: "360000" } },
+            { command: "close" },
+          ],
+        },
+      ],
+    });
+    const reread = await parseWorkbook(await generateWorkbook(parsed));
+    expect(reread.worksheets?.[0]?.shapes?.[0]?.properties?.customGeometry).toEqual(
+      parsed.worksheets?.[0]?.shapes?.[0]?.properties?.customGeometry,
+    );
+  });
+
+  it("projects and regenerates graphic gradient fills", async () => {
+    const source = generateOcf("application/vnd.oasis.opendocument.spreadsheet", {
+      "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:automatic-styles><style:style style:name="Gradient" style:family="graphic"><style:graphic-properties draw:fill="gradient" draw:fill-gradient-name="Blue"/></style:style></office:automatic-styles><office:body><office:spreadsheet><table:table table:name="Sheet1"><table:shapes><draw:rect draw:style-name="Gradient" svg:x="1cm" svg:y="1cm" svg:width="4cm" svg:height="2cm"/></table:shapes><table:table-row><table:table-cell/></table:table-row></table:table></office:spreadsheet></office:body></office:document-content>`,
+      "styles.xml": `<?xml version="1.0"?><office:document-styles ${ODF_NAMESPACES}><office:styles><draw:gradient draw:name="Blue" draw:style="linear" draw:start-color="#112233" draw:end-color="#AABBCC"/></office:styles></office:document-styles>`,
+    });
+    const parsed = await parseWorkbook(source);
+    expect(parsed.worksheets?.[0]?.shapes?.[0]?.properties?.fill).toMatchObject({
+      type: "gradient",
+      stops: [
+        { position: 0, color: "112233" },
+        { position: 100, color: "AABBCC" },
+      ],
+    });
+    const generated = await generateWorkbook(parsed);
+    const files = (await readOcf(generated, "application/vnd.oasis.opendocument.spreadsheet"))
+      .files;
+    expect(files["styles.xml"]).toContain('draw:gradient draw:name="gradient-1"');
+    const reread = await parseWorkbook(generated);
+    expect(reread.worksheets?.[0]?.shapes?.[0]?.properties?.fill).toMatchObject({
+      type: "gradient",
+    });
+  });
+
+  it("rejects a content document without its required spreadsheet body", async () => {
+    const source = generateOcf("application/vnd.oasis.opendocument.spreadsheet", {
+      "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body/></office:document-content>`,
+    });
+
+    await expect(parseWorkbook(source)).rejects.toMatchObject({
+      name: "OdsParseError",
+      part: "content.xml",
+      elementName: "office:spreadsheet",
+      reason: "missing-required-element",
+    });
+  });
+
   it("round-trips a workbook through canonical WorkbookOptions", async () => {
     const parsed = await parseWorkbook(
       await generateWorkbook({ worksheets: [{ rows: [{ cells: [{ value: "ODS" }] }] }] }),
     );
     expect(parsed.worksheets?.[0]?.rows?.[0]?.cells).toEqual([{ reference: "A1", value: "ODS" }]);
+  });
+
+  it("round-trips grouped worksheet shapes through canonical groups", async () => {
+    const source = generateOcf("application/vnd.oasis.opendocument.spreadsheet", {
+      "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:spreadsheet><table:table table:name="Sheet1"><table:shapes><draw:rect draw:name="Standalone" svg:x="5cm" svg:y="6cm" svg:width="2cm" svg:height="1cm"/><draw:g draw:name="Group" svg:x="1cm" svg:y="2cm" svg:width="4cm" svg:height="3cm"><svg:title>Group title</svg:title><draw:rect draw:name="Child" svg:x="0.5cm" svg:y="0.25cm" svg:width="2cm" svg:height="1cm"><text:p>Grouped text</text:p></draw:rect><draw:g draw:name="Nested" svg:x="0.25cm" svg:y="0.5cm" svg:width="1cm" svg:height="1cm"><draw:ellipse draw:name="Nested child" svg:x="0.1cm" svg:y="0.1cm" svg:width="0.5cm" svg:height="0.5cm"/></draw:g></draw:g></table:shapes><table:table-row><table:table-cell/></table:table-row></table:table></office:spreadsheet></office:body></office:document-content>`,
+    });
+    const parsed = await parseWorkbook(source);
+    expect(parsed.worksheets?.[0]?.shapes).toMatchObject([
+      { name: "Standalone", anchorType: "absolute", absoluteX: 1800000, absoluteY: 2160000 },
+    ]);
+    expect(parsed.worksheets?.[0]?.groups).toMatchObject([
+      {
+        col: 1,
+        row: 1,
+        anchorType: "absolute",
+        absoluteX: 360000,
+        absoluteY: 720000,
+        extentCx: 1440000,
+        extentCy: 1080000,
+        name: "Group",
+        title: "Group title",
+        properties: { x: 360000, y: 720000, width: 1440000, height: 1080000 },
+        shapes: [
+          {
+            name: "Child",
+            properties: { x: 180000, y: 90000, width: 720000, height: 360000 },
+            textBody: { text: "Grouped text" },
+          },
+        ],
+        groups: [
+          {
+            name: "Nested",
+            properties: { x: 90000, y: 180000, width: 360000, height: 360000 },
+            shapes: [
+              {
+                name: "Nested child",
+                properties: { x: 36000, y: 36000, width: 180000, height: 180000 },
+              },
+            ],
+          },
+        ],
+      },
+    ]);
+
+    const generated = await generateWorkbook(parsed);
+    const roundTripped = await parseWorkbook(generated);
+    expect(roundTripped.worksheets?.[0]?.groups).toEqual(parsed.worksheets?.[0]?.groups);
+  });
+
+  it("projects worksheet group rotation into canonical group properties", async () => {
+    const source = generateOcf("application/vnd.oasis.opendocument.spreadsheet", {
+      "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:spreadsheet><table:table table:name="Sheet1"><table:shapes><draw:g draw:name="Rotated" draw:transform="rotate(15deg)" svg:x="1cm" svg:y="2cm" svg:width="4cm" svg:height="3cm"><draw:rect svg:x="0cm" svg:y="0cm" svg:width="1cm" svg:height="1cm"/></draw:g></table:shapes><table:table-row><table:table-cell/></table:table-row></table:table></office:spreadsheet></office:body></office:document-content>`,
+    });
+    const parsed = await parseWorkbook(source);
+    expect(parsed.worksheets?.[0]?.groups?.[0]?.properties.rotation).toBe(15);
+
+    const roundTripped = await parseWorkbook(await generateWorkbook(parsed));
+    expect(roundTripped.worksheets?.[0]?.groups?.[0]?.properties.rotation).toBe(15);
+  });
+
+  it("round-trips worksheet shape anchors, rotation, and end-cell offsets", async () => {
+    const source = generateOcf("application/vnd.oasis.opendocument.spreadsheet", {
+      "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:spreadsheet><table:table table:name="Sheet1"><table:shapes><draw:rect draw:name="Box" draw:transform="rotate(15deg)" svg:x="1cm" svg:y="2cm" svg:width="4cm" svg:height="3cm" table:end-cell-address="C4" table:end-x="5mm" table:end-y="6mm"/></table:shapes><table:table-row><table:table-cell/></table:table-row></table:table></office:spreadsheet></office:body></office:document-content>`,
+    });
+    const parsed = await parseWorkbook(source);
+    expect(parsed.worksheets?.[0]?.shapes?.[0]).toMatchObject({
+      toCol: 3,
+      toRow: 4,
+      toColOffset: 180000,
+      toRowOffset: 216000,
+      properties: { rotation: 15 },
+    });
+
+    const reread = await parseWorkbook(await generateWorkbook(parsed));
+    expect(reread.worksheets?.[0]?.shapes?.[0]).toMatchObject({
+      toCol: 3,
+      toRow: 4,
+      toColOffset: 180000,
+      toRowOffset: 216000,
+      properties: { rotation: 15 },
+    });
+  });
+
+  it("projects worksheet-level image frames into WorkbookOptions", async () => {
+    const source = generateOcf("application/vnd.oasis.opendocument.spreadsheet", {
+      "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:spreadsheet><table:table table:name="Sheet1"><table:shapes><draw:frame draw:name="Logo" draw:transform="rotate(15deg)" svg:x="1cm" svg:y="2cm" svg:width="4cm" svg:height="3cm" table:end-cell-address="C4" table:end-x="5mm" table:end-y="6mm"><draw:image xlink:href="Pictures/logo.png"/><svg:title>Logo title</svg:title><svg:desc>Logo description</svg:desc></draw:frame></table:shapes><table:table-row><table:table-cell/></table:table-row></table:table></office:spreadsheet></office:body></office:document-content>`,
+      "styles.xml": `<?xml version="1.0"?><office:document-styles ${ODF_NAMESPACES}><office:styles/></office:document-styles>`,
+      "Pictures/logo.png": new Uint8Array([1, 2, 3]),
+    });
+    const parsed = await parseWorkbook(source);
+    expect(parsed.worksheets?.[0]?.images?.[0]).toMatchObject({
+      type: "png",
+      sourcePath: "Pictures/logo.png",
+      anchorType: "twoCell",
+      col: 1,
+      row: 1,
+      colOffset: 360000,
+      rowOffset: 720000,
+      toCol: 3,
+      toRow: 4,
+      toColOffset: 180000,
+      toRowOffset: 216000,
+      properties: {
+        width: 1440000,
+        height: 1080000,
+        rotation: 15,
+      },
+    });
+    const regenerated = await parseWorkbook(await generateWorkbook(parsed));
+    expect(regenerated.worksheets?.[0]?.images).toEqual(parsed.worksheets?.[0]?.images);
+  });
+
+  it("projects worksheet group fills into canonical group properties", async () => {
+    const source = generateOcf("application/vnd.oasis.opendocument.spreadsheet", {
+      "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:automatic-styles><style:style style:name="GroupStyle" style:family="graphic"><style:graphic-properties draw:fill="solid" draw:fill-color="#3366ff"/></style:style></office:automatic-styles><office:body><office:spreadsheet><table:table table:name="Sheet1"><table:shapes><draw:g draw:name="Filled" draw:style-name="GroupStyle" svg:x="1cm" svg:y="2cm" svg:width="4cm" svg:height="3cm"><draw:rect svg:x="0cm" svg:y="0cm" svg:width="1cm" svg:height="1cm"/></draw:g></table:shapes><table:table-row><table:table-cell/></table:table-row></table:table></office:spreadsheet></office:body></office:document-content>`,
+    });
+    const parsed = await parseWorkbook(source);
+    expect(parsed.worksheets?.[0]?.groups?.[0]?.properties.fill).toEqual({
+      type: "solid",
+      color: "3366ff",
+    });
+
+    const roundTripped = await parseWorkbook(await generateWorkbook(parsed));
+    expect(roundTripped.worksheets?.[0]?.groups?.[0]?.properties.fill).toEqual(
+      parsed.worksheets?.[0]?.groups?.[0]?.properties.fill,
+    );
+  });
+
+  it("rejects worksheet chart frames whose chart subdocument is missing", async () => {
+    const source = generateOcf("application/vnd.oasis.opendocument.spreadsheet", {
+      "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:spreadsheet><table:table table:name="Sheet1"><table:shapes><draw:frame><draw:object xlink:href="Object 1"/></draw:frame></table:shapes><table:table-row><table:table-cell/></table:table-row></table:table></office:spreadsheet></office:body></office:document-content>`,
+    });
+
+    await expect(parseWorkbook(source)).rejects.toMatchObject({
+      name: "OdsParseError",
+      part: "content.xml",
+      reason: "missing-chart-subdocument",
+    });
+  });
+
+  it("rejects OOXML pivot definitions that ODS cannot represent", async () => {
+    await expect(
+      generateWorkbook({
+        worksheets: [
+          {
+            name: "Sheet1",
+            rows: [],
+            pivotTables: [
+              {
+                mode: "definition",
+                cacheId: 1,
+                definition: { name: "Pivot", cacheId: 1 },
+              },
+            ],
+          },
+        ],
+      }),
+    ).rejects.toMatchObject({
+      name: "OdsGenerateError",
+      reason: "pivot-definition-not-representable",
+    });
+  });
+
+  it("rejects standalone OOXML pivot caches", async () => {
+    await expect(
+      generateWorkbook({
+        pivotCaches: [
+          {
+            mode: "definition",
+            cacheId: 1,
+            definitionPath: "xl/pivotCache/pivotCacheDefinition1.xml",
+            definition: {},
+          },
+        ],
+        worksheets: [],
+      }),
+    ).rejects.toMatchObject({
+      name: "OdsGenerateError",
+      reason: "pivot-cache-not-representable",
+    });
   });
 
   it("compresses identical adjacent rows without losing reparse positions", async () => {
@@ -82,6 +322,56 @@ describe("ODS codec", () => {
       reference: "C1",
       value: 0.5,
       style: { numFmt: "hh:mm:ss" },
+    });
+  });
+
+  it("round-trips rich cell text through the canonical rich-text model", async () => {
+    const parsed = await parseWorkbook(
+      await generateWorkbook({
+        worksheets: [
+          {
+            rows: [
+              {
+                cells: [
+                  {
+                    value: {
+                      runs: [
+                        { text: "Plain " },
+                        {
+                          text: "bold",
+                          properties: { bold: true, font: "Aptos", size: 12 },
+                        },
+                        { text: " and " },
+                        { text: "red", properties: { color: { rgb: "FFFF0000" } } },
+                      ],
+                    },
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      }),
+    );
+    expect(parsed.worksheets?.[0]?.rows?.[0]?.cells?.[0]?.value).toEqual({
+      runs: [
+        { text: "Plain " },
+        { text: "bold", properties: { bold: true, font: "Aptos", size: 12 } },
+        { text: " and " },
+        { text: "red", properties: { color: { rgb: "FFFF0000" } } },
+      ],
+    });
+  });
+
+  it("applies common table-cell styles from styles.xml", async () => {
+    const parsed = await parseWorkbook(
+      generateOcf("application/vnd.oasis.opendocument.spreadsheet", {
+        "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:spreadsheet><table:table table:name="Sheet1"><table:table-row><table:table-cell table:style-name="CommonCell" office:value-type="string"><text:p>Styled</text:p></table:table-cell></table:table-row></table:table></office:spreadsheet></office:body></office:document-content>`,
+        "styles.xml": `<?xml version="1.0"?><office:document-styles ${ODF_NAMESPACES}><office:styles><style:style style:name="CommonCell" style:family="table-cell"><style:text-properties fo:font-weight="bold" fo:font-size="14pt"/></style:style></office:styles></office:document-styles>`,
+      }),
+    );
+    expect(parsed.worksheets?.[0]?.rows?.[0]?.cells?.[0]?.style).toEqual({
+      font: { bold: true, size: 14 },
     });
   });
 
@@ -192,6 +482,29 @@ describe("ODS codec", () => {
     ).toBe(-1 / 24);
   });
 
+  it("rejects invalid scalar cell values instead of coercing them", async () => {
+    const packageFor = (cell: string) =>
+      generateOcf("application/vnd.oasis.opendocument.spreadsheet", {
+        "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:spreadsheet><table:table table:name="Sheet1"><table:table-row><table:table-cell ${cell}/></table:table-row></table:table></office:spreadsheet></office:body></office:document-content>`,
+      });
+    await expect(
+      parseWorkbook(packageFor('office:value-type="time" office:time-value="invalid"')),
+    ).rejects.toMatchObject({
+      elementName: "office:time-value",
+      reason: "invalid time duration",
+    });
+    await expect(
+      parseWorkbook(packageFor('office:value-type="boolean" office:boolean-value="yes"')),
+    ).rejects.toMatchObject({
+      elementName: "office:boolean-value",
+      reason: "invalid boolean value",
+    });
+    await expect(parseWorkbook(packageFor('office:value-type="future"'))).rejects.toMatchObject({
+      elementName: "office:value-type",
+      reason: "unsupported value type: future",
+    });
+  });
+
   it("expands column, row, and cell repeats", async () => {
     const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:spreadsheet><table:table table:name="Sheet1"><table:table-column table:number-columns-repeated="3"/><table:table-row table:number-rows-repeated="2"><table:table-cell table:number-columns-repeated="3"/><table:table-cell office:value-type="float" office:value="1"/></table:table-row></table:table></office:spreadsheet></office:body></office:document-content>`;
     const worksheet = (
@@ -213,6 +526,21 @@ describe("ODS codec", () => {
     expect(worksheet.rows?.[0]?.cells?.[3]?.value).toBe(1);
   });
 
+  it("maps ODF dimension units and boolean lexemes", async () => {
+    const source = generateOcf("application/vnd.oasis.opendocument.spreadsheet", {
+      "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:automatic-styles><style:style style:name="Column" style:family="table-column"><style:table-column-properties style:column-width="2cm"/></style:style><style:style style:name="Row" style:family="table-row"><style:table-row-properties style:row-height="10mm"/></style:style></office:automatic-styles><office:body><office:spreadsheet><table:table table:name="Sheet1"><table:table-column table:style-name="Column" table:visibility="collapse"/><table:table-row table:style-name="Row" table:visibility="visible"><table:table-cell/></table:table-row></table:table></office:spreadsheet></office:body></office:document-content>`,
+    });
+    const parsed = await parseWorkbook(source);
+    expect(parsed.worksheets?.[0]?.columns?.[0]).toMatchObject({
+      width: expect.closeTo((2 * 96) / 2.54, 0.01),
+      hidden: true,
+    });
+    expect(parsed.worksheets?.[0]?.rows?.[0]).toMatchObject({
+      height: expect.closeTo((10 * 72) / 25.4, 0.01),
+      hidden: undefined,
+    });
+  });
+
   it("does not materialize very large empty repeats", async () => {
     const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:spreadsheet><table:table table:name="Sheet1"><table:table-row table:number-rows-repeated="999999999"><table:table-cell table:number-columns-repeated="16384"/></table:table-row></table:table></office:spreadsheet></office:body></office:document-content>`;
     const worksheet = (
@@ -221,6 +549,24 @@ describe("ODS codec", () => {
       )
     ).worksheets?.[0];
     expect(worksheet?.rows).toEqual([]);
+  });
+
+  it("preserves populated repeats beyond XLSX materialization limits", async () => {
+    const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:spreadsheet><table:table table:name="Sheet1"><table:table-row table:number-rows-repeated="999999999"><table:table-cell table:number-columns-repeated="999999999" office:value-type="string"><text:p>X</text:p></table:table-cell></table:table-row></table:table></office:spreadsheet></office:body></office:document-content>`;
+    const source = generateOcf("application/vnd.oasis.opendocument.spreadsheet", {
+      "content.xml": content,
+    });
+    const parsed = await parseWorkbook(source);
+    expect(parsed.worksheets?.[0]?.rows).toMatchObject([
+      {
+        rowNumber: 1,
+        repeat: 999999999,
+        cells: [{ reference: "A1", value: "X", repeat: 999999999 }],
+      },
+    ]);
+    const regenerated = await parseWorkbook(await generateWorkbook(parsed));
+    expect(regenerated.worksheets?.[0]?.rows?.[0]?.repeat).toBe(999999999);
+    expect(regenerated.worksheets?.[0]?.rows?.[0]?.cells?.[0]?.repeat).toBe(999999999);
   });
 
   it("clamps virtual default column repeats", async () => {
@@ -254,6 +600,164 @@ describe("ODS codec", () => {
     ).worksheets?.[0];
     expect(worksheet?.rows).toEqual([]);
     expect(worksheet?.sheetFormat).toEqual({ defaultRowHeight: 15 });
+    const regenerated = await parseWorkbook(await generateWorkbook({ worksheets: [worksheet!] }));
+    expect(regenerated.worksheets?.[0]?.sheetFormat).toEqual({ defaultRowHeight: 15 });
+    expect(regenerated.worksheets?.[0]?.rows).toEqual([]);
+  });
+
+  it("preserves default row height alongside explicit rows", async () => {
+    const workbook = {
+      worksheets: [
+        {
+          name: "Sheet1",
+          sheetFormat: { defaultRowHeight: 18 },
+          rows: [{ rowNumber: 1, cells: [{ reference: "A1", value: "value" }] }],
+        },
+      ],
+    } satisfies OdsWorkbookOptions;
+
+    const parsed = await parseWorkbook(await generateWorkbook(workbook));
+    expect(parsed.worksheets?.[0]?.sheetFormat).toEqual({ defaultRowHeight: 18 });
+    expect(parsed.worksheets?.[0]?.rows?.[0]?.height).toBeUndefined();
+    expect(parsed.worksheets?.[0]?.rows?.[0]?.cells?.[0]?.value).toBe("value");
+  });
+
+  it("round-trips optimal column width", async () => {
+    const source = generateOcf("application/vnd.oasis.opendocument.spreadsheet", {
+      "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:automatic-styles><style:style style:name="Optimal" style:family="table-column"><style:table-column-properties style:use-optimal-column-width="true"/></style:style></office:automatic-styles><office:body><office:spreadsheet><table:table table:name="Sheet1"><table:table-column table:style-name="Optimal"/><table:table-row><table:table-cell/></table:table-row></table:table></office:spreadsheet></office:body></office:document-content>`,
+    });
+    const parsed = await parseWorkbook(source);
+    expect(parsed.worksheets?.[0]?.columns?.[0]).toMatchObject({ bestFit: true });
+    expect(parsed.worksheets?.[0]?.columns?.[0]?.width).toBeUndefined();
+
+    const regenerated = await parseWorkbook(await generateWorkbook(parsed));
+    expect(regenerated.worksheets?.[0]?.columns?.[0]).toMatchObject({ bestFit: true });
+    expect(regenerated.worksheets?.[0]?.columns?.[0]?.width).toBeUndefined();
+  });
+
+  it("round-trips canonical cell font and alignment properties", async () => {
+    const workbook = {
+      worksheets: [
+        {
+          name: "Sheet1",
+          rows: [
+            {
+              cells: [
+                {
+                  reference: "A1",
+                  value: "Styled",
+                  style: {
+                    font: { font: "Liberation Sans" },
+                    alignment: { textRotation: 45, shrinkToFit: true },
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    } satisfies OdsWorkbookOptions;
+
+    const parsed = await parseWorkbook(await generateWorkbook(workbook));
+    expect(parsed.worksheets?.[0]?.rows?.[0]?.cells?.[0]?.style).toMatchObject({
+      font: { font: "Liberation Sans" },
+      alignment: { textRotation: 45, shrinkToFit: true },
+    });
+  });
+
+  it("projects cell hyperlinks into the canonical worksheet model", async () => {
+    const source = generateOcf("application/vnd.oasis.opendocument.spreadsheet", {
+      "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:automatic-styles/><office:body><office:spreadsheet><table:table table:name="Sheet1"><table:table-row><table:table-cell office:value-type="string"><text:p><text:a xlink:type="simple" xlink:href="https://example.com">Open</text:a></text:p></table:table-cell></table:table-row></table:table></office:spreadsheet></office:body></office:document-content>`,
+      "styles.xml": `<?xml version="1.0"?><office:document-styles ${ODF_NAMESPACES}><office:styles/></office:document-styles>`,
+    });
+    const parsed = await parseWorkbook(source);
+    expect(parsed.worksheets?.[0]?.hyperlinks).toEqual([
+      { cell: "A1", url: "https://example.com", display: "Open" },
+    ]);
+
+    const regenerated = await parseWorkbook(await generateWorkbook(parsed));
+    expect(regenerated.worksheets?.[0]?.hyperlinks).toEqual(parsed.worksheets?.[0]?.hyperlinks);
+  });
+
+  it("round-trips ODF table scenarios and linked sources", async () => {
+    const source = generateOcf("application/vnd.oasis.opendocument.spreadsheet", {
+      "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:automatic-styles/><office:body><office:spreadsheet><table:table table:name="Sheet1"><table:table-source table:mode="copy-results-only" table:table-name="Remote" xlink:type="simple" xlink:href="https://example.com/data.csv" xlink:actuate="onRequest" table:filter-name="Rows" table:filter-options="active" table:refresh-delay="PT1H"/><table:scenario table:scenario-ranges="Sheet1.A1:B2" table:is-active="true" table:display-border="false" table:border-color="#112233" table:copy-back="true" table:copy-styles="false" table:copy-formulas="true" table:comment="Scenario" table:protected="true"/><table:table-row><table:table-cell/></table:table-row></table:table></office:spreadsheet></office:body></office:document-content>`,
+    });
+    const parsed = await parseWorkbook(source);
+    expect(parsed.worksheets?.[0]?.tableSource).toEqual({
+      href: "https://example.com/data.csv",
+      mode: "copy-results-only",
+      tableName: "Remote",
+      actuate: "onRequest",
+      filterName: "Rows",
+      filterOptions: "active",
+      refreshDelay: "PT1H",
+    });
+    expect(parsed.worksheets?.[0]?.scenario).toEqual({
+      ranges: "Sheet1.A1:B2",
+      active: true,
+      displayBorder: false,
+      borderColor: "#112233",
+      copyBack: true,
+      copyStyles: false,
+      copyFormulas: true,
+      comment: "Scenario",
+      protected: true,
+    });
+    const regenerated = await parseWorkbook(await generateWorkbook(parsed));
+    expect(regenerated.worksheets?.[0]?.tableSource).toEqual(parsed.worksheets?.[0]?.tableSource);
+    expect(regenerated.worksheets?.[0]?.scenario).toEqual(parsed.worksheets?.[0]?.scenario);
+  });
+
+  it("round-trips ODF table title and description", async () => {
+    const source = generateOcf("application/vnd.oasis.opendocument.spreadsheet", {
+      "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:spreadsheet><table:table table:name="Sheet1"><table:title>Quarterly report</table:title><table:desc>Imported from finance</table:desc><table:table-row><table:table-cell/></table:table-row></table:table></office:spreadsheet></office:body></office:document-content>`,
+    });
+    const parsed = await parseWorkbook(source);
+    expect(parsed.worksheets?.[0]).toMatchObject({
+      tableTitle: "Quarterly report",
+      tableDescription: "Imported from finance",
+    });
+
+    const regenerated = await parseWorkbook(await generateWorkbook(parsed));
+    expect(regenerated.worksheets?.[0]).toMatchObject({
+      tableTitle: "Quarterly report",
+      tableDescription: "Imported from finance",
+    });
+  });
+
+  it("rejects invalid ODF table source attributes", async () => {
+    const source = generateOcf("application/vnd.oasis.opendocument.spreadsheet", {
+      "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:spreadsheet><table:table table:name="Sheet1"><table:table-source table:mode="invalid" xlink:type="simple" xlink:href="source.csv"/><table:table-row><table:table-cell/></table:table-row></table:table></office:spreadsheet></office:body></office:document-content>`,
+    });
+    await expect(parseWorkbook(source)).rejects.toMatchObject({
+      name: "OdsParseError",
+      elementName: "table:mode",
+      reason: "invalid table source mode",
+    });
+  });
+
+  it("inherits table-cell styles across common and automatic styles", async () => {
+    const source = generateOcf("application/vnd.oasis.opendocument.spreadsheet", {
+      "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:automatic-styles><style:style style:name="Child" style:family="table-cell" style:parent-style-name="Parent"><style:table-cell-properties style:shrink-to-fit="true"/></style:style></office:automatic-styles><office:body><office:spreadsheet><table:table table:name="Sheet1"><table:table-row><table:table-cell table:style-name="Child" office:value-type="string"><text:p>Styled</text:p></table:table-cell></table:table-row></table:table></office:spreadsheet></office:body></office:document-content>`,
+      "styles.xml": `<?xml version="1.0"?><office:document-styles ${ODF_NAMESPACES}><office:styles><style:style style:name="Parent" style:family="table-cell"><style:text-properties fo:font-family="Liberation Sans" fo:font-weight="bold"/></style:style></office:styles></office:document-styles>`,
+    });
+    const parsed = await parseWorkbook(source);
+    expect(parsed.worksheets?.[0]?.rows?.[0]?.cells?.[0]?.style).toMatchObject({
+      font: { font: "Liberation Sans", bold: true },
+      alignment: { shrinkToFit: true },
+    });
+  });
+
+  it("rejects cyclic table-cell style inheritance", async () => {
+    const source = generateOcf("application/vnd.oasis.opendocument.spreadsheet", {
+      "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:automatic-styles><style:style style:name="First" style:family="table-cell" style:parent-style-name="Second"/><style:style style:name="Second" style:family="table-cell" style:parent-style-name="First"/></office:automatic-styles><office:body><office:spreadsheet><table:table table:name="Sheet1"><table:table-row><table:table-cell table:style-name="First"/></table:table-row></table:table></office:spreadsheet></office:body></office:document-content>`,
+    });
+    await expect(parseWorkbook(source)).rejects.toMatchObject({
+      name: "OdsParseError",
+      elementName: "style:parent-style-name",
+      reason: "cyclic-style-inheritance",
+    });
   });
 
   it("round-trips Gnumeric selection state through canonical selections", async () => {
@@ -406,6 +910,76 @@ describe("ODS codec", () => {
     expect(charts[1]).toMatchObject({
       type: "scatter",
       series: [{ name: "Points", xValues: [1, 2], yValues: [2, 4] }],
+    });
+  });
+
+  it("assigns unique default chart subdocument paths across worksheets", async () => {
+    const parsed = await parseWorkbook(
+      await generateWorkbook({
+        worksheets: [
+          {
+            name: "First",
+            charts: [{ type: "bar", series: [{ values: [1] }], col: 1, row: 1 }],
+          },
+          {
+            name: "Second",
+            charts: [{ type: "line", series: [{ values: [2] }], col: 1, row: 1 }],
+          },
+        ],
+      }),
+    );
+    expect(parsed.worksheets?.map((worksheet) => worksheet.charts?.[0]?.name)).toEqual([
+      "Object 1",
+      "Object 2",
+    ]);
+  });
+
+  it("preserves chart frame names separately from chart subdocument paths", async () => {
+    const generated = await generateWorkbook({
+      worksheets: [
+        {
+          name: "Sheet1",
+          charts: [
+            {
+              name: "Visible chart",
+              sourcePath: "Charts/Original chart",
+              type: "line",
+              series: [{ values: [1] }],
+              col: 1,
+              row: 1,
+            },
+          ],
+        },
+      ],
+    });
+    const parsed = await parseWorkbook(generated);
+    expect(parsed.worksheets?.[0]?.charts?.[0]).toMatchObject({
+      name: "Visible chart",
+      sourcePath: "Charts/Original chart",
+    });
+    const { files } = await readOcf(generated, "application/vnd.oasis.opendocument.spreadsheet");
+    expect(files["Charts/Original chart/content.xml"]).toBeDefined();
+    expect(files["content.xml"]).toContain('draw:name="Visible chart"');
+    expect(files["content.xml"]).toContain('xlink:href="Charts/Original chart"');
+  });
+
+  it("rejects duplicate explicit chart subdocument paths", async () => {
+    await expect(
+      generateWorkbook({
+        worksheets: [
+          {
+            name: "First",
+            charts: [{ name: "Shared", type: "bar", series: [], col: 1, row: 1 }],
+          },
+          {
+            name: "Second",
+            charts: [{ name: "Shared", type: "line", series: [], col: 1, row: 1 }],
+          },
+        ],
+      }),
+    ).rejects.toMatchObject({
+      name: "OdsGenerateError",
+      reason: "duplicate-chart-path",
     });
   });
 
@@ -589,6 +1163,17 @@ describe("ODS codec", () => {
     });
   });
 
+  it("rejects malformed local image package references", async () => {
+    const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:spreadsheet><table:table table:name="Sheet1"><table:table-row><table:table-cell><draw:frame svg:x="1cm" svg:y="2cm" svg:width="3cm" svg:height="4cm"><draw:image xlink:href="Pictures/logo%ZZ.png"/></draw:frame></table:table-cell></table:table-row></table:table></office:spreadsheet></office:body></office:document-content>`;
+    await expect(
+      parseWorkbook(
+        generateOcf("application/vnd.oasis.opendocument.spreadsheet", {
+          "content.xml": content,
+        }),
+      ),
+    ).rejects.toMatchObject({ reason: "invalid-package-uri" });
+  });
+
   it("round-trips cell object frames and rejects unknown frame children", async () => {
     const object = {
       type: "object" as const,
@@ -658,6 +1243,8 @@ describe("ODS codec", () => {
       automaticLabelSearch: true,
       regularExpressionSearch: true,
       wildcardSearch: true,
+      searchCriteriaMustApplyToWholeCell: true,
+      nullYear: 1930,
       nullDate: { year: 1900, month: 1, day: 1 },
     };
     const controls: FormControlOptions[] = [
@@ -757,6 +1344,55 @@ describe("ODS codec", () => {
     expect(parsed.worksheets?.[0]?.rows?.[0]?.cells?.[1]?.covered).toEqual({
       reference: "B1",
       text: "covered",
+    });
+  });
+
+  it("preserves an iteration element with omitted status", async () => {
+    const source = generateOcf("application/vnd.oasis.opendocument.spreadsheet", {
+      "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:spreadsheet><table:calculation-settings><table:iteration table:maximum-difference="0.0001"/></table:calculation-settings></office:spreadsheet></office:body></office:document-content>`,
+    });
+    const parsed = await parseWorkbook(source);
+    expect(parsed.calculation).toMatchObject({ iterationPresent: true, iterateDelta: 0.0001 });
+    const content = (
+      await readOcf(
+        await generateWorkbook(parsed),
+        "application/vnd.oasis.opendocument.spreadsheet",
+      )
+    ).files["content.xml"]!;
+    expect(content).toContain('<table:iteration table:maximum-difference="0.0001"/>');
+  });
+
+  it("round-trips canonical spreadsheet error values", async () => {
+    const parsed = await parseWorkbook(
+      await generateWorkbook({
+        worksheets: [{ rows: [{ cells: [{ reference: "A1", error: "#DIV/0!" }] }] }],
+      }),
+    );
+    expect(parsed.worksheets?.[0]?.rows?.[0]?.cells?.[0]?.error).toBe("#DIV/0!");
+  });
+
+  it("keeps error cells typed as errors when a number format is present", async () => {
+    const parsed = await parseWorkbook(
+      await generateWorkbook({
+        worksheets: [
+          {
+            rows: [
+              {
+                cells: [
+                  {
+                    reference: "A1",
+                    error: "#VALUE!",
+                    style: { numFmt: "$#,##0.00" },
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      }),
+    );
+    expect(parsed.worksheets?.[0]?.rows?.[0]?.cells?.[0]).toMatchObject({
+      error: "#VALUE!",
     });
   });
 

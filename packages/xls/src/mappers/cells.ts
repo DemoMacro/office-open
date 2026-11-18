@@ -59,9 +59,9 @@ export function cellStyle(style: number, state: WorkbookState): number | StyleOp
   const result: StyleOptions = {};
   const font = state.fonts[xf.fontIndex];
   if (font) {
-    result.font = font;
+    result.font = xf.font ? { ...font, ...xf.font } : font;
   } else if (xf.fontIndex === state.fonts.length) {
-    result.font = DEFAULT_FONT;
+    result.font = xf.font ? { ...DEFAULT_FONT, ...xf.font } : DEFAULT_FONT;
   } else {
     throw new XlsParseError("Invalid legacy XLS file: extended format references missing font", {
       part: "stream",
@@ -100,6 +100,7 @@ function resolveXf(
     border: xf.border ?? parent.border,
     fill: xf.fill ?? parent.fill,
     protection: xf.protection ?? parent.protection,
+    font: xf.font ?? parent.font,
   };
 }
 

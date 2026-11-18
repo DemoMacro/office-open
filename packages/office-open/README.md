@@ -68,8 +68,10 @@ console.log(parsed.format, parsed.options);
 ### Patch
 
 ```typescript
+import { readFileSync } from "node:fs";
 import { patchDocument } from "office-open";
 
+const input = new Uint8Array(readFileSync("input.docx"));
 const patched = await patchDocument({
   format: "docx",
   data: input,
@@ -149,7 +151,7 @@ type WorkbookOptions = /* XLS, XLSX, and ODS projection */;
 type PresentationOptions = /* PPT, PPTX, and ODP projection */;
 ```
 
-Every parser returns the same family model. Therefore legacy and ODF content can flow into the same DOCX, XLSX, and PPTX generation and conversion paths without a fourth ODF document model.
+Every parser returns its family model. Legacy formats share that model directly; ODF adds package-specific fields for faithful ODF round-trips. Cross-format generation uses the shared family fields, while format-specific package metadata is not carried to other formats.
 
 ## Errors and Limitations
 

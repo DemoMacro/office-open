@@ -21,6 +21,54 @@ const CHART = {
 } as const;
 
 describe("xlsx relationship topology", () => {
+  it("parses a chartsheet relocated outside its conventional folder", async () => {
+    const source = (await generateWorkbook({
+      chartsheets: [{ name: "Relocated", chart: CHART }],
+    })) as Uint8Array;
+    const archive = unzipSync(source);
+    replaceText(
+      archive,
+      "xl/_rels/workbook.xml.rels",
+      fileText(archive, "xl/_rels/workbook.xml.rels").replace(
+        'Target="chartsheets/sheet1.xml"',
+        'Target="../custom/chart.xml"',
+      ),
+    );
+    replaceText(
+      archive,
+      "[Content_Types].xml",
+      fileText(archive, "[Content_Types].xml").replace(
+        "/xl/chartsheets/sheet1.xml",
+        "/custom/chart.xml",
+      ),
+    );
+    archive["custom/chart.xml"] = archive["xl/chartsheets/sheet1.xml"]!;
+    archive["custom/_rels/chart.xml.rels"] = new TextEncoder().encode(
+      fileText(archive, "xl/chartsheets/_rels/sheet1.xml.rels").replaceAll(
+        "../drawings/",
+        "../xl/drawings/",
+      ),
+    );
+    delete archive["xl/chartsheets/sheet1.xml"];
+    delete archive["xl/chartsheets/_rels/sheet1.xml.rels"];
+
+    const parsed = parseWorkbookSync(zipSync(archive));
+
+    expect(parsed.chartsheets?.[0]?.name).toBe("Relocated");
+    expect(parsed.chartsheets?.[0]?.chart).toBeDefined();
+    expect(parsed.chartsheets?.[0]?.sourcePath).toBe("custom/chart.xml");
+
+    const regenerated = unzipSync((await generateWorkbook(parsed)) as Uint8Array);
+    expect(regenerated["custom/chart.xml"]).toBeDefined();
+    expect(regenerated["custom/_rels/chart.xml.rels"]).toBeDefined();
+    expect(regenerated["xl/chartsheets/sheet1.xml"]).toBeUndefined();
+    expect(fileText(regenerated, "xl/_rels/workbook.xml.rels")).toContain(
+      'Target="../custom/chart.xml"',
+    );
+    const reparsed = parseWorkbookSync(zipSync(regenerated));
+    expect(reparsed.chartsheets?.[0]?.name).toBe("Relocated");
+    expect(reparsed.chartsheets?.[0]?.chart).toBeDefined();
+  });
   it("preserves unmodeled drawing companion relationships", async () => {
     const source = (await generateWorkbook({
       worksheets: [
@@ -141,6 +189,42 @@ describe("xlsx relationship topology", () => {
     expect(fileText(output, "xl/drawings/_rels/drawing2.xml.rels")).toContain(
       'Target="../charts/chart1.xml"',
     );
+  });
+
+  it("writes a chartsheet drawing back to its source path", async () => {
+    const source = (await generateWorkbook({
+      chartsheets: [{ name: "Chart", chart: CHART }],
+    })) as Uint8Array;
+    const archive = unzipSync(source);
+    replaceText(
+      archive,
+      "xl/chartsheets/_rels/sheet1.xml.rels",
+      fileText(archive, "xl/chartsheets/_rels/sheet1.xml.rels").replace(
+        "../drawings/drawing1.xml",
+        "../custom/drawings/chart.xml",
+      ),
+    );
+    replaceText(
+      archive,
+      "xl/drawings/_rels/drawing1.xml.rels",
+      fileText(archive, "xl/drawings/_rels/drawing1.xml.rels").replace(
+        "../charts/chart1.xml",
+        "../../charts/chart1.xml",
+      ),
+    );
+    archive["xl/custom/drawings/chart.xml"] = archive["xl/drawings/drawing1.xml"]!;
+    archive["xl/custom/drawings/_rels/chart.xml.rels"] =
+      archive["xl/drawings/_rels/drawing1.xml.rels"]!;
+    delete archive["xl/drawings/drawing1.xml"];
+    delete archive["xl/drawings/_rels/drawing1.xml.rels"];
+
+    const parsed = parseWorkbookSync(zipSync(archive));
+    const output = unzipSync((await generateWorkbook(parsed)) as Uint8Array);
+
+    expect(output["xl/custom/drawings/chart.xml"]).toBeDefined();
+    expect(output["xl/custom/drawings/_rels/chart.xml.rels"]).toBeDefined();
+    expect(output["xl/drawings/drawing1.xml"]).toBeUndefined();
+    expect(parseWorkbookSync(zipSync(output)).chartsheets?.[0]?.chart).toBeDefined();
   });
 
   it("preserves duplicate external data consolidation relationships", async () => {

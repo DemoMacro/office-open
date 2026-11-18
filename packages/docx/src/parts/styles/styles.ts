@@ -191,14 +191,14 @@ export class Styles {
     // template path does, else w:styles emits with an unbound prefix
     const merged: Record<string, string> = {
       ...Object.fromEntries(
-        documentNamespaceAttributesInDialect(["mc", "r", "w", "w14", "w15"], dialect)
+        documentNamespaceAttributesInDialect(["mc", "r", "w", "w14", "w15", "w16du"], dialect)
           .split(" ")
           .map((attribute) => {
             const [name, value] = attribute.split("=");
             return [name!, value!.slice(1, -1)];
           }),
       ),
-      "mc:Ignorable": "w14 w15",
+      "mc:Ignorable": "w14 w15 w16du",
       ...this.attributes,
     };
 
@@ -354,10 +354,7 @@ const STYLE_ELEMENT_ORDER = new Map<string, StyleChildOrder>([
  */
 export function parseStyleDefinitions(
   el: Element,
-  parseParagraphProperties: (
-    el: Element,
-    ctx: DocxReadContext,
-  ) => Partial<ParagraphPropertiesOptions>,
+  parseParagraphProperties: (el: Element) => Partial<ParagraphPropertiesOptions>,
   ctx: DocxReadContext,
 ): StylesOptions | undefined {
   const opts: StylesOptions = {};
@@ -370,7 +367,7 @@ export function parseStyleDefinitions(
 
   for (const child of el.elements ?? []) {
     if (child.name === "w:docDefaults") {
-      const defOpts = parseDocDefaults(child, parseParagraphProperties, ctx);
+      const defOpts = parseDocDefaults(child, parseParagraphProperties);
       if (defOpts) opts.default = defOpts;
       // Also capture verbatim for byte-exact round-trip (the structured path
       // may re-order or default-fill rPrDefault/pPrDefault children).
@@ -424,11 +421,7 @@ export function parseStyleDefinitions(
 
 function parseDocDefaults(
   el: Element,
-  parseParagraphProperties: (
-    el: Element,
-    ctx: DocxReadContext,
-  ) => Partial<ParagraphPropertiesOptions>,
-  ctx: DocxReadContext,
+  parseParagraphProperties: (el: Element) => Partial<ParagraphPropertiesOptions>,
 ): DefaultStylesOptions | undefined {
   const document: DocumentDefaultsOptions = {};
 
@@ -454,7 +447,7 @@ function parseDocDefaults(
       // Reuse the full paragraph-properties reader (stringifyDocDefaults uses
       // stringifyParagraphProperties) instead of only reading spacing, so jc/
       // ind/etc. round-trip too.
-      const paraDefaults = parseParagraphProperties(pPr, ctx);
+      const paraDefaults = parseParagraphProperties(pPr);
       document.paragraph = Object.keys(paraDefaults).length > 0 ? paraDefaults : null;
     } else {
       document.paragraph = null;
@@ -466,10 +459,7 @@ function parseDocDefaults(
 
 function parseStyleElement(
   el: Element,
-  parseParagraphProperties: (
-    el: Element,
-    ctx: DocxReadContext,
-  ) => Partial<ParagraphPropertiesOptions>,
+  parseParagraphProperties: (el: Element) => Partial<ParagraphPropertiesOptions>,
   ctx: DocxReadContext,
 ): ParsedStyle | undefined {
   const opts: ParsedStyle = {};
@@ -579,7 +569,7 @@ function parseStyleElement(
 
   const pPr = findChild(el, "w:pPr");
   if (pPr) {
-    const paraOpts = parseParagraphProperties(pPr, ctx);
+    const paraOpts = parseParagraphProperties(pPr);
     if (Object.keys(paraOpts).length > 0) {
       opts.paragraph = paraOpts;
     }
@@ -629,7 +619,7 @@ function parseStyleElement(
     const cf: ConditionalTableStyleOptions = { type };
     const cfPPr = findChild(child, "w:pPr");
     if (cfPPr) {
-      const paraOpts = parseParagraphProperties(cfPPr, ctx);
+      const paraOpts = parseParagraphProperties(cfPPr);
       if (Object.keys(paraOpts).length > 0) {
         cf.paragraph = paraOpts;
       }

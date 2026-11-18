@@ -1,16 +1,8 @@
-import type {
-  ParagraphChild,
-  ParagraphOptions,
-  SectionChild,
-  TrackChangeChild,
-} from "@office-open/docx";
+import type { ParagraphChild, ParagraphOptions, SectionChild } from "@office-open/docx";
 
 import { DocParseError } from "../errors";
 import type { CharacterRange, ParagraphRange, TextCharacter } from "./models";
 import { paragraphPropertiesFor } from "./paragraph-projection";
-
-const LEGACY_REVISION_AUTHOR = "Unknown";
-const LEGACY_REVISION_DATE = "1970-01-01T00:00:00Z";
 
 export function projectChildren(
   characters: TextCharacter[],
@@ -37,12 +29,6 @@ export function projectChildren(
         if (cp === range.cpStart) boundaries.add(index);
       }
       if (index > 0 && paragraph[index]!.hyperlink !== paragraph[index - 1]!.hyperlink) {
-        boundaries.add(index);
-      }
-      if (
-        index > 0 &&
-        paragraph[index]!.revision?.inserted !== paragraph[index - 1]!.revision?.inserted
-      ) {
         boundaries.add(index);
       }
       if (paragraph[index]!.complexField) boundaries.add(index);
@@ -97,7 +83,6 @@ export function projectChildren(
       }
       const range = ranges.find((candidate) => candidate.cpStart <= cp && cp < candidate.cpEnd);
       const hyperlink = paragraph[start]!.hyperlink;
-      const revision = paragraph[start]!.revision;
       const breakCount = text.split("\n").length - 1;
       const visibleText = text.replaceAll("\n", "");
       if (breakCount > 0) revisionChildren.push({ break: breakCount });
@@ -109,19 +94,7 @@ export function projectChildren(
       } else if (visibleText.length > 0) {
         revisionChildren.push({ text: visibleText, ...range?.properties });
       }
-      if (revision) {
-        const children = revisionChildren.flatMap((child): TrackChangeChild[] =>
-          "text" in child ? [child] : [],
-        );
-        const change = {
-          author: LEGACY_REVISION_AUTHOR,
-          date: LEGACY_REVISION_DATE,
-          children,
-        };
-        runs.push(revision.inserted ? { insertion: change } : { deletion: change });
-      } else {
-        runs.push(...revisionChildren);
-      }
+      runs.push(...revisionChildren);
     }
     const plainText = sanitizeLegacyText(
       paragraph
@@ -181,6 +154,7 @@ export function applyHyperlinkFields(
   fields: readonly { start: number; end: number; instruction: string }[],
   rawCharacters: readonly string[],
 ): void {
+  const charactersByCp = new Map(characters.map((character) => [character.cp, character]));
   for (const field of fields) {
     const match = /^HYPERLINK\s+(?:"([^"]*)"|(\S+))/i.exec(field.instruction.trim());
     if (!match) continue;
@@ -192,7 +166,7 @@ export function applyHyperlinkFields(
       cp < rawCharacters.length && rawCharacters[cp] !== "\x15";
       cp += 1
     ) {
-      const character = characters.find((candidate) => candidate.cp === cp);
+      const character = charactersByCp.get(cp);
       if (character) character.hyperlink = hyperlink;
     }
   }
@@ -219,33 +193,6 @@ export function parseRequired<T>(context: RequiredRecordContext, parse: () => T)
       });
     }
     throw new DocParseError((error as Error).message, { ...context, reason: "invalid-record" });
-  }
-}
-
-/**
- * Tolerant auxiliary-structure parsing: real-world DOC files (all of which
- * Word opens) routinely carry auxiliary tables with non-fatal anomalies —
- * truncated style sheets, section tables outside the table stream, …  A
- * failure there skips the structure instead of failing the document, and the
- * abandonment is reported as a structured warning rather than dropped
- * silently. Main-document-stream parsing stays strict (parseRequired).
- */
-export function parseTolerant<T>(context: RequiredRecordContext, fallback: T, parse: () => T): T {
-  try {
-    return parse();
-  } catch (error) {
-    const reason =
-      error instanceof DocParseError
-        ? (error.context.reason ?? "invalid-record")
-        : "invalid-record";
-    console.warn(
-      `doc parse diagnostic: skipped ${context.recordName ?? context.path} (${JSON.stringify({
-        ...context,
-        reason,
-        detail: String((error as Error).message).slice(0, 160),
-      })})`,
-    );
-    return fallback;
   }
 }
 

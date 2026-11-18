@@ -413,6 +413,14 @@ export interface CustomTableStyleOptions {
 }
 
 /** Custom cell style (CT_CellStyle) — a named reference to a cell-style XF. */
+export type CellStyleCategory =
+  | "custom"
+  | "goodBadNeutral"
+  | "dataModel"
+  | "titleAndHeading"
+  | "themedCell"
+  | "numberFormat";
+
 export interface CustomCellStyleOptions {
   /** Style name */
   name: string;
@@ -423,6 +431,8 @@ export interface CustomCellStyleOptions {
   customBuiltin?: boolean;
   /** Outline level (CT_CellStyle `@iLevel`) */
   iLevel?: number;
+  /** Gallery category recorded by legacy workbook formats. */
+  category?: CellStyleCategory;
   /** Hidden style (CT_CellStyle `@hidden`) */
   hidden?: boolean;
   /** Revision uid (CT_CellStyle `@xr:uid`) */

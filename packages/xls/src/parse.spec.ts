@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import { buildSmallContainer } from "./cfb/test-container";
 import { XlsParseError, parseWorkbook } from "./index";
+import { readBiff8String } from "./mappers/biff";
 import { parseHyperlink } from "./mappers/workbook-globals";
 
 const BIFF5_TOKEN = 0x0500;
@@ -43,6 +44,35 @@ function biff8String(value: string): Uint8Array {
   characters.forEach((character, index) =>
     view.setUint16(3 + index * 2, character.charCodeAt(0), true),
   );
+  return bytes;
+}
+
+function compressedBiff8String(value: string): Uint8Array {
+  const bytes = new Uint8Array(3 + value.length);
+  const view = new DataView(bytes.buffer);
+  view.setUint16(0, value.length, true);
+  for (let index = 0; index < value.length; index++) bytes[index + 3] = value.charCodeAt(index);
+  return bytes;
+}
+
+function richBiff8String(
+  value: string,
+  runs: readonly { characterIndex: number; fontIndex: number }[],
+): Uint8Array {
+  const characters = Array.from(value);
+  const bytes = new Uint8Array(5 + characters.length * 2 + runs.length * 4);
+  const view = new DataView(bytes.buffer);
+  view.setUint16(0, characters.length, true);
+  bytes[2] = 0x09;
+  view.setUint16(3, runs.length, true);
+  characters.forEach((character, index) =>
+    view.setUint16(5 + index * 2, character.charCodeAt(0), true),
+  );
+  runs.forEach(({ characterIndex, fontIndex }, index) => {
+    const offset = 5 + characters.length * 2 + index * 4;
+    view.setUint16(offset, characterIndex, true);
+    view.setUint16(offset + 2, fontIndex, true);
+  });
   return bytes;
 }
 
@@ -154,8 +184,19 @@ function labelSstCell(row: number, column: number, index: number): Uint8Array {
   return record(0x00fd, body);
 }
 
-function richLabelCell(row: number, column: number, value: string): Uint8Array {
-  return record(0x00d6, concat([uint16Body([row, column, 3]), biff8String(value)]));
+function richLabelCell(
+  row: number,
+  column: number,
+  value: string,
+  runs?: readonly { characterIndex: number; fontIndex: number }[],
+): Uint8Array {
+  return record(
+    0x00d6,
+    concat([
+      uint16Body([row, column, 3]),
+      runs ? richBiff8String(value, runs) : biff8String(value),
+    ]),
+  );
 }
 
 function rkCell(row: number, column: number, value: number, style = 2): Uint8Array {
@@ -480,6 +521,42 @@ function styleXfRecord(fontIndex: number): Uint8Array {
   return record(0x00e0, body);
 }
 
+function styleRecord(xfIndex: number, name: string): Uint8Array {
+  return record(0x0293, concat([uint16Body([xfIndex]), biff8String(name)]));
+}
+
+function styleExtensionRecord(
+  name: string,
+  properties: readonly Uint8Array[],
+  options: { flags?: number; category?: number; builtInData?: number } = {},
+): Uint8Array {
+  const header = new Uint8Array(16);
+  const view = new DataView(header.buffer);
+  view.setUint16(0, 0x0892, true);
+  header[12] = options.flags ?? 0x02;
+  header[13] = options.category ?? 0x04;
+  view.setUint16(14, options.builtInData ?? 0xffff, true);
+  const encodedName = new Uint8Array(2 + name.length * 2);
+  const encodedView = new DataView(encodedName.buffer);
+  encodedView.setUint16(0, name.length, true);
+  Array.from(name).forEach((character, index) =>
+    encodedView.setUint16(2 + index * 2, character.charCodeAt(0), true),
+  );
+  const propertiesHeader = uint16Body([0, properties.length]);
+  return record(0x0892, concat([header, encodedName, propertiesHeader, ...properties]));
+}
+
+function builtInStyleRecord(xfIndex: number, builtInId: number, level: number): Uint8Array {
+  return record(
+    0x0293,
+    concat([uint16Body([0x8000 | xfIndex]), new Uint8Array([builtInId, level])]),
+  );
+}
+
+function styleProperty(type: number, data: Uint8Array): Uint8Array {
+  return concat([uint16Body([type, data.byteLength + 4]), data]);
+}
+
 function nameRecord(name: string, tokens: Uint8Array): Uint8Array {
   const encodedName = shortBiff8String(name).slice(1);
   const body = new Uint8Array(14);
@@ -598,8 +675,8 @@ function pageSetupRecords(): readonly Uint8Array[] {
   view.setFloat64(16, 0.5, true);
   view.setFloat64(24, 0.5, true);
   return [
-    record(0x0014, new Uint8Array([1, 0, 0x48])),
-    record(0x0015, new Uint8Array([1, 0, 0x46])),
+    record(0x0014, new Uint8Array([1, 0, 1, 0x75, 0x98])),
+    record(0x0015, new Uint8Array([1, 0, 0, 0x46])),
     record(0x0026, float64Bytes(0.75)),
     record(0x0027, float64Bytes(0.75)),
     record(0x0028, float64Bytes(0.75)),
@@ -642,6 +719,62 @@ function shortBiff8String(value: string): Uint8Array {
     view.setUint16(2 + index * 2, character.charCodeAt(0), true),
   );
   return bytes;
+}
+
+function scaleRecord(numerator: number, denominator: number): Uint8Array {
+  return record(0x00a0, uint16Body([numerator, denominator]));
+}
+
+function codeNameRecord(value: string): Uint8Array {
+  return record(0x01ba, shortBiff8String(value));
+}
+
+function dataValidationFormula(tokens: Uint8Array): Uint8Array {
+  return concat([uint16Body([tokens.byteLength, 0]), tokens]);
+}
+
+function dataValidationRecord(options: {
+  flags: number;
+  formula1?: Uint8Array;
+  formula2?: Uint8Array;
+  ranges?: readonly [number, number, number, number][];
+  promptTitle?: string;
+  errorTitle?: string;
+  prompt?: string;
+  error?: string;
+}): Uint8Array {
+  const encodeText = (value: string | undefined): Uint8Array =>
+    value === undefined ? biff8String("\0") : compressedBiff8String(value);
+  const ranges = options.ranges ?? [[0, 0, 0, 0]];
+  return record(
+    0x01be,
+    concat([
+      new Uint8Array([
+        options.flags & 0xff,
+        (options.flags >> 8) & 0xff,
+        (options.flags >> 16) & 0xff,
+        (options.flags >> 24) & 0xff,
+      ]),
+      encodeText(options.promptTitle),
+      encodeText(options.errorTitle),
+      encodeText(options.prompt),
+      encodeText(options.error),
+      dataValidationFormula(options.formula1 ?? new Uint8Array()),
+      dataValidationFormula(options.formula2 ?? new Uint8Array()),
+      uint16Body([ranges.length]),
+      ...ranges.map((range) => uint16Body(range)),
+    ]),
+  );
+}
+
+function dataValidationListRecord(count: number, xWindow = 12, yWindow = 24): Uint8Array {
+  const body = new Uint8Array(18);
+  const view = new DataView(body.buffer);
+  view.setUint32(2, xWindow, true);
+  view.setUint32(6, yWindow, true);
+  view.setInt32(10, -1, true);
+  view.setUint32(14, count, true);
+  return record(0x01b2, body);
 }
 
 function boundSheet(version: 5 | 8, position: number, name: string, state = 0): Uint8Array {
@@ -711,6 +844,28 @@ function cell(worksheet: WorksheetOptions, reference: string): CellOptions {
 }
 
 describe("parseWorkbook", () => {
+  it("reads BIFF8 extension length before string content", () => {
+    const bytes = new Uint8Array([1, 0, 5, 2, 0, 0, 0, 0x41, 0, 0x58, 0x59]);
+
+    expect(readBiff8String(bytes)).toEqual({ value: "A", offset: bytes.byteLength });
+  });
+
+  it("decodes compressed BIFF8 strings with a UTF-16 workbook code page", () => {
+    const bytes = new Uint8Array([1, 0, 0, 0x41]);
+
+    expect(readBiff8String(bytes, 0, "utf-16le")).toEqual({ value: "A", offset: bytes.byteLength });
+  });
+
+  it("reports truncated BIFF8 extension data as a parse error", () => {
+    const bytes = new Uint8Array([1, 0, 5, 2, 0, 0, 0, 0x41, 0]);
+
+    expect(() => readBiff8String(bytes)).toThrow(XlsParseError);
+  });
+
+  it("reports a truncated BIFF8 rich-run header as a parse error", () => {
+    expect(() => readBiff8String(new Uint8Array([1, 0, 8]))).toThrow(XlsParseError);
+  });
+
   it("reports structured low-level parse failures", () => {
     const malformedRecord = (code: number, declaredLength: number): Uint8Array => {
       const bytes = new Uint8Array(4);
@@ -934,14 +1089,66 @@ describe("parseWorkbook", () => {
   });
 
   it("reads BIFF8 rich label cells", () => {
-    const data = workbook(8, [{ name: "Sheet", cells: [richLabelCell(0, 0, "rich")] }]);
+    const data = workbook(
+      8,
+      [
+        {
+          name: "Sheet",
+          cells: [
+            richLabelCell(0, 0, "rich", [
+              { characterIndex: 0, fontIndex: 0 },
+              { characterIndex: 2, fontIndex: 1 },
+            ]),
+          ],
+        },
+      ],
+      [],
+      [],
+      [fontRecord("Arial"), fontRecord("Courier New")],
+    );
     const options = parseWorkbook(xls(data));
     const worksheet = options.worksheets?.[0];
     if (!worksheet) throw new TypeError("Expected a worksheet");
     expect(options.cellXfs).toHaveLength(4);
     const richCell = cell(worksheet, "A1");
-    expect(richCell.value).toBe("rich");
+    expect(richCell.value).toMatchObject({
+      runs: [
+        { text: "ri", properties: { font: "Arial", bold: true } },
+        { text: "ch", properties: { font: "Courier New", bold: true } },
+      ],
+    });
     expect(richCell.style).toBe(3);
+  });
+
+  it("preserves rich runs in BIFF8 shared strings", () => {
+    const header = new Uint8Array(8);
+    const headerView = new DataView(header.buffer);
+    headerView.setUint32(0, 1, true);
+    headerView.setUint32(4, 1, true);
+    const richSst = record(
+      0x00fc,
+      concat([
+        header,
+        richBiff8String("rich", [
+          { characterIndex: 0, fontIndex: 0 },
+          { characterIndex: 2, fontIndex: 1 },
+        ]),
+      ]),
+    );
+    const data = workbook(
+      8,
+      [{ name: "Sheet", cells: [labelSstCell(0, 0, 0)] }],
+      [],
+      [richSst],
+      [fontRecord("Arial"), fontRecord("Courier New")],
+    );
+    const value = cell(parseWorkbook(xls(data)).worksheets![0]!, "A1").value;
+    expect(value).toMatchObject({
+      runs: [
+        { text: "ri", properties: { font: "Arial" } },
+        { text: "ch", properties: { font: "Courier New" } },
+      ],
+    });
   });
 
   it("reads row layout semantics", () => {
@@ -1015,15 +1222,14 @@ describe("parseWorkbook", () => {
     expect(worksheets[0]!.rows?.map((row) => row.rowNumber)).toEqual([1, 2]);
   });
 
-  it("stops a stale shared-string count at the physical table end", () => {
+  it("rejects a stale shared-string count beyond the physical table end", () => {
     const header = new Uint8Array(8);
     const headerView = new DataView(header.buffer);
     headerView.setUint32(0, 2, true);
     headerView.setUint32(4, 2, true);
     const staleSst = record(0x00fc, concat([header, biff8String("only")]));
     const data = workbook(8, [{ name: "Sheet", cells: [labelSstCell(0, 0, 0)] }], [], [staleSst]);
-    const worksheets = parseWorkbook(xls(data)).worksheets ?? [];
-    expect(cell(worksheets[0]!, "A1").value).toBe("only");
+    expect(() => parseWorkbook(xls(data))).toThrow("truncated shared string table");
   });
 
   it("ignores nested substreams before the worksheet EOF", () => {
@@ -1054,6 +1260,201 @@ describe("parseWorkbook", () => {
     expect(parsed.properties?.date1904).toBe(true);
   });
 
+  it("maps workbook and worksheet CODENAME records to workbook properties", () => {
+    const data = workbook(
+      8,
+      [{ name: "Sheet", cells: [codeNameRecord("SheetCode")] }],
+      [],
+      [],
+      [codeNameRecord("BookCode")],
+    );
+    const parsed = parseWorkbook(xls(data));
+    expect(parsed.properties?.codeName).toBe("BookCode");
+    expect(parsed.worksheets?.[0]?.properties?.codeName).toBe("SheetCode");
+  });
+
+  it("rejects malformed, misplaced, duplicate, and overlong CODENAME records", () => {
+    const badGlobal = workbook(8, [{ name: "Sheet", cells: [] }], [], [], [record(0x01ba)]);
+    const duplicateGlobal = workbook(
+      8,
+      [{ name: "Sheet", cells: [] }],
+      [],
+      [],
+      [codeNameRecord("One"), codeNameRecord("Two")],
+    );
+    const badSheet = workbook(8, [{ name: "Sheet", cells: [record(0x01ba)] }]);
+    const longName = workbook(
+      8,
+      [{ name: "Sheet", cells: [] }],
+      [],
+      [],
+      [codeNameRecord("x".repeat(32))],
+    );
+    for (const input of [badGlobal, duplicateGlobal, badSheet, longName])
+      expect(() => parseWorkbook(xls(input))).toThrow(XlsParseError);
+  });
+
+  it("maps SCL fractions to worksheet zoom percentages", () => {
+    const data = workbook(8, [
+      { name: "Sheet", cells: [scaleRecord(3, 2)] },
+      { name: "Other", cells: [scaleRecord(4, 3)] },
+    ]);
+    expect(
+      parseWorkbook(xls(data)).worksheets?.map((worksheet) => worksheet.sheetView?.zoomScale),
+    ).toEqual([150, 133]);
+  });
+
+  it("rejects invalid and duplicate SCL records", () => {
+    const invalidScales = [
+      scaleRecord(0, 100),
+      scaleRecord(1, 0),
+      scaleRecord(1, 11),
+      scaleRecord(5, 1),
+      record(0x00a0, new Uint8Array([1, 0])),
+    ];
+    for (const invalidScale of invalidScales) {
+      const data = workbook(8, [{ name: "Sheet", cells: [invalidScale] }]);
+      expect(() => parseWorkbook(xls(data))).toThrow(XlsParseError);
+    }
+    const duplicate = workbook(8, [
+      { name: "Sheet", cells: [scaleRecord(1, 1), scaleRecord(3, 2)] },
+    ]);
+    expect(() => parseWorkbook(xls(duplicate))).toThrow(/duplicate SCL/);
+  });
+
+  it("maps DV criteria and DVAL worksheet settings", () => {
+    const validation = dataValidationRecord({
+      flags: 1 | (1 << 4) | (1 << 8) | (1 << 9) | (1 << 18) | (1 << 19),
+      formula1: integerToken(5),
+      formula2: integerToken(10),
+      ranges: [
+        [0, 2, 0, 0],
+        [4, 4, 1, 2],
+      ],
+      promptTitle: "Input",
+      errorTitle: "Invalid",
+      prompt: "Enter a value",
+      error: "Out of range",
+    });
+    const data = workbook(8, [
+      {
+        name: "Sheet",
+        cells: [dataValidationListRecord(1, 300, 500), validation],
+      },
+    ]);
+    const worksheet = parseWorkbook(xls(data)).worksheets?.[0];
+    expect(worksheet?.dataValidations).toEqual([
+      {
+        sqref: "A1:A3 B5:C5",
+        type: "whole",
+        operator: "between",
+        formula1: "5",
+        formula2: "10",
+        allowBlank: true,
+        showErrorMessage: true,
+        showInputMessage: true,
+        errorStyle: "warning",
+        imeMode: "noControl",
+        promptTitle: "Input",
+        errorTitle: "Invalid",
+        prompt: "Enter a value",
+        error: "Out of range",
+      },
+    ]);
+    expect(worksheet?.dataValidationsXWindow).toBe(300);
+    expect(worksheet?.dataValidationsYWindow).toBe(500);
+  });
+
+  it("preserves the list validation dropdown suppression flag", () => {
+    const validation = dataValidationRecord({
+      flags: 3 | (1 << 7) | (1 << 9),
+      formula1: integerToken(5),
+    });
+    const data = workbook(8, [{ name: "Sheet", cells: [dataValidationListRecord(1), validation] }]);
+    expect(parseWorkbook(xls(data)).worksheets?.[0]?.dataValidations?.[0]).toMatchObject({
+      type: "list",
+      formula1: "5",
+      showDropDown: true,
+    });
+  });
+
+  it("maps DV IME mode and accepts the BIFF error-text limit", () => {
+    const error = "E".repeat(225);
+    const validation = dataValidationRecord({
+      flags: 3 | (3 << 10),
+      formula1: integerToken(5),
+      error,
+    });
+    const data = workbook(8, [{ name: "Sheet", cells: [dataValidationListRecord(1), validation] }]);
+    const parsed = parseWorkbook(xls(data)).worksheets?.[0]?.dataValidations?.[0];
+    expect(parsed?.error).toBe(error);
+    expect(parsed?.imeMode).toBe("disabled");
+  });
+
+  it("ignores undefined operators but rejects invalid numeric operators", () => {
+    const ignoredOperator = workbook(8, [
+      {
+        name: "Sheet",
+        cells: [
+          dataValidationListRecord(1),
+          dataValidationRecord({ flags: 3 | (15 << 20), formula1: integerToken(5) }),
+        ],
+      },
+    ]);
+    expect(
+      parseWorkbook(xls(ignoredOperator)).worksheets?.[0]?.dataValidations?.[0],
+    ).not.toHaveProperty("operator");
+
+    const invalidOperator = workbook(8, [
+      {
+        name: "Sheet",
+        cells: [
+          dataValidationListRecord(1),
+          dataValidationRecord({ flags: 1 | (8 << 20), formula1: integerToken(5) }),
+        ],
+      },
+    ]);
+    expect(() => parseWorkbook(xls(invalidOperator))).toThrow(XlsParseError);
+  });
+
+  it("rejects malformed DV records and DVAL count mismatches", () => {
+    const missingList = workbook(8, [
+      {
+        name: "Sheet",
+        cells: [dataValidationRecord({ flags: 1, formula1: integerToken(1) })],
+      },
+    ]);
+    const countMismatch = workbook(8, [
+      {
+        name: "Sheet",
+        cells: [
+          dataValidationListRecord(2),
+          dataValidationRecord({ flags: 1, formula1: integerToken(1) }),
+        ],
+      },
+    ]);
+    const malformedFormula = workbook(8, [
+      {
+        name: "Sheet",
+        cells: [
+          dataValidationListRecord(1),
+          dataValidationRecord({ flags: 1, formula1: new Uint8Array([0xff]) }),
+        ],
+      },
+    ]);
+    const validationBeforeList = workbook(8, [
+      {
+        name: "Sheet",
+        cells: [
+          dataValidationRecord({ flags: 1, formula1: integerToken(1) }),
+          dataValidationListRecord(1),
+        ],
+      },
+    ]);
+    for (const input of [missingList, countMismatch, malformedFormula, validationBeforeList])
+      expect(() => parseWorkbook(xls(input))).toThrow(XlsParseError);
+  });
+
   it("maps FONT, FORMAT and XF to cell formatting", () => {
     const data = workbook(
       8,
@@ -1069,6 +1470,100 @@ describe("parseWorkbook", () => {
       font: parsed.fonts?.[0],
       numFmt: "0.0%",
     });
+  });
+
+  it("maps STYLE and STYLEEXT to named cell styles and cell-style XFs", () => {
+    const color = new Uint8Array([0x07, 0x01, 0, 0, 0, 0, 0, 0xff]);
+    const data = workbook(
+      8,
+      [{ name: "Sheet", cells: [] }],
+      [],
+      [],
+      [
+        fontRecord("Arial"),
+        styleXfRecord(0),
+        styleRecord(0, "Accent 1"),
+        styleExtensionRecord("Accent 1", [
+          styleProperty(0x05, color),
+          styleProperty(0x12, uint16Body([3])),
+        ]),
+      ],
+    );
+    const parsed = parseWorkbook(xls(data));
+    expect(parsed.cellStyles).toEqual([
+      { name: "Accent 1", xfId: 0, hidden: true, category: "themedCell" },
+    ]);
+    expect(parsed.cellStyleXfs?.[0]).toMatchObject({
+      font: { color: { theme: 1 } },
+      alignment: { indent: 3 },
+    });
+  });
+
+  it("matches built-in STYLEEXT records by their complete built-in data", () => {
+    const data = workbook(
+      8,
+      [{ name: "Sheet", cells: [] }],
+      [],
+      [],
+      [
+        styleXfRecord(0),
+        builtInStyleRecord(0, 1, 2),
+        styleExtensionRecord("RowLevel_3", [], {
+          flags: 0x03,
+          category: 0x01,
+          builtInData: 0x0201,
+        }),
+      ],
+    );
+    expect(parseWorkbook(xls(data)).cellStyles).toEqual([
+      {
+        name: "RowLevel_3",
+        xfId: 0,
+        builtinId: 1,
+        hidden: true,
+        category: "goodBadNeutral",
+        iLevel: 2,
+      },
+    ]);
+  });
+
+  it("rejects STYLEEXT records that do not match their preceding STYLE", () => {
+    const data = workbook(
+      8,
+      [{ name: "Sheet", cells: [] }],
+      [],
+      [],
+      [styleXfRecord(0), styleRecord(0, "Accent 1"), styleExtensionRecord("Accent 2", [])],
+    );
+    expect(() => parseWorkbook(xls(data))).toThrow(/StyleExt does not match a Style record/);
+  });
+
+  it("rejects invalid STYLEEXT categories and reserved text rotations", () => {
+    const invalidCategory = workbook(
+      8,
+      [{ name: "Sheet", cells: [] }],
+      [],
+      [],
+      [
+        styleXfRecord(0),
+        styleRecord(0, "Accent 1"),
+        styleExtensionRecord("Accent 1", [], { category: 6 }),
+      ],
+    );
+    expect(() => parseWorkbook(xls(invalidCategory))).toThrow(/invalid-style-category/);
+
+    const invalidRotation = workbook(
+      8,
+      [{ name: "Sheet", cells: [] }],
+      [],
+      [],
+      [
+        styleXfRecord(0),
+        styleRecord(0, "Accent 1"),
+        styleExtensionRecord("Accent 1", [styleProperty(0x11, new Uint8Array([0xb5]))]),
+      ],
+    );
+    expect(() => parseWorkbook(xls(invalidRotation))).toThrow(/invalid-text-rotation/);
   });
 
   it("rejects malformed style metadata records structurally", () => {
@@ -1220,6 +1715,12 @@ describe("parseWorkbook", () => {
     ]);
   });
 
+  it("rejects MERGEDCELLS records whose declared range count is truncated", () => {
+    const malformed = record(0x00e5, uint16Body([2, 0, 0, 0, 1, 0]));
+    const data = workbook(8, [{ name: "Sheet", cells: [malformed] }], [], [], []);
+    expect(() => parseWorkbook(xls(data))).toThrow(/truncated MERGEDCELLS ranges/);
+  });
+
   it("parses NAME defined names", () => {
     const data = workbook(
       8,
@@ -1270,6 +1771,20 @@ describe("parseWorkbook", () => {
     });
   });
 
+  it("decodes built-in BIFF8 NAME identifiers", () => {
+    const tokens = referenceToken(0, 0);
+    const body = new Uint8Array(16 + tokens.byteLength);
+    const view = new DataView(body.buffer);
+    view.setUint16(0, 0x0020, true);
+    body[3] = 1;
+    view.setUint16(4, tokens.byteLength, true);
+    body[14] = 0;
+    body[15] = 0x06;
+    body.set(tokens, 16);
+    const data = workbook(8, [{ name: "Sheet", cells: [] }], [], [], [record(0x0018, body)]);
+    expect(parseWorkbook(xls(data)).definedNames?.[0]?.name).toBe("_xlnm.Print_Area");
+  });
+
   it("parses DDE and OLE SUPBOOK references", () => {
     const dde = workbook(
       8,
@@ -1297,91 +1812,123 @@ describe("parseWorkbook", () => {
     });
   });
 
-  it("tolerates truncated SUPBOOK sheet lists", () => {
-    const warnings: string[] = [];
-    const warn = console.warn;
-    console.warn = (message: string) => warnings.push(message);
-    try {
-      const data = workbook(
-        8,
-        [{ name: "Sheet", cells: [] }],
-        [],
-        [],
-        [partialSupbookRecord("external.xlsx", "Data"), externSheetRecord()],
-      );
-      const parsed = parseWorkbook(xls(data));
-      expect(parsed.externalLinks?.[0]?.externalBook).toEqual({
-        target: "external.xlsx",
-        sheetNames: ["Data"],
-      });
-      expect(warnings.some((message) => message.includes("truncated-sheet-list"))).toBe(true);
-    } finally {
-      console.warn = warn;
-    }
-
-    const missingReference = workbook(
-      8,
-      [{ name: "Sheet", cells: [] }],
-      [],
-      [],
-      [
-        partialSupbookRecord("external.xlsx", "Data"),
-        record(0x0017, uint16Body([1, 0, 1, 1])),
-        nameRecord("Link", externalReferenceToken(1)),
-      ],
-    );
-    expect(parseWorkbook(xls(missingReference)).definedNames).toEqual([
-      expect.objectContaining({ name: "Link", value: "#REF!!$A$1" }),
-    ]);
-  });
-
-  it("tolerates unknown records but rejects malformed auxiliary structures", () => {
-    const warnings: string[] = [];
-    const warn = console.warn;
-    console.warn = (message: string) => warnings.push(message);
-    try {
-      const unknown = workbook(
-        8,
-        [{ name: "Sheet", cells: [] }],
-        [],
-        [],
-        [record(0xffff, new Uint8Array(1))],
-      );
-      const parsed = parseWorkbook(xls(unknown));
-      expect(parsed.worksheets?.[0]?.name).toBe("Sheet");
-      expect(warnings.some((message) => message.includes("unknown-record"))).toBe(true);
-      expect(warnings.some((message) => message.includes("0xffff"))).toBe(true);
-
-      const malformedSupbook = workbook(
-        8,
-        [{ name: "Sheet", cells: [] }],
-        [],
-        [],
-        [record(0x01ae, new Uint8Array(1))],
-      );
-      expect(() => parseWorkbook(xls(malformedSupbook))).toThrow(/truncated SUPBOOK/);
-      const malformedName = workbook(
-        8,
-        [{ name: "Sheet", cells: [] }],
-        [],
-        [],
-        [nameRecord("Broken", new Uint8Array([0xff]))],
-      );
-      expect(() => parseWorkbook(xls(malformedName))).toThrow(/unsupported formula token 0xff/);
-    } finally {
-      console.warn = warn;
-    }
-  });
-
-  it("skips registered structural no-op records", () => {
+  it("rejects truncated SUPBOOK sheet lists", () => {
     const data = workbook(
       8,
       [{ name: "Sheet", cells: [] }],
       [],
       [],
-      [record(0x005c, new TextEncoder().encode("office-open"))],
+      [partialSupbookRecord("external.xlsx", "Data"), externSheetRecord()],
     );
+    expect(() => parseWorkbook(xls(data))).toThrow(/truncated SUPBOOK sheet name/);
+  });
+
+  it("rejects unknown records and malformed auxiliary structures", () => {
+    const unknown = workbook(
+      8,
+      [{ name: "Sheet", cells: [] }],
+      [],
+      [],
+      [record(0xffff, new Uint8Array(1))],
+    );
+    expect(() => parseWorkbook(xls(unknown))).toThrow(/unsupported legacy XLS record 0xffff/i);
+
+    const malformedSupbook = workbook(
+      8,
+      [{ name: "Sheet", cells: [] }],
+      [],
+      [],
+      [record(0x01ae, new Uint8Array(1))],
+    );
+    expect(() => parseWorkbook(xls(malformedSupbook))).toThrow(/truncated SUPBOOK/);
+    const malformedName = workbook(
+      8,
+      [{ name: "Sheet", cells: [] }],
+      [],
+      [],
+      [nameRecord("Broken", new Uint8Array([0xff]))],
+    );
+    expect(() => parseWorkbook(xls(malformedName))).toThrow(/unsupported formula token 0xff/);
+  });
+
+  it("skips registered structural no-op records", () => {
+    const data = workbook(8, [{ name: "Sheet", cells: [] }], [], [], [record(0x005e)]);
     expect(parseWorkbook(xls(data)).worksheets).toHaveLength(1);
+  });
+
+  it("maps BIFF workbook calculation and protection records", () => {
+    const delta = float64Bytes(0.25);
+    const data = workbook(
+      8,
+      [{ name: "Sheet", cells: [] }],
+      [],
+      [],
+      [
+        record(0x000c, uint16Body([25])),
+        record(0x000d, uint16Body([0xffff])),
+        record(0x000e, uint16Body([0])),
+        record(0x000f, uint16Body([0])),
+        record(0x0010, delta),
+        record(0x0011, uint16Body([1])),
+        record(0x0012, uint16Body([1])),
+        record(0x0013, uint16Body([0x1234])),
+        record(0x0019, uint16Body([1])),
+        record(0x0040, uint16Body([1])),
+        record(0x01af, uint16Body([1])),
+        record(0x01bc, uint16Body([0xabcd])),
+      ],
+    );
+
+    const parsed = parseWorkbook(xls(data));
+    expect(parsed.calculation).toEqual({
+      iterateCount: 25,
+      calcMode: "autoNoTable",
+      fullPrecision: false,
+      refMode: "R1C1",
+      iterateDelta: 0.25,
+      iterate: true,
+    });
+    expect(parsed.workbookProtection).toEqual({
+      lockStructure: true,
+      workbookPasswordHashRaw: "1234",
+      lockWindows: true,
+      lockRevision: true,
+      revisionsPasswordHashRaw: "ABCD",
+    });
+    expect(parsed.properties?.backupFile).toBe(true);
+  });
+
+  it("maps BIFF8 file-sharing and write-access records", () => {
+    const fileSharing = concat([uint16Body([1, 0xabcd]), biff8String("Owner")]);
+    const writeAccess = new Uint8Array(112);
+    new DataView(writeAccess.buffer).setUint16(0, 6, true);
+    writeAccess[2] = 1;
+    for (const [index, character] of Array.from("Editor").entries())
+      new DataView(writeAccess.buffer).setUint16(3 + index * 2, character.charCodeAt(0), true);
+    const data = workbook(
+      8,
+      [{ name: "Sheet", cells: [] }],
+      [],
+      [],
+      [record(0x005b, fileSharing), record(0x005c, writeAccess)],
+    );
+
+    const parsed = parseWorkbook(xls(data));
+    expect(parsed.fileSharing).toEqual({
+      readOnlyRecommended: true,
+      reservationPasswordHashRaw: "ABCD",
+      userName: "Owner",
+    });
+    expect(parsed.lastModifiedBy).toBe("Editor");
+  });
+
+  it("maps the legacy padded write-access layout", () => {
+    const writeAccess = new Uint8Array(32);
+    writeAccess.set(new TextEncoder().encode("Legacy User"));
+    writeAccess.fill(0x20, "Legacy User".length);
+    const data = workbook(8, [{ name: "Sheet", cells: [] }], [], [], [record(0x005c, writeAccess)]);
+
+    expect(parseWorkbook(xls(data)).lastModifiedBy).toBe("Legacy User");
   });
 
   it("parses HLINK hyperlinks", () => {
@@ -1634,7 +2181,7 @@ describe("parseWorkbook", () => {
   it("parses HEADER, FOOTER, margins and PAGESETUP", () => {
     const data = workbook(8, [{ name: "Sheet", cells: [...pageSetupRecords()] }]);
     const worksheet = (parseWorkbook(xls(data)).worksheets ?? [])[0]!;
-    expect(worksheet.headerFooter).toEqual({ oddHeader: "H", oddFooter: "F" });
+    expect(worksheet.headerFooter).toEqual({ oddHeader: "页", oddFooter: "F" });
     expect(worksheet.pageMargins).toEqual({
       left: 0.75,
       right: 0.75,

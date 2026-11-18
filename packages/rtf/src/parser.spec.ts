@@ -8,6 +8,7 @@ import type {
 import { describe, expect, it } from "vite-plus/test";
 
 import { parseDocument } from ".";
+import { RtfParseError } from "./errors";
 import { generateDocument } from "./generate";
 
 function roundTrip(source: string): ReturnType<typeof parseDocument> {
@@ -48,8 +49,20 @@ describe("parseDocument RTF text and formatting", () => {
     });
   });
 
+  it("accepts Unicode and UTF-8 BOM prefixes", () => {
+    const source = String.raw`{\rtf1 Hello}`;
+    expect(parseDocument(`\uFEFF${source}`)).toEqual(parseDocument(source));
+    expect(
+      parseDocument(new Uint8Array([0xef, 0xbb, 0xbf, ...new TextEncoder().encode(source)])),
+    ).toEqual(parseDocument(source));
+  });
+
+  it("accepts a NUL terminator after the root group", () => {
+    expect(parseDocument("{\\rtf1 Hello}\0")).toEqual(parseDocument("{\\rtf1 Hello}"));
+  });
+
   it("scopes bold formatting to its group and maps paragraph alignment", () => {
-    const paragraph = firstParagraph(String.raw`{\rtf1{\b Bold} plain\par}{\qc Centered\par}`);
+    const paragraph = firstParagraph(String.raw`{\rtf1{\b Bold} plain\par{\qc Centered\par}}`);
     expect(runs(paragraph)).toEqual([{ bold: true, text: "Bold" }, { text: " plain" }]);
   });
 
@@ -104,7 +117,7 @@ describe("parseDocument RTF text and formatting", () => {
   });
 
   it("maps document default language", () => {
-    expect(parseDocument(String.raw`{\rtf1\deflang1033 Body`)).toMatchObject({
+    expect(parseDocument(String.raw`{\rtf1\deflang1033 Body}`)).toMatchObject({
       language: "en-US",
     });
   });
@@ -197,11 +210,9 @@ describe("parseDocument RTF tables", () => {
     expect(rows).toHaveLength(2);
   });
 
-  it("recovers missing and extra document group braces", () => {
+  it("rejects an extra closing brace", () => {
     const source = String.raw`{\rtf1{\b Text}\par}}`;
-    expect(parseDocument(source).sections[0]?.children[0]).toEqual({
-      paragraph: { children: [{ bold: true, text: "Text" }] },
-    });
+    expect(() => parseDocument(source)).toThrow("Content appears after the RTF root group");
   });
 });
 
@@ -210,20 +221,14 @@ describe("parseDocument recovery", () => {
     expect(() => parseDocument("plain text")).toThrow('RTF must begin with "{\\rtf"');
   });
 
-  it("closes an unterminated group and table at end of input", () => {
-    const document = parseDocument(String.raw`{\rtf1 Unclosed\trowd\cellx100 Text\cell`);
-    expect(document.sections[0]?.children[0]).toEqual({
-      paragraph: { children: [{ text: "Unclosed" }] },
-    });
+  it("rejects an unterminated root group", () => {
+    const source = String.raw`{\rtf1 Unclosed\trowd\cellx100 Text\cell`;
+    expect(() => parseDocument(source)).toThrow("RTF root group is not closed");
   });
 
-  it("keeps parsing content after a premature root closing brace", () => {
+  it("rejects content after the root group", () => {
     const source = String.raw`{\rtf1 First}\par Second`;
-    const children = parseDocument(source).sections[0]?.children ?? [];
-    expect(children).toEqual([
-      { paragraph: { children: [{ text: "First" }] } },
-      { paragraph: { children: [{ text: "Second" }] } },
-    ]);
+    expect(() => parseDocument(source)).toThrow("Content appears after the RTF root group");
   });
 });
 
@@ -244,6 +249,24 @@ describe("parseDocument RTF rich destinations", () => {
     expect(document.sections[0]?.children?.[0]).toEqual({
       paragraph: { children: [{ footnoteReference: 0 }, { text: "Body" }] },
     });
+  });
+
+  it("preserves meaningful header and footer edge spaces", () => {
+    const document = parseDocument(String.raw`{\rtf1{\header  leading and trailing  }Body}`);
+    expect(document.sections[0]?.headers?.default?.[0]).toEqual({
+      paragraph: { children: [{ text: " leading and trailing  " }] },
+    });
+  });
+
+  it("reports unsupported font encodings as RtfParseError", () => {
+    let error: unknown;
+    try {
+      parseDocument(String.raw`{\rtf1\ansicpg999{\fonttbl{\f0\fcharset255 Foo;}}Text}`);
+    } catch (cause) {
+      error = cause;
+    }
+    expect(error).toBeInstanceOf(RtfParseError);
+    expect(error).toMatchObject({ context: { part: "RTF font table", name: "fonttbl" } });
   });
 
   it("separates left and right header and footer slots", () => {

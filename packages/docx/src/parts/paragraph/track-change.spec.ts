@@ -9,9 +9,10 @@ const readCtx = {} as unknown as DocxReadContext;
 const writeCtx = {} as never;
 
 const W_NS = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"';
+const W16DU_NS = 'xmlns:w16du="http://schemas.microsoft.com/office/word/2023/wordml/word16du"';
 
 function roundTrip(inner: string): string {
-  const doc = parseXml(`<w:p ${W_NS}>${inner}</w:p>`);
+  const doc = parseXml(`<w:p ${W_NS} ${W16DU_NS}>${inner}</w:p>`);
   const el = doc.elements?.[0];
   if (!el) throw new Error("parsed document has no root element");
   return stringifyParagraph(parseParagraph(el, readCtx), writeCtx);
@@ -91,6 +92,21 @@ describe("track-change round-trip", () => {
       xml.indexOf('<w:ins w:id="2" w:author="Bob" w:date="2020-01-02T00:00:00Z">'),
     );
     expect(xml).toContain("<w:r><w:t>inserted</w:t></w:r></w:ins></w:hyperlink></w:ins>");
+  });
+
+  it("round-trips w16du UTC timestamps on track changes", () => {
+    const xml = roundTrip(
+      '<w:ins w:id="1" w:author="Alice" w:date="2026-01-15T09:30:00Z" w16du:dateUtc="2026-01-15T09:30:00.000Z">' +
+        "<w:r><w:t>added</w:t></w:r></w:ins>",
+    );
+    expect(xml).toContain('w16du:dateUtc="2026-01-15T09:30:00.000Z"');
+  });
+
+  it("round-trips w16du UTC timestamps on paragraph-mark revisions", () => {
+    const xml = roundTrip(
+      '<w:pPr><w:rPr><w:ins w:id="1" w:author="Alice" w16du:dateUtc="2026-01-15T09:30:00.000Z"/></w:rPr></w:pPr>',
+    );
+    expect(xml).toContain('w16du:dateUtc="2026-01-15T09:30:00.000Z"');
   });
 
   it("preserves per-stage rsids on a deleted complex field", () => {

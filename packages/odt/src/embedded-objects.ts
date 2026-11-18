@@ -8,6 +8,8 @@ export interface OdtEmbeddedObjectFrameOptions {
   shapeId: number;
   anchorType?: OdtFrameAnchorType;
   styleName?: string;
+  replacementImagePath?: string;
+  replacementImageSourceUrl?: string;
 }
 
 /** Standalone embedded ODF object with no canonical docx run equivalent. */

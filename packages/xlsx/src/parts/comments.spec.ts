@@ -91,6 +91,15 @@ describe("commentsDesc round-trip", () => {
     expect(comments[0]?.text).toBe('<b>&"quotes"');
   });
 
+  it("round-trips control characters in author names", () => {
+    const opts: CommentsDocOptions = {
+      comments: [{ cell: "A1", author: "A\u0001B", text: "note" }],
+    };
+    const xml = commentsDesc.stringify(opts, writeCtx)!;
+    expect(xml).toContain("_x0001_");
+    expect(roundTrip(opts).comments[0]?.author).toBe("A\u0001B");
+  });
+
   it("round-trips single author with no text", () => {
     const opts: CommentsDocOptions = {
       comments: [{ cell: "C3", author: "Empty", text: "" }],

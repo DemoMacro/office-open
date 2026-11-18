@@ -13914,7 +13914,7 @@
         },
         "type": {
           "description": "Image format. Loose string here; each package narrows to its supported union.",
-          "enum": ["png", "jpg", "gif", "bmp", "tif", "ico", "emf", "wmf"],
+          "enum": ["png", "jpg", "gif", "bmp", "tif", "ico", "emf", "wmf", "svg"],
           "type": "string"
         },
         "useLocalDpi": {
@@ -14844,6 +14844,11 @@
           "description": "Notes page height in EMU (`p:notesSz/@cy`, default 9144000).",
           "type": "number"
         },
+        "notesMasterIdListPresent": {
+          "description": "Whether the source had p:notesMasterIdLst; round-trip only.",
+          "readOnly": true,
+          "type": "boolean"
+        },
         "notesMasterOptions": {
           "$ref": "#/definitions/NotesMasterOptions"
         },
@@ -14861,6 +14866,11 @@
         },
         "photoAlbum": {
           "$ref": "#/definitions/PhotoAlbumOptions"
+        },
+        "presentationPath": {
+          "description": "Source path of the primary presentation part; round-trip only.",
+          "readOnly": true,
+          "type": "string"
         },
         "presentationPropertiesExt": {
           "description": "Verbatim inner XML of p:presentationPr's p:extLst (presProps extensions) — round-trip channel: captured from a parsed source; do not hand-author.",

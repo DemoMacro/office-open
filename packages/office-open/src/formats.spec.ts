@@ -1,3 +1,4 @@
+import { OOXML_PACKAGE_FORMATS } from "@office-open/core/opc";
 import { zipSync } from "fflate";
 import { describe, expect, it } from "vitest";
 
@@ -65,11 +66,17 @@ function odfZip(mimeType: string): Uint8Array {
   return zipSync({ mimetype: encoder.encode(mimeType) });
 }
 
-function ooxmlZip(mainContentType: string): Uint8Array {
+function ooxmlZip(mainContentType: string, mainPartPath = "word/document.xml"): Uint8Array {
   return zipSync({
     "[Content_Types].xml": encoder.encode(
-      `<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Override PartName="/x.xml" ContentType="${mainContentType}"/></Types>`,
+      `<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Override PartName="/${mainPartPath}" ContentType="${mainContentType}"/></Types>`,
     ),
+    "_rels/.rels": encoder.encode(
+      '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="' +
+        mainPartPath +
+        '"/></Relationships>',
+    ),
+    [mainPartPath]: encoder.encode("<main/>"),
   });
 }
 
@@ -98,30 +105,39 @@ describe("detectOffice", () => {
     });
   });
 
-  it("detects OOXML package variants", () => {
-    expect(
-      detectOffice(
-        ooxmlZip(
-          "application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml",
-        ),
+  it("detects every OOXML package variant from its primary part", () => {
+    for (const [format, info] of Object.entries(OOXML_PACKAGE_FORMATS)) {
+      const family =
+        info.family === "wordprocessing"
+          ? "document"
+          : info.family === "spreadsheet"
+            ? "workbook"
+            : "presentation";
+      expect(detectOffice(ooxmlZip(info.mainContentType, info.mainPartPath))).toEqual({
+        format,
+        family,
+        container: "zip",
+      });
+    }
+  });
+
+  it("detects OOXML by the primary override, not unrelated XML text", () => {
+    const bytes = zipSync({
+      "[Content_Types].xml": encoder.encode(
+        '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+          "<!-- application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml -->" +
+          "<Ignored>application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml</Ignored>" +
+          '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.ms-excel.sheet.macroEnabled.main+xml"/>' +
+          "</Types>",
       ),
-    ).toEqual({
-      format: "docx",
-      family: "document",
-      container: "zip",
+      "_rels/.rels": encoder.encode(
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+          '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>' +
+          "</Relationships>",
+      ),
+      "xl/workbook.xml": encoder.encode("<workbook/>"),
     });
-    expect(
-      detectOffice(ooxmlZip("application/vnd.ms-powerpoint.presentation.macroEnabled.main+xml")),
-    ).toEqual({
-      format: "pptm",
-      family: "presentation",
-      container: "zip",
-    });
-    expect(detectOffice(ooxmlZip("application/vnd.ms-excel.sheet.macroEnabled.main+xml"))).toEqual({
-      format: "xlsm",
-      family: "workbook",
-      container: "zip",
-    });
+    expect(detectOffice(bytes)).toMatchObject({ format: "xlsm", family: "workbook" });
   });
 
   it("detects legacy CFB formats by their semantic streams", () => {

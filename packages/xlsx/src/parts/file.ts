@@ -151,10 +151,16 @@ export interface WorkbookOptions extends CorePropertiesOptions {
   externalLinks?: ExternalLinkOptions[];
   /** Workbook data connections (xl/connections.xml) */
   connections?: ConnectionOptions[];
+  /** Source connections part path; default xl/connections.xml. Round-trip only. */
+  connectionsPath?: string;
   /** Rich metadata block (xl/metadata.xml) */
   metadata?: MetadataOptions;
+  /** Source metadata part path; default xl/metadata.xml. Round-trip only. */
+  metadataPath?: string;
   /** XML mappings (xl/xmlMaps.xml) */
   xmlMaps?: MapInfoOptions;
+  /** Source XML mappings part path; default xl/xmlMaps.xml. Round-trip only. */
+  xmlMapsPath?: string;
   /**
    * Workbook-level custom view snapshots. Excel requires one entry per
    * sheet-level customSheetViews guid (matched by guid).
@@ -196,6 +202,8 @@ export interface WorkbookOptions extends CorePropertiesOptions {
   /** Calculation chain cells (xl/calcChain.xml) — set on parse; the compiler
    * round-trips them verbatim and rebuilds from formula cells only when absent */
   calcChain?: CalcCell[] | false;
+  /** Source calculation-chain part path; default xl/calcChain.xml. Round-trip only. */
+  calcChainPath?: string;
   /** Pivot caches, either generated from source data or fully defined. */
   pivotCaches?: PivotCacheOptions[];
   /**

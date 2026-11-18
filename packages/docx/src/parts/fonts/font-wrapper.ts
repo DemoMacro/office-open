@@ -158,6 +158,7 @@ export class FontWrapper implements ViewWrapper {
     const usedRelationshipIds = new Set<string>();
     for (const font of this.fontOptionsWithKey) {
       for (const [partName, part] of embeddedFontParts(font)) {
+        if (part.data === undefined && part.odttfPath === undefined) continue;
         const sourceId = part.embedRid === undefined ? undefined : /^rId(\d+)$/.exec(part.embedRid);
         const sourceRelationshipId = sourceId ? `rId${sourceId[1]}` : undefined;
         const reuseSourceId =

@@ -144,18 +144,7 @@ export function parseTextboxBoundaries(
     const reusable = readUint16(table, entryOffset + 8, message) !== 0;
     const start = cps[index]!;
     const end = cps[index + 1]!;
-    if (reusable) {
-      if (end - start !== 1) {
-        throw new DocParseError("Invalid DOC textbox table: reusable boundary is not empty", {
-          part: "table",
-          path: "PlcftxbxTxt/FTXBXS",
-          recordIndex: index,
-          byteRange: [entryOffset, entryOffset + 22],
-          reason: "invalid-reusable-boundary",
-        });
-      }
-      continue;
-    }
+    if (reusable) continue;
     if (end - start <= 1) {
       throw new DocParseError("Invalid DOC textbox table: actual boundary is empty", {
         part: "table",

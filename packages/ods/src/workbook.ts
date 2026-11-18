@@ -14,8 +14,10 @@ import {
   attributeString,
   CHART_MIME,
   chartSubdocumentFiles,
+  bindGraphicStyleResources,
   childNamed,
   childrenNamed,
+  createGraphicStyleResources,
   descendantElements,
   generateOcf,
   hasOcfManifestOptions,
@@ -23,6 +25,8 @@ import {
   metaXml,
   OdfSchemaError,
   parseEmbeddedCharts,
+  graphicStyleFiles,
+  graphicStyleResourcesXml,
   officeFormsXml,
   parseOfficeForms,
   parseMeta,
@@ -40,10 +44,10 @@ import type { Element } from "@office-open/xml";
 
 import { dataMappingsXml, parseDataMappings } from "./data-mappings";
 import { parseWorksheetCharts } from "./drawing-chart";
-import { OdsParseError } from "./error";
+import { OdsGenerateError, OdsParseError } from "./error";
 import { base64ToBytes, bytesToBase64, imageMediaType } from "./image-data";
 import { parseNumberStyles } from "./numbering";
-import type { OdsWorkbookOptions } from "./options";
+import type { OdsCalculationSettingsOptions, OdsWorkbookOptions } from "./options";
 import {
   attachContentValidations,
   contentValidationsXml,
@@ -63,8 +67,13 @@ import {
   parseWorksheetGraphicStyles,
   parseWorksheetNamedExpressions,
 } from "./spreadsheet";
-import { parseDimensionStyles, parseStyleResources, styleResourcesXml } from "./styles";
-import { worksheet, worksheetXml } from "./worksheet";
+import {
+  parseDimensionStyles,
+  parseStyleResources,
+  parseTextStyles,
+  styleResourcesXml,
+} from "./styles";
+import { odsPackagePath, worksheet, worksheetImagePath, worksheetXml } from "./worksheet";
 
 export const MIME = "application/vnd.oasis.opendocument.spreadsheet";
 export const TEMPLATE_MIME = "application/vnd.oasis.opendocument.spreadsheet-template";
@@ -91,15 +100,64 @@ export const NAMESPACES = [
 ].join(" ");
 
 function generateOdsPackage(options: OdsWorkbookOptions): Uint8Array {
+  try {
+    return buildOdsPackage(options);
+  } catch (cause) {
+    if (
+      cause instanceof OdfSchemaError ||
+      (cause instanceof Error && cause.name === "XmlParseError")
+    )
+      throw new OdsGenerateError(
+        cause.message,
+        cause instanceof OdfSchemaError ? cause.part : "content.xml",
+        cause instanceof OdfSchemaError ? cause.path : "/office:document-content",
+        cause instanceof OdfSchemaError ? cause.elementName : "#text",
+        cause instanceof OdfSchemaError ? cause.reason : "invalid-xml-character",
+        { cause },
+      );
+    throw cause;
+  }
+}
+
+function buildOdsPackage(options: OdsWorkbookOptions): Uint8Array {
   const { packageManifest, packageMembers, styleResources, packageMediaType } = options;
+  if (options.pivotCaches?.length) {
+    throw new OdsGenerateError(
+      "ODS cannot represent OOXML pivot cache definitions independently of Data Pilot tables",
+      "content.xml",
+      "/office:document-content/office:body/office:spreadsheet/table:data-pilot-tables",
+      "table:data-pilot-tables",
+      "pivot-cache-not-representable",
+    );
+  }
   const mimeType = packageMediaType ?? MIME;
   const styles: string[] = styleResourcesXml(styleResources);
+  const graphicResources = createGraphicStyleResources();
+  bindGraphicStyleResources(styles, graphicResources);
+  let chartIndex = 0;
+  const chartNames = new Set<string>();
   const chartFrames = (options.worksheets ?? []).flatMap((worksheet, worksheetIndex) =>
-    (worksheet.charts ?? []).map((chart, chartIndex) => ({
-      name: chart.name || `Object ${worksheetIndex + chartIndex + 1}`,
-      worksheet: worksheet.name ?? `Sheet${worksheetIndex + 1}`,
-      chart,
-    })),
+    (worksheet.charts ?? []).map((chart) => {
+      chartIndex += 1;
+      const name = chart.name || `Object ${chartIndex}`;
+      const path = (chart.sourcePath ?? name).replace(/^\.\//u, "").replace(/\/$/u, "");
+      if (chartNames.has(path)) {
+        throw new OdsGenerateError(
+          `ODS chart subdocument path is duplicated: ${path}`,
+          "content.xml",
+          "/office:document-content/office:body/office:spreadsheet/table:table/table:shapes/draw:frame/draw:object",
+          "draw:object",
+          "duplicate-chart-path",
+        );
+      }
+      chartNames.add(path);
+      return {
+        name,
+        path,
+        worksheet: worksheet.name ?? `Sheet${worksheetIndex + 1}`,
+        chart,
+      };
+    }),
   );
   const validationNames = contentValidationNames(options.worksheets ?? []);
   const sheets = (options.worksheets ?? []).map((worksheet, index) =>
@@ -118,13 +176,27 @@ function generateOdsPackage(options: OdsWorkbookOptions): Uint8Array {
   );
   const files: OdfPackageFiles = {
     "content.xml": contentXml(sheets, styles, options),
-    "styles.xml": stylesXml(),
+    "styles.xml": stylesXml(graphicStyleResourcesXml(graphicResources)),
     "meta.xml": metaXml(options),
   };
   for (const member of packageMembers ?? []) addPackageFile(files, member);
+  for (const file of graphicStyleFiles(graphicResources)) files[file.path] = file.data;
   for (const entry of chartFrames)
-    Object.assign(files, chartSubdocumentFiles(`${entry.name}/`, entry.chart));
-  for (const worksheet of options.worksheets ?? []) {
+    Object.assign(files, chartSubdocumentFiles(`${entry.path}/`, entry.chart));
+  for (const [worksheetIndex, worksheet] of (options.worksheets ?? []).entries()) {
+    for (const [imageIndex, image] of (worksheet.images ?? []).entries()) {
+      if (image.data !== undefined) {
+        files[worksheetImagePath(image, worksheetIndex + 1, imageIndex)] = toUint8Array(image.data);
+      } else if (image.sourceUrl === undefined) {
+        throw new OdsGenerateError(
+          `content.xml: ${image.name ?? ""}: image data or source URL is missing`,
+          "content.xml",
+          "/office:document-content/office:body/office:spreadsheet/table:table/table:shapes/draw:frame/draw:image",
+          "draw:image",
+          "missing-image-source",
+        );
+      }
+    }
     for (const row of worksheet.rows ?? []) {
       for (const cell of row.cells ?? []) {
         for (const graphic of cell.graphics ?? []) {
@@ -149,7 +221,7 @@ function generateOdsPackage(options: OdsWorkbookOptions): Uint8Array {
     mimeType,
     files,
     Object.fromEntries([
-      ...chartFrames.map((entry) => [`${entry.name}/`, CHART_MIME]),
+      ...chartFrames.map((entry) => [`${entry.path}/`, CHART_MIME]),
       ...(options.worksheets ?? []).flatMap((worksheet) =>
         (worksheet.rows ?? []).flatMap((row) =>
           (row.cells ?? []).flatMap((cell) =>
@@ -253,10 +325,18 @@ function parseOdsPackage(data: Uint8Array): OdsWorkbookOptions {
   const stylesDocument =
     files["styles.xml"] === undefined ? undefined : readXml(files, "styles.xml");
   const body = childNamed(childNamed(content, "office:body"), "office:spreadsheet");
+  if (!body) {
+    throw new OdsParseError(
+      "content.xml: /office:document-content/office:body/office:spreadsheet: required spreadsheet body is missing",
+      "content.xml",
+      "/office:document-content/office:body/office:spreadsheet",
+      "office:spreadsheet",
+      "missing-required-element",
+    );
+  }
   const automaticStyles = childNamed(content, "office:automatic-styles");
   const dimensions = parseDimensionStyles(automaticStyles);
-  const cellStyles = parseNumberStyles(automaticStyles);
-  const chartPool = parseEmbeddedCharts(manifest, files, binaries);
+  const chartPool = parseEmbeddedCharts(manifest, files, binaries, files["styles.xml"]);
   const usedBinaryPaths = new Set<string>();
   const calcProperties = parseOdsSemantics(body);
   const forms = parseForms(body);
@@ -265,11 +345,28 @@ function parseOdsPackage(data: Uint8Array): OdsWorkbookOptions {
   const contentValidations = parseContentValidations(body);
   const dataMappings = parseDataMappings(body);
   const commonCellStyles = parseCommonCellStyles(stylesDocument);
-  const graphicStyles = parseWorksheetGraphicStyles(automaticStyles, stylesDocument);
+  const commonStyles = childNamed(stylesDocument, "office:styles");
+  const automaticCellStyles = parseNumberStyles(automaticStyles, [commonStyles]);
+  const cellStyles = new Map([...commonCellStyles, ...automaticCellStyles]);
+  const graphicStyles = parseWorksheetGraphicStyles(automaticStyles, stylesDocument, binaries);
+  const textStyles = parseTextStyles([
+    automaticStyles,
+    childNamed(stylesDocument, "office:automatic-styles"),
+    childNamed(stylesDocument, "office:styles"),
+  ]);
   const dxfs: DxfOptions[] = [];
   const localDefinedNames: NonNullable<WorkbookOptions["definedNames"]> = [];
   const worksheets = childrenNamed(body, "table:table").map((table, index) => {
-    const parsed = worksheet(table, index + 1, dimensions, cellStyles, graphicStyles);
+    const parsed = worksheet(
+      table,
+      index + 1,
+      dimensions,
+      cellStyles,
+      graphicStyles,
+      textStyles,
+      binaries,
+      usedBinaryPaths,
+    );
     const name = attributeString(table, "table:name");
     const charts = embeddedCharts
       .filter((entry) => entry.worksheet === (name ?? `Sheet${index + 1}`))
@@ -308,8 +405,10 @@ function parseOdsPackage(data: Uint8Array): OdsWorkbookOptions {
               graphic.data = undefined;
               continue;
             }
-            const binary = binaries[graphic.href];
-            if (binary) usedBinaryPaths.add(graphic.href);
+            const path = odsPackagePath(graphic.href);
+            graphic.href = path;
+            const binary = binaries[path];
+            if (binary) usedBinaryPaths.add(path);
             graphic.data = binary ? bytesToBase64(binary) : undefined;
             if (!graphic.data) {
               throw new OdsParseError(
@@ -338,7 +437,9 @@ function parseOdsPackage(data: Uint8Array): OdsWorkbookOptions {
     ...(dxfs.length > 0 ? { dxfs } : {}),
     worksheets,
   };
-  const styleResources = parseStyleResources(automaticStyles);
+  const styleResources = parseStyleResources(automaticStyles).filter(
+    (resource) => resource.family !== "graphic",
+  );
   const packageMembers = sourcePackageMembers(
     manifest,
     files,
@@ -447,14 +548,25 @@ export function contentXml(
   return result;
 }
 
-export function parseOdsSemantics(body: Element | undefined): WorkbookOptions["calculation"] {
+export function parseOdsSemantics(body: Element | undefined): OdsWorkbookOptions["calculation"] {
   const calculation = childNamed(body, "table:calculation-settings");
   if (!calculation) return undefined;
   const iteration = childNamed(calculation, "table:iteration");
-  const result: NonNullable<WorkbookOptions["calculation"]> = {
+  const caseSensitive = calculationBoolean(calculation, "table:case-sensitive");
+  const precisionAsShown = calculationBoolean(calculation, "table:precision-as-shown");
+  const automaticLabelSearch = calculationBoolean(calculation, "table:automatic-find-labels");
+  const regularExpressionSearch = calculationBoolean(calculation, "table:use-regular-expressions");
+  const wildcardSearch = calculationBoolean(calculation, "table:use-wildcards");
+  const searchCriteriaMustApplyToWholeCell = calculationBoolean(
+    calculation,
+    "table:search-criteria-must-apply-to-whole-cell",
+  );
+  const iterationStatus = iteration ? calculationIterationStatus(iteration) : undefined;
+  const result: OdsCalculationSettingsOptions = {
     ...(iteration
       ? {
-          iterate: attributeString(iteration, "table:status") === "enable",
+          ...(iterationStatus === undefined ? { iterationPresent: true } : {}),
+          ...(iterationStatus === undefined ? {} : { iterate: iterationStatus }),
           ...(attributeNumber(iteration, "table:steps") !== undefined
             ? { iterateCount: attributeNumber(iteration, "table:steps") }
             : {}),
@@ -463,21 +575,14 @@ export function parseOdsSemantics(body: Element | undefined): WorkbookOptions["c
             : {}),
         }
       : {}),
-    ...(attributeString(calculation, "table:case-sensitive") === "false"
-      ? { caseSensitive: false }
-      : {}),
-    ...(attributeString(calculation, "table:precision-as-shown") === "true"
-      ? { precisionAsShown: true }
-      : {}),
-    ...(attributeString(calculation, "table:automatic-find-labels") === "true"
-      ? { automaticLabelSearch: true }
-      : {}),
-    ...(attributeString(calculation, "table:use-regular-expressions") === "true"
-      ? { regularExpressionSearch: true }
-      : {}),
-    ...(attributeString(calculation, "table:use-wildcards") === "true"
-      ? { wildcardSearch: true }
-      : {}),
+    ...(caseSensitive === undefined ? {} : { caseSensitive }),
+    ...(precisionAsShown === undefined ? {} : { precisionAsShown }),
+    ...(automaticLabelSearch === undefined ? {} : { automaticLabelSearch }),
+    ...(regularExpressionSearch === undefined ? {} : { regularExpressionSearch }),
+    ...(wildcardSearch === undefined ? {} : { wildcardSearch }),
+    ...(searchCriteriaMustApplyToWholeCell === undefined
+      ? {}
+      : { searchCriteriaMustApplyToWholeCell }),
   };
   const nullDate = childNamed(calculation, "table:null-date");
   if (nullDate) {
@@ -494,13 +599,15 @@ export function parseOdsSemantics(body: Element | undefined): WorkbookOptions["c
           day: attributeNumber(nullDate, "table:date-value-day") ?? 30,
         };
   }
+  const nullYear = attributeNumber(calculation, "table:null-year");
+  if (nullYear !== undefined) result.nullYear = nullYear;
   assertCalculationChildren(calculation, result);
   return result;
 }
 
 export function assertCalculationChildren(
   calculation: Element,
-  result: NonNullable<WorkbookOptions["calculation"]>,
+  result: NonNullable<OdsWorkbookOptions["calculation"]>,
 ): void {
   for (const child of calculation.elements ?? []) {
     if (child.type !== "element") continue;
@@ -526,6 +633,32 @@ export function assertCalculationChildren(
       "element has no canonical calculation mapping",
     );
   }
+}
+
+function calculationBoolean(element: Element, name: string): boolean | undefined {
+  const value = attributeString(element, name);
+  if (value === undefined) return undefined;
+  if (value === "true" || value === "1") return true;
+  if (value === "false" || value === "0") return false;
+  throw unknownOdsElement(
+    element,
+    "/office:document-content/office:body/office:spreadsheet/table:calculation-settings",
+    name,
+    `invalid boolean value: ${value}`,
+  );
+}
+
+function calculationIterationStatus(element: Element): boolean | undefined {
+  const value = attributeString(element, "table:status");
+  if (value === undefined) return undefined;
+  if (value === "enable") return true;
+  if (value === "disable") return false;
+  throw unknownOdsElement(
+    element,
+    "/office:document-content/office:body/office:spreadsheet/table:calculation-settings/table:iteration",
+    "table:status",
+    `invalid iteration status: ${value ?? ""}`,
+  );
 }
 
 export function formsXml(forms: WorkbookOptions["forms"]): string {
@@ -559,16 +692,19 @@ export function parseForms(body: Element | undefined): OfficeFormsOptions | unde
   };
 }
 
-export function semanticsXml(calculation: WorkbookOptions["calculation"]): string {
+export function semanticsXml(calculation: OdsWorkbookOptions["calculation"]): string {
   if (!calculation) return "";
   const hasSettings =
     calculation.iterate !== undefined ||
+    calculation.iterationPresent !== undefined ||
     calculation.caseSensitive !== undefined ||
     calculation.precisionAsShown !== undefined ||
     calculation.automaticLabelSearch !== undefined ||
     calculation.regularExpressionSearch !== undefined ||
     calculation.wildcardSearch !== undefined ||
-    calculation.nullDate !== undefined;
+    calculation.nullDate !== undefined ||
+    calculation.searchCriteriaMustApplyToWholeCell !== undefined ||
+    calculation.nullYear !== undefined;
   if (!hasSettings) return "";
   const iteration = {
     "table:status":
@@ -584,9 +720,14 @@ export function semanticsXml(calculation: WorkbookOptions["calculation"]): strin
       "table:automatic-find-labels": calculation.automaticLabelSearch,
       "table:use-regular-expressions": calculation.regularExpressionSearch,
       "table:use-wildcards": calculation.wildcardSearch,
+      "table:search-criteria-must-apply-to-whole-cell":
+        calculation.searchCriteriaMustApplyToWholeCell,
+      "table:null-year": calculation.nullYear,
     },
     [
-      ...(calculation.iterate !== undefined ? [xmlElement("table:iteration", iteration)] : []),
+      ...(calculation.iterate !== undefined || calculation.iterationPresent
+        ? [xmlElement("table:iteration", iteration)]
+        : []),
       ...(calculation.nullDate
         ? [
             xmlElement("table:null-date", {
@@ -622,8 +763,11 @@ export function definedNamesXml(definedNames: WorkbookOptions["definedNames"]): 
   );
 }
 
-export function stylesXml(): string {
-  return `<?xml version="1.0" encoding="UTF-8"?><office:document-styles ${NAMESPACES} office:version="1.3"><office:styles/></office:document-styles>`;
+export function stylesXml(graphicResources: readonly string[] = []): string {
+  const commonStyles = graphicResources.length
+    ? `<office:styles>${graphicResources.join("")}</office:styles>`
+    : "<office:styles/>";
+  return `<?xml version="1.0" encoding="UTF-8"?><office:document-styles ${NAMESPACES} office:version="1.3">${commonStyles}</office:document-styles>`;
 }
 
 export function rejectUnknownSpreadsheetChildren(
@@ -664,10 +808,12 @@ export function parseDefinedNames(body: Element | undefined): WorkbookOptions["d
     ...childrenNamed(expressions, "table:named-range").map((range) => ({
       name: attributeString(range, "table:name") ?? "",
       value: attributeString(range, "table:cell-range-address") ?? "",
+      hidden: attributeString(range, "loext:hidden") === "true" || undefined,
     })),
     ...childrenNamed(expressions, "table:named-expression").map((expression) => ({
       name: attributeString(expression, "table:name") ?? "",
       value: attributeString(expression, "table:expression") ?? "",
+      hidden: attributeString(expression, "loext:hidden") === "true" || undefined,
     })),
   ];
 }

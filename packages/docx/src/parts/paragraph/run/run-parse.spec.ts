@@ -10,6 +10,7 @@ import { parseRun, parseRunProperties, parsedRunToOptions } from "./run-parse";
 
 const W_NS = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"';
 const W16SE_NS = 'xmlns:w16se="http://schemas.microsoft.com/office/word/2015/wordml/symex"';
+const W14_NS = 'xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml"';
 
 function roundTrip(opts: RunPropertiesOptions): RunPropertiesOptions {
   const rPr = stringifyRunProperties(opts)!;
@@ -289,6 +290,65 @@ describe("parseRunProperties round-trip", () => {
     expect(parsed.rightToLeft).toBe(false);
     expect(parsed.rightToLeftRaw).toBe("0");
     expect(stringifyRunProperties(parsed)).toContain('<w:rtl w:val="0"/>');
+  });
+
+  it("round-trips w14 attributes on run-property children", () => {
+    const doc = parseXml(
+      `<w:rPr ${W_NS} ${W14_NS}><w:b w:val="1" w14:paraId="1A2B3C4D" w14:textId="77777777"/></w:rPr>`,
+    );
+    const parsed = parseRunProperties(doc.elements![0]!);
+    expect(parsed.extensionAttributes).toEqual([
+      {
+        element: "w:b",
+        occurrence: 0,
+        attributes: { "w14:paraId": "1A2B3C4D", "w14:textId": "77777777" },
+      },
+    ]);
+    expect(stringifyRunProperties(parsed)).toContain(
+      '<w:b w14:paraId="1A2B3C4D" w14:textId="77777777" w:val="1"/>',
+    );
+  });
+
+  it("round-trips w16du attributes on run-property children", () => {
+    const source =
+      `<w:rPr ${W_NS} xmlns:w16du="http://schemas.microsoft.com/office/word/2023/wordml/word16du">` +
+      '<w:b w:val="1" w16du:dateUtc="2026-01-15T09:30:00.000Z"/></w:rPr>';
+    const root = parseXml(source).elements![0]!;
+    const parsed = parseRunProperties(root);
+    expect(stringifyRunProperties(parsed)).toContain('w16du:dateUtc="2026-01-15T09:30:00.000Z"');
+  });
+
+  it("does not duplicate typed revision timestamps from extension attributes", () => {
+    const source =
+      `<w:rPr ${W_NS} xmlns:w16du="http://schemas.microsoft.com/office/word/2023/wordml/word16du">` +
+      '<w:rPrChange w:id="1" w:author="Alice" w16du:dateUtc="2026-01-15T09:30:00.000Z">' +
+      '<w:rPr><w:ins w:id="2" w:author="Bob" w16du:dateUtc="2026-01-16T09:30:00.000Z"/></w:rPr>' +
+      "</w:rPrChange></w:rPr>";
+    const parsed = parseRunProperties(parseXml(source).elements![0]!);
+    const generated = stringifyRunProperties(parsed)!;
+
+    expect(() =>
+      parseXml(
+        `<w:r ${W_NS} xmlns:w16du="http://schemas.microsoft.com/office/word/2023/wordml/word16du">${generated}</w:r>`,
+      ),
+    ).not.toThrow();
+    expect(generated.match(/w16du:dateUtc=/g)).toHaveLength(2);
+  });
+
+  it("keeps extension attributes on repeated run-property elements separate", () => {
+    const source =
+      `<w:rPr ${W_NS} ${W14_NS}>` +
+      '<w:rFonts w:ascii="A" w14:paraId="11111111"/>' +
+      '<w:rFonts w:hAnsi="B" w14:paraId="22222222"/>' +
+      "</w:rPr>";
+    const root = parseXml(source).elements![0]!;
+    const parsed = parseRunProperties(root);
+    const output = stringifyRunProperties(parsed)!;
+    expect(output).toContain('w14:paraId="11111111"');
+    expect(output).toContain('w14:paraId="22222222"');
+    expect(output.indexOf('w14:paraId="11111111"')).toBeLessThan(
+      output.indexOf('w14:paraId="22222222"'),
+    );
   });
 
   it("does not auto-pair iCs when only italic is set", () => {

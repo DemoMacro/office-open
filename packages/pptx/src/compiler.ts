@@ -166,11 +166,11 @@ function relationshipIds(
   });
 }
 
-function sourceTagsRel(options: PresentationOptions) {
+function sourceTagsRel(options: PresentationOptions, presentationPath: string) {
   const rId = options.customerData?.tags?.rId;
   return options.passthroughRelationships?.find(
     (rel) =>
-      rel.source === "ppt/presentation.xml" &&
+      rel.source === presentationPath &&
       rel.relationshipType.split("/").pop() === "tags" &&
       (rId === undefined || rel.rId === rId),
   );
@@ -182,10 +182,14 @@ function tagOutputPaths(options: PresentationOptions): string[] {
   );
 }
 
-function sourceCustomXmlRel(options: PresentationOptions, item: CustomXmlItemOptions) {
+function sourceCustomXmlRel(
+  options: PresentationOptions,
+  item: CustomXmlItemOptions,
+  presentationPath: string,
+) {
   return options.passthroughRelationships?.find(
     (rel) =>
-      rel.source === "ppt/presentation.xml" &&
+      rel.source === presentationPath &&
       rel.relationshipType === RELATIONSHIP_TYPES.customXml &&
       resolveRelationshipTarget(rel.source, rel.target) === item.contentPath,
   );
@@ -201,6 +205,7 @@ export function compilePresentation(
   packageVariant: OoxmlPackageVariant = "standard",
 ): Zippable {
   const packageFormat = ooxmlPackageFormatInfo("presentation", packageVariant);
+  const presentationPath = options.presentationPath ?? packageFormat.mainPartPath;
   const descCtx = new PptxWriteContext();
   descCtx.reproducible = reproducible;
   const slides = options.slides ?? [];
@@ -231,7 +236,12 @@ export function compilePresentation(
   // Presence-based: a parsed empty docProps/custom.xml round-trips as an
   // empty part (undefined = fresh document, omit the part).
   const hasCustomProperties = options.customProperties !== undefined;
-  const presRels = initPresRels(masters, slides, options.passthroughRelationships);
+  const presRels = initPresRels(
+    masters,
+    slides,
+    options.passthroughRelationships,
+    presentationPath,
+  );
   // Group slides into p14:sections by name (first-occurrence order); slides
   // without a section name are left ungrouped (absent from p14:sectionLst).
   const sectionOrder: string[] = [];
@@ -256,7 +266,7 @@ export function compilePresentation(
 
   const customXmlRIds = new Map<string, string>();
   for (const [index, item] of (options.customXml ?? []).entries()) {
-    const sourceRel = sourceCustomXmlRel(options, item);
+    const sourceRel = sourceCustomXmlRel(options, item, presentationPath);
     const target = sourceRel?.target ?? `../customXml/item${index + 1}.xml`;
     const existingRelationshipId = presRels.idOf(RELATIONSHIP_TYPES.customXml, target);
     const rId = existingRelationshipId ?? presRels.add(RELATIONSHIP_TYPES.customXml, target);
@@ -271,13 +281,10 @@ export function compilePresentation(
       (left, right) => (left.presentationMasterOrder ?? 0) - (right.presentationMasterOrder ?? 0),
     );
   const masterTargets = attachedMasters.map((master) =>
-    relativePartTarget("ppt/presentation.xml", master.path),
+    relativePartTarget(presentationPath, master.path),
   );
   const slideTargets = slides.map((slide, index) =>
-    relativePartTarget(
-      "ppt/presentation.xml",
-      slide.sourcePath ?? `ppt/slides/slide${index + 1}.xml`,
-    ),
+    relativePartTarget(presentationPath, slide.sourcePath ?? `ppt/slides/slide${index + 1}.xml`),
   );
   const presOptions: PresentationPartOptions = {
     slideWidth: sz.width,
@@ -290,6 +297,9 @@ export function compilePresentation(
     masterCount: attachedMasters.length,
     sections,
     ...buildPresAttrOpts(options),
+    ...(options.notesMasterIdListPresent !== undefined
+      ? { notesMasterIdListPresent: options.notesMasterIdListPresent }
+      : {}),
     ...(options.ext !== undefined ? { ext: options.ext } : {}),
   };
   if (options.customerData?.data && customXmlRIds.size > 0) {
@@ -301,7 +311,7 @@ export function compilePresentation(
     };
   }
   if (options.tags?.length) {
-    const sourceTags = sourceTagsRel(options);
+    const sourceTags = sourceTagsRel(options, presentationPath);
     const hasFreshPresentationTags = !sourceTags && options.tags.some((part) => !part.sourcePath);
     if (hasFreshPresentationTags) {
       const tagsRId = presRels.add(RELATIONSHIP_TYPES.tags, "tags/tags1.xml");
@@ -318,7 +328,7 @@ export function compilePresentation(
     );
   const hasAppProperties = options.includeAppProperties ?? true;
   const fileRels = buildRootRelationships(
-    "ppt/presentation.xml",
+    presentationPath,
     hasCustomProperties,
     options.passthroughRelationships,
     {
@@ -480,17 +490,16 @@ export function compilePresentation(
   }
   if (!presRels.hasRelationshipKind("theme")) {
     const sourceThemeRel = options.passthroughRelationships?.find(
-      (rel) =>
-        rel.source === "ppt/presentation.xml" && rel.relationshipType === RELATIONSHIP_TYPES.theme,
+      (rel) => rel.source === presentationPath && rel.relationshipType === RELATIONSHIP_TYPES.theme,
     );
     if (!options.passthroughRelationships) {
       presRels.add(RELATIONSHIP_TYPES.theme, "theme/theme1.xml");
     } else if (sourceThemeRel) {
-      const themePath = resolveRelationshipTarget("ppt/presentation.xml", sourceThemeRel.target);
+      const themePath = resolveRelationshipTarget(presentationPath, sourceThemeRel.target);
       presRels.addRelationship(
         sourceThemeRel.rId,
         RELATIONSHIP_TYPES.theme,
-        relativePartTarget("ppt/presentation.xml", themePath),
+        relativePartTarget(presentationPath, themePath),
       );
     }
   }
@@ -520,7 +529,7 @@ export function compilePresentation(
 
   mapping["Presentation"] = {
     data: replacedPresentationXml,
-    path: "ppt/presentation.xml",
+    path: presentationPath,
   };
   for (const [tagIndex, tagPart] of (options.tags ?? []).entries()) {
     mapping[`Tags${tagIndex}`] = {
@@ -530,7 +539,7 @@ export function compilePresentation(
   }
   mapping["PresentationRelationships"] = {
     data: XML_DECL + presRels.serialize(),
-    path: "ppt/_rels/presentation.xml.rels",
+    path: partPathToRelsPath(presentationPath),
   };
 
   // Slides
@@ -573,11 +582,11 @@ export function compilePresentation(
         rawParts: options.rawParts,
         forcedOverrides: [
           {
-            path: packageFormat.mainPartPath,
+            path: presentationPath,
             contentType: resolveMainPartContentType(
               "presentation",
               options.contentTypes,
-              packageFormat.mainPartPath,
+              presentationPath,
               packageFormat.mainContentType,
             ),
           },

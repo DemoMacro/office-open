@@ -21,6 +21,7 @@ export type {
   AlignmentOptions,
   CustomTableStyleOptions,
   CustomCellStyleOptions,
+  CellStyleCategory,
   CellStyleXfOptions,
   StyleExtensionOptions,
 } from "./styles";
@@ -68,6 +69,9 @@ export type {
   IconSetOptions,
   CfvoOptions,
   FormulaOptions,
+  RichTextOptions,
+  RichTextRunOptions,
+  RichTextRunPropertiesOptions,
   ScenarioOptions,
   ScenarioDefinition,
   ScenarioCellOptions,
@@ -209,6 +213,7 @@ export type {
   FileRecoveryPropertiesOptions,
   WebPublishingOptions,
   FileSharingOptions,
+  CalculationPropertiesOptions,
   DefinedNameOptions,
 } from "./workbook";
 export type {

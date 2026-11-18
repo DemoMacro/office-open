@@ -29,6 +29,7 @@ import { attr, attrNum, findChild, textOf } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 import { escapeXml } from "@office-open/xml";
 
+import { decodeSpreadsheetXml, escapeSpreadsheetXml } from "../shared/xml";
 import { parseA1Cell } from "../util/index";
 import { buildRstXml, parseRPr, tElement } from "./shared-strings";
 import type {
@@ -66,7 +67,7 @@ export const commentsDesc: CustomDescriptor<CommentsDocOptions> = {
     ];
 
     for (const author of authors) {
-      p.push(`<author>${escapeXml(author)}</author>`);
+      p.push(`<author>${escapeSpreadsheetXml(author)}</author>`);
     }
 
     p.push("</authors><commentList>");
@@ -94,7 +95,7 @@ export const commentsDesc: CustomDescriptor<CommentsDocOptions> = {
     const authorsEl = findChild(el, "authors");
     if (authorsEl) {
       for (const a of authorsEl.elements ?? []) {
-        if (a.name === "author") authors.push(textOf(a) ?? "");
+        if (a.name === "author") authors.push(decodeSpreadsheetXml(textOf(a) ?? ""));
       }
     }
 

@@ -13,6 +13,7 @@ import type {
   OfficeFormsOptions,
   SequenceDeclarationOptions,
   VariableDeclarationOptions,
+  VariableValueType,
 } from "@office-open/core";
 import type {
   BlockContentChild,
@@ -26,7 +27,9 @@ import {
   chartSubdocumentFiles,
   childNamed,
   childrenNamed,
+  bindGraphicStyleResources,
   descendantElements,
+  createGraphicStyleResources,
   generateOcf,
   hasOcfManifestOptions,
   metaXml,
@@ -35,6 +38,8 @@ import {
   parseOfficeForms,
   parseEmbeddedCharts,
   parseGraphicStyles,
+  parseGraphicStyleResources,
+  graphicStyleFiles,
   parseMeta,
   readOcfSync,
   readXml,
@@ -51,6 +56,7 @@ import type { Element } from "@office-open/xml";
 import {
   automaticStyleResourcesXml,
   parseStyles,
+  type ParsedStyle,
   type OdtAutomaticStyleResource,
   type StyleMap,
 } from "./automatic-styles";
@@ -63,6 +69,7 @@ import {
   parseCommonStyles,
 } from "./common-styles";
 import {
+  assertSingleFramePayload,
   isShapeElement,
   parseChartFrame,
   parseGroup,
@@ -75,7 +82,7 @@ import {
   type OdtImage,
 } from "./drawing";
 import type { OdtEmbeddedObjectOptions } from "./embedded-objects";
-import { OdtParseError } from "./error";
+import { OdtGenerateError, OdtParseError } from "./error";
 import {
   listParagraphLevel,
   listXml,
@@ -84,7 +91,12 @@ import {
   parseOutlineStyle,
   type AbstractNumbering,
 } from "./list";
-import { parseMasterHeaderFooter, parsePageLayout } from "./master-pages";
+import {
+  masterHeaderFooter,
+  parseMasterPages,
+  parsePageLayout,
+  parsePageLayouts,
+} from "./master-pages";
 import { parseNotesConfiguration } from "./notes";
 import type { OdtDocumentOptions } from "./options";
 import {
@@ -143,6 +155,7 @@ export interface ParseContext {
   listDefinitions: AbstractNumbering[];
   outline?: AbstractNumbering;
   binaries: Record<string, Uint8Array>;
+  binaryMediaTypes: Map<string, string>;
   usedBinaryPaths: Set<string>;
   notes: {
     footnotes: NoteEntry[];
@@ -152,7 +165,9 @@ export interface ParseContext {
   comments: NonNullable<DocumentOptions["comments"]>;
   annotationIds: Map<string, number>;
   bookmarkIds: Map<string, number>;
+  bookmarkOpenIds: Map<string, number[]>;
   bookmarkIdAllocator: { value: number };
+  deletedContentDepth: number;
   indexAutoMarkFile?: import("./options").OdtIndexAutoMarkFileOptions;
   pendingFormatChanges: Map<string, import("./paragraph").ChangedProperties>;
   sectionSources: Map<string, import("./options").OdtSectionSourceOptions>;
@@ -161,18 +176,40 @@ export interface ParseContext {
   pendingInsertions: Set<string>;
   declaredSequences: SequenceDeclarationOptions[];
   declaredVariables: VariableDeclarationOptions[];
-  odtDeclaredVariables: import("./paragraph").OdtVariableDeclarationOptions[];
   documentVariables: NonNullable<NonNullable<DocumentOptions["settings"]>["docVars"]>;
   pendingSequences: Set<string>;
-  pendingVariables: Map<string, import("./paragraph").OdtVariableValueType>;
+  pendingVariables: Map<string, VariableValueType>;
   sourcePath?: string;
   nextEmbeddedShapeId: number;
   trackRevisions?: boolean;
 }
 
 function generateOdtPackage(options: OdtDocumentOptions): Uint8Array {
+  try {
+    return buildOdtPackage(options);
+  } catch (cause) {
+    if (
+      cause instanceof OdfSchemaError ||
+      (cause instanceof Error && cause.name === "XmlParseError")
+    )
+      throw new OdtGenerateError(
+        cause.message,
+        cause instanceof OdfSchemaError ? cause.part : "content.xml",
+        cause instanceof OdfSchemaError ? cause.path : "/office:document-content",
+        cause instanceof OdfSchemaError ? cause.elementName : "#text",
+        cause instanceof OdfSchemaError ? cause.reason : "invalid-xml-character",
+        { cause },
+      );
+    throw cause;
+  }
+}
+
+function buildOdtPackage(options: OdtDocumentOptions): Uint8Array {
   const { packageManifest, embeddedObjects, packageMembers, styleResources } = options;
+  validateSectionProjection(options.sections);
   const styles: string[] = automaticStyleResourcesXml(styleResources);
+  const graphicResources = createGraphicStyleResources();
+  bindGraphicStyleResources(styles, graphicResources);
   const blocks = options.sections.flatMap((section) => section.children);
   const images: OdtImage[] = [];
   const charts: OdtChart[] = [];
@@ -197,6 +234,65 @@ function generateOdtPackage(options: OdtDocumentOptions): Uint8Array {
     embeddedObjects ?? [],
   );
   const body = declarationsXml(options, notes) + bodyBlocks;
+  const section = options.sections[0];
+  const sectionProperties = section?.properties;
+  const referencedPageLayoutName = options.masterPages?.[0]?.pageLayoutName;
+  const pageLayouts = options.pageLayouts?.map((layout, index) =>
+    (referencedPageLayoutName !== undefined
+      ? layout.name !== referencedPageLayoutName
+      : index !== 0) || sectionProperties === undefined
+      ? layout
+      : {
+          ...layout,
+          properties: {
+            ...layout.properties,
+            ...sectionProperties,
+            ...(layout.properties?.pageSize || sectionProperties.pageSize
+              ? { pageSize: { ...layout.properties?.pageSize, ...sectionProperties.pageSize } }
+              : {}),
+            ...(layout.properties?.pageMargin || sectionProperties.pageMargin
+              ? {
+                  pageMargin: { ...layout.properties?.pageMargin, ...sectionProperties.pageMargin },
+                }
+              : {}),
+          },
+        },
+  );
+  const masterPages = options.masterPages?.map((master, index) =>
+    index !== 0 || section === undefined
+      ? master
+      : {
+          ...master,
+          ...(section.headers === undefined ? {} : { headers: section.headers }),
+          ...(section.footers === undefined ? {} : { footers: section.footers }),
+        },
+  );
+  const headerFooter = masterHeaderFooter(options.sections[0], {
+    renderBlocks: (children) =>
+      blocksXml(children, styles, images, notes, options.numbering, charts, embeddedObjects ?? []),
+  });
+  const masterPageXml = masterPages?.map((master) => {
+    const content = masterHeaderFooter(master, {
+      renderBlocks: (children) =>
+        blocksXml(
+          children,
+          styles,
+          images,
+          notes,
+          options.numbering,
+          charts,
+          embeddedObjects ?? [],
+        ),
+    });
+    return xmlElement(
+      "style:master-page",
+      {
+        "style:name": master.name,
+        "style:page-layout-name": master.pageLayoutName,
+      },
+      content ? [content] : [],
+    );
+  });
   const files: OdfPackageFiles = {
     "content.xml": contentXml(body, styles, fontFaceDecls(options.fonts)),
     "styles.xml": documentStylesXml(
@@ -204,10 +300,16 @@ function generateOdtPackage(options: OdtDocumentOptions): Uint8Array {
       options.settings,
       options.numbering,
       options.styles,
+      headerFooter,
+      pageLayouts,
+      masterPages,
+      masterPageXml,
+      graphicResources,
     ),
     "meta.xml": metaXml(options),
   };
   for (const image of images) files[image.path] = image.data;
+  for (const file of graphicStyleFiles(graphicResources)) files[file.path] = file.data;
   for (const entry of charts)
     Object.assign(files, chartSubdocumentFiles(`${entry.path}/`, entry.chart));
   const mediaTypes: Record<string, string> = Object.fromEntries(
@@ -230,6 +332,32 @@ function generateOdtPackage(options: OdtDocumentOptions): Uint8Array {
     }
   }
   return generateOcf(options.packageMediaType ?? MIME, files, mediaTypes, packageManifest);
+}
+
+function validateSectionProjection(sections: OdtDocumentOptions["sections"]): void {
+  const first = sections[0];
+  if (first === undefined || sections.length < 2) return;
+  const firstProjection = JSON.stringify({
+    properties: first.properties,
+    headers: first.headers,
+    footers: first.footers,
+  });
+  const hasDifferentSection = sections.slice(1).some(
+    (section) =>
+      JSON.stringify({
+        properties: section.properties,
+        headers: section.headers,
+        footers: section.footers,
+      }) !== firstProjection,
+  );
+  if (!hasDifferentSection) return;
+  throw new OdtGenerateError(
+    "ODT cannot represent multiple canonical sections with different page or header/footer properties",
+    "styles.xml",
+    "/office:document-styles/office:master-styles/style:master-page",
+    "style:master-page",
+    "multiple-sections-not-representable",
+  );
 }
 
 export function generateDocumentSync<T extends OutputType = "uint8array">(
@@ -457,9 +585,27 @@ function parseOdtPackage(data: Uint8Array): OdtDocumentOptions {
   const { files, binaries, manifest } = readOcfSync(data, [MIME, TEMPLATE_MIME]);
   const content = readXml(files, "content.xml");
   const body = childNamed(childNamed(content, "office:body"), "office:text");
+  if (!body) {
+    throw new OdtParseError(
+      "content.xml: /office:document-content/office:body/office:text: required document body is missing",
+      "content.xml",
+      "/office:document-content/office:body/office:text",
+      "office:text",
+      "missing-required-element",
+    );
+  }
   const styleContainer = childNamed(content, "office:automatic-styles");
-  const styleMap = parseStyles(styleContainer);
-  const graphicStyles = parseGraphicStyles(styleContainer);
+  const commonStyleContainer = childNamed(readXml(files, "styles.xml"), "office:styles");
+  const styleMap = parseStyles(commonStyleContainer, styleContainer);
+  const graphicResources = parseGraphicStyleResources(
+    [commonStyleContainer, styleContainer],
+    binaries,
+  );
+  const commonGraphicStyles = parseGraphicStyles(commonStyleContainer, "graphic", graphicResources);
+  const graphicStyles = new Map([
+    ...commonGraphicStyles,
+    ...parseGraphicStyles(styleContainer, "graphic", graphicResources, commonGraphicStyles),
+  ]);
   const chartBodies = parseEmbeddedCharts(manifest, files, binaries, files["styles.xml"]);
   const objectMediaTypes = new Map(
     manifest.entries
@@ -488,12 +634,19 @@ function parseOdtPackage(data: Uint8Array): OdtDocumentOptions {
     listDefinitions: parseListNumberings(styleContainer),
     outline: parseOutlineStyle(files),
     binaries,
+    binaryMediaTypes: new Map(
+      manifest.entries.flatMap((entry) =>
+        entry.mediaType ? [[entry.fullPath, entry.mediaType] as const] : [],
+      ),
+    ),
     usedBinaryPaths: new Set(),
     notes: { footnotes: [], endnotes: [], forms: { containers: [] } },
     comments: [],
     annotationIds: new Map(),
     bookmarkIds: new Map(),
+    bookmarkOpenIds: new Map(),
     bookmarkIdAllocator: { value: 0 },
+    deletedContentDepth: 0,
     pendingFormatChanges: new Map(),
     sectionSources: new Map(),
     changes: new Map(),
@@ -501,7 +654,6 @@ function parseOdtPackage(data: Uint8Array): OdtDocumentOptions {
     pendingInsertions: new Set(),
     declaredSequences: [],
     declaredVariables: [],
-    odtDeclaredVariables: [],
     documentVariables: [],
     pendingSequences: new Set(),
     pendingVariables: new Map(),
@@ -521,6 +673,8 @@ function parseOdtPackage(data: Uint8Array): OdtDocumentOptions {
     ...meta,
     sections: [{ properties: parsePageLayout(files), children }],
   };
+  const pageLayouts = parsePageLayouts(files);
+  if (pageLayouts.length > 0) result.pageLayouts = pageLayouts;
   if (calculationSettings)
     result.calculationSettings = parseCalculationSettings(calculationSettings);
   const packageMembers = sourcePackageMembers(
@@ -533,8 +687,13 @@ function parseOdtPackage(data: Uint8Array): OdtDocumentOptions {
   );
   if (embeddedObjects.size > 0) result.embeddedObjects = [...embeddedObjects.values()];
   if (packageMembers.length > 0) result.packageMembers = packageMembers;
-  const styleResources: OdtAutomaticStyleResource[] = [...styleMap]
-    .filter(([, style]) => (style.properties ?? []).some(hasStyleProjection))
+  const automaticStyles = parseStyles(styleContainer);
+  const styleResources: OdtAutomaticStyleResource[] = [...automaticStyles]
+    .filter(
+      ([, style]) =>
+        (style.family !== "graphic" || !hasGraphicResourceReference(style)) &&
+        (style.properties ?? []).some(hasStyleProjection),
+    )
     .map(([name, style]) => ({
       name,
       family: style.family,
@@ -552,8 +711,6 @@ function parseOdtPackage(data: Uint8Array): OdtDocumentOptions {
   if (context.comments.length > 0) result.comments = context.comments;
   if (context.declaredSequences.length > 0) result.sequenceDeclarations = context.declaredSequences;
   if (context.declaredVariables.length > 0) result.variableDeclarations = context.declaredVariables;
-  if (context.odtDeclaredVariables.length > 0)
-    result.odtVariableDeclarations = context.odtDeclaredVariables;
   if (context.documentVariables.length > 0)
     result.settings = { ...result.settings, docVars: context.documentVariables };
   if (context.notes.footnotes.length > 0) result.footnotes = context.notes.footnotes;
@@ -581,11 +738,15 @@ function parseOdtPackage(data: Uint8Array): OdtDocumentOptions {
       ...result.styles,
       default: { ...result.styles?.default, document: defaultStyle },
     };
-  const masterHeaderFooter = parseMasterHeaderFooter(files);
+  const masterPages = parseMasterPages(files, (elements, path) =>
+    parseBlocks(elements, context, 0, undefined, path),
+  );
+  if (masterPages.length > 0) result.masterPages = masterPages;
   const section = result.sections[0];
   if (section) {
-    if (masterHeaderFooter.headers) section.headers = masterHeaderFooter.headers;
-    if (masterHeaderFooter.footers) section.footers = masterHeaderFooter.footers;
+    const firstMaster = masterPages[0];
+    if (firstMaster?.headers) section.headers = firstMaster.headers;
+    if (firstMaster?.footers) section.footers = firstMaster.footers;
   }
   return result;
 }
@@ -595,6 +756,17 @@ function hasStyleProjection(property: {
   children?: unknown[];
 }) {
   return Object.keys(property.attributes).length > 0 || (property.children?.length ?? 0) > 0;
+}
+
+function hasGraphicResourceReference(style: ParsedStyle): boolean {
+  const resourceAttributes = new Set([
+    "draw:fill-gradient-name",
+    "draw:fill-hatch-name",
+    "draw:fill-image-name",
+  ]);
+  return (style.properties ?? []).some((property) =>
+    Object.keys(property.attributes).some((name) => resourceAttributes.has(name)),
+  );
 }
 
 function validateEmbeddedObjectBodies(
@@ -681,6 +853,21 @@ export function blockXml(
   charts: OdtChart[],
   embeddedObjects: OdtEmbeddedObjectOptions[] = [],
 ): string {
+  if ("textbox" in child) {
+    return xmlElement("draw:frame", { "text:anchor-type": "as-char" }, [
+      xmlElement("draw:text-box", undefined, [
+        blocksXml(
+          child.textbox.children ?? [],
+          styles,
+          images,
+          notes,
+          numbering,
+          charts,
+          embeddedObjects,
+        ),
+      ]),
+    ]);
+  }
   if ("toc" in child)
     return indexXml(child.toc, styles, images, notes, numbering, charts, embeddedObjects);
   if ("sdt" in child && child.sdt.properties.bibliography) return bibliographyIndexXml(child.sdt);
@@ -748,7 +935,21 @@ export function blockXml(
       ],
     );
   }
-  return "";
+  const elementName =
+    "altChunk" in child
+      ? "altChunk"
+      : "subDoc" in child
+        ? "subDoc"
+        : "customXml" in child
+          ? "customXml"
+          : "unknown";
+  throw new OdtGenerateError(
+    `ODT block child ${elementName} has no canonical ODF mapping`,
+    "content.xml",
+    "/office:document-content/office:body/office:text",
+    elementName,
+    "unsupported-block-child",
+  );
 }
 
 export function parseBlock(element: Element, context: ParseContext): SectionChild {
@@ -981,11 +1182,19 @@ export function parseBlocks(
       continue;
     }
     if (element.name === "text:list") {
-      // A typed text:list unwraps to bullet or numbered paragraphs at the
-      // nesting depth, judged by its referenced list style; list-header
-      // content (rare) keeps the generic fall-through below.
       const name = attributeString(element, "text:style-name") ?? "";
       const state = { name, ordered: context.listStyles.get(name) ?? false };
+      for (const header of childrenNamed(element, "text:list-header")) {
+        push(
+          ...parseBlocks(
+            header.elements ?? [],
+            context,
+            listDepth,
+            undefined,
+            `${sourcePath}/text:list/text:list-header`,
+          ),
+        );
+      }
       for (const item of childrenNamed(element, "text:list-item")) {
         push(
           ...parseBlocks(
@@ -1016,21 +1225,19 @@ export function parseBlocks(
       const decoded = canonicalBookmarkName(sourceName, bookmarkDiagnostic);
       const name = decoded.name;
       if (!name) throw unknownOdtElement(element);
-      const existingId = context.bookmarkIds.get(name);
       const encodedId = /^(?:bookmark-)?(\d+)$/.exec(
-        attributeString(element, "text:id") ??
-          attributeString(element, "xml:id") ??
+        attributeString(element, "xml:id") ??
           (decoded.encodedId !== undefined ? String(decoded.encodedId) : ""),
       )?.[1];
-      if (existingId !== undefined && sourceName === name && encodedId !== String(existingId))
-        throw unknownOdtElement(element);
       if (encodedId !== undefined) parseBookmarkId(encodedId, bookmarkDiagnostic);
-      const id =
-        decoded.encodedId ??
-        existingId ??
-        (encodedId ? parseBookmarkId(encodedId, bookmarkDiagnostic) : nextBookmarkId(context));
-      if (existingId === undefined) trackBookmarkId(context, name, id);
-      if (sourceName !== name) trackBookmarkId(context, sourceName, id);
+      const id = registerBookmarkStart(
+        context,
+        sourceName,
+        name,
+        encodedId === undefined
+          ? decoded.encodedId
+          : parseBookmarkId(encodedId, bookmarkDiagnostic),
+      );
       push({
         bookmarkStart: { id, name },
       });
@@ -1042,8 +1249,9 @@ export function parseBlocks(
         elementName: element.name,
       };
       const sourceName = attributeString(element, "text:name") ?? "";
-      const name = canonicalBookmarkName(sourceName, bookmarkDiagnostic).name;
-      const id = context.bookmarkIds.get(sourceName) ?? context.bookmarkIds.get(name);
+      const decoded = canonicalBookmarkName(sourceName, bookmarkDiagnostic);
+      const name = decoded.name;
+      const id = closeBookmark(context, sourceName, name, decoded.encodedId);
       if (!name || id === undefined) throw unknownOdtElement(element);
       push({
         bookmarkEnd: { id },
@@ -1105,6 +1313,23 @@ export function parseBlocks(
       }
       if (endIndex < 0) endIndex = elements.length;
       const revision = { id: change.id, author: change.author, date: change.date };
+      if (change.kind === "deletion") {
+        if (endIndex < 0) throw unknownOdtElement(element);
+        const changed = parseBlocks(
+          elements.slice(elementIndex + 1, endIndex),
+          context,
+          listDepth,
+          listState,
+          `${sourcePath}/${element.name}`,
+        );
+        resumeAfter = endIndex;
+        if (changed.length === 0) {
+          push({ paragraph: { children: [{ deletion: { ...revision, children: [] } }] } });
+        } else {
+          push(...trackRevisionBlocks("deletion", revision, changed));
+        }
+        continue;
+      }
       const changed = parseBlocks(
         element.elements ?? hoistedElements.slice(elementIndex + 1, endIndex),
         context,
@@ -1168,7 +1393,7 @@ export function parseBlocks(
       continue;
     }
     if (isShapeElement(element.name)) {
-      push(shapeBlock(parseShape(element)));
+      push(shapeBlock(parseShape(element, context)));
       continue;
     }
     if (element.name === "draw:g") {
@@ -1181,7 +1406,8 @@ export function parseBlocks(
         continue;
       }
       const child = parseFrame(element, context);
-      if (child) push(child);
+      if (!child) throw unknownOdtElement(element);
+      push(child);
       continue;
     }
     if (element.name === "draw:a") {
@@ -1258,15 +1484,50 @@ export function parseBlocks(
 }
 
 function parseFrame(element: Element, context: ParseContext): SectionChild | undefined {
-  const children = childNamed(element, "draw:object")
-    ? parseChartFrame(element, context)
-    : parsePictureFrame(element, context);
+  assertSingleFramePayload(element);
+  if (childNamed(element, "draw:object"))
+    return { paragraph: { children: parseChartFrame(element, context) } };
+  if (!childNamed(element, "draw:image")) throw unknownOdtElement(element);
+  const children = parsePictureFrame(element, context);
   if (children.length === 0) return undefined;
   return { paragraph: { children } };
 }
 
 export function blockChildren(children: SectionChild[]): BlockContentChild[] {
   return children.filter((child): child is BlockContentChild => !("altChunk" in child));
+}
+
+export function registerBookmarkStart(
+  context: ParseContext,
+  sourceName: string,
+  name: string,
+  encodedId?: number,
+): number {
+  const id = encodedId ?? nextBookmarkId(context);
+  trackBookmarkId(context, name, id);
+  if (sourceName !== name) trackBookmarkId(context, sourceName, id);
+  const openIds = context.bookmarkOpenIds.get(sourceName) ?? [];
+  openIds.push(id);
+  context.bookmarkOpenIds.set(sourceName, openIds);
+  return id;
+}
+
+export function closeBookmark(
+  context: ParseContext,
+  sourceName: string,
+  name: string,
+  encodedId?: number,
+): number | undefined {
+  const openIds = context.bookmarkOpenIds.get(sourceName);
+  if (openIds && openIds.length > 0) {
+    const index = encodedId === undefined ? 0 : openIds.indexOf(encodedId);
+    if (index >= 0) {
+      const [id] = openIds.splice(index, 1);
+      if (openIds.length === 0) context.bookmarkOpenIds.delete(sourceName);
+      return id;
+    }
+  }
+  return encodedId ?? context.bookmarkIds.get(sourceName) ?? context.bookmarkIds.get(name);
 }
 
 export function unknownOdtElement(element: Element): OdtParseError {

@@ -240,8 +240,10 @@ bun add office-open
   ::code-group
 
   ```ts [DOCX]
+import { readFileSync } from "node:fs";
 import { parseDocument, patchDocument } from "@office-open/docx";
 
+const buffer = new Uint8Array(readFileSync("input.docx"));
 // 解析现有文件
 const opts = await parseDocument(buffer);
 // opts.sections — 文档节
@@ -262,8 +264,10 @@ const result = await patchDocument({
 ```
 
   ```ts [PPTX]
+import { readFileSync } from "node:fs";
 import { parsePresentation, patchPresentation } from "@office-open/pptx";
 
+const buffer = new Uint8Array(readFileSync("input.pptx"));
 // 解析现有文件
 const opts = await parsePresentation(buffer);
 // opts.slides — 幻灯片数组
@@ -284,8 +288,10 @@ const result = await patchPresentation({
 ```
 
   ```ts [XLSX]
+import { readFileSync } from "node:fs";
 import { parseWorkbook, patchWorkbook } from "@office-open/xlsx";
 
+const buffer = new Uint8Array(readFileSync("input.xlsx"));
 // 解析现有文件
 const opts = await parseWorkbook(buffer);
 // opts.worksheets — 工作表数组

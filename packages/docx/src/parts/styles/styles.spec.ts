@@ -114,9 +114,7 @@ describe("parseStyleDefinitions (round-trip)", () => {
         '<w:tabs><w:tab w:val="center" w:pos="234pt"/></w:tabs></w:pPr>',
     ).elements?.[0];
     if (!el) throw new Error("parsed pPr has no root element");
-    expect(parseParagraphProperties(el, ctx).tabStops).toEqual([
-      { type: "center", position: "234pt" },
-    ]);
+    expect(parseParagraphProperties(el).tabStops).toEqual([{ type: "center", position: "234pt" }]);
   });
 
   it("preserves an explicit empty tabs container", () => {
@@ -125,7 +123,7 @@ describe("parseStyleDefinitions (round-trip)", () => {
         "<w:tabs/></w:pPr>",
     ).elements?.[0];
     if (!el) throw new Error("parsed pPr has no root element");
-    const parsed = parseParagraphProperties(el, ctx);
+    const parsed = parseParagraphProperties(el);
     expect(parsed.tabStops).toEqual([]);
     expect(stringifyParagraphProperties(parsed).xml).toContain("<w:tabs></w:tabs>");
   });
@@ -137,7 +135,7 @@ describe("parseStyleDefinitions (round-trip)", () => {
     ).elements?.[0];
     if (!el) throw new Error("parsed pPr has no root element");
 
-    const parsed = parseParagraphProperties(el, ctx);
+    const parsed = parseParagraphProperties(el);
     expect(parsed.hyphenationLines).toBe(0);
 
     const xml = stringifyParagraphProperties(parsed).xml;
@@ -146,7 +144,7 @@ describe("parseStyleDefinitions (round-trip)", () => {
 
     const reparsed = parseXml(xml).elements?.[0];
     if (!reparsed) throw new Error("stringified pPr has no root element");
-    expect(parseParagraphProperties(reparsed, ctx).hyphenationLines).toBe(0);
+    expect(parseParagraphProperties(reparsed).hyphenationLines).toBe(0);
   });
 
   it("reads back custom paragraph style fields", () => {
