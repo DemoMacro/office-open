@@ -1163,6 +1163,17 @@ describe("ODS codec", () => {
     });
   });
 
+  it("rejects malformed local image package references", async () => {
+    const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:spreadsheet><table:table table:name="Sheet1"><table:table-row><table:table-cell><draw:frame svg:x="1cm" svg:y="2cm" svg:width="3cm" svg:height="4cm"><draw:image xlink:href="Pictures/logo%ZZ.png"/></draw:frame></table:table-cell></table:table-row></table:table></office:spreadsheet></office:body></office:document-content>`;
+    await expect(
+      parseWorkbook(
+        generateOcf("application/vnd.oasis.opendocument.spreadsheet", {
+          "content.xml": content,
+        }),
+      ),
+    ).rejects.toMatchObject({ reason: "invalid-package-uri" });
+  });
+
   it("round-trips cell object frames and rejects unknown frame children", async () => {
     const object = {
       type: "object" as const,

@@ -738,22 +738,45 @@ function worksheetImageType(href: string): PictureOptions["type"] {
   );
 }
 
-function odsPackagePath(href: string): string | undefined {
+export function odsPackagePath(href: string): string {
   let decoded: string;
   try {
     decoded = decodeURIComponent(href.split(/[?#]/u, 1)[0] ?? "");
-  } catch {
-    return undefined;
+  } catch (cause) {
+    throw new OdsParseError(
+      "ODS image reference is not a valid package URI",
+      "content.xml",
+      "/office:document-content/office:body/office:spreadsheet/table:table/draw:frame/draw:image",
+      "xlink:href",
+      "invalid-package-uri",
+      { cause },
+    );
   }
   const segments: string[] = [];
   for (const segment of decoded.split("/")) {
     if (segment === "" || segment === ".") continue;
     if (segment === "..") {
-      if (segments.length === 0) return undefined;
+      if (segments.length === 0)
+        throw new OdsParseError(
+          "ODS image reference escapes the package root",
+          "content.xml",
+          "/office:document-content/office:body/office:spreadsheet/table:table/draw:frame/draw:image",
+          "xlink:href",
+          "invalid-package-uri",
+        );
       segments.pop();
     } else segments.push(segment);
   }
-  return segments.join("/");
+  const path = segments.join("/");
+  if (path === "")
+    throw new OdsParseError(
+      "ODS image reference does not identify a package member",
+      "content.xml",
+      "/office:document-content/office:body/office:spreadsheet/table:table/draw:frame/draw:image",
+      "xlink:href",
+      "invalid-package-uri",
+    );
+  return path;
 }
 
 function concatenate(parts: readonly string[]): string {

@@ -73,7 +73,7 @@ import {
   parseTextStyles,
   styleResourcesXml,
 } from "./styles";
-import { worksheet, worksheetImagePath, worksheetXml } from "./worksheet";
+import { odsPackagePath, worksheet, worksheetImagePath, worksheetXml } from "./worksheet";
 
 export const MIME = "application/vnd.oasis.opendocument.spreadsheet";
 export const TEMPLATE_MIME = "application/vnd.oasis.opendocument.spreadsheet-template";
@@ -385,8 +385,10 @@ function parseOdsPackage(data: Uint8Array): OdsWorkbookOptions {
               graphic.data = undefined;
               continue;
             }
-            const binary = binaries[graphic.href];
-            if (binary) usedBinaryPaths.add(graphic.href);
+            const path = odsPackagePath(graphic.href);
+            graphic.href = path;
+            const binary = binaries[path];
+            if (binary) usedBinaryPaths.add(path);
             graphic.data = binary ? bytesToBase64(binary) : undefined;
             if (!graphic.data) {
               throw new OdsParseError(
