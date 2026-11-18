@@ -47,28 +47,32 @@ function readPictureRecordRange(view: DataView, offset: number, end: number): Re
 
 function readIsolatedPicture(view: DataView, record: RecordNode): LegacyPicture | undefined {
   if (!isPictureRecord(record)) return undefined;
-  try {
-    return record.type === RecordType.escherBse
-      ? readPictureRecord(view, record)
-      : readEmbeddedPicture(record, recordBody(view, record));
-  } catch (error) {
-    if (!(error instanceof PptParseError)) throw error;
-    return undefined;
-  }
+  return record.type === RecordType.escherBse
+    ? readPictureRecord(view, record)
+    : readEmbeddedPicture(record, recordBody(view, record));
 }
 
 function isPictureRecord(record: RecordNode): boolean {
   return record.type === RecordType.escherBse || PICTURE_RECORD_TYPES.has(record.type);
 }
 
-function readPictureRecord(view: DataView, bse: RecordNode): LegacyPicture | undefined {
+function readPictureRecord(view: DataView, bse: RecordNode): LegacyPicture {
   if (bse.length < 36) {
     throw new PptParseError("Corrupt legacy PowerPoint file: malformed Pictures stream");
   }
 
   const nameLength = view.getUint8(bse.offset + 8 + 33);
   const blipOffset = bse.offset + 8 + 36 + nameLength;
-  if (blipOffset === bse.end) return undefined;
+  if (blipOffset === bse.end) {
+    throw new PptParseError("Corrupt legacy PowerPoint file: picture record has no BLIP", {
+      part: "stream",
+      path: "Pictures",
+      recordType: bse.type,
+      recordName: "OfficeArtBSE",
+      offset: bse.offset,
+      reason: "missing-picture-data",
+    });
+  }
   if (blipOffset + 8 > bse.end) {
     throw new PptParseError("Corrupt legacy PowerPoint file: malformed Pictures stream");
   }
@@ -81,9 +85,18 @@ function readPictureRecord(view: DataView, bse: RecordNode): LegacyPicture | und
   return readEmbeddedPicture(blip, body);
 }
 
-function readEmbeddedPicture(blip: RecordHeader, body: Uint8Array): LegacyPicture | undefined {
+function readEmbeddedPicture(blip: RecordHeader, body: Uint8Array): LegacyPicture {
   const skip = picturePayloadOffset(blip);
-  if (skip === undefined) return undefined;
+  if (skip === undefined) {
+    throw new PptParseError("Corrupt legacy PowerPoint file: unsupported picture variant", {
+      part: "stream",
+      path: "Pictures",
+      recordType: blip.type,
+      recordName: "OfficeArtBlip",
+      offset: blip.offset,
+      reason: "unsupported-picture-variant",
+    });
+  }
   if (skip > body.byteLength) {
     throw new PptParseError("Corrupt legacy PowerPoint file: malformed picture data");
   }

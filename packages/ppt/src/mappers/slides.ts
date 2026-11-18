@@ -64,9 +64,14 @@ export function readNotes(
 ): string | undefined {
   if (!notesId) return undefined;
   const offset = notesReferences.get(notesId);
-  if (offset === undefined) {
-    return undefined;
-  }
+  if (offset === undefined)
+    throw new PptParseError("Corrupt legacy PowerPoint file: notes persist object is missing", {
+      part: "record",
+      recordType: RecordType.notes,
+      recordName: "NotesContainer",
+      notesId,
+      reason: "missing-notes-persist-object",
+    });
   const notes = readPersistedRecord(view, offset, [RecordType.notes]);
   const drawing = findDirect(notes, RecordType.ppDrawing);
   if (!drawing) {

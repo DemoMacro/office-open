@@ -406,9 +406,25 @@ function parseShape(
   context: DrawingContext,
 ): SlideChild | undefined {
   const shapeRecord = findDirect(container, RecordType.escherShape);
-  if (!shapeRecord) return undefined;
+  if (!shapeRecord) {
+    throw new PptParseError("Corrupt legacy PowerPoint drawing: shape record is missing", {
+      part: "record",
+      recordType: container.type,
+      recordName: "OfficeArtSpContainer",
+      offset: container.offset,
+      reason: "missing-shape-record",
+    });
+  }
   const bounds = readAnchorBounds(view, container);
-  if (!bounds) return undefined;
+  if (!bounds) {
+    throw new PptParseError("Corrupt legacy PowerPoint drawing: shape anchor is missing", {
+      part: "record",
+      recordType: container.type,
+      recordName: "OfficeArtSpContainer",
+      offset: container.offset,
+      reason: "missing-shape-anchor",
+    });
+  }
   const optionsRecord = findDirect(container, RecordType.escherShapeProperties);
   const style = optionsRecord ? readShapeProperties(view, optionsRecord) : {};
   const flags = readShapeFlags(view, shapeRecord);
@@ -539,16 +555,21 @@ function parsePictureShape(
 ): SlideChild | undefined {
   const picture = findPicture(context, style.blipReference);
   if (!picture) {
-    return text
-      ? {
-          shape: {
-            ...position,
-            textBox: true,
-            textBody: text,
-            ...placeholderOptions(placeholderMetadata),
-          },
-        }
-      : undefined;
+    if (text) {
+      return {
+        shape: {
+          ...position,
+          textBox: true,
+          textBody: text,
+          ...placeholderOptions(placeholderMetadata),
+        },
+      };
+    }
+    throw new PptParseError("Corrupt legacy PowerPoint picture: image data is missing", {
+      part: "stream",
+      path: "Pictures",
+      reason: "missing-picture-data",
+    });
   }
   if (!text) {
     return {
