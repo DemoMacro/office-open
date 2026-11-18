@@ -1,6 +1,6 @@
 {
   "name": "@office-open/formula",
-  "version": "0.15.2",
+  "version": "0.15.3",
   "description": "Spreadsheet formula parsing, analysis, rewriting, dependency graphs, and evaluation — fully typed TypeScript, no Microsoft Office required",
   "keywords": [
     "analyzer",
