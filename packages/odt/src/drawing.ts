@@ -38,7 +38,7 @@ import type { Element } from "@office-open/xml";
 
 type WpgChildMediaData = Extract<GroupChildMediaData, { type: "wps" | "wpg" }>;
 
-import { unknownOdtElement, type ParseContext } from "./body";
+import { parseBlocks, unknownOdtElement, type ParseContext } from "./body";
 import type {
   OdtEmbeddedObjectFrameOptions,
   OdtEmbeddedObjectOptions,
@@ -107,16 +107,10 @@ function transformationOffset(
 
 function odfAnchorType(floating: Floating | undefined): OdtFrameAnchorType {
   if (!floating) return "as-char";
-  if (
-    floating.horizontalPosition.relative === "character" ||
-    floating.verticalPosition.relative === "line"
-  )
-    return "char";
-  if (
-    floating.horizontalPosition.relative === "page" ||
-    floating.verticalPosition.relative === "page"
-  )
-    return "page";
+  const horizontalRelative = floating.horizontalPosition?.relative;
+  const verticalRelative = floating.verticalPosition?.relative;
+  if (horizontalRelative === "character" || verticalRelative === "line") return "char";
+  if (horizontalRelative === "page" || verticalRelative === "page") return "page";
   return "paragraph";
 }
 
@@ -382,6 +376,9 @@ export function pictureFrameXml(picture: PictureOptions, images: OdtImage[]): st
       xmlElement("draw:image", {
         "xlink:href": path,
         ...(picture.sourceUrl && raster.data === undefined
+          ? { "draw:mime-type": pictureMimeType(raster.type) }
+          : {}),
+        ...(picture.sourceUrl && raster.data === undefined
           ? { "xlink:type": "simple", "xlink:show": "embed" }
           : {}),
       }),
@@ -535,7 +532,16 @@ export function parsePictureFrame(frame: Element, context: ParseContext): Paragr
     context.usedBinaryPaths.add(path);
     const mediaType = context.binaryMediaTypes.get(path);
     const type = pictureTypeFromMediaType(mediaType) ?? pictureTypeFromPath(path);
-    return isPictureType(type) ? [{ type, data }] : [];
+    if (!isPictureType(type)) {
+      throw new OdtParseError(
+        `content.xml: embedded image type is not supported: ${type}`,
+        "content.xml",
+        "/office:document-content/office:body/office:text/draw:frame/draw:image",
+        "draw:image",
+        "unsupported-image-type",
+      );
+    }
+    return [{ type, data }];
   });
   const svg = images.find((image) => image.type === "svg");
   const raster = images.find(
@@ -545,11 +551,14 @@ export function parsePictureFrame(frame: Element, context: ParseContext): Paragr
   if (!svg && !raster) {
     const image = childNamed(frame, "draw:image");
     const href = attributeString(image, "xlink:href");
-    if (href && isExternalOdfUrl(href))
+    const linkedPath = href ? packagePathFromReference(href) : undefined;
+    if (href && (isExternalOdfUrl(href) || linkedPath === undefined))
       return [
         {
           picture: {
-            type: pictureTypeFromUrl(href),
+            type:
+              rasterPictureTypeFromMediaType(attributeString(image, "draw:mime-type")) ??
+              pictureTypeFromUrl(href),
             sourceUrl: href,
             transformation: {
               ...(offset ? { offset } : {}),
@@ -633,10 +642,26 @@ function packagePathFromReference(href: string): string | undefined {
   return segments.join("/");
 }
 
-function pictureTypeFromMediaType(mediaType: string | undefined): string | undefined {
-  if (mediaType === "image/jpeg") return "jpg";
-  if (mediaType === "image/svg+xml") return "svg";
-  return mediaType?.startsWith("image/") ? mediaType.slice("image/".length) : undefined;
+function pictureTypeFromMediaType(mediaType: string | undefined): PictureType | undefined {
+  let type: string | undefined;
+  if (mediaType === "image/jpeg") type = "jpg";
+  else if (mediaType === "image/tiff") type = "tif";
+  else if (mediaType === "image/svg+xml") type = "svg";
+  else if (mediaType?.startsWith("image/")) type = mediaType.slice("image/".length);
+  return type !== undefined && isPictureType(type) ? type : undefined;
+}
+
+function rasterPictureTypeFromMediaType(
+  mediaType: string | undefined,
+): RasterPictureType | undefined {
+  const type = pictureTypeFromMediaType(mediaType);
+  return type !== undefined && isRasterPictureType(type) ? type : undefined;
+}
+
+function pictureMimeType(type: RasterPictureType): string {
+  if (type === "jpg") return "image/jpeg";
+  if (type === "tif") return "image/tiff";
+  return `image/${type}`;
 }
 
 function pictureTypeFromPath(path: string): string {
@@ -807,6 +832,14 @@ export function parseCustomShape(
     if (child.type !== "element") return [];
     if (child.name === "text:p" || child.name === "text:h")
       return [{ paragraph: parseParagraph(child, context) }];
+    if (
+      child.name === "text:section" ||
+      child.name === "text:list" ||
+      child.name === "table:table" ||
+      child.name === "text:bookmark-start" ||
+      child.name === "text:bookmark-end"
+    )
+      return parseBlocks([child], context);
     if (
       child.name === "draw:enhanced-geometry" ||
       child.name === "svg:title" ||

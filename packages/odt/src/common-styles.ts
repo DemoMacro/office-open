@@ -21,7 +21,7 @@ import {
 import type { Element } from "@office-open/xml";
 
 import { NAMESPACES } from "./body";
-import { OdtParseError } from "./error";
+import { OdtGenerateError, OdtParseError } from "./error";
 import { outlineStyleXml } from "./list";
 import {
   lengthToTwips,
@@ -160,9 +160,7 @@ function pageLayoutPropertiesXml(
     pageMargin?.right !== undefined && `fo:margin-right="${twipsToLength(pageMargin.right)}"`,
     pageMargin?.bottom !== undefined && `fo:margin-bottom="${twipsToLength(pageMargin.bottom)}"`,
     pageMargin?.left !== undefined && `fo:margin-left="${twipsToLength(pageMargin.left)}"`,
-    properties?.bidi && `style:writing-mode="rl-tb"`,
-    properties?.textDirection === "lrTb" && `style:writing-mode="lr-tb"`,
-    properties?.textDirection === "tbRl" && `style:writing-mode="tb-rl"`,
+    writingModeAttribute(properties),
   ].filter(Boolean);
   const columns = pageLayoutColumnsXml(properties, preservedColumns);
   if (preservedProperties !== undefined) {
@@ -191,6 +189,7 @@ function pageLayoutCanonicalAttributes(
 ): Partial<Record<string, string | number | boolean>> {
   const pageSize = typeof properties?.pageSize === "object" ? properties.pageSize : undefined;
   const pageMargin = typeof properties?.pageMargin === "object" ? properties.pageMargin : undefined;
+  const writingMode = writingModeValue(properties);
   return {
     ...(pageSize?.width === undefined ? {} : { "fo:page-width": pageSize.width }),
     ...(pageSize?.height === undefined ? {} : { "fo:page-height": pageSize.height }),
@@ -201,10 +200,29 @@ function pageLayoutCanonicalAttributes(
     ...(pageMargin?.right === undefined ? {} : { "fo:margin-right": pageMargin.right }),
     ...(pageMargin?.bottom === undefined ? {} : { "fo:margin-bottom": pageMargin.bottom }),
     ...(pageMargin?.left === undefined ? {} : { "fo:margin-left": pageMargin.left }),
-    ...(properties?.bidi ? { "style:writing-mode": "rl-tb" } : {}),
-    ...(properties?.textDirection === "lrTb" ? { "style:writing-mode": "lr-tb" } : {}),
-    ...(properties?.textDirection === "tbRl" ? { "style:writing-mode": "tb-rl" } : {}),
+    ...(writingMode === undefined ? {} : { "style:writing-mode": writingMode }),
   };
+}
+
+function writingModeValue(properties: SectionOptions["properties"]): string | undefined {
+  if (properties?.bidi && properties.textDirection !== undefined) {
+    throw new OdtGenerateError(
+      "ODT cannot represent section bidi and text direction together",
+      "styles.xml",
+      "/office:document-styles/office:automatic-styles/style:page-layout/style:page-layout-properties/@style:writing-mode",
+      "style:writing-mode",
+      "conflicting-writing-mode",
+    );
+  }
+  if (properties?.bidi) return "rl-tb";
+  if (properties?.textDirection === "lrTb") return "lr-tb";
+  if (properties?.textDirection === "tbRl") return "tb-rl";
+  return undefined;
+}
+
+function writingModeAttribute(properties: SectionOptions["properties"]): string | undefined {
+  const value = writingModeValue(properties);
+  return value === undefined ? undefined : `style:writing-mode="${value}"`;
 }
 
 export function commonStylesXml(styles: DocumentOptions["styles"]): string {
@@ -222,7 +240,7 @@ export function commonStylesXml(styles: DocumentOptions["styles"]): string {
         },
         [
           xmlElement("style:paragraph-properties", {
-            "fo:text-align": paragraph?.alignment,
+            "fo:text-align": paragraph?.alignment === "both" ? "justify" : paragraph?.alignment,
             "fo:margin-left":
               paragraph?.indent?.left !== undefined
                 ? twipsToLength(paragraph.indent.left)
@@ -282,7 +300,7 @@ export function defaultStyleXml(styles: DocumentOptions["styles"]): string {
     : {};
   const paragraphAttributes = paragraph
     ? {
-        "fo:text-align": paragraph.alignment,
+        "fo:text-align": paragraph.alignment === "both" ? "justify" : paragraph.alignment,
         "fo:margin-left":
           paragraph.indent?.left !== undefined ? twipsToLength(paragraph.indent.left) : undefined,
         "fo:margin-right":

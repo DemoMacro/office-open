@@ -379,6 +379,8 @@ export function pageLayoutColumnsOptions(
   const columns = preserved ?? { name: "style:columns" as const, attributes: {}, columns: [] };
   const attributes = { ...columns.attributes };
   if (canonical?.count !== undefined) attributes["fo:column-count"] = canonical.count;
+  if (attributes["fo:column-count"] === undefined)
+    attributes["fo:column-count"] = Math.max(columns.columns.length, 1);
   if (canonical?.space !== undefined) attributes["fo:column-gap"] = canonical.space;
   let separator = columns.separator;
   if (canonical?.separate !== undefined) {

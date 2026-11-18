@@ -29,6 +29,10 @@ export interface ParsedStyle {
 
 export type StyleMap = Map<string, ParsedStyle>;
 
+function canonicalAlignment(value: string | undefined): string | undefined {
+  return value === "justify" ? "both" : value;
+}
+
 export interface CharacterProperties {
   bold?: boolean;
   italic?: boolean;
@@ -65,7 +69,7 @@ export function addParagraphStyle(
         xmlElement(
           "style:paragraph-properties",
           {
-            "fo:text-align": properties.alignment,
+            "fo:text-align": properties.alignment === "both" ? "justify" : properties.alignment,
             "fo:break-before": properties.pageBreakBefore ? "page" : undefined,
           },
           properties.tabStops?.length
@@ -152,7 +156,7 @@ export function parseStyles(...containers: (Element | undefined)[]): StyleMap {
       };
       direct.set(name, {
         basedOn: attributeString(style, "style:parent-style-name"),
-        alignment: attributeString(paragraph, "fo:text-align"),
+        alignment: canonicalAlignment(attributeString(paragraph, "fo:text-align")),
         pageBreakBefore: breakBefore === undefined ? undefined : breakBefore === "page",
         tabStops: tabStops.length > 0 ? tabStops : undefined,
         columnWidth,

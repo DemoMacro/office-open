@@ -2,7 +2,13 @@ import { strFromU8, unzipSync } from "@office-open/core";
 import type { FormControlOptions, OfficeFormsOptions } from "@office-open/core";
 import type { DocumentOptions, TableOptions } from "@office-open/docx";
 import type { ParagraphOptions } from "@office-open/docx";
-import { CHART_MIME, generateOcf, ODF_NAMESPACES, readOcf } from "@office-open/odf";
+import {
+  CHART_MIME,
+  generateOcf,
+  ODF_NAMESPACES,
+  readOcf,
+  type StyleColumnsOptions,
+} from "@office-open/odf";
 import { describe, expect, it } from "vite-plus/test";
 
 import {
@@ -12,6 +18,7 @@ import {
   parseDocument,
   type OdtDocumentOptions,
 } from "./index";
+import { pageLayoutColumnsXml } from "./master-pages";
 import { trackRevisionBlocks } from "./paragraph";
 
 const FORM_NAMESPACE = 'xmlns:form="urn:oasis:names:tc:opendocument:xmlns:form:1.0"';
@@ -660,6 +667,16 @@ describe("ODT canonical projection", () => {
     });
   });
 
+  it("adds the required count when preserved page columns omit it", () => {
+    const preserved: StyleColumnsOptions = {
+      name: "style:columns",
+      attributes: {},
+      columns: [{ attributes: { "style:rel-width": "1*" } }],
+    };
+
+    expect(pageLayoutColumnsXml(undefined, preserved)).toContain('fo:column-count="1"');
+  });
+
   it("preserves all page layouts and master-page bindings", async () => {
     const source = generateOcf("application/vnd.oasis.opendocument.text", {
       "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:automatic-styles/><office:body><office:text><text:p>Body</text:p></office:text></office:body></office:document-content>`,
@@ -911,6 +928,26 @@ describe("ODT canonical projection", () => {
     expect((await parseDocument(generated)).styleResources).toEqual(options.styleResources);
   });
 
+  it("maps canonical both alignment to ODF justify", async () => {
+    const options: DocumentOptions = {
+      sections: [{ children: [{ paragraph: { alignment: "both", text: "Justified" } }] }],
+    };
+    const generated = await generateDocument(options);
+    const content = strFromU8(unzipSync(generated)["content.xml"]!);
+    expect(content).toContain('fo:text-align="justify"');
+    expect((await parseDocument(generated)).sections[0]?.children?.[0]).toMatchObject({
+      paragraph: { alignment: "both", text: "Justified" },
+    });
+  });
+
+  it("rejects section directions that ODF cannot represent together", async () => {
+    await expect(
+      generateDocument({
+        sections: [{ properties: { bidi: true, textDirection: "lrTb" }, children: [] }],
+      }),
+    ).rejects.toMatchObject({ reason: "conflicting-writing-mode" });
+  });
+
   it("rejects unknown paragraph style attributes", async () => {
     await expect(
       parseDocument(
@@ -1082,6 +1119,70 @@ describe("ODT canonical projection", () => {
     });
   });
 
+  it("preserves linked pictures whose URL has no image extension", async () => {
+    const options: DocumentOptions = {
+      sections: [
+        {
+          children: [
+            {
+              paragraph: {
+                children: [
+                  {
+                    picture: {
+                      type: "png",
+                      sourceUrl: "https://example.com/image.txt",
+                      transformation: { width: 360000, height: 360000 },
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      ],
+    };
+
+    const parsed = await parseDocument(await generateDocument(options));
+    expect(parsed.sections[0]?.children?.[0]).toMatchObject({
+      paragraph: {
+        children: [
+          {
+            picture: {
+              type: "png",
+              sourceUrl: "https://example.com/image.txt",
+            },
+          },
+        ],
+      },
+    });
+  });
+
+  it("writes standard MIME types for linked raster pictures", async () => {
+    const generated = await generateDocument({
+      sections: [
+        {
+          children: [
+            {
+              paragraph: {
+                children: [
+                  {
+                    picture: {
+                      type: "jpg",
+                      sourceUrl: "https://example.com/image",
+                      transformation: { width: 360000, height: 360000 },
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      ],
+    });
+    const content = strFromU8(unzipSync(generated)["content.xml"]!);
+    expect(content).toContain('draw:mime-type="image/jpeg"');
+  });
+
   it("preserves picture descriptions", async () => {
     const parsed = await parseDocument(
       await generateDocument({
@@ -1133,6 +1234,16 @@ describe("ODT canonical projection", () => {
       elementName: "draw:image",
       reason: "missing-package-part",
     });
+  });
+
+  it("does not treat a missing embedded image as an external link", async () => {
+    await expect(
+      parseDocument(
+        odtPackage(
+          '<text:p><draw:frame svg:width="4cm" svg:height="3cm"><draw:image xlink:type="simple" xlink:show="embed" xlink:href="Pictures/missing.png"/></draw:frame></text:p>',
+        ),
+      ),
+    ).rejects.toMatchObject({ reason: "missing-package-part" });
   });
 
   it("resolves encoded package image paths and case-insensitive file extensions", async () => {
