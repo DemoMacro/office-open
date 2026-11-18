@@ -25,6 +25,7 @@ import type { Element } from "@office-open/xml";
 import type { XlsxReadContext } from "../../context";
 import { XlsxParseError, XlsxPartParseError } from "../../error";
 import { parseColorOptions, type ColorOptions } from "../../shared/color";
+import { decodeSpreadsheetXml } from "../../shared/xml";
 import { parseAutoFilter, parseSortStateEl } from "../auto-filter";
 import { parsePivotArea } from "../pivot-table/parse";
 import { parseCfColor, parseCfvo, parsePageBreaks } from "./parse";
@@ -649,9 +650,9 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
         if (showDropDown !== undefined) dv.showDropDown = showDropDown;
 
         const f1El = findChild(dEl, "formula1");
-        if (f1El) dv.formula1 = textOf(f1El);
+        if (f1El) dv.formula1 = decodeSpreadsheetXml(textOf(f1El));
         const f2El = findChild(dEl, "formula2");
-        if (f2El) dv.formula2 = textOf(f2El);
+        if (f2El) dv.formula2 = decodeSpreadsheetXml(textOf(f2El));
         // Excel 2010+ explicit list: the x12ac:list Choice preserves per-item
         // quoting, while the Fallback formula1 stays the canonical plain form.
         const dvAltContent = dEl.elements?.find((c) => c.name === "mc:AlternateContent");
@@ -662,7 +663,7 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
           if (dv.formula1 === undefined) {
             const fallback = dvAltContent.elements?.find((c) => c.name === "mc:Fallback");
             const fbFormula1 = fallback ? findChild(fallback, "formula1") : undefined;
-            if (fbFormula1) dv.formula1 = textOf(fbFormula1);
+            if (fbFormula1) dv.formula1 = decodeSpreadsheetXml(textOf(fbFormula1));
           }
         }
 

@@ -18,6 +18,7 @@ import { columnToLetter, dateToSerialNumber, hashPassword } from "@util/index";
 
 import { colorAttributes } from "../../shared/color";
 import type { ColorOptions } from "../../shared/color";
+import { escapeSpreadsheetXml } from "../../shared/xml";
 import { stringifyAutoFilter, stringifySortStateXml } from "../auto-filter";
 import { buildPivotAreaXml } from "../pivot-table/stringify";
 import { buildRstXml, tElement } from "../shared-strings";
@@ -683,16 +684,16 @@ export function stringifyWorksheet(
           `<mc:AlternateContent xmlns:x12ac="http://schemas.microsoft.com/office/spreadsheetml/2011/1/ac" ` +
             `xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006">` +
             `<mc:Choice Requires="x12ac"><x12ac:list>${escapeXml(dv.explicitList)}</x12ac:list></mc:Choice>` +
-            `<mc:Fallback><formula1>${escapeXml(dv.formula1 ?? "")}</formula1></mc:Fallback>` +
+            `<mc:Fallback><formula1>${escapeSpreadsheetXml(dv.formula1 ?? "")}</formula1></mc:Fallback>` +
             `</mc:AlternateContent>`,
         );
       else if (dv.formula1 !== undefined)
         inner.push(
-          `<formula1${/^\s|\s$/.test(dv.formula1) ? ' xml:space="preserve"' : ""}>${escapeXml(dv.formula1)}</formula1>`,
+          `<formula1${/^\s|\s$/.test(dv.formula1) ? ' xml:space="preserve"' : ""}>${escapeSpreadsheetXml(dv.formula1)}</formula1>`,
         );
       if (dv.formula2 !== undefined)
         inner.push(
-          `<formula2${/^\s|\s$/.test(dv.formula2) ? ' xml:space="preserve"' : ""}>${escapeXml(dv.formula2)}</formula2>`,
+          `<formula2${/^\s|\s$/.test(dv.formula2) ? ' xml:space="preserve"' : ""}>${escapeSpreadsheetXml(dv.formula2)}</formula2>`,
         );
       if (inner.length > 0) {
         p.push(`<dataValidation${attrs(dvAttrs)}>`, ...inner, "</dataValidation>");
