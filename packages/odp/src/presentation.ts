@@ -60,9 +60,8 @@ import type {
   OdpSlideOptions,
 } from "./options";
 import {
+  parseColumnWidths,
   parseSlide,
-  parseTableStyles,
-  type TableStyles,
   reconcileTransitionStyleResources,
   slideChildXml,
   slideXml,
@@ -490,7 +489,11 @@ function parseOdpPackage(data: Uint8Array): OdpPresentationOptions {
     ...parseTextStyles(stylesAutomaticStyles),
     ...parseTextStyles(commonStyles),
   ]);
-  const tableStyles = parseTableStyles(contentAutomaticStyles, stylesAutomaticStyles, commonStyles);
+  const columnWidths = new Map([
+    ...parseColumnWidths(contentAutomaticStyles),
+    ...parseColumnWidths(stylesAutomaticStyles),
+    ...parseColumnWidths(commonStyles),
+  ]);
   const masterStyleResources = [
     ...parseStyleResources(contentAutomaticStyles),
     ...parseStyleResources(stylesAutomaticStyles),
@@ -502,7 +505,7 @@ function parseOdpPackage(data: Uint8Array): OdpPresentationOptions {
     const children = parseMasterChildren(
       master,
       textStyles,
-      tableStyles,
+      columnWidths,
       binaries,
       files,
       graphicStyles,
@@ -540,7 +543,7 @@ function parseOdpPackage(data: Uint8Array): OdpPresentationOptions {
       parseSlide(
         page,
         textStyles,
-        tableStyles,
+        columnWidths,
         binaries,
         files,
         graphicStyles,
@@ -790,7 +793,7 @@ function masterHeaderFooterXml(
 function parseMasterChildren(
   master: Element,
   textStyles: Map<string, TextProperties>,
-  tableStyles: TableStyles,
+  columnWidths: Map<string, number>,
   binaries: Record<string, Uint8Array>,
   files: OdfPackageFiles,
   graphicStyles: Map<string, GraphicStyle>,
@@ -820,7 +823,7 @@ function parseMasterChildren(
       parseSlide(
         page,
         textStyles,
-        tableStyles,
+        columnWidths,
         binaries,
         files,
         graphicStyles,

@@ -75,15 +75,8 @@ import {
   type OdpSlideNodeOptions,
   type OdpSlideNodePayload,
 } from "./slide-nodes";
-import {
-  addCellStyle,
-  addColumnStyle,
-  addRowStyle,
-  parseCellStyles,
-  parseDrawingPageBackground,
-  parseRowHeights,
-  type TableCellStyle,
-} from "./styles";
+import { parseDrawingPageBackground } from "./styles";
+import { addCellStyle, addColumnStyle, addRowStyle } from "./styles";
 import { parseParagraph, textBodyXml, type TextProperties } from "./text-run";
 import {
   applyTransitionToStyleResource,
@@ -340,7 +333,7 @@ export function slideChildXml(
       return customShapeXml(child.shape, styles);
     return shapeXml(child.shape, styles);
   }
-  if ("table" in child) return tableFrameXml(child.table, styles);
+  if ("table" in child) return slideTableXml(child.table, styles);
   if ("connector" in child) return connectorXml(child.connector, styles);
   if ("line" in child) return lineXml(child.line, styles);
   if ("picture" in child) return pictureFrameXml(child.picture, images, styles);
@@ -476,7 +469,7 @@ function compatibilityLegacyShape(rawXml: string): SlideShape | undefined {
 export function parseSlide(
   page: Element,
   textStyles: Map<string, TextProperties>,
-  tableStyles: TableStyles,
+  columnWidths: Map<string, number>,
   binaries: Record<string, Uint8Array>,
   packageMembers: OdfPackageFiles,
   graphicStyles: Map<string, GraphicStyle>,
@@ -575,18 +568,6 @@ export function parseSlide(
         children.push({ shape: parseShape(child, textStyles, graphicStyles) });
         continue;
       }
-      const framedTable = tableOfPlainFrame(child);
-      if (framedTable) {
-        const { table } = parseSlideTable(framedTable, textStyles, tableStyles);
-        const geometry = Object.fromEntries(
-          (["x", "y", "width", "height"] as const).flatMap((key) => {
-            const emu = lengthToEmu(attributeString(child, `svg:${key}`));
-            return emu === undefined ? [] : [[key, emu] as const];
-          }),
-        );
-        children.push({ table: { ...table, ...geometry } });
-        continue;
-      }
       typedSources.add(child);
       odpNodes.push({
         position: visibleChildIndex(page, child),
@@ -623,7 +604,7 @@ export function parseSlide(
           child,
           textStyles,
           graphicStyles,
-          tableStyles,
+          columnWidths,
           binaries,
           chartPool,
           usedBinaryPaths,
@@ -636,7 +617,7 @@ export function parseSlide(
       continue;
     }
     if (child.name === "table:table") {
-      children.push(parseSlideTable(child, textStyles, tableStyles));
+      children.push(parseSlideTable(child, textStyles, columnWidths));
       continue;
     }
     if (
@@ -915,53 +896,6 @@ export function parseColumnWidths(container: Element | undefined): Map<string, n
   return result;
 }
 
-/** Style lookups a slide table needs when it is parsed back. */
-export interface TableStyles {
-  columnWidths: Map<string, number>;
-  rowHeights: Map<string, number>;
-  cells: Map<string, TableCellStyle>;
-}
-
-/** Table style lookups merged from several style containers; a later container wins on a name clash. */
-export function parseTableStyles(...containers: (Element | undefined)[]): TableStyles {
-  return {
-    columnWidths: new Map(containers.flatMap((container) => [...parseColumnWidths(container)])),
-    rowHeights: new Map(containers.flatMap((container) => [...parseRowHeights(container)])),
-    cells: new Map(containers.flatMap((container) => [...parseCellStyles(container)])),
-  };
-}
-
-const NO_TABLE_STYLES: TableStyles = {
-  columnWidths: new Map(),
-  rowHeights: new Map(),
-  cells: new Map(),
-};
-
-const TABLE_FRAME_GEOMETRY = ["svg:x", "svg:y", "svg:width", "svg:height"];
-
-/** A slide table sits in a draw:frame, which carries its position and size. */
-function tableFrameXml(table: TableOptions, styles: string[]): string {
-  return xmlElement(
-    "draw:frame",
-    {
-      "svg:x": toOdfLength(table.x),
-      "svg:y": toOdfLength(table.y),
-      "svg:width": toOdfLength(table.width),
-      "svg:height": toOdfLength(table.height),
-    },
-    [slideTableXml(table, styles)],
-  );
-}
-
-/** The table of a frame that holds nothing else and carries only geometry — the form `tableFrameXml` writes. */
-function tableOfPlainFrame(frame: Element): Element | undefined {
-  const elements = (frame.elements ?? []).filter(
-    (candidate): candidate is Element => candidate.type === "element",
-  );
-  if (elements.length !== 1 || elements[0]!.name !== "table:table") return undefined;
-  return unknownAttributeNames(frame, TABLE_FRAME_GEOMETRY).length === 0 ? elements[0] : undefined;
-}
-
 /** Serializes a pptx table as an ODF table:table (cells render text paragraphs). */
 export function slideTableXml(table: TableOptions, styles: string[]): string {
   const columns = (table.columnWidths ?? []).map((width) =>
@@ -1046,14 +980,13 @@ function tableRowXml(
 export function parseSlideTable(
   element: Element,
   textStyles: Map<string, TextProperties>,
-  tableStyles: TableStyles = NO_TABLE_STYLES,
+  columnWidths: Map<string, number>,
 ): { table: TableOptions } {
-  const { columnWidths } = tableStyles;
   const rows = childrenNamed(element, "table:table-row").map((row) => {
-    const height = tableStyles.rowHeights.get(attributeString(row, "table:style-name") ?? "");
+    const height = textStyles.get(attributeString(row, "table:style-name") ?? "")?.rowHeight;
     return {
       ...(height === undefined ? {} : { height }),
-      cells: parseTableRowCells(row, textStyles, tableStyles.cells),
+      cells: parseTableRowCells(row, textStyles),
     };
   });
   return {
@@ -1072,7 +1005,6 @@ export function parseSlideTable(
 function parseTableRowCells(
   row: Element,
   textStyles: Map<string, TextProperties>,
-  cellStyles: Map<string, TableCellStyle>,
 ): TableOptions["rows"][number]["cells"] {
   const children = (row.elements ?? []).filter(
     (child): child is Element => child.type === "element",
@@ -1086,7 +1018,7 @@ function parseTableRowCells(
     if (cell.name !== "table:table-cell") throw unknownSlideChild(cell, "/draw:page/table:table");
     const span = attributeNumber(cell, "table:number-columns-spanned") ?? 1;
     cells.push({
-      ...cellStyles.get(attributeString(cell, "table:style-name") ?? ""),
+      ...textStyles.get(attributeString(cell, "table:style-name") ?? "")?.cell,
       columnSpan: attributeNumber(cell, "table:number-columns-spanned"),
       rowSpan: attributeNumber(cell, "table:number-rows-spanned"),
       children: childrenNamed(cell, "text:p").map((paragraph) =>

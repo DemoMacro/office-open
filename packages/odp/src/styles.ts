@@ -4,7 +4,9 @@ import {
   childNamed,
   childrenNamed,
   emuToLength,
+  hexColorValue,
   lengthToEmu,
+  odfColor,
   parseStyleMaps,
   parseStyleProperty,
   removeStylePropertyAttributes,
@@ -122,36 +124,21 @@ export type TableCellStyle = Pick<
 const CELL_SIDES = ["top", "bottom", "left", "right"] as const;
 const CELL_VERTICAL_ALIGN = { top: "top", center: "middle", bottom: "bottom" } as const;
 
-/** RRGGBB of a plain solid fill; themed, transformed, and non-solid fills have no ODF colour form. */
-function solidHexColor(fill: TableCellOptions["fill"]): string | undefined {
-  const color = typeof fill === "object" && fill.type === "solid" ? fill.color : fill;
-  const value =
-    typeof color === "string"
-      ? color
-      : typeof color === "object" && "value" in color && !("transforms" in color)
-        ? color.value
-        : undefined;
-  if (typeof value !== "string") return undefined;
-  const hex = value.startsWith("#") ? value.slice(1) : value;
-  return /^[0-9a-f]{6}$/i.test(hex) ? hex : undefined;
-}
-
-const odfLength = (value: number | string): string =>
-  typeof value === "number" ? emuToLength(value) : value;
-
 /** fo:border value of one cell side: width, line style, colour (1pt solid black when unset). */
 function cellBorderValue(
   border: NonNullable<TableCellStyle["borders"]>["top"],
 ): string | undefined {
   if (!border) return undefined;
-  const dash = border.dashStyle;
+  const width = border.width ?? 12700;
   const line =
-    dash === undefined || dash === "solid"
+    border.dashStyle === undefined || border.dashStyle === "solid"
       ? "solid"
-      : dash === "dot" || dash === "sysDot"
+      : border.dashStyle === "dot" || border.dashStyle === "sysDot"
         ? "dotted"
         : "dashed";
-  return `${odfLength(border.width ?? 12700)} ${line} #${solidHexColor(border.color) ?? "000000"}`;
+  return `${typeof width === "number" ? emuToLength(width) : width} ${line} ${
+    odfColor(hexColorValue(border.color)) ?? "#000000"
+  }`;
 }
 
 /**
@@ -159,24 +146,28 @@ function cellBorderValue(
  * as paragraph-properties — the placement Impress reads cell borders from.
  */
 export function addCellStyle(cell: TableCellStyle, styles: string[]): string | undefined {
-  const fill = solidHexColor(cell.fill);
-  const background =
-    fill !== undefined
-      ? `#${fill}`
-      : typeof cell.fill === "object" && cell.fill.type === "none"
-        ? "transparent"
-        : undefined;
+  const fill = cell.fill;
   const cellProperties = {
-    "fo:background-color": background,
+    "fo:background-color":
+      typeof fill === "object" && fill.type === "none"
+        ? "transparent"
+        : odfColor(
+            typeof fill === "object" && fill.type === "solid"
+              ? hexColorValue(fill.color)
+              : hexColorValue(fill),
+          ),
     "style:vertical-align":
       cell.verticalAlign && Object.hasOwn(CELL_VERTICAL_ALIGN, cell.verticalAlign)
         ? CELL_VERTICAL_ALIGN[cell.verticalAlign as keyof typeof CELL_VERTICAL_ALIGN]
         : undefined,
     ...Object.fromEntries(
-      CELL_SIDES.map((side) => [
-        `fo:padding-${side}`,
-        cell.margins?.[side] === undefined ? undefined : odfLength(cell.margins[side]),
-      ]),
+      CELL_SIDES.map((side) => {
+        const margin = cell.margins?.[side];
+        return [
+          `fo:padding-${side}`,
+          margin === undefined || typeof margin === "string" ? margin : emuToLength(margin),
+        ];
+      }),
     ),
   };
   const borders = Object.fromEntries(
@@ -195,77 +186,24 @@ export function addCellStyle(cell: TableCellStyle, styles: string[]): string | u
   return name;
 }
 
-/** Row heights (EMU) by table-row style name. */
-export function parseRowHeights(container: Element | undefined): Map<string, number> {
-  const result = new Map<string, number>();
-  for (const style of childrenNamed(container, "style:style")) {
-    if (attributeString(style, "style:family") !== "table-row") continue;
-    const height = attributeString(
-      childNamed(style, "style:table-row-properties"),
-      "style:row-height",
-    );
-    const emu = lengthToEmu(height);
-    if (emu !== undefined) result.set(attributeString(style, "style:name") ?? "", emu);
-  }
-  return result;
-}
-
-function parseCellBorder(value: string | undefined): NonNullable<TableCellStyle["borders"]>["top"] {
-  const match = value?.match(/^(\S+)\s+(solid|dashed|dotted)\s+#([0-9a-f]{6})$/i);
-  const width = lengthToEmu(match?.[1]);
-  if (!match || width === undefined) return undefined;
-  const line = match[2]!.toLowerCase();
-  return {
-    width,
-    color: match[3]!,
-    ...(line === "solid" ? {} : { dashStyle: line === "dotted" ? "dot" : "dash" }),
-  };
-}
-
-/** Cell formatting by table-cell style name (the form `addCellStyle` writes). */
-export function parseCellStyles(container: Element | undefined): Map<string, TableCellStyle> {
-  const result = new Map<string, TableCellStyle>();
-  for (const style of childrenNamed(container, "style:style")) {
-    if (attributeString(style, "style:family") !== "table-cell") continue;
-    const cellProperties = childNamed(style, "style:table-cell-properties");
-    const paragraphProperties = childNamed(style, "style:paragraph-properties");
-    const background = attributeString(cellProperties, "fo:background-color");
-    const verticalAlign = Object.entries(CELL_VERTICAL_ALIGN).find(
-      ([, odf]) => odf === attributeString(cellProperties, "style:vertical-align"),
-    )?.[0] as TableCellStyle["verticalAlign"];
-    const margins = Object.fromEntries(
-      CELL_SIDES.flatMap((side) => {
-        const emu = lengthToEmu(attributeString(cellProperties, `fo:padding-${side}`));
-        return emu === undefined ? [] : [[side, emu] as const];
-      }),
-    );
-    const borders = Object.fromEntries(
-      CELL_SIDES.flatMap((side) => {
-        const border = parseCellBorder(attributeString(paragraphProperties, `fo:border-${side}`));
-        return border ? [[side, border] as const] : [];
-      }),
-    );
-    const cell: TableCellStyle = {
-      ...(background && /^#[0-9a-f]{6}$/i.test(background)
-        ? { fill: background.slice(1) }
-        : background === "transparent"
-          ? { fill: { type: "none" } }
-          : {}),
-      ...(verticalAlign ? { verticalAlign } : {}),
-      ...(Object.keys(margins).length > 0 ? { margins } : {}),
-      ...(Object.keys(borders).length > 0 ? { borders } : {}),
-    };
-    if (Object.keys(cell).length > 0) result.set(attributeString(style, "style:name") ?? "", cell);
-  }
-  return result;
-}
-
 export function parseTextStyles(container: Element | undefined): Map<string, TextProperties> {
   const result = new Map<string, TextProperties>();
   const paragraphStyles = parseParagraphStyles([container]);
+  const rowHeights = parseRowHeights([container]);
+  const cellStyles = parseCellStyles([container]);
   for (const style of childrenNamed(container, "style:style")) {
     const familyName = attributeString(style, "style:family");
     const styleName = attributeString(style, "style:name") ?? "";
+    if (familyName === "table-row") {
+      const rowHeight = rowHeights.get(styleName);
+      if (rowHeight !== undefined) result.set(styleName, { rowHeight });
+      continue;
+    }
+    if (familyName === "table-cell") {
+      const cell = cellStyles.get(styleName);
+      if (cell) result.set(styleName, { cell });
+      continue;
+    }
     if (familyName === "paragraph") {
       const paragraph = paragraphStyles.get(styleName);
       if (paragraph) result.set(styleName, { paragraph });
@@ -290,6 +228,66 @@ export function parseTextStyles(container: Element | undefined): Map<string, Tex
         ? { paragraph: paragraphStyles.get(attributeString(style, "style:name") ?? "") }
         : {}),
     });
+  }
+  return result;
+}
+
+/** Row heights (EMU) by table-row style name. */
+export function parseRowHeights(containers: readonly (Element | undefined)[]): Map<string, number> {
+  const result = new Map<string, number>();
+  for (const container of containers) {
+    for (const style of childrenNamed(container, "style:style")) {
+      if (attributeString(style, "style:family") !== "table-row") continue;
+      const name = attributeString(style, "style:name");
+      const height = lengthToEmu(
+        attributeString(childNamed(style, "style:table-row-properties"), "style:row-height"),
+      );
+      if (name && height !== undefined) result.set(name, height);
+    }
+  }
+  return result;
+}
+
+function parseCellBorder(value: string | undefined): NonNullable<TableCellStyle["borders"]>["top"] {
+  const match = value?.match(/^(\S+)\s+(solid|dashed|dotted)\s+#([0-9a-f]{6})$/i);
+  const width = lengthToEmu(match?.[1]);
+  if (!match || width === undefined) return undefined;
+  const line = match[2]!.toLowerCase();
+  return {
+    width,
+    color: match[3]!,
+    ...(line === "solid" ? {} : { dashStyle: line === "dotted" ? "dot" : "dash" }),
+  };
+}
+
+/** Cell formatting by table-cell style name (the form `addCellStyle` writes). */
+export function parseCellStyles(
+  containers: readonly (Element | undefined)[],
+): Map<string, TableCellStyle> {
+  const result = new Map<string, TableCellStyle>();
+  for (const container of containers) {
+    for (const style of childrenNamed(container, "style:style")) {
+      if (attributeString(style, "style:family") !== "table-cell") continue;
+      const name = attributeString(style, "style:name");
+      if (!name) continue;
+      const cellProperties = childNamed(style, "style:table-cell-properties");
+      const paragraphProperties = childNamed(style, "style:paragraph-properties");
+      const background = attributeString(cellProperties, "fo:background-color");
+      const anchor = attributeString(cellProperties, "style:vertical-align");
+      const cell: TableCellStyle = {};
+      if (background && /^#[0-9a-f]{6}$/i.test(background)) cell.fill = background.slice(1);
+      else if (background === "transparent") cell.fill = { type: "none" };
+      if (anchor === "top") cell.verticalAlign = "top";
+      else if (anchor === "middle") cell.verticalAlign = "center";
+      else if (anchor === "bottom") cell.verticalAlign = "bottom";
+      for (const side of CELL_SIDES) {
+        const margin = lengthToEmu(attributeString(cellProperties, `fo:padding-${side}`));
+        if (margin !== undefined) cell.margins = { ...cell.margins, [side]: margin };
+        const border = parseCellBorder(attributeString(paragraphProperties, `fo:border-${side}`));
+        if (border) cell.borders = { ...cell.borders, [side]: border };
+      }
+      if (Object.keys(cell).length > 0) result.set(name, cell);
+    }
   }
   return result;
 }

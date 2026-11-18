@@ -10,7 +10,7 @@ import { attributeNumber, attributeString, escapeText, textOf, xmlElement } from
 import type { Element } from "@office-open/xml";
 
 import { OdpGenerateError, unknownSlideChild } from "./error";
-import { addParagraphStyle, addTextStyle } from "./styles";
+import { addParagraphStyle, addTextStyle, type TableCellStyle } from "./styles";
 
 export interface TextProperties {
   bold?: boolean;
@@ -22,6 +22,10 @@ export interface TextProperties {
   /** Latin font family (fo:font-family). */
   font?: string;
   paragraph?: TextParagraphPropertiesOptions;
+  /** Row height in EMU, from a table-row style. */
+  rowHeight?: number;
+  /** Cell formatting, from a table-cell style. */
+  cell?: TableCellStyle;
 }
 
 /** Semantic segment of a measurement text run inside draw:measure. */

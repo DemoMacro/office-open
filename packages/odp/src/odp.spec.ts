@@ -1486,34 +1486,14 @@ describe("ODP codec", () => {
     });
   });
 
-  it("declares the table namespace and places a slide table in a positioned frame", async () => {
+  it("declares the table namespace that slide tables use", async () => {
     const generated = await generatePresentation({
-      slides: [
-        {
-          children: [
-            {
-              table: {
-                x: 360000,
-                y: 720000,
-                width: 2743200,
-                height: 720000,
-                columnWidths: [914400, 1828800],
-                rows: [{ cells: [{ text: "A" }, { text: "B" }] }],
-              },
-            },
-          ],
-        },
-      ],
+      slides: [{ children: [{ table: { rows: [{ cells: [{ text: "A" }] }] } }] }],
     });
     const content = (await readOcf(generated, "application/vnd.oasis.opendocument.presentation"))
       .files["content.xml"]!;
+    expect(content).toContain("<table:table>");
     expect(content).toContain('xmlns:table="urn:oasis:names:tc:opendocument:xmlns:table:1.0"');
-    expect(content).toContain(
-      '<draw:frame svg:x="1cm" svg:y="2cm" svg:width="7.62cm" svg:height="2cm"><table:table>',
-    );
-    expect((await parsePresentation(generated)).slides?.[0]?.children?.[0]).toMatchObject({
-      table: { x: 360000, y: 720000, width: 2743200, height: 720000 },
-    });
   });
 
   it("round-trips slide table row heights and cell formatting", async () => {
@@ -1523,10 +1503,6 @@ describe("ODP codec", () => {
           children: [
             {
               table: {
-                x: 0,
-                y: 0,
-                width: 2743200,
-                height: 720000,
                 columnWidths: [914400, 1828800],
                 rows: [
                   {
