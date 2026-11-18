@@ -47,7 +47,7 @@ import {
 } from "@office-open/odf";
 import type { PackageMemberOptions } from "@office-open/odf";
 import type { MasterDefinition, PresentationOptions, SlideOptions } from "@office-open/pptx";
-import type { Element } from "@office-open/xml";
+import { XmlParseError, type Element } from "@office-open/xml";
 
 import type { OdpChart, OdpImage } from "./drawing";
 import { normalizeEmbeddedObjectPath, type OdpEmbeddedObjectPool } from "./embedded-frames";
@@ -200,6 +200,26 @@ function backgroundOptions(
 }
 
 function generateOdpPackage(options: OdpPresentationOptions): Uint8Array {
+  try {
+    return buildOdpPackage(options);
+  } catch (cause) {
+    if (
+      cause instanceof OdfSchemaError ||
+      (cause instanceof Error && cause.name === XmlParseError.name)
+    )
+      throw new OdpGenerateError(
+        cause.message,
+        cause instanceof OdfSchemaError ? cause.part : "content.xml",
+        cause instanceof OdfSchemaError ? cause.path : "/office:document-content",
+        cause instanceof OdfSchemaError ? cause.elementName : "#text",
+        cause instanceof OdfSchemaError ? cause.reason : "invalid-xml-character",
+        { cause },
+      );
+    throw cause;
+  }
+}
+
+function buildOdpPackage(options: OdpPresentationOptions): Uint8Array {
   const { packageManifest, packageMembers, styleResources, embeddedObjects, packageMediaType } =
     packageOptions(options);
   validateEmbeddedObjects(options, embeddedObjects);

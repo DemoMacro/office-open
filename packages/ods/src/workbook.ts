@@ -40,7 +40,7 @@ import {
 } from "@office-open/odf";
 import type { PackageMemberOptions } from "@office-open/odf";
 import type { DxfOptions, WorkbookOptions } from "@office-open/xlsx";
-import type { Element } from "@office-open/xml";
+import { XmlParseError, type Element } from "@office-open/xml";
 
 import { dataMappingsXml, parseDataMappings } from "./data-mappings";
 import { parseWorksheetCharts } from "./drawing-chart";
@@ -100,6 +100,26 @@ export const NAMESPACES = [
 ].join(" ");
 
 function generateOdsPackage(options: OdsWorkbookOptions): Uint8Array {
+  try {
+    return buildOdsPackage(options);
+  } catch (cause) {
+    if (
+      cause instanceof OdfSchemaError ||
+      (cause instanceof Error && cause.name === XmlParseError.name)
+    )
+      throw new OdsGenerateError(
+        cause.message,
+        cause instanceof OdfSchemaError ? cause.part : "content.xml",
+        cause instanceof OdfSchemaError ? cause.path : "/office:document-content",
+        cause instanceof OdfSchemaError ? cause.elementName : "#text",
+        cause instanceof OdfSchemaError ? cause.reason : "invalid-xml-character",
+        { cause },
+      );
+    throw cause;
+  }
+}
+
+function buildOdsPackage(options: OdsWorkbookOptions): Uint8Array {
   const { packageManifest, packageMembers, styleResources, packageMediaType } = options;
   if (options.pivotCaches?.length) {
     throw new OdsGenerateError(

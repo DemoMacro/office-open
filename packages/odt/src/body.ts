@@ -51,7 +51,7 @@ import {
   type OdfPackageFiles,
   type PackageMemberOptions,
 } from "@office-open/odf";
-import type { Element } from "@office-open/xml";
+import { XmlParseError, type Element } from "@office-open/xml";
 
 import {
   automaticStyleResourcesXml,
@@ -185,6 +185,26 @@ export interface ParseContext {
 }
 
 function generateOdtPackage(options: OdtDocumentOptions): Uint8Array {
+  try {
+    return buildOdtPackage(options);
+  } catch (cause) {
+    if (
+      cause instanceof OdfSchemaError ||
+      (cause instanceof Error && cause.name === XmlParseError.name)
+    )
+      throw new OdtGenerateError(
+        cause.message,
+        cause instanceof OdfSchemaError ? cause.part : "content.xml",
+        cause instanceof OdfSchemaError ? cause.path : "/office:document-content",
+        cause instanceof OdfSchemaError ? cause.elementName : "#text",
+        cause instanceof OdfSchemaError ? cause.reason : "invalid-xml-character",
+        { cause },
+      );
+    throw cause;
+  }
+}
+
+function buildOdtPackage(options: OdtDocumentOptions): Uint8Array {
   const { packageManifest, embeddedObjects, packageMembers, styleResources } = options;
   validateSectionProjection(options.sections);
   const styles: string[] = automaticStyleResourcesXml(styleResources);
