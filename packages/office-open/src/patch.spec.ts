@@ -4,7 +4,7 @@ import { describe, expect, it } from "vite-plus/test";
 import { generateDocument, patchDocument } from "./document";
 import { parseDocument } from "./document";
 import { generatePresentation, patchPresentation } from "./presentation";
-import { generateWorkbook, patchWorkbook } from "./workbook";
+import { generateWorkbook, parseWorkbook, patchWorkbook } from "./workbook";
 
 describe("canonical patch dispatch", () => {
   it("patches RTF and regenerates canonical content", async () => {
@@ -67,7 +67,8 @@ describe("canonical patch dispatch", () => {
         },
       ],
     })) as Uint8Array;
-    expect(new TextDecoder().decode(unzipSync(patched)["content.xml"])).toContain("Patched ODS");
+    const parsed = await parseWorkbook(patched);
+    expect(parsed.worksheets?.[0]?.rows?.[0]?.cells?.[0]?.value).toBe("Patched ODS");
   });
 
   it("patches ODP canonical text", async () => {
