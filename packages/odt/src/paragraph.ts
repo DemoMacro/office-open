@@ -707,7 +707,15 @@ export function runXml(
         }
       ).hyperlink;
       const href = link.url ?? (link.anchor !== undefined ? `#${link.anchor}` : undefined);
-      if (href === undefined) return "";
+      if (href === undefined) {
+        throw new OdtGenerateError(
+          "ODT hyperlink has neither a URL nor an anchor",
+          "content.xml",
+          "/office:document-content/office:body/office:text/text:p/text:a",
+          "text:a",
+          "missing-hyperlink-target",
+        );
+      }
       const inner = link.children
         ? link.children
             .map((linkChild) =>
@@ -820,7 +828,14 @@ export function runXml(
     if ("chart" in child) {
       return chartFrameXml((child as { chart: ChartOptions }).chart, charts);
     }
-    return "";
+    const childName = Object.keys(child)[0] ?? "unknown";
+    throw new OdtGenerateError(
+      `ODT inline child "${childName}" has no canonical ODF mapping`,
+      "content.xml",
+      "/office:document-content/office:body/office:text/text:p",
+      childName,
+      "unsupported-inline-child",
+    );
   });
 }
 

@@ -2147,6 +2147,23 @@ describe("ODT canonical projection", () => {
     });
   });
 
+  it("rejects hyperlinks without a target", async () => {
+    await expect(
+      generateDocument({
+        sections: [
+          {
+            children: [
+              { paragraph: { children: [{ hyperlink: { children: ["missing target"] } }] } },
+            ],
+          },
+        ],
+      }),
+    ).rejects.toMatchObject({
+      elementName: "text:a",
+      reason: "missing-hyperlink-target",
+    });
+  });
+
   it("rejects a frame with an unsupported payload and no image", async () => {
     const error = await parseBodyError(
       '<text:p>before<draw:frame svg:width="2cm" svg:height="1cm"><draw:plugin xlink:href="plugin:example" draw:mime-type="application/example"/></draw:frame>after</text:p>',
