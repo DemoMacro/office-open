@@ -76,7 +76,7 @@ import {
   type OdpSlideNodePayload,
 } from "./slide-nodes";
 import { parseDrawingPageBackground } from "./styles";
-import { addColumnStyle } from "./styles";
+import { addCellStyle, addColumnStyle, addRowStyle } from "./styles";
 import { parseParagraph, textBodyXml, type TextProperties } from "./text-run";
 import {
   applyTransitionToStyleResource,
@@ -905,7 +905,7 @@ export function slideTableXml(table: TableOptions, styles: string[]): string {
   const rows = table.rows.map((row, rowIndex) =>
     xmlElement(
       "table:table-row",
-      undefined,
+      { "table:style-name": addRowStyle(row.height, styles) },
       tableRowXml(row, covered[rowIndex] ?? new Map(), styles),
     ),
   );
@@ -964,6 +964,7 @@ function tableRowXml(
     xml += xmlElement(
       "table:table-cell",
       {
+        "table:style-name": addCellStyle(cell, styles),
         "office:value-type": "string",
         "table:number-columns-spanned": cell.columnSpan,
         "table:number-rows-spanned": cell.rowSpan,
@@ -981,9 +982,13 @@ export function parseSlideTable(
   textStyles: Map<string, TextProperties>,
   columnWidths: Map<string, number>,
 ): { table: TableOptions } {
-  const rows = childrenNamed(element, "table:table-row").map((row) => ({
-    cells: parseTableRowCells(row, textStyles),
-  }));
+  const rows = childrenNamed(element, "table:table-row").map((row) => {
+    const height = textStyles.get(attributeString(row, "table:style-name") ?? "")?.rowHeight;
+    return {
+      ...(height === undefined ? {} : { height }),
+      cells: parseTableRowCells(row, textStyles),
+    };
+  });
   return {
     table: {
       ...(attributeString(element, "table:name")
@@ -1013,6 +1018,7 @@ function parseTableRowCells(
     if (cell.name !== "table:table-cell") throw unknownSlideChild(cell, "/draw:page/table:table");
     const span = attributeNumber(cell, "table:number-columns-spanned") ?? 1;
     cells.push({
+      ...textStyles.get(attributeString(cell, "table:style-name") ?? "")?.cell,
       columnSpan: attributeNumber(cell, "table:number-columns-spanned"),
       rowSpan: attributeNumber(cell, "table:number-rows-spanned"),
       children: childrenNamed(cell, "text:p").map((paragraph) =>

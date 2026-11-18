@@ -1486,6 +1486,98 @@ describe("ODP codec", () => {
     });
   });
 
+  it("declares the table namespace that slide tables use", async () => {
+    const generated = await generatePresentation({
+      slides: [{ children: [{ table: { rows: [{ cells: [{ text: "A" }] }] } }] }],
+    });
+    const content = (await readOcf(generated, "application/vnd.oasis.opendocument.presentation"))
+      .files["content.xml"]!;
+    expect(content).toContain("<table:table>");
+    expect(content).toContain('xmlns:table="urn:oasis:names:tc:opendocument:xmlns:table:1.0"');
+  });
+
+  it("round-trips slide table row heights and cell formatting", async () => {
+    const options: OdpPresentationOptions = {
+      slides: [
+        {
+          children: [
+            {
+              table: {
+                columnWidths: [914400, 1828800],
+                rows: [
+                  {
+                    height: 360000,
+                    cells: [
+                      {
+                        text: "Head",
+                        fill: "DFEBFD",
+                        verticalAlign: "center",
+                        margins: { left: 91440, right: 91440, top: 45720, bottom: 0 },
+                        borders: {
+                          bottom: { width: 12700, color: "1F5FBF" },
+                          right: { width: 9525, color: "C00000", dashStyle: "dash" },
+                        },
+                      },
+                      { text: "Plain" },
+                    ],
+                  },
+                  {
+                    height: 360000,
+                    cells: [
+                      { text: "a", fill: { type: "none" }, verticalAlign: "bottom" },
+                      {
+                        text: "b",
+                        borders: { top: { width: 12700, color: "000000", dashStyle: "dot" } },
+                      },
+                    ],
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      ],
+    };
+    const generated = await generatePresentation(options);
+    const content = (await readOcf(generated, "application/vnd.oasis.opendocument.presentation"))
+      .files["content.xml"]!;
+    expect(content).toContain(
+      '<style:table-row-properties style:row-height="1cm" style:use-optimal-row-height="false"/>',
+    );
+    expect(content).toContain(
+      '<style:table-cell-properties fo:background-color="#DFEBFD" style:vertical-align="middle" fo:padding-top="0.127cm" fo:padding-bottom="0cm" fo:padding-left="0.254cm" fo:padding-right="0.254cm"/>',
+    );
+    expect(content).toContain(
+      '<style:paragraph-properties fo:border-bottom="0.035278cm solid #1F5FBF" fo:border-right="0.026458cm dashed #C00000"/>',
+    );
+    const child = (await parsePresentation(generated)).slides?.[0]?.children?.[0];
+    if (!child || !("table" in child)) throw new TypeError("Expected a table child");
+    const [head, body] = child.table.rows;
+    expect(head).toMatchObject({
+      height: 360000,
+      cells: [
+        {
+          fill: "DFEBFD",
+          verticalAlign: "center",
+          margins: { left: 91440, right: 91440, top: 45720, bottom: 0 },
+          borders: {
+            bottom: { width: 12700, color: "1F5FBF" },
+            right: { width: 9525, color: "C00000", dashStyle: "dash" },
+          },
+        },
+        {},
+      ],
+    });
+    expect(head?.cells[1]).not.toHaveProperty("fill");
+    expect(body).toMatchObject({
+      height: 360000,
+      cells: [
+        { fill: { type: "none" }, verticalAlign: "bottom" },
+        { borders: { top: { width: 12700, color: "000000", dashStyle: "dot" } } },
+      ],
+    });
+  });
+
   it("rejects covered cells that do not match their preceding span", async () => {
     const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:automatic-styles><style:style style:name="W" style:family="table-column"><style:table-column-properties style:column-width="25.4mm"/></style:style></office:automatic-styles><office:body><office:presentation><draw:page><table:table table:name="Budget"><table:table-column table:style-name="W"/><table:table-row><table:table-cell table:number-columns-spanned="2"><text:p>A</text:p></table:table-cell></table:table-row></table:table></draw:page></office:presentation></office:body></office:document-content>`;
     await expect(

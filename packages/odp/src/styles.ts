@@ -4,7 +4,9 @@ import {
   childNamed,
   childrenNamed,
   emuToLength,
+  hexColorValue,
   lengthToEmu,
+  odfColor,
   parseStyleMaps,
   parseStyleProperty,
   removeStylePropertyAttributes,
@@ -13,7 +15,7 @@ import {
   xmlElement,
 } from "@office-open/odf";
 import type { StyleFamily, StyleResourceOptions } from "@office-open/odf";
-import type { BackgroundOptions } from "@office-open/pptx";
+import type { BackgroundOptions, TableCellOptions } from "@office-open/pptx";
 import type { Element } from "@office-open/xml";
 
 import { OdpParseError } from "./error";
@@ -95,12 +97,113 @@ export function addColumnStyle(width: number | string, styles: string[]): string
   return name;
 }
 
+/** Row height style — pptx heights are EMU. */
+export function addRowStyle(
+  height: number | string | undefined,
+  styles: string[],
+): string | undefined {
+  if (height === undefined) return undefined;
+  const name = `TR${styles.length + 1}`;
+  styles.push(
+    xmlElement("style:style", { "style:name": name, "style:family": "table-row" }, [
+      xmlElement("style:table-row-properties", {
+        "style:row-height": typeof height === "number" ? emuToLength(height) : height,
+        "style:use-optimal-row-height": "false",
+      }),
+    ]),
+  );
+  return name;
+}
+
+/** The cell formatting ODF can carry: fill, vertical anchor, padding, and the four side borders. */
+export type TableCellStyle = Pick<
+  TableCellOptions,
+  "fill" | "verticalAlign" | "margins" | "borders"
+>;
+
+const CELL_SIDES = ["top", "bottom", "left", "right"] as const;
+const CELL_VERTICAL_ALIGN = { top: "top", center: "middle", bottom: "bottom" } as const;
+
+/** fo:border value of one cell side: width, line style, colour (1pt solid black when unset). */
+function cellBorderValue(
+  border: NonNullable<TableCellStyle["borders"]>["top"],
+): string | undefined {
+  if (!border) return undefined;
+  const width = border.width ?? 12700;
+  const line =
+    border.dashStyle === undefined || border.dashStyle === "solid"
+      ? "solid"
+      : border.dashStyle === "dot" || border.dashStyle === "sysDot"
+        ? "dotted"
+        : "dashed";
+  return `${typeof width === "number" ? emuToLength(width) : width} ${line} ${
+    odfColor(hexColorValue(border.color)) ?? "#000000"
+  }`;
+}
+
+/**
+ * Cell style: fill, anchor and padding as table-cell-properties, side borders
+ * as paragraph-properties — the placement Impress reads cell borders from.
+ */
+export function addCellStyle(cell: TableCellStyle, styles: string[]): string | undefined {
+  const fill = cell.fill;
+  const cellProperties = {
+    "fo:background-color":
+      typeof fill === "object" && fill.type === "none"
+        ? "transparent"
+        : odfColor(
+            typeof fill === "object" && fill.type === "solid"
+              ? hexColorValue(fill.color)
+              : hexColorValue(fill),
+          ),
+    "style:vertical-align":
+      cell.verticalAlign && Object.hasOwn(CELL_VERTICAL_ALIGN, cell.verticalAlign)
+        ? CELL_VERTICAL_ALIGN[cell.verticalAlign as keyof typeof CELL_VERTICAL_ALIGN]
+        : undefined,
+    ...Object.fromEntries(
+      CELL_SIDES.map((side) => {
+        const margin = cell.margins?.[side];
+        return [
+          `fo:padding-${side}`,
+          margin === undefined || typeof margin === "string" ? margin : emuToLength(margin),
+        ];
+      }),
+    ),
+  };
+  const borders = Object.fromEntries(
+    CELL_SIDES.map((side) => [`fo:border-${side}`, cellBorderValue(cell.borders?.[side])]),
+  );
+  const hasCellProperties = Object.values(cellProperties).some((value) => value !== undefined);
+  const hasBorders = Object.values(borders).some((value) => value !== undefined);
+  if (!hasCellProperties && !hasBorders) return undefined;
+  const name = `TE${styles.length + 1}`;
+  styles.push(
+    xmlElement("style:style", { "style:name": name, "style:family": "table-cell" }, [
+      ...(hasCellProperties ? [xmlElement("style:table-cell-properties", cellProperties)] : []),
+      ...(hasBorders ? [xmlElement("style:paragraph-properties", borders)] : []),
+    ]),
+  );
+  return name;
+}
+
 export function parseTextStyles(container: Element | undefined): Map<string, TextProperties> {
   const result = new Map<string, TextProperties>();
   const paragraphStyles = parseParagraphStyles([container]);
+  const rowHeights = parseRowHeights([container]);
+  const cellStyles = parseCellStyles([container]);
   for (const style of childrenNamed(container, "style:style")) {
     const familyName = attributeString(style, "style:family");
     const styleName = attributeString(style, "style:name") ?? "";
+    if (familyName === "table-row") {
+      const rowHeight = rowHeights.get(styleName);
+      if (rowHeight !== undefined) result.set(styleName, { rowHeight });
+      continue;
+    }
+    if (familyName === "table-cell") {
+      const cell = cellStyles.get(styleName);
+      if (cell) result.set(styleName, { cell });
+      continue;
+    }
     if (familyName === "paragraph") {
       const paragraph = paragraphStyles.get(styleName);
       if (paragraph) result.set(styleName, { paragraph });
@@ -125,6 +228,66 @@ export function parseTextStyles(container: Element | undefined): Map<string, Tex
         ? { paragraph: paragraphStyles.get(attributeString(style, "style:name") ?? "") }
         : {}),
     });
+  }
+  return result;
+}
+
+/** Row heights (EMU) by table-row style name. */
+export function parseRowHeights(containers: readonly (Element | undefined)[]): Map<string, number> {
+  const result = new Map<string, number>();
+  for (const container of containers) {
+    for (const style of childrenNamed(container, "style:style")) {
+      if (attributeString(style, "style:family") !== "table-row") continue;
+      const name = attributeString(style, "style:name");
+      const height = lengthToEmu(
+        attributeString(childNamed(style, "style:table-row-properties"), "style:row-height"),
+      );
+      if (name && height !== undefined) result.set(name, height);
+    }
+  }
+  return result;
+}
+
+function parseCellBorder(value: string | undefined): NonNullable<TableCellStyle["borders"]>["top"] {
+  const match = value?.match(/^(\S+)\s+(solid|dashed|dotted)\s+#([0-9a-f]{6})$/i);
+  const width = lengthToEmu(match?.[1]);
+  if (!match || width === undefined) return undefined;
+  const line = match[2]!.toLowerCase();
+  return {
+    width,
+    color: match[3]!,
+    ...(line === "solid" ? {} : { dashStyle: line === "dotted" ? "dot" : "dash" }),
+  };
+}
+
+/** Cell formatting by table-cell style name (the form `addCellStyle` writes). */
+export function parseCellStyles(
+  containers: readonly (Element | undefined)[],
+): Map<string, TableCellStyle> {
+  const result = new Map<string, TableCellStyle>();
+  for (const container of containers) {
+    for (const style of childrenNamed(container, "style:style")) {
+      if (attributeString(style, "style:family") !== "table-cell") continue;
+      const name = attributeString(style, "style:name");
+      if (!name) continue;
+      const cellProperties = childNamed(style, "style:table-cell-properties");
+      const paragraphProperties = childNamed(style, "style:paragraph-properties");
+      const background = attributeString(cellProperties, "fo:background-color");
+      const anchor = attributeString(cellProperties, "style:vertical-align");
+      const cell: TableCellStyle = {};
+      if (background && /^#[0-9a-f]{6}$/i.test(background)) cell.fill = background.slice(1);
+      else if (background === "transparent") cell.fill = { type: "none" };
+      if (anchor === "top") cell.verticalAlign = "top";
+      else if (anchor === "middle") cell.verticalAlign = "center";
+      else if (anchor === "bottom") cell.verticalAlign = "bottom";
+      for (const side of CELL_SIDES) {
+        const margin = lengthToEmu(attributeString(cellProperties, `fo:padding-${side}`));
+        if (margin !== undefined) cell.margins = { ...cell.margins, [side]: margin };
+        const border = parseCellBorder(attributeString(paragraphProperties, `fo:border-${side}`));
+        if (border) cell.borders = { ...cell.borders, [side]: border };
+      }
+      if (Object.keys(cell).length > 0) result.set(name, cell);
+    }
   }
   return result;
 }

@@ -77,6 +77,7 @@ export const NAMESPACES = [
   'xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"',
   'xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0"',
   'xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0"',
+  'xmlns:table="urn:oasis:names:tc:opendocument:xmlns:table:1.0"',
   'xmlns:draw="urn:oasis:names:tc:opendocument:xmlns:drawing:1.0"',
   'xmlns:presentation="urn:oasis:names:tc:opendocument:xmlns:presentation:1.0"',
   'xmlns:svg="urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0"',
