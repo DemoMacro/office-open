@@ -829,19 +829,9 @@ describe("legacy DOC parser", () => {
     expect(textboxSections).toEqual([false, true]);
   });
 
-  it("tolerates malformed textbox boundary tables with a structured warning", () => {
+  it("rejects malformed textbox boundary tables with structured context", () => {
     const { data } = buildDocument({ textboxes: { malformed: true } });
-    const warnings: string[] = [];
-    const warn = console.warn;
-    console.warn = (message: string) => warnings.push(message);
-    try {
-      const document = parseDocument(data);
-      expect(document.sections[0]?.children.every((child) => !("textbox" in child))).toBe(true);
-    } finally {
-      console.warn = warn;
-    }
-    expect(warnings.some((message) => message.includes("PlcftxbxTxt"))).toBe(true);
-    expect(warnings.some((message) => message.includes("invalid-record-length"))).toBe(true);
+    expect(() => parseDocument(data)).toThrow(DocParseError);
   });
 
   it("projects individual footnote boundaries", () => {
